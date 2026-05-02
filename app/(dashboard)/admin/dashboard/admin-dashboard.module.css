@@ -1,0 +1,111 @@
+/* ─── Admin Dashboard ─────────────────────────────────────────────────────────── */
+
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.greeting {
+  font-size: 22px;
+  font-weight: 700;
+  color: #2D1B14;
+  margin: 0 0 4px;
+}
+
+.date {
+  font-size: 13px;
+  color: #8B6F5F;
+  margin: 0;
+  text-transform: capitalize;
+}
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+}
+
+.statCard {
+  padding: 20px;
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 6px;
+}
+
+.statValue {
+  font-size: 32px;
+  font-weight: 700;
+  color: #2D1B14;
+  line-height: 1;
+}
+
+.statLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: #8B6F5F;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* Tabs */
+.tabBar {
+  display: flex;
+  gap: 4px;
+  background: #FFE8CD;
+  border-radius: 12px;
+  padding: 4px;
+  width: fit-content;
+}
+
+.tab {
+  padding: 8px 20px;
+  border: none;
+  background: transparent;
+  border-radius: 9px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #6B4F3F;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.15s, color 0.15s;
+}
+
+.tab:hover:not(.tabActive) { background: rgba(194, 84, 80, 0.08); }
+
+.tabActive {
+  background: #C25450;
+  color: #fff;
+  font-weight: 600;
+}
+
+.tableWrap { overflow-x: auto; }
+
+.emptyText {
+  padding: 20px;
+  font-size: 13px;
+  color: #8B6F5F;
+  text-align: center;
+  margin: 0;
+}
+
+@media (max-width: 1023px) {
+  .statsGrid { grid-template-columns: repeat(2, 1fr); }
+  .tabBar    { width: 100%; }
+  .tab       { flex: 1; }
+}
+
+@media (max-width: 639px) {
+  .statsGrid  { gap: 10px; }
+  .statValue  { font-size: 26px; }
+  .statCard   { padding: 16px; }
+  .greeting   { font-size: 18px; }
+}
