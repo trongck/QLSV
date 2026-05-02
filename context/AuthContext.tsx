@@ -28,7 +28,8 @@ export interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-// ─── Hook nội bộ (chỉ dùng trong file này và hook/useAuth.ts) ────────────────
+// ─── Hook nội bộ — CHỈ dùng trong hook/useAuth.ts, không import trực tiếp ───
+// Các component phải dùng useAuth() từ @/hook/useAuth thay vì hook này.
 
 export function useAuthContext(): AuthContextValue {
   const ctx = useContext(AuthContext);
@@ -43,13 +44,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
-  // Khởi tạo: kiểm tra session đang tồn tại (dùng cached user trước, rồi verify với server)
+  // Khởi tạo: hiển thị cached user ngay, rồi verify với server trong background
   useEffect(() => {
-    // Hiển thị cached user ngay để tránh flash màn hình trắng
     const cached = authService.getCachedUser();
     if (cached) setUser(cached);
 
-    // Verify với server trong background
     authService
       .getCurrentUser()
       .then((profile) => setUser(profile))
@@ -58,26 +57,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   // ── Đăng nhập ──────────────────────────────────────────────────────────────
+  // FIX (Issue 8): Truyền `remember` xuống authService để chọn storage đúng.
+  // FIX (bug): Redirect phải chạy kể cả khi remember=false — đã tách ra ngoài if.
+  // Không còn cần beforeunload hack vì sessionStorage tự xóa khi tab đóng.
 
   const login = useCallback(async (payload: LoginRequest, remember = false) => {
-    const response = await authService.login(payload);
+    const response = await authService.login(payload, remember);
     setUser(response.user);
 
-    // Nếu không "Duy trì đăng nhập" → đăng ký xóa session khi tab đóng
-    if (!remember) {
-      const handleUnload = () => {
-        authService.logout();
-      };
-      window.addEventListener("beforeunload", handleUnload);
-      // Cleanup nếu component unmount trước khi tab đóng
-      return () => window.removeEventListener("beforeunload", handleUnload);
-    }
-
-    // Redirect theo vai trò
+    // Redirect theo vai trò — chạy bất kể remember hay không
     switch (response.user.vaitro) {
       case VaiTro.SinhVien:  router.push("/student/dashboard");  break;
-      case VaiTro.GiangVien: router.push("/teacher/dashboard"); break;
-      case VaiTro.Admin:     router.push("/admin/dashboard");   break;
+      case VaiTro.GiangVien: router.push("/teacher/dashboard");  break;
+      case VaiTro.Admin:     router.push("/admin/dashboard");    break;
     }
   }, [router]);
 

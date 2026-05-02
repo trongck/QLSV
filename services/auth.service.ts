@@ -6,38 +6,67 @@ const KEY_ACCESS  = "auth_access_token";
 const KEY_REFRESH = "auth_refresh_token";
 const KEY_USER    = "auth_user";
 
-// ─── Token Helpers (client-side only) ─────────────────────────────────────────
+// ─── safeJson ─────────────────────────────────────────────────────────────────
+// Tránh lỗi "Unexpected token '<', <!DOCTYPE..." khi server trả HTML thay vì JSON
+// (xảy ra khi route không tồn tại → 404, hoặc server crash → 500 error page).
+
+async function safeJson<T>(res: Response): Promise<T | null> {
+  const ct = res.headers.get("content-type") ?? "";
+  if (!ct.includes("application/json")) return null;
+  try { return (await res.json()) as T; } catch { return null; }
+}
+
+// ─── Storage helpers ──────────────────────────────────────────────────────────
+
+/** Tìm giá trị trong cả hai storage — localStorage được ưu tiên. */
+function readFromEither(key: string): string | null {
+  return localStorage.getItem(key) ?? sessionStorage.getItem(key);
+}
+
+function clearBothStorages() {
+  [localStorage, sessionStorage].forEach((s) => {
+    s.removeItem(KEY_ACCESS);
+    s.removeItem(KEY_REFRESH);
+    s.removeItem(KEY_USER);
+  });
+}
+
+// ─── Token Storage ────────────────────────────────────────────────────────────
 
 export const tokenStorage = {
-  save(accessToken: string, refreshToken: string, user: UserProfile) {
+  /**
+   * FIX (Issue 8) — "Duy trì đăng nhập":
+   *   remember=true  → localStorage   (tồn tại đến khi refresh token hết hạn)
+   *   remember=false → sessionStorage (tự xóa khi đóng tab/trình duyệt)
+   */
+  save(accessToken: string, refreshToken: string, user: UserProfile, remember = true) {
     if (typeof window === "undefined") return;
-    localStorage.setItem(KEY_ACCESS, accessToken);
-    localStorage.setItem(KEY_REFRESH, refreshToken);
-    localStorage.setItem(KEY_USER, JSON.stringify(user));
+    // Xóa cả hai storage để tránh token cũ tồn tại song song
+    clearBothStorages();
+    const s = remember ? localStorage : sessionStorage;
+    s.setItem(KEY_ACCESS,  accessToken);
+    s.setItem(KEY_REFRESH, refreshToken);
+    s.setItem(KEY_USER,    JSON.stringify(user));
   },
 
   clear() {
     if (typeof window === "undefined") return;
-    localStorage.removeItem(KEY_ACCESS);
-    localStorage.removeItem(KEY_REFRESH);
-    localStorage.removeItem(KEY_USER);
+    clearBothStorages();
   },
 
-  getAccessToken(): string | null {
-    if (typeof window === "undefined") return null;
-    return localStorage.getItem(KEY_ACCESS);
-  },
-
-  getRefreshToken(): string | null {
-    if (typeof window === "undefined") return null;
-    return localStorage.getItem(KEY_REFRESH);
-  },
+  getAccessToken():  string | null { return typeof window === "undefined" ? null : readFromEither(KEY_ACCESS);  },
+  getRefreshToken(): string | null { return typeof window === "undefined" ? null : readFromEither(KEY_REFRESH); },
 
   getCachedUser(): UserProfile | null {
     if (typeof window === "undefined") return null;
-    const raw = localStorage.getItem(KEY_USER);
+    const raw = readFromEither(KEY_USER);
     if (!raw) return null;
     try { return JSON.parse(raw) as UserProfile; } catch { return null; }
+  },
+
+  /** Token đang lưu ở localStorage (remember=true)? */
+  isRemembered(): boolean {
+    return typeof window !== "undefined" && !!localStorage.getItem(KEY_ACCESS);
   },
 };
 
@@ -47,18 +76,18 @@ export const authService = {
 
   // ── Đăng nhập ──────────────────────────────────────────────────────────────
 
-  async login(payload: LoginRequest): Promise<LoginResponse> {
+  async login(payload: LoginRequest, remember = false): Promise<LoginResponse> {
     const res = await fetch("/api/auth/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
 
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error ?? "Đăng nhập thất bại.");
+    const data = await safeJson<LoginResponse & { error?: string }>(res);
+    if (!res.ok) throw new Error(data?.error ?? `Đăng nhập thất bại (${res.status}).`);
+    if (!data?.accessToken) throw new Error("Phản hồi từ server không hợp lệ.");
 
-    // Lưu token + user vào localStorage
-    tokenStorage.save(data.accessToken, data.refreshToken, data.user);
+    tokenStorage.save(data.accessToken, data.refreshToken, data.user, remember);
     return data as LoginResponse;
   },
 
@@ -66,20 +95,17 @@ export const authService = {
 
   async logout(): Promise<void> {
     const refreshToken = tokenStorage.getRefreshToken();
-
-    // Xóa phiên trên server (best-effort)
     if (refreshToken) {
       fetch("/api/auth/logout", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ refreshToken }),
-      }).catch(() => {/* ignore */});
+      }).catch(() => {/* best-effort */});
     }
-
     tokenStorage.clear();
   },
 
-  // ── Lấy user hiện tại (gọi API với Bearer token) ──────────────────────────
+  // ── Lấy user hiện tại ─────────────────────────────────────────────────────
 
   async getCurrentUser(): Promise<UserProfile | null> {
     if (typeof window === "undefined") return null;
@@ -88,27 +114,19 @@ export const authService = {
     if (!accessToken) return null;
 
     const res = await fetch("/api/auth/me", {
-      method: "GET",
       headers: { Authorization: `Bearer ${accessToken}` },
     });
 
-    // Token hết hạn → thử refresh
-    if (res.status === 401) {
-      return await authService.refreshAndGetUser();
-    }
+    if (res.status === 401) return authService.refreshAndGetUser();
 
-    if (!res.ok) {
-      tokenStorage.clear();
-      return null;
-    }
+    if (!res.ok) { tokenStorage.clear(); return null; }
 
-    const data = await res.json();
-    if (!data.user) { tokenStorage.clear(); return null; }
+    const data = await safeJson<{ user?: UserProfile }>(res);
+    if (!data?.user) { tokenStorage.clear(); return null; }
 
-    // Cập nhật cache
     const refreshToken = tokenStorage.getRefreshToken()!;
-    tokenStorage.save(accessToken, refreshToken, data.user);
-    return data.user as UserProfile;
+    tokenStorage.save(accessToken, refreshToken, data.user, tokenStorage.isRemembered());
+    return data.user;
   },
 
   // ── Refresh token ──────────────────────────────────────────────────────────
@@ -123,51 +141,42 @@ export const authService = {
       body: JSON.stringify({ refreshToken }),
     });
 
-    if (!res.ok) {
-      tokenStorage.clear();
-      return null;
-    }
+    if (!res.ok) { tokenStorage.clear(); return null; }
 
-    const data = await res.json();
-    // Gọi lại /me với access token mới
+    const tokens = await safeJson<{ accessToken: string; refreshToken: string }>(res);
+    if (!tokens?.accessToken) { tokenStorage.clear(); return null; }
+
     const meRes = await fetch("/api/auth/me", {
-      method: "GET",
-      headers: { Authorization: `Bearer ${data.accessToken}` },
+      headers: { Authorization: `Bearer ${tokens.accessToken}` },
     });
 
     if (!meRes.ok) { tokenStorage.clear(); return null; }
 
-    const meData = await meRes.json();
-    if (!meData.user) { tokenStorage.clear(); return null; }
+    const meData = await safeJson<{ user?: UserProfile }>(meRes);
+    if (!meData?.user) { tokenStorage.clear(); return null; }
 
-    tokenStorage.save(data.accessToken, data.refreshToken, meData.user);
-    return meData.user as UserProfile;
+    tokenStorage.save(tokens.accessToken, tokens.refreshToken, meData.user, tokenStorage.isRemembered());
+    return meData.user;
   },
-
-  // ── Lấy user từ cache (đồng bộ, không gọi network) ──────────────────────
 
   getCachedUser(): UserProfile | null {
     return tokenStorage.getCachedUser();
   },
 };
 
-// ─── Fetch helper gắn Bearer token tự động ────────────────────────────────────
-// Dùng thay fetch() trong các service khác để tự động refresh khi 401
+// ─── apiFetch — tự gắn Bearer token & tự refresh khi 401 ─────────────────────
 
 export async function apiFetch(url: string, init?: RequestInit): Promise<Response> {
-  const accessToken = tokenStorage.getAccessToken();
   const headers = new Headers(init?.headers);
+  const accessToken = tokenStorage.getAccessToken();
   if (accessToken) headers.set("Authorization", `Bearer ${accessToken}`);
 
   let res = await fetch(url, { ...init, headers });
 
-  // Tự động refresh nếu 401
   if (res.status === 401) {
     const newUser = await authService.refreshAndGetUser();
-    if (!newUser) return res; // không thể refresh → trả 401 để caller xử lý
-
-    const newToken = tokenStorage.getAccessToken()!;
-    headers.set("Authorization", `Bearer ${newToken}`);
+    if (!newUser) return res;
+    headers.set("Authorization", `Bearer ${tokenStorage.getAccessToken()!}`);
     res = await fetch(url, { ...init, headers });
   }
 
