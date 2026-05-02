@@ -1,5 +1,3 @@
-
-
 import { VaiTro } from "@/types";
 
 // ─── Request ──────────────────────────────────────────────────────────────────
@@ -7,6 +5,7 @@ import { VaiTro } from "@/types";
 export interface LoginRequest {
   email: string;
   matkhau: string;
+  // vaitro không cần gửi — server tự xác định từ bảng taikhoan
 }
 
 export interface RefreshTokenRequest {
@@ -37,7 +36,7 @@ export interface RefreshTokenResponse {
   refreshToken: string;
 }
 
-// ─── JWT Payload ──────────────────────────────────────────────────────────────
+// ─── JWT Payload (dùng trong lib/utils/jwt.ts) ────────────────────────────────
 
 export interface JwtPayload {
   mataikhoan: string;

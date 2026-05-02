@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useAuthContext } from "@/context/AuthContext";
+import { useAuth } from "@/hook/useAuth";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { createClient } from "@/lib/utils/supabase/client";
 import { VaiTro } from "@/types";
@@ -36,7 +36,7 @@ function StatCard({ label, value, sub }: { label: string; value: string | number
 }
 
 export default function TeacherDashboard() {
-  const { user, loading } = useAuthContext();
+  const { user, loading } = useAuth();
   const router = useRouter();
   const [data, setData]     = useState<DashboardData | null>(null);
   const [fetching, setFetching] = useState(true);

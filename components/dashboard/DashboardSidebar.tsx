@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useAuthContext } from "@/context/AuthContext";
+import { useAuth } from "@/hook/useAuth";
 import { VaiTro } from "@/types";
 import styles from "./DashboardLayout.module.css";
 
@@ -35,7 +35,7 @@ const ADMIN_NAV = [
 // ─── Component ─────────────────────────────────────────────────────────────────
 
 export function DashboardSidebar() {
-  const { user, logout } = useAuthContext();
+  const { user, logout } = useAuth();
   const pathname = usePathname();
 
   const navItems =
@@ -110,7 +110,7 @@ export function DashboardTopbar({
   title: string;
   onMenuClick: () => void;
 }) {
-  const { user, logout } = useAuthContext();
+  const { user, logout } = useAuth();
 
   return (
     <header className={styles.topbar}>

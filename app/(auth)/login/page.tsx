@@ -5,36 +5,10 @@ import { useAuth } from "@/hook/useAuth";
 import Image from "next/image";
 import styles from "./login.module.css";
 
-// ─── Role Configuration ───────────────────────────────────────────────────────
-type Role = "sinhvien" | "giangvien" | "quantri";
-
-const ROLES: { key: Role; label: string; placeholder: string; hint: string }[] =
-  [
-    {
-      key: "sinhvien",
-      label: "Sinh viên",
-      placeholder: "Nhập mã sinh viên: (VD:687840)",
-      hint: "Mã sinh viên",
-    },
-    {
-      key: "giangvien",
-      label: "Giảng viên",
-      placeholder: "Nhập mã giảng viên",
-      hint: "Mã giảng viên",
-    },
-    {
-      key: "quantri",
-      label: "Admin",
-      placeholder: "Nhập tài khoản Admin",
-      hint: "Tài khoản Admin",
-    },
-  ];
-
 // ─── Login Page ───────────────────────────────────────────────────────────────
 export default function LoginPage() {
   const { login, submitting, error, setError } = useAuth();
 
-  const [role, setRole] = useState<Role>("sinhvien");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(false);
@@ -52,8 +26,6 @@ export default function LoginPage() {
     emailRef.current?.focus();
   }, []);
 
-  const currentRole = ROLES.find((r) => r.key === role)!;
-
   const handleEmailChange = (v: string) => {
     setEmail(v);
     setFieldErrors((e) => ({ ...e, email: undefined }));
@@ -68,7 +40,7 @@ export default function LoginPage() {
   const validate = () => {
     const errs: { email?: string; password?: string } = {};
     if (!email.trim())
-      errs.email = "Vui lòng nhập " + currentRole.hint.toLowerCase() + ".";
+      errs.email = "Vui lòng nhập mã tài khoản hoặc email.";
     if (!password.trim()) errs.password = "Vui lòng nhập mật khẩu.";
     else if (password.length < 6) errs.password = "Mật khẩu tối thiểu 6 ký tự.";
     setFieldErrors(errs);
@@ -78,7 +50,8 @@ export default function LoginPage() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
-    await login({ email: email.trim(), matkhau: password });
+    
+    await login({ email: email.trim(), matkhau: password }, remember);
   };
 
   return (
@@ -157,33 +130,6 @@ export default function LoginPage() {
             Nhập thông tin của bạn để tiếp tục vào hệ thống.
           </p>
 
-          {/* Role Tabs */}
-          <div
-            className={styles.roleTabs}
-            role="tablist"
-            aria-label="Chọn vai trò đăng nhập"
-          >
-            {ROLES.map((r) => (
-              <button
-                key={r.key}
-                id={`role-tab-${r.key}`}
-                role="tab"
-                aria-selected={role === r.key}
-                className={`${styles.roleTab} ${role === r.key ? styles.roleTabActive : ""}`}
-                onClick={() => {
-                  setRole(r.key);
-                  setEmail("");
-                  setPassword("");
-                  setFieldErrors({});
-                  setError(null);
-                }}
-                type="button"
-              >
-                {r.label}
-              </button>
-            ))}
-          </div>
-
           {/* Error banner */}
           {error && (
             <div
@@ -220,14 +166,14 @@ export default function LoginPage() {
           <form onSubmit={handleSubmit} className={styles.form} noValidate>
             <div className={styles.field}>
               <label className={styles.label} htmlFor="field-email">
-                {currentRole.hint}
+                Mã tài khoản / Email
               </label>
               <input
                 id="field-email"
                 ref={emailRef}
                 type="text"
                 autoComplete="username"
-                placeholder={currentRole.placeholder}
+                placeholder="Nhập mã tài khoản hoặc email..."
                 value={email}
                 onChange={(e) => handleEmailChange(e.target.value)}
                 className={`input ${fieldErrors.email ? "error" : ""} ${styles.inputOverride}`}

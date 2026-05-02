@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useAuthContext } from "@/context/AuthContext";
+import { useAuth } from "@/hook/useAuth";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { createClient } from "@/lib/utils/supabase/client";
 import { VaiTro, TrangThaiSinhVien } from "@/types";
@@ -35,7 +35,7 @@ function StatCard({ label, value, color }: { label: string; value: number | stri
 }
 
 export default function AdminDashboard() {
-  const { user, loading } = useAuthContext();
+  const { user, loading } = useAuth();
   const router = useRouter();
   const [data, setData]     = useState<AdminData | null>(null);
   const [fetching, setFetching] = useState(true);

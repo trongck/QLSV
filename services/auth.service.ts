@@ -1,158 +1,175 @@
-import { createClient } from "@/lib/utils/supabase/client";
 import type { LoginRequest, LoginResponse, UserProfile } from "@/models";
-import { VaiTro } from "@/types";
+
+// ─── Token Storage Keys ────────────────────────────────────────────────────────
+
+const KEY_ACCESS  = "auth_access_token";
+const KEY_REFRESH = "auth_refresh_token";
+const KEY_USER    = "auth_user";
+
+// ─── Token Helpers (client-side only) ─────────────────────────────────────────
+
+export const tokenStorage = {
+  save(accessToken: string, refreshToken: string, user: UserProfile) {
+    if (typeof window === "undefined") return;
+    localStorage.setItem(KEY_ACCESS, accessToken);
+    localStorage.setItem(KEY_REFRESH, refreshToken);
+    localStorage.setItem(KEY_USER, JSON.stringify(user));
+  },
+
+  clear() {
+    if (typeof window === "undefined") return;
+    localStorage.removeItem(KEY_ACCESS);
+    localStorage.removeItem(KEY_REFRESH);
+    localStorage.removeItem(KEY_USER);
+  },
+
+  getAccessToken(): string | null {
+    if (typeof window === "undefined") return null;
+    return localStorage.getItem(KEY_ACCESS);
+  },
+
+  getRefreshToken(): string | null {
+    if (typeof window === "undefined") return null;
+    return localStorage.getItem(KEY_REFRESH);
+  },
+
+  getCachedUser(): UserProfile | null {
+    if (typeof window === "undefined") return null;
+    const raw = localStorage.getItem(KEY_USER);
+    if (!raw) return null;
+    try { return JSON.parse(raw) as UserProfile; } catch { return null; }
+  },
+};
+
+// ─── Auth Service ─────────────────────────────────────────────────────────────
 
 export const authService = {
+
+  // ── Đăng nhập ──────────────────────────────────────────────────────────────
+
   async login(payload: LoginRequest): Promise<LoginResponse> {
-    const supabase = createClient();
+    const res = await fetch("/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
 
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error ?? "Đăng nhập thất bại.");
 
-    const { data: taikhoan, error: tkError } = await supabase
-      .from("taikhoan")
-      .select("mataikhoan, email, vaitro, trangthai, matkhau")
-      .or(`email.eq.${payload.email},mataikhoan.eq.${payload.email}`)
-      .single();
-
-    if (tkError || !taikhoan) {
-      throw new Error("Không tìm thấy tài khoản hoặc sai email.");
-    }
-
-    const { data: isMatch, error: verifyError } = await supabase
-      .rpc('verify_password', {
-        input_password: payload.matkhau,
-        hashed_password: taikhoan.matkhau
-      });
-
-    if (taikhoan.trangthai === "Khoa") {
-      throw new Error("Tài khoản của bạn đã bị khóa.");
-    }
-
-    // 2. Lấy profile theo vai trò
-    let hoten = "";
-    let anhdaidien: string | null = null;
-    let maSinhVien: string | undefined;
-    let maGiangVien: string | undefined;
-    let maAdmin: string | undefined;
-
-    if (taikhoan.vaitro === VaiTro.SinhVien) {
-      const { data: sv } = await supabase
-        .from("sinhvien")
-        .select("masv, hoten, anhdaidien")
-        .eq("mataikhoan", taikhoan.mataikhoan)
-        .single();
-      hoten = sv?.hoten ?? "Sinh Viên";
-      anhdaidien = sv?.anhdaidien ?? null;
-      maSinhVien = sv?.masv;
-    } else if (taikhoan.vaitro === VaiTro.GiangVien) {
-      const { data: gv } = await supabase
-        .from("giangvien")
-        .select("magv, hoten, anhdaidien")
-        .eq("mataikhoan", taikhoan.mataikhoan)
-        .single();
-      hoten = gv?.hoten ?? "Giảng Viên";
-      anhdaidien = gv?.anhdaidien ?? null;
-      maGiangVien = gv?.magv;
-    } else if (taikhoan.vaitro === VaiTro.Admin) {
-      const { data: admin } = await supabase
-        .from("admin")
-        .select("maadmin, hoten")
-        .eq("mataikhoan", taikhoan.mataikhoan)
-        .single();
-      hoten = admin?.hoten ?? "Admin";
-      maAdmin = admin?.maadmin;
-    }
-
-    const userProfile: UserProfile = {
-      mataikhoan: taikhoan.mataikhoan,
-      email: taikhoan.email,
-      vaitro: taikhoan.vaitro as VaiTro,
-      hoten,
-      anhdaidien,
-      maSinhVien,
-      maGiangVien,
-      maAdmin,
-    };
-
-    // 3. Lưu session thủ công
-    if (typeof window !== "undefined") {
-      localStorage.setItem("session_mataikhoan", taikhoan.mataikhoan);
-    }
-
-    return {
-      accessToken: "dummy_token",
-      refreshToken: "dummy_token",
-      user: userProfile,
-    };
+    // Lưu token + user vào localStorage
+    tokenStorage.save(data.accessToken, data.refreshToken, data.user);
+    return data as LoginResponse;
   },
+
+  // ── Đăng xuất ──────────────────────────────────────────────────────────────
 
   async logout(): Promise<void> {
-    if (typeof window !== "undefined") {
-      localStorage.removeItem("session_mataikhoan");
+    const refreshToken = tokenStorage.getRefreshToken();
+
+    // Xóa phiên trên server (best-effort)
+    if (refreshToken) {
+      fetch("/api/auth/logout", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ refreshToken }),
+      }).catch(() => {/* ignore */});
     }
+
+    tokenStorage.clear();
   },
+
+  // ── Lấy user hiện tại (gọi API với Bearer token) ──────────────────────────
 
   async getCurrentUser(): Promise<UserProfile | null> {
     if (typeof window === "undefined") return null;
 
-    const mataikhoanId = localStorage.getItem("session_mataikhoan");
-    if (!mataikhoanId) return null;
+    const accessToken = tokenStorage.getAccessToken();
+    if (!accessToken) return null;
 
-    const supabase = createClient();
-    const { data: taikhoan } = await supabase
-      .from("taikhoan")
-      .select("mataikhoan, email, vaitro")
-      .eq("mataikhoan", mataikhoanId)
-      .single();
+    const res = await fetch("/api/auth/me", {
+      method: "GET",
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
 
-    if (!taikhoan) {
-      localStorage.removeItem("session_mataikhoan");
+    // Token hết hạn → thử refresh
+    if (res.status === 401) {
+      return await authService.refreshAndGetUser();
+    }
+
+    if (!res.ok) {
+      tokenStorage.clear();
       return null;
     }
 
-    let hoten = "";
-    let anhdaidien: string | null = null;
-    let maSinhVien: string | undefined;
-    let maGiangVien: string | undefined;
-    let maAdmin: string | undefined;
+    const data = await res.json();
+    if (!data.user) { tokenStorage.clear(); return null; }
 
-    if (taikhoan.vaitro === VaiTro.SinhVien) {
-      const { data: sv } = await supabase
-        .from("sinhvien")
-        .select("masv, hoten, anhdaidien")
-        .eq("mataikhoan", taikhoan.mataikhoan)
-        .single();
-      hoten = sv?.hoten ?? "Sinh Viên";
-      anhdaidien = sv?.anhdaidien ?? null;
-      maSinhVien = sv?.masv;
-    } else if (taikhoan.vaitro === VaiTro.GiangVien) {
-      const { data: gv } = await supabase
-        .from("giangvien")
-        .select("magv, hoten, anhdaidien")
-        .eq("mataikhoan", taikhoan.mataikhoan)
-        .single();
-      hoten = gv?.hoten ?? "Giảng Viên";
-      anhdaidien = gv?.anhdaidien ?? null;
-      maGiangVien = gv?.magv;
-    } else if (taikhoan.vaitro === VaiTro.Admin) {
-      const { data: admin } = await supabase
-        .from("admin")
-        .select("maadmin, hoten")
-        .eq("mataikhoan", taikhoan.mataikhoan)
-        .single();
-      hoten = admin?.hoten ?? "Admin";
-      maAdmin = admin?.maadmin;
+    // Cập nhật cache
+    const refreshToken = tokenStorage.getRefreshToken()!;
+    tokenStorage.save(accessToken, refreshToken, data.user);
+    return data.user as UserProfile;
+  },
+
+  // ── Refresh token ──────────────────────────────────────────────────────────
+
+  async refreshAndGetUser(): Promise<UserProfile | null> {
+    const refreshToken = tokenStorage.getRefreshToken();
+    if (!refreshToken) { tokenStorage.clear(); return null; }
+
+    const res = await fetch("/api/auth/refresh", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ refreshToken }),
+    });
+
+    if (!res.ok) {
+      tokenStorage.clear();
+      return null;
     }
 
-    return {
-      mataikhoan: taikhoan.mataikhoan,
-      email: taikhoan.email,
-      vaitro: taikhoan.vaitro as VaiTro,
-      hoten,
-      anhdaidien,
-      maSinhVien,
-      maGiangVien,
-      maAdmin,
-    };
+    const data = await res.json();
+    // Gọi lại /me với access token mới
+    const meRes = await fetch("/api/auth/me", {
+      method: "GET",
+      headers: { Authorization: `Bearer ${data.accessToken}` },
+    });
+
+    if (!meRes.ok) { tokenStorage.clear(); return null; }
+
+    const meData = await meRes.json();
+    if (!meData.user) { tokenStorage.clear(); return null; }
+
+    tokenStorage.save(data.accessToken, data.refreshToken, meData.user);
+    return meData.user as UserProfile;
+  },
+
+  // ── Lấy user từ cache (đồng bộ, không gọi network) ──────────────────────
+
+  getCachedUser(): UserProfile | null {
+    return tokenStorage.getCachedUser();
   },
 };
 
+// ─── Fetch helper gắn Bearer token tự động ────────────────────────────────────
+// Dùng thay fetch() trong các service khác để tự động refresh khi 401
+
+export async function apiFetch(url: string, init?: RequestInit): Promise<Response> {
+  const accessToken = tokenStorage.getAccessToken();
+  const headers = new Headers(init?.headers);
+  if (accessToken) headers.set("Authorization", `Bearer ${accessToken}`);
+
+  let res = await fetch(url, { ...init, headers });
+
+  // Tự động refresh nếu 401
+  if (res.status === 401) {
+    const newUser = await authService.refreshAndGetUser();
+    if (!newUser) return res; // không thể refresh → trả 401 để caller xử lý
+
+    const newToken = tokenStorage.getAccessToken()!;
+    headers.set("Authorization", `Bearer ${newToken}`);
+    res = await fetch(url, { ...init, headers });
+  }
+
+  return res;
+}
