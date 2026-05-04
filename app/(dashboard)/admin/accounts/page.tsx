@@ -20,7 +20,7 @@ import {
 } from "@/services/admin.service";
 import { VaiTro } from "@/types";
 import styles from "./accounts.module.css";
-
+import { validateTaiKhoanUpdate, firstError } from "@/lib/validation/admin.validation";
 // ─── Config ───────────────────────────────────────────────────────────────────
 
 const ROLE_LABEL: Record<string, string> = {
@@ -63,6 +63,7 @@ function EditAccountForm({
   return (
     <>
       {error && <div className="error-msg">{error}</div>}
+      
       <div className={styles.editInfo}>
         <span className={styles.editEmail}>{item.email}</span>
         <span className={`badge ${ROLE_BADGE[item.vaitro] ?? "badge-peach"}`}>
@@ -82,11 +83,14 @@ function EditAccountForm({
         </div>
         <div className="field full">
           <label>Đặt lại mật khẩu (để trống = không đổi)</label>
+          {/* Dummy hidden input to "catch" browser autofill */}
+          <input type="text" style={{ display: "none" }} aria-hidden="true" />
           <input
             type="password"
             value={matkhau}
             onChange={(e) => setMatkhau(e.target.value)}
             placeholder="Mật khẩu mới…"
+            autoComplete="new-password"
           />
         </div>
       </div>
@@ -163,19 +167,18 @@ export default function AdminAccountsPage() {
   if (loading || !user) return null;
 
   async function handleEdit(form: { trangthai?: string; matkhau?: string }) {
-    if (!modal?.item) return;
-    setMutating(true);
-    setMutError("");
-    try {
-      await updateTaiKhoan(modal.item.mataikhoan, form);
-      setModal(null);
-      await loadTK();
-    } catch (e) {
-      setMutError(e instanceof Error ? e.message : "Lỗi không xác định.");
-    } finally {
-      setMutating(false);
-    }
-  }
+  const errors = validateTaiKhoanUpdate(form);
+  if (errors.length) { setMutError(firstError(errors)); return; }
+
+  setMutating(true); setMutError("");
+  try {
+    await updateTaiKhoan(modal!.item.mataikhoan, form);
+    setModal(null);
+    await loadTK();
+  } catch (e) {
+    setMutError(e instanceof Error ? e.message : "Lỗi không xác định.");
+  } finally { setMutating(false); }
+}
 
   async function handleDelete() {
     if (!modal?.item) return;

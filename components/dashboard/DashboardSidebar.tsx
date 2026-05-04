@@ -29,6 +29,9 @@ const ADMIN_NAV = [
   { href: "/admin/students",    label: "Sinh viên" },
   { href: "/admin/teachers",    label: "Giảng viên" },
   { href: "/admin/classes",     label: "Lớp - Khoa" },
+  { href: "/admin/semesters",   label: "Học kỳ" },
+  { href: "/admin/subjects",    label: "Môn học" },
+  { href: "/admin/notifications", label: "Thông báo" },
   { href: "/admin/accounts",    label: "Tài khoản" },
 ];
 

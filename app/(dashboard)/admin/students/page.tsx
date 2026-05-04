@@ -25,6 +25,11 @@ import {
 } from "@/services/admin.service";
 import { VaiTro, TrangThaiSinhVien } from "@/types";
 import styles from "./students.module.css";
+import {
+  validateSinhVienCreate,
+  validateSinhVienUpdate,
+  firstError,
+} from "@/lib/validation/admin.validation";
 
 // ─── Status config ────────────────────────────────────────────────────────────
 
@@ -331,22 +336,26 @@ export default function AdminStudentsPage() {
     : lops;
 
   async function handleSubmit(form: Record<string, unknown>) {
-    setMutating(true);
-    setMutError("");
-    try {
-      if (modal?.mode === "edit" && modal.item) {
-        await updateSinhVien(modal.item.masv, form);
-      } else {
-        await createSinhVien(form);
-      }
-      setModal(null);
-      await loadSV();
-    } catch (e) {
-      setMutError(e instanceof Error ? e.message : "Lỗi không xác định.");
-    } finally {
-      setMutating(false);
+  // ── Validate theo mode ──
+  const isEdit = modal?.mode === "edit";
+  const errors = isEdit
+    ? validateSinhVienUpdate(form)
+    : validateSinhVienCreate(form);
+  if (errors.length) { setMutError(firstError(errors)); return; }
+
+  setMutating(true); setMutError("");
+  try {
+    if (isEdit && modal.item) {
+      await updateSinhVien(modal.item.masv, form);
+    } else {
+      await createSinhVien(form);
     }
-  }
+    setModal(null);
+    await loadSV();
+  } catch (e) {
+    setMutError(e instanceof Error ? e.message : "Lỗi không xác định.");
+  } finally { setMutating(false); }
+}
 
   async function handleDelete() {
     if (!modal?.item) return;

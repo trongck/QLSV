@@ -24,6 +24,12 @@ import {
 import { VaiTro } from "@/types";
 import styles from "./teachers.module.css";
 
+import {
+  validateGiangVienCreate,
+  validateGiangVienUpdate,
+  firstError,
+} from "@/lib/validation/admin.validation";
+
 const HOCVI_LIST = ["Cử nhân", "Thạc sĩ", "Tiến sĩ", "Phó Giáo sư", "Giáo sư"];
 
 // ─── Create Form ──────────────────────────────────────────────────────────────
@@ -331,22 +337,26 @@ export default function AdminTeachersPage() {
   if (loading || !user) return null;
 
   async function handleSubmit(form: Record<string, unknown>) {
-    setMutating(true);
-    setMutError("");
-    try {
-      if (modal?.mode === "edit" && modal.item) {
-        await updateGiangVien(modal.item.magv, form);
-      } else {
-        await createGiangVien(form);
-      }
-      setModal(null);
-      await loadGV();
-    } catch (e) {
-      setMutError(e instanceof Error ? e.message : "Lỗi không xác định.");
-    } finally {
-      setMutating(false);
+  // ── Validate theo mode ──
+  const isEdit = modal?.mode === "edit";
+  const errors = isEdit
+    ? validateGiangVienUpdate(form)
+    : validateGiangVienCreate(form);
+  if (errors.length) { setMutError(firstError(errors)); return; }
+
+  setMutating(true); setMutError("");
+  try {
+    if (isEdit && modal.item) {
+      await updateGiangVien(modal.item.magv, form);
+    } else {
+      await createGiangVien(form);
     }
-  }
+    setModal(null);
+    await loadGV();
+  } catch (e) {
+    setMutError(e instanceof Error ? e.message : "Lỗi không xác định.");
+  } finally { setMutating(false); }
+}
 
   async function handleDelete() {
     if (!modal?.item) return;

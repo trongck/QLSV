@@ -1,0 +1,157 @@
+/* app/(dashboard)/admin/subjects/subject.module.css */
+
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #2D1B14;
+  margin: 0;
+}
+
+.subtitle {
+  font-size: 14px;
+  color: #8B6F5F;
+  margin: 4px 0 0;
+}
+
+/* Stats Cards */
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.statCard {
+  background: #FFF0CD;
+  padding: 20px;
+  border-radius: 16px;
+  border: 1px solid #FFDBB6;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.statLabel {
+  font-size: 13px;
+  color: #8B6F5F;
+  font-weight: 600;
+}
+
+.statValue {
+  font-size: 28px;
+  font-weight: 800;
+  color: #2D1B14;
+}
+
+/* Toolbar */
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  background: #FEFAE3;
+  border-bottom: 1px solid #FFDBB6;
+  border-radius: 16px 16px 0 0;
+  flex-wrap: wrap;
+}
+
+.filterSelect {
+  padding: 10px 14px;
+  border: 1.5px solid #FFDBB6;
+  border-radius: 10px;
+  font-size: 13px;
+  background: #fff;
+  color: #2D1B14;
+  cursor: pointer;
+  outline: none;
+}
+
+.filterSelect:focus {
+  border-color: #FBD9D9;
+}
+
+/* Table styles */
+.tableContainer {
+  overflow-x: auto;
+}
+
+.subjectCode {
+  font-family: monospace;
+  background: #FBD9D9;
+  color: #C25450;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.badgeRequired {
+  background: #FFE4E1;
+  color: #D64545;
+  padding: 4px 10px;
+  border-radius: 100px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.badgeOptional {
+  background: #E8F5E9;
+  color: #2E7D32;
+  padding: 4px 10px;
+  border-radius: 100px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .filterSelect {
+    width: 100%;
+  }
+}
+
+.clearFilter {
+  padding: 9px 14px;
+  border: 1.5px solid #C25450;
+  border-radius: 10px;
+  font-size: 13px;
+  color: #C25450;
+  background: #FFF5F5;
+  cursor: pointer;
+  font-family: inherit;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+
+.clearFilter:hover {
+  background: #C25450;
+  color: #fff;
+}

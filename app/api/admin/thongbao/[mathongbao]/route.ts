@@ -1,0 +1,92 @@
+import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
+import { createClient } from "@/lib/utils/supabase/server";
+import { verifyToken, extractBearer } from "@/lib/utils/jwt";
+import { VaiTro } from "@/types";
+
+async function requireAdmin(request: Request) {
+  const token = extractBearer(request.headers.get("authorization"));
+  if (!token) return null;
+  try {
+    const payload = await verifyToken(token);
+    return payload.vaitro === VaiTro.Admin ? payload : null;
+  } catch {
+    return null;
+  }
+}
+
+export async function PUT(request: Request, { params }: { params: Promise<{ mathongbao: string }> }) {
+  if (!(await requireAdmin(request))) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { mathongbao } = await params;
+  const id = Number(mathongbao);
+  const body = await request.json();
+  const { tieude, noidung, loai, doituong, malop, maphancong, ngayhethan, ghim } = body;
+
+  if (!tieude?.trim()) return NextResponse.json({ error: "Tiêu đề không được trống." }, { status: 400 });
+  if (!noidung?.trim()) return NextResponse.json({ error: "Nội dung không được trống." }, { status: 400 });
+
+  const supabase = createClient(await cookies());
+
+  const { data, error } = await supabase
+    .from("thongbao")
+    .update({
+      tieude: tieude.trim(),
+      noidung: noidung.trim(),
+      loai,
+      doituong,
+      malop: malop || null,
+      maphancong: maphancong ? Number(maphancong) : null,
+      ngayhethan: ngayhethan || null,
+      ghim: Boolean(ghim),
+    })
+    .eq("mathongbao", id)
+    .select("*, admin:maadmintao(hoten), lop:malop(tenlop)")
+    .single();
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json({ data });
+}
+
+export async function DELETE(request: Request, { params }: { params: Promise<{ mathongbao: string }> }) {
+  if (!(await requireAdmin(request))) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { mathongbao } = await params;
+  const id = Number(mathongbao);
+  const supabase = createClient(await cookies());
+
+  const { error } = await supabase.from("thongbao").delete().eq("mathongbao", id);
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json({ success: true });
+}
+
+export async function PATCH(request: Request, { params }: { params: Promise<{ mathongbao: string }> }) {
+  if (!(await requireAdmin(request))) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const { mathongbao } = await params;
+  const id = Number(mathongbao);
+  const body = await request.json();
+
+  // Sanitize body: empty strings to null for nullable fields IF they are provided
+  if (body.malop === "") body.malop = null;
+  if (body.maphancong === "") body.maphancong = null;
+  else if (body.maphancong !== undefined && body.maphancong !== null) body.maphancong = Number(body.maphancong);
+
+  const supabase = createClient(await cookies());
+
+  const { data, error } = await supabase
+    .from("thongbao")
+    .update(body)
+    .eq("mathongbao", id)
+    .select("*, admin:maadmintao(hoten), lop:malop(tenlop)")
+    .single();
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  return NextResponse.json({ data });
+}

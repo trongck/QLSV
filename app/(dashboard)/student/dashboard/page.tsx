@@ -56,16 +56,43 @@ export default function StudentDashboard() {
       setFetching(true);
       try {
         // Parallel queries
+        // Fetch Student Info & Assignments
+        const [ { data: svInfo }, { data: svMonHoc } ] = await Promise.all([
+          supabase.from("sinhvien").select("malop").eq("masv", masv).single(),
+          supabase.from("sinhvienmonhoc").select("maphancong").eq("masv", masv).eq("trangthai", "Danghoc"),
+        ]);
+
+        const myLop = svInfo?.malop;
+        const myAssignments = (svMonHoc ?? []).map(m => m.maphancong);
+
+        // Fetch filtered notifications
+        // Logic: 
+        // 1. doituong is "Tatca"
+        // 2. OR (doituong is "SinhVien" AND (malop is null OR malop == myLop))
+        // 3. OR (doituong is NOT "GiangVien" AND maphancong is in myAssignments)
+        
+        let conditions = [
+          "doituong.eq.Tatca",
+          `and(doituong.eq.SinhVien,or(malop.is.null,malop.eq.${myLop || 'NONE'}))`
+        ];
+        
+        if (myAssignments.length > 0) {
+          conditions.push(`and(doituong.neq.GiangVien,maphancong.in.(${myAssignments.join(",")}))`);
+        }
+
+        const { data: thongBao } = await supabase
+          .from("thongbao")
+          .select("tieude, ngaytao, loai")
+          .or(conditions.join(","))
+          .order("ngaytao", { ascending: false })
+          .limit(5);
+
         const [
-          { data: svMonHoc },
-          { data: thongBao },
           { data: diemRows },
           { data: lichHoc },
           { data: diemDanh },
           { data: baiTap },
         ] = await Promise.all([
-          supabase.from("sinhvienmonhoc").select("maphancong").eq("masv", masv).eq("trangthai", "Danghoc"),
-          supabase.from("thongbao").select("tieude, ngaytao, loai").order("ngaytao", { ascending: false }).limit(5),
           supabase.from("diem").select("loaidiem, giatri, maphancong").eq("masv", masv).order("ngaytao", { ascending: false }).limit(6),
           supabase
             .from("lichhocsinhvien")

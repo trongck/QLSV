@@ -107,6 +107,8 @@ export function SearchBar({ value, onChange, placeholder = "Tìm kiếm…" }: S
       </svg>
       <input
         type="search"
+        name="admin-search-input"
+        autoComplete="off"
         value={value}
         onChange={e => onChange(e.target.value)}
         placeholder={placeholder}

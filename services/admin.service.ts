@@ -218,3 +218,165 @@ export async function deleteTaiKhoan(mataikhoan: string): Promise<void> {
   const res = await apiFetch(`/api/admin/taikhoan/${mataikhoan}`, { method: "DELETE" });
   await apiJson(res);
 }
+
+// ─── Học kỳ ───────────────────────────────────────────────────────────────────
+
+export interface HockyRow {
+  mahocky: number;
+  tenhocky: string;
+  namhoc: number;
+  ky: number;
+  ngaybatdau: string | null;
+  ngayketthuc: string | null;
+  danghieuluc: boolean;
+  ngaytao: string;
+}
+
+export interface HockyListResponse {
+  data: HockyRow[];
+  total: number;
+}
+
+export async function getHocky(params: { search?: string; namhoc?: number } = {}): Promise<HockyListResponse> {
+  const q = new URLSearchParams();
+  if (params.search) q.set("search", params.search);
+  if (params.namhoc) q.set("namhoc", String(params.namhoc));
+  const res = await apiFetch(`/api/admin/hocky?${q}`);
+  return apiJson<HockyListResponse>(res);
+}
+
+export async function createHocky(payload: Partial<HockyRow>) {
+  const res = await apiFetch("/api/admin/hocky", { method: "POST", body: JSON.stringify(payload) });
+  return (await apiJson<{ data: HockyRow }>(res)).data;
+}
+
+export async function updateHocky(mahk: number, payload: Partial<HockyRow>) {
+  const res = await apiFetch(`/api/admin/hocky/${mahk}`, { method: "PUT", body: JSON.stringify(payload) });
+  return (await apiJson<{ data: HockyRow }>(res)).data;
+}
+
+export async function deleteHocky(mahk: number): Promise<void> {
+  const res = await apiFetch(`/api/admin/hocky/${mahk}`, { method: "DELETE" });
+  await apiJson(res);
+}
+
+export async function activateHocky(mahk: number): Promise<HockyRow> {
+  const res = await apiFetch(`/api/admin/hocky/${mahk}`, { method: "PATCH" });
+  return (await apiJson<{ data: HockyRow }>(res)).data;
+}
+
+// ─── Môn học ──────────────────────────────────────────────────────────────────
+
+export interface MonhocRow {
+  mamon: string;
+  tenmon: string;
+  sotinchi: number;
+  sotietlythuyet: number | null;
+  sotietthuchanh: number | null;
+  mota: string | null;
+  batbuoc: boolean;
+  makhoa: string | null;
+  ngaytao: string;
+  khoa?: { tenkhoa: string };
+}
+
+export interface MonhocListResponse {
+  data: MonhocRow[];
+  pagination: { 
+    page: number; 
+    limit: number; 
+    total: number; 
+    totalPages: number;
+    countRequired: number;
+    countOptional: number;
+    totalAll: number;
+  };
+}
+
+export async function getMonhoc(params: { search?: string; makhoa?: string; batbuoc?: boolean; page?: number; limit?: number } = {}): Promise<MonhocListResponse> {
+  const q = new URLSearchParams();
+  Object.entries(params).forEach(([k, v]) => { if (v !== undefined && v !== "") q.set(k, String(v)); });
+  const res = await apiFetch(`/api/admin/monhoc?${q}`);
+  return apiJson<MonhocListResponse>(res);
+}
+
+export async function createMonhoc(payload: Partial<MonhocRow>) {
+  const res = await apiFetch("/api/admin/monhoc", { method: "POST", body: JSON.stringify(payload) });
+  return (await apiJson<{ data: MonhocRow }>(res)).data;
+}
+
+export async function updateMonhoc(mamon: string, payload: Partial<MonhocRow>) {
+  const res = await apiFetch(`/api/admin/monhoc/${mamon}`, { method: "PUT", body: JSON.stringify(payload) });
+  return (await apiJson<{ data: MonhocRow }>(res)).data;
+}
+
+export async function deleteMonhoc(mamon: string): Promise<void> {
+  const res = await apiFetch(`/api/admin/monhoc/${mamon}`, { method: "DELETE" });
+  await apiJson(res);
+}
+
+// ─── Thông báo ────────────────────────────────────────────────────────────────
+
+export interface ThongbaoRow {
+  mathongbao: number;
+  tieude: string;
+  noidung: string;
+  loai: string;
+  doituong: string;
+  malop: string | null;
+  maphancong: number | null;
+  ngayhethan: string | null;
+  ghim: boolean;
+  ngaytao: string;
+  maadmintao: string | null;
+  magvtao: string | null;
+  admin?: { hoten: string };
+  giangvien?: { hoten: string };
+  lop?: { tenlop: string };
+}
+
+export interface ThongbaoListResponse {
+  data: ThongbaoRow[];
+  pagination: { page: number; limit: number; total: number; totalPages: number };
+}
+
+export async function getThongbao(params: { search?: string; loai?: string; doituong?: string; page?: number; limit?: number } = {}): Promise<ThongbaoListResponse> {
+  const q = new URLSearchParams();
+  Object.entries(params).forEach(([k, v]) => { if (v) q.set(k, String(v)); });
+  const res = await apiFetch(`/api/admin/thongbao?${q}`);
+  return apiJson<ThongbaoListResponse>(res);
+}
+
+export async function createThongbao(payload: Partial<ThongbaoRow>) {
+  const res = await apiFetch("/api/admin/thongbao", { method: "POST", body: JSON.stringify(payload) });
+  return (await apiJson<{ data: ThongbaoRow }>(res)).data;
+}
+
+export async function updateThongbao(id: number, payload: Partial<ThongbaoRow>) {
+  const res = await apiFetch(`/api/admin/thongbao/${id}`, { method: "PATCH", body: JSON.stringify(payload) });
+  return (await apiJson<{ data: ThongbaoRow }>(res)).data;
+}
+
+export async function deleteThongbao(mathongbao: number): Promise<void> {
+  const res = await apiFetch(`/api/admin/thongbao/${mathongbao}`, { method: "DELETE" });
+  await apiJson(res);
+}
+
+// ─── Phân công ────────────────────────────────────────────────────────────────
+
+export interface PhanCongRow {
+  maphancong: number;
+  magv: string;
+  mamon: string;
+  malop: string;
+  mahocky: number;
+  giangvien?: { hoten: string };
+  monhoc?: { tenmon: string };
+  lop?: { tenlop: string };
+}
+
+export async function getPhanCong(limit = 100): Promise<PhanCongRow[]> {
+  const res = await apiFetch(`/api/admin/phancong?limit=${limit}`);
+  const json = await apiJson<{ data: PhanCongRow[] }>(res);
+  return json.data;
+}

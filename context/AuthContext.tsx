@@ -56,10 +56,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .finally(() => setLoading(false));
   }, []);
 
-  // ── Đăng nhập ──────────────────────────────────────────────────────────────
-  // FIX (Issue 8): Truyền `remember` xuống authService để chọn storage đúng.
-  // FIX (bug): Redirect phải chạy kể cả khi remember=false — đã tách ra ngoài if.
-  // Không còn cần beforeunload hack vì sessionStorage tự xóa khi tab đóng.
+  
 
   const login = useCallback(async (payload: LoginRequest, remember = false) => {
     const response = await authService.login(payload, remember);
