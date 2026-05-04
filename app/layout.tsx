@@ -11,7 +11,8 @@ const beVietnamPro = Be_Vietnam_Pro({
 
 export const metadata: Metadata = {
   title: "Quản lý sinh viên",
-  description: "Hệ thống quản lý sinh viên. Tra cứu điểm, lịch học, bài tập và thông báo.",
+  description:
+    "Hệ thống quản lý sinh viên. Tra cứu điểm, lịch học, bài tập và thông báo.",
 };
 
 export default function RootLayout({
