@@ -13,13 +13,13 @@ async function requireAdmin(request: Request) {
   } catch { return null; }
 }
 
-// ─── PUT /api/admin/taikhoan/[id] — đổi trạng thái hoặc reset mật khẩu ───────
+// ─── PUT /api/admin/taikhoan/[mataikhoan] — đổi trạng thái hoặc reset mật khẩu ───────
 
-export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function PUT(request: Request, { params }: { params: Promise<{ mataikhoan: string }> }) {
   if (!(await requireAdmin(request)))
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { id } = await params;
+  const { mataikhoan } = await params;
   const body = await request.json();
   const { trangthai, matkhau } = body;
 
@@ -36,7 +36,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
   const { data, error } = await supabase
     .from("taikhoan")
     .update(update)
-    .eq("mataikhoan", id)
+    .eq("mataikhoan", mataikhoan)
     .select("mataikhoan, email, vaitro, trangthai, dangnhaplancuoi")
     .single();
 
@@ -44,17 +44,17 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
   return NextResponse.json({ success: true, data });
 }
 
-// ─── DELETE /api/admin/taikhoan/[id] ─────────────────────────────────────────
+// ─── DELETE /api/admin/taikhoan/[mataikhoan] ─────────────────────────────────────────
 
-export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(request: Request, { params }: { params: Promise<{ mataikhoan: string }> }) {
   if (!(await requireAdmin(request)))
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { id } = await params;
+  const { mataikhoan } = await params;
   const cookieStore = await cookies();
   const supabase = createClient(cookieStore);
 
-  const { error } = await supabase.from("taikhoan").delete().eq("mataikhoan", id);
+  const { error } = await supabase.from("taikhoan").delete().eq("mataikhoan", mataikhoan);
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
   return NextResponse.json({ success: true });
 }

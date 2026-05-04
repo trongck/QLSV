@@ -13,33 +13,33 @@ async function requireAdmin(request: Request) {
   } catch { return null; }
 }
 
-// ─── GET /api/admin/sinhvien/[id] ────────────────────────────────────────────
+// ─── GET /api/admin/sinhvien/[masv] ────────────────────────────────────────────
 
-export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(request: Request, { params }: { params: Promise<{ masv: string }> }) {
   if (!(await requireAdmin(request)))
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { id } = await params;
+  const { masv } = await params;
   const cookieStore = await cookies();
   const supabase = createClient(cookieStore);
 
   const { data, error } = await supabase
     .from("sinhvien")
     .select(`*, lop(tenlop, makhoa, khoa(tenkhoa)), chitietsinhvien(*), taikhoan(email, vaitro, trangthai)`)
-    .eq("masv", id)
+    .eq("masv", masv)
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 404 });
   return NextResponse.json({ success: true, data });
 }
 
-// ─── PUT /api/admin/sinhvien/[id] ────────────────────────────────────────────
+// ─── PUT /api/admin/sinhvien/[masv] ────────────────────────────────────────────
 
-export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function PUT(request: Request, { params }: { params: Promise<{ masv: string }> }) {
   if (!(await requireAdmin(request)))
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { id } = await params;
+  const { masv } = await params;
   const body = await request.json();
   const { hoten, ngaysinh, gioitinh, malop, trangthai, emailtruong, chiTiet } = body;
 
@@ -57,7 +57,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
   const { data, error } = await supabase
     .from("sinhvien")
     .update(update)
-    .eq("masv", id)
+    .eq("masv", masv)
     .select()
     .single();
 
@@ -65,26 +65,26 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
 
   // Upsert chi tiết
   if (chiTiet && Object.keys(chiTiet).length > 0) {
-    await supabase.from("chitietsinhvien").upsert({ masv: id, ...chiTiet });
+    await supabase.from("chitietsinhvien").upsert({ masv: masv, ...chiTiet });
   }
 
   return NextResponse.json({ success: true, data });
 }
 
-// ─── DELETE /api/admin/sinhvien/[id] ─────────────────────────────────────────
+// ─── DELETE /api/admin/sinhvien/[masv] ─────────────────────────────────────────
 
-export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(request: Request, { params }: { params: Promise<{ masv: string }> }) {
   if (!(await requireAdmin(request)))
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const { id } = await params;
+  const { masv } = await params;
   const cookieStore = await cookies();
   const supabase = createClient(cookieStore);
 
   // Lấy mataikhoan để xoá tài khoản sau
-  const { data: sv } = await supabase.from("sinhvien").select("mataikhoan").eq("masv", id).single();
+  const { data: sv } = await supabase.from("sinhvien").select("mataikhoan").eq("masv", masv).single();
 
-  const { error } = await supabase.from("sinhvien").delete().eq("masv", id);
+  const { error } = await supabase.from("sinhvien").delete().eq("masv", masv);
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
 
   // Xoá tài khoản liên kết
