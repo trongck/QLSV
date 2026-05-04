@@ -1,0 +1,84 @@
+/* ─── Admin Teachers Page ─────────────────────────────────────────────────────── */
+
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.pageHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.pageTitle {
+  font-size: 22px;
+  font-weight: 700;
+  color: #2D1B14;
+  margin: 0 0 4px;
+}
+
+.pageSub {
+  font-size: 13px;
+  color: #8B6F5F;
+  margin: 0;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 16px 20px;
+  border-bottom: 1px solid #EAD9CB;
+  flex-wrap: wrap;
+}
+
+.filter {
+  padding: 9px 12px;
+  border: 1.5px solid #EAD9CB;
+  border-radius: 10px;
+  font-size: 13px;
+  color: #2D1B14;
+  background: #FFF;
+  outline: none;
+  font-family: inherit;
+  cursor: pointer;
+  min-width: 160px;
+}
+
+.filter:focus { border-color: #C25450; }
+
+.tableWrap { overflow-x: auto; }
+
+.actions {
+  display: flex;
+  gap: 6px;
+}
+
+@media (max-width: 639px) {
+  .pageTitle  { font-size: 18px; }
+  .pageHeader { flex-direction: column; }
+  .toolbar    { flex-direction: column; align-items: stretch; }
+  .filter     { width: 100%; }
+}
+
+.clearFilter {
+  padding: 9px 14px;
+  border: 1.5px solid #C25450;
+  border-radius: 10px;
+  font-size: 13px;
+  color: #C25450;
+  background: #FFF5F5;
+  cursor: pointer;
+  font-family: inherit;
+  white-space: nowrap;
+  transition: background 0.15s;
+}
+
+.clearFilter:hover {
+  background: #C25450;
+  color: #fff;
+}

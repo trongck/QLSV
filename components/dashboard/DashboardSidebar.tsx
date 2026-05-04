@@ -9,27 +9,27 @@ import styles from "./DashboardLayout.module.css";
 // ─── Nav items per role ────────────────────────────────────────────────────────
 
 const SV_NAV = [
-  { href: "/student/dashboard", label: "Tổng quan", icon: "⊞" },
-  { href: "/student/schedule",  label: "Lịch học",  icon: "📅" },
-  { href: "/student/grades",    label: "Kết quả",   icon: "📊" },
-  { href: "/student/tasks",     label: "Bài tập",   icon: "📝" },
-  { href: "/student/messages",  label: "Tin nhắn",  icon: "💬" },
+  { href: "/student/dashboard", label: "Tổng quan" },
+  { href: "/student/schedule",  label: "Lịch học" },
+  { href: "/student/grades",    label: "Kết quả" },
+  { href: "/student/tasks",     label: "Bài tập" },
+  { href: "/student/messages",  label: "Tin nhắn" },
 ];
 
 const GV_NAV = [
-  { href: "/teacher/dashboard", label: "Tổng quan",   icon: "⊞" },
-  { href: "/teacher/classes",   label: "Lớp học",     icon: "🏫" },
-  { href: "/teacher/students",  label: "Sinh viên",   icon: "👥" },
-  { href: "/teacher/grades",    label: "Nhập điểm",   icon: "📊" },
-  { href: "/teacher/tasks",     label: "Bài tập",     icon: "📝" },
+  { href: "/teacher/dashboard", label: "Tổng quan" },
+  { href: "/teacher/classes",   label: "Lớp học" },
+  { href: "/teacher/students",  label: "Sinh viên" },
+  { href: "/teacher/grades",    label: "Nhập điểm" },
+  { href: "/teacher/tasks",     label: "Bài tập" },
 ];
 
 const ADMIN_NAV = [
-  { href: "/admin/dashboard",   label: "Tổng quan",   icon: "⊞" },
-  { href: "/admin/students",    label: "Sinh viên",   icon: "👥" },
-  { href: "/admin/teachers",    label: "Giảng viên",  icon: "🎓" },
-  { href: "/admin/classes",     label: "Lớp - Khoa",  icon: "🏫" },
-  { href: "/admin/accounts",    label: "Tài khoản",   icon: "🔐" },
+  { href: "/admin/dashboard",   label: "Tổng quan" },
+  { href: "/admin/students",    label: "Sinh viên" },
+  { href: "/admin/teachers",    label: "Giảng viên" },
+  { href: "/admin/classes",     label: "Lớp - Khoa" },
+  { href: "/admin/accounts",    label: "Tài khoản" },
 ];
 
 // ─── Component ─────────────────────────────────────────────────────────────────
@@ -48,8 +48,11 @@ export function DashboardSidebar() {
     user?.vaitro === VaiTro.GiangVien ? "Giảng viên" :
     "Quản trị viên";
 
+  // ⚠️ KHÔNG dùng <nav className={styles.sidebar}> ở đây nữa.
+  // DashboardShell đã bọc <div className={styles.sidebar}> bên ngoài rồi —
+  // nếu lồng thêm sẽ khiến class .open không hoạt động trên mobile/tablet.
   return (
-    <nav className={styles.sidebar} aria-label="Menu chính">
+    <>
       {/* Logo */}
       <div className={styles.sidebarLogo}>
         <div className={styles.logoIcon}>
@@ -68,7 +71,7 @@ export function DashboardSidebar() {
               href={item.href}
               className={`sidebar-item ${pathname === item.href || pathname.startsWith(item.href + "/") ? "active" : ""}`}
             >
-              <span className={styles.navIcon} aria-hidden>{item.icon}</span>
+              <span className={styles.navIcon} aria-hidden></span>
               {item.label}
             </Link>
           </li>
@@ -97,7 +100,7 @@ export function DashboardSidebar() {
           </svg>
         </button>
       </div>
-    </nav>
+    </>
   );
 }
 
@@ -117,6 +120,7 @@ export function DashboardTopbar({
       <button
         className={styles.menuBtn}
         onClick={onMenuClick}
+        data-menu-btn
         aria-label="Mở menu"
       >
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden>
