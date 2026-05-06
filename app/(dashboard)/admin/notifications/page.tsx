@@ -193,7 +193,7 @@ export default function AdminNotificationsPage() {
   const [isLoading, setIsLoading] = useState(true);
 
   const [modal, setModal] = useState<{
-    mode: "create" | "edit" | "delete";
+    mode: "create" | "edit" | "delete" | "view";
     item?: ThongbaoRow;
   } | null>(null);
   const [mutating, setMutating] = useState(false);
@@ -357,6 +357,9 @@ export default function AdminNotificationsPage() {
                 <div
                   key={notif.mathongbao}
                   className={`${styles.card} ${notif.ghim ? styles.cardPinned : ""}`}
+                  onClick={() => setModal({ mode: "view", item: notif })}
+                  style={{ cursor: "pointer" }}
+                  title="Click để xem toàn bộ nội dung"
                 >
                   {notif.ghim && (
                     <div className={styles.pinIcon} title="Đã ghim">
@@ -421,7 +424,8 @@ export default function AdminNotificationsPage() {
                     <div className={styles.cardActions}>
                       <button
                         className={`${styles.actionBtn} ${styles.editBtn}`}
-                        onClick={() => {
+                        onClick={(e) => {
+                          e.stopPropagation();
                           setMutError("");
                           setModal({ mode: "edit", item: notif });
                         }}
@@ -441,7 +445,8 @@ export default function AdminNotificationsPage() {
                       </button>
                       <button
                         className={`${styles.actionBtn} ${styles.deleteBtn}`}
-                        onClick={() => {
+                        onClick={(e) => {
+                          e.stopPropagation();
                           setMutError("");
                           setModal({ mode: "delete", item: notif });
                         }}
@@ -525,6 +530,66 @@ export default function AdminNotificationsPage() {
               {mutError}
             </p>
           )}
+        </AdminModal>
+      )}
+
+      {modal?.mode === "view" && modal.item && (
+        <AdminModal
+          title="Chi tiết thông báo"
+          onClose={() => setModal(null)}
+          size="md"
+        >
+          <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "8px" }}>
+              <span className={`${styles.cardType} ${getLoaiClass(modal.item.loai)}`}>
+                {modal.item.loai}
+              </span>
+              <span style={{ fontSize: "12px", color: "#8B6F5F" }}>
+                Đăng ngày: {new Date(modal.item.ngaytao).toLocaleDateString("vi-VN")} bởi <strong>{modal.item.admin?.hoten || "Hệ thống"}</strong>
+              </span>
+            </div>
+            
+            <h2 style={{ fontSize: "18px", fontWeight: 700, color: "#2D1B14", margin: 0, lineHeight: 1.4 }}>
+              {modal.item.tieude}
+            </h2>
+            
+            <div style={{ 
+              background: "#FFF0CD", 
+              padding: "8px 12px", 
+              borderRadius: "8px", 
+              fontSize: "13px", 
+              color: "#5D4037",
+              border: "1px solid #FFDBB6"
+            }}>
+              <strong>Đối tượng nhận:</strong> {
+                modal.item.doituong === "Tatca" ? "Tất cả mọi người" :
+                modal.item.doituong === "GiangVien" ? "Toàn bộ giảng viên" :
+                modal.item.doituong === "SinhVien" ? "Toàn bộ sinh viên" :
+                modal.item.doituong === "Lop" ? `Lớp hành chính: ${modal.item.malop}` :
+                `Lớp học phần: ${modal.item.maphancong}`
+              }
+            </div>
+
+            <div style={{ 
+              fontSize: "14px", 
+              color: "#2D1B14", 
+              lineHeight: "1.6", 
+              whiteSpace: "pre-wrap", 
+              background: "#FEFAE3", 
+              padding: "16px 20px", 
+              borderRadius: "12px",
+              border: "1.5px solid #FFDBB6",
+              maxHeight: "40vh",
+              overflowY: "auto"
+            }}>
+              {modal.item.noidung}
+            </div>
+          </div>
+          <div className="modal-actions" style={{ borderTop: "none", marginTop: "12px", paddingTop: 0 }}>
+            <button className="btn-primary" onClick={() => setModal(null)}>
+              Đóng
+            </button>
+          </div>
         </AdminModal>
       )}
     </DashboardShell>

@@ -103,7 +103,7 @@
   letter-spacing: 0.05em;
 }
 
-.body :global(.field input),
+.body :global(.field input:not([type="checkbox"]):not([type="radio"])),
 .body :global(.field select),
 .body :global(.field textarea) {
   border: 1.5px solid #EAD9CB;
@@ -115,9 +115,20 @@
   font-family: inherit;
   transition: border-color 0.15s, box-shadow 0.15s;
   outline: none;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
-.body :global(.field input:focus),
+.body :global(.field input[type="checkbox"]),
+.body :global(.field input[type="radio"]) {
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+  accent-color: #C25450;
+}
+
+.body :global(.field input:not([type="checkbox"]):not([type="radio"]):focus),
 .body :global(.field select:focus),
 .body :global(.field textarea:focus) {
   border-color: #C25450;

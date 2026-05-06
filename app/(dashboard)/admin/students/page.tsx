@@ -30,6 +30,7 @@ import {
   validateSinhVienUpdate,
   firstError,
 } from "@/lib/validation/admin.validation";
+import ImportModal from "@/components/admin/ImportModal";
 
 // ─── Status config ────────────────────────────────────────────────────────────
 
@@ -267,7 +268,7 @@ function EditForm({
 export default function AdminStudentsPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
-
+  const [showImport, setShowImport] = useState(false);
   const [svList, setSvList] = useState<SinhVienRow[]>([]);
   const [khoas, setKhoas] = useState<KhoaRow[]>([]);
   const [lops, setLops] = useState<LopRow[]>([]);
@@ -336,26 +337,32 @@ export default function AdminStudentsPage() {
     : lops;
 
   async function handleSubmit(form: Record<string, unknown>) {
-  // ── Validate theo mode ──
-  const isEdit = modal?.mode === "edit";
-  const errors = isEdit
-    ? validateSinhVienUpdate(form)
-    : validateSinhVienCreate(form);
-  if (errors.length) { setMutError(firstError(errors)); return; }
-
-  setMutating(true); setMutError("");
-  try {
-    if (isEdit && modal.item) {
-      await updateSinhVien(modal.item.masv, form);
-    } else {
-      await createSinhVien(form);
+    // ── Validate theo mode ──
+    const isEdit = modal?.mode === "edit";
+    const errors = isEdit
+      ? validateSinhVienUpdate(form)
+      : validateSinhVienCreate(form);
+    if (errors.length) {
+      setMutError(firstError(errors));
+      return;
     }
-    setModal(null);
-    await loadSV();
-  } catch (e) {
-    setMutError(e instanceof Error ? e.message : "Lỗi không xác định.");
-  } finally { setMutating(false); }
-}
+
+    setMutating(true);
+    setMutError("");
+    try {
+      if (isEdit && modal.item) {
+        await updateSinhVien(modal.item.masv, form);
+      } else {
+        await createSinhVien(form);
+      }
+      setModal(null);
+      await loadSV();
+    } catch (e) {
+      setMutError(e instanceof Error ? e.message : "Lỗi không xác định.");
+    } finally {
+      setMutating(false);
+    }
+  }
 
   async function handleDelete() {
     if (!modal?.item) return;
@@ -385,15 +392,36 @@ export default function AdminStudentsPage() {
                 : "Quản lý toàn bộ sinh viên"}
             </p>
           </div>
-          <button
-            className="btn-primary"
-            onClick={() => {
-              setMutError("");
-              setModal({ mode: "create" });
-            }}
-          >
-            + Thêm sinh viên
-          </button>
+          <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+            <button
+              className="btn-secondary"
+              onClick={() => setShowImport(true)}
+              style={{ display: "flex", alignItems: "center", gap: "6px" }}
+            >
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="17 8 12 3 7 8" />
+                <line x1="12" y1="3" x2="12" y2="15" />
+              </svg>
+              Import Excel
+            </button>
+            <button
+              className="btn-primary"
+              onClick={() => {
+                setMutError("");
+                setModal({ mode: "create" });
+              }}
+            >
+              + Thêm sinh viên
+            </button>
+          </div>
         </div>
 
         {/* Filters */}
@@ -609,6 +637,15 @@ export default function AdminStudentsPage() {
             </p>
           )}
         </AdminModal>
+      )}
+      {showImport && (
+        <ImportModal
+          onClose={() => setShowImport(false)}
+          onSuccess={(count) => {
+            setShowImport(false);
+            loadSV(); // reload danh sách
+          }}
+        />
       )}
     </DashboardShell>
   );
