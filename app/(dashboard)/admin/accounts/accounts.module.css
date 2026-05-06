@@ -447,7 +447,7 @@
 
   .drawer       { width: 100vw; }
 }
-.clearFilter {
+  .clearFilter {
   padding: 9px 14px;
   border: 1.5px solid #C25450;
   border-radius: 10px;
@@ -463,4 +463,275 @@
 .clearFilter:hover {
   background: #C25450;
   color: #fff;
+}
+
+/* ─── Header & Export Actions ─────────────────────────────────────────── */
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.exportBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  background-color: #FEFAE3;
+  border: 1.5px solid #FFDBB6;
+  color: #6B4F3F;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.exportBtn:hover {
+  background-color: #FFF0CD;
+  border-color: #C25450;
+  color: #C25450;
+  transform: translateY(-1px);
+}
+
+/* ─── Bulk Action Bar Buttons ─────────────────────────────────────────── */
+.bulkBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  background-color: #FFFFFF;
+  border: 1.5px solid #EAD9CB;
+  color: #5C3D1E;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.bulkBtn:hover {
+  border-color: #C25450;
+  color: #C25450;
+  background-color: #FFFDF9;
+}
+
+.bulkBtnDanger {
+  border-color: #FBD9D9;
+  color: #C25450;
+}
+
+.bulkBtnDanger:hover {
+  background-color: #FFF5F5;
+  border-color: #C25450;
+}
+
+.bulkBtnWarning {
+  border-color: #FFDBB6;
+  color: #B45309;
+}
+
+.bulkBtnWarning:hover {
+  background-color: #FFFBEB;
+  border-color: #B45309;
+}
+
+.bulkClear {
+  background: transparent;
+  border: none;
+  color: #8B6F5F;
+  font-size: 12.5px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 6px 10px;
+  border-radius: 6px;
+  transition: background 0.15s;
+}
+
+.bulkClear:hover {
+  background: rgba(45, 27, 20, 0.05);
+  color: #2D1B14;
+}
+
+/* ─── Selection Styles ────────────────────────────────────────────────── */
+.rowSelected {
+  background-color: #FFFDF4 !important;
+  transition: background-color 0.15s ease;
+}
+
+.rowSelected td {
+  border-bottom: 1.5px solid #FFDBB6 !important;
+}
+
+/* ─── Email Cell Custom Alignment ─────────────────────────────────────── */
+.emailCell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.emailText {
+  font-weight: 600;
+  color: #2D1B14;
+  font-size: 13.5px;
+}
+
+.idCode {
+  font-family: monospace;
+  font-size: 11px;
+  color: #8B6F5F;
+  background: #FEFAE3;
+  padding: 1px 5px;
+  border-radius: 4px;
+  border: 1px solid #EAD9CB;
+  align-self: flex-start;
+}
+
+.dateCell {
+  font-size: 12px;
+  color: #6B4F3F;
+}
+
+/* ─── Action Buttons ─────────────────────────────────────────────────── */
+.resetBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  font-size: 12px;
+  border-radius: 6px;
+  background-color: #FEFAE3;
+  border: 1.5px solid #FFDBB6;
+  color: #6B4F3F;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.15s ease;
+}
+
+.resetBtn:hover {
+  background-color: #FFF0CD;
+  border-color: #C25450;
+  color: #C25450;
+}
+
+/* ─── Password Reset Modal Utilities ─────────────────────────────────── */
+.pwWrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.pwWrap input {
+  padding-right: 40px !important;
+}
+
+.pwToggle {
+  position: absolute;
+  right: 12px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #8B6F5F;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  transition: color 0.15s;
+}
+
+.pwToggle:hover {
+  color: #C25450;
+}
+
+.generateBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background-color: #FEFAE3;
+  border: 1.5px solid #FFDBB6;
+  color: #6B4F3F;
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 8px 14px;
+  border-radius: 10px;
+  cursor: pointer;
+  margin-top: 10px;
+  margin-bottom: 16px;
+  transition: all 0.15s ease;
+}
+
+.generateBtn:hover {
+  background-color: #FFF0CD;
+  border-color: #C25450;
+  color: #C25450;
+}
+
+/* ─── Bulk Info warning banner ────────────────────────────────────────── */
+.bulkInfo {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 16px;
+  background-color: #FFF5F5;
+  border: 1px solid #FBD9D9;
+  border-radius: 10px;
+  margin-bottom: 20px;
+  color: #6B4F3F;
+  font-size: 13.5px;
+  line-height: 1.4;
+}
+
+.bulkInfo svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.bulkInfo p {
+  margin: 0;
+}
+
+.bulkInfo strong {
+  color: #C25450;
+}
+
+/* ─── Toast System ───────────────────────────────────────────────────── */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 20px;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(45, 27, 20, 0.15);
+  font-size: 13.5px;
+  font-weight: 600;
+  z-index: 9999;
+  animation: toastSlideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  backdrop-filter: blur(8px);
+}
+
+.toastSuccess {
+  background-color: rgba(209, 250, 229, 0.95);
+  border: 1.5px solid #34D399;
+  color: #065F46;
+}
+
+.toastError {
+  background-color: rgba(254, 226, 226, 0.95);
+  border: 1.5px solid #F87171;
+  color: #991B1B;
+}
+
+@keyframes toastSlideIn {
+  from {
+    transform: translateY(20px) scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
 }

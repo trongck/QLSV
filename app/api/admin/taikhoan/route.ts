@@ -32,15 +32,20 @@ export async function GET(request: Request) {
 
   let query = supabase
     .from("taikhoan")
-    .select("mataikhoan, email, vaitro, trangthai, dangnhaplancuoi", { count: "exact" })
-    .order("mataikhoan", { ascending: true })
-    .range(from, from + limit - 1);
+    .select("mataikhoan, email, vaitro, trangthai, dangnhaplancuoi", { count: "exact" });
 
-  if (search)    query = query.ilike("email", `%${search}%`);
+  if (search) {
+    query = query.or(`email.ilike.%${search}%,mataikhoan.ilike.%${search}%`);
+  }
   if (vaitro)    query = query.eq("vaitro", vaitro);
   if (trangthai) query = query.eq("trangthai", trangthai);
 
-  const { data, count, error } = await query;
+  // Apply ordering and range on the query
+  const finalQuery = query
+    .order("mataikhoan", { ascending: true })
+    .range(from, from + limit - 1);
+
+  const { data, count, error } = await finalQuery;
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
   return NextResponse.json({

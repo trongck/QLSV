@@ -82,3 +82,329 @@
   background: #C25450;
   color: #fff;
 }
+
+/* ─── Premium Profile Detail & Tabs ─────────────────────────────────────────── */
+
+.tabContainer {
+  display: flex;
+  gap: 8px;
+  border-bottom: 2px solid #EAD9CB;
+  margin-bottom: 20px;
+  padding-bottom: 2px;
+}
+
+.tabBtn {
+  padding: 10px 20px;
+  border: none;
+  background: transparent;
+  font-size: 14px;
+  font-weight: 600;
+  color: #8B6F5F;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  border-radius: 8px 8px 0 0;
+}
+
+.tabBtn:hover {
+  color: #2D1B14;
+  background: rgba(234, 217, 203, 0.25);
+}
+
+.tabBtnActive {
+  color: #C25450;
+  font-weight: 700;
+}
+
+.tabBtnActive::after {
+  content: "";
+  position: absolute;
+  bottom: -4px;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: #C25450;
+  border-radius: 3px;
+}
+
+/* ─── Detail Header ─── */
+.detailHeader {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding-bottom: 18px;
+  border-bottom: 2px solid #EAD9CB;
+  margin-bottom: 20px;
+}
+
+.avatar {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #FBD9D9 0%, #FFDBB6 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  font-weight: 700;
+  color: #C25450;
+  border: 2px solid #EAD9CB;
+  box-shadow: inset 0 2px 4px rgba(45, 27, 20, 0.05);
+}
+
+.meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.name {
+  font-size: 19px;
+  font-weight: 700;
+  color: #2D1B14;
+  margin: 0;
+}
+
+.codeBadge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.sectionTitle {
+  font-size: 13px;
+  font-weight: 700;
+  color: #C25450;
+  margin: 22px 0 12px;
+  padding-bottom: 4px;
+  border-bottom: 1px dashed #EAD9CB;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.infoGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.fullWidth {
+  grid-column: span 2;
+}
+
+.infoField {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: #FFFDF9;
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid #EAD9CB;
+  box-shadow: 0 1px 3px rgba(45, 27, 20, 0.02);
+}
+
+.label {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: #8B6F5F;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.value {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #2D1B14;
+}
+
+.inputField {
+  border: 1.5px solid #EAD9CB;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 13.5px;
+  color: #2D1B14;
+  background: #fff;
+  width: 100%;
+  outline: none;
+  font-family: inherit;
+  font-weight: 600;
+  transition: all 0.15s ease;
+}
+
+.inputField:focus {
+  border-color: #C25450;
+  box-shadow: 0 0 0 3px rgba(194, 84, 80, 0.1);
+}
+
+/* ─── Assignments & Scheduling ─── */
+.assignmentsPanel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.panelHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.panelSelector {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.panelSelector label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #6B4F3F;
+}
+
+.selectSem {
+  padding: 8px 12px;
+  border: 1.5px solid #EAD9CB;
+  border-radius: 10px;
+  font-size: 13.5px;
+  color: #2D1B14;
+  background: #fff;
+  outline: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-weight: 500;
+}
+
+.selectSem:focus {
+  border-color: #C25450;
+}
+
+/* ─── Inline Quick Assignment Form ─── */
+.quickFormCard {
+  background: linear-gradient(135deg, #FEFAE3 0%, #FFF0CD 100%);
+  border: 1px solid #FFDBB6;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 16px;
+  animation: slideDown2 0.2s ease;
+}
+
+@keyframes slideDown2 {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.quickFormTitle {
+  font-size: 14px;
+  font-weight: 700;
+  color: #2D1B14;
+  margin: 0 0 12px 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.quickFormGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.quickFormGrid .fullCol {
+  grid-column: span 3;
+}
+
+.formField {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.formField label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #6B4F3F;
+  text-transform: uppercase;
+}
+
+.formField input,
+.formField select {
+  border: 1.5px solid #EAD9CB;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 13px;
+  color: #2D1B14;
+  background: #fff;
+  outline: none;
+  font-family: inherit;
+  width: 100%;
+}
+
+.formField input:focus,
+.formField select:focus {
+  border-color: #C25450;
+}
+
+.checkField {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  padding-top: 24px;
+}
+
+.checkField input {
+  width: 16px;
+  height: 16px;
+  accent-color: #C25450;
+  cursor: pointer;
+}
+
+.checkField label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #2D1B14;
+  cursor: pointer;
+  text-transform: none;
+}
+
+.quickFormActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding-top: 10px;
+  border-top: 1px dashed #EAD9CB;
+}
+
+.successMsg {
+  background: #ECFDF5;
+  color: #059669;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 13px;
+  margin-bottom: 14px;
+  border: 1px solid #A7F3D0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+@media (max-width: 767px) {
+  .infoGrid {
+    grid-template-columns: 1fr;
+  }
+  .fullWidth {
+    grid-column: span 1;
+  }
+  .quickFormGrid {
+    grid-template-columns: 1fr;
+  }
+  .quickFormGrid .fullCol {
+    grid-column: span 1;
+  }
+  .checkField {
+    padding-top: 4px;
+  }
+}

@@ -1,16 +1,4 @@
-/**
- * lib/validation/admin.validation.ts
- *
- * Tập trung toàn bộ logic kiểm tra dữ liệu đầu vào cho các form Admin.
- * Dùng chung cho cả INSERT (create) và UPDATE (edit) — trường nào undefined
- * hoặc không có trong payload thì bỏ qua (partial update).
- *
- * Cách dùng:
- *   const errs = validateKhoa({ tenkhoa: "" });
- *   if (errs.length) { setError(errs[0]); return; }
- */
 
-// ─── Kiểu trả về ──────────────────────────────────────────────────────────────
 
 export interface ValidationError {
     field: string;   // tên field bị lỗi (dùng để highlight input nếu cần)

@@ -28,7 +28,16 @@ export async function PUT(request: Request, { params }: { params: Promise<{ mata
 
   const update: Record<string, unknown> = {};
   if (trangthai) update.trangthai = trangthai;
-  if (matkhau?.trim()) update.matkhau = matkhau.trim(); // hash via trigger
+
+  if (matkhau?.trim()) {
+    const { data: hashed, error: hashErr } = await supabase
+      .rpc("hash_password", { password: matkhau.trim() });
+
+    if (hashErr || !hashed) {
+      return NextResponse.json({ error: "Lỗi mã hoá mật khẩu mới." }, { status: 500 });
+    }
+    update.matkhau = hashed;
+  }
 
   if (Object.keys(update).length === 0)
     return NextResponse.json({ error: "Không có thông tin cập nhật." }, { status: 400 });

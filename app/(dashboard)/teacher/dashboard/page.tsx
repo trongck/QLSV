@@ -73,6 +73,7 @@ export default function TeacherDashboard() {
             .from("thongbao")
             .select("tieude, ngaytao")
             .eq("magvtao", magv)
+            .lte("ngaytao", new Date().toISOString().replace("Z", ""))
             .order("ngaytao", { ascending: false })
             .limit(5),
           supabase

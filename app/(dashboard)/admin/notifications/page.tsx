@@ -28,6 +28,65 @@ import styles from "./notification.module.css";
 
 // ─── Form Component ───────────────────────────────────────────────────────────
 
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+interface ParsedContent {
+  imageUrl: string | null;
+  text: string;
+}
+
+function parseNotificationContent(noidung: string): ParsedContent {
+  const match = noidung.match(/^\s*\[IMAGE_URL:([^\]]+)\]([\s\S]*)$/i);
+  if (match) {
+    const imageUrl = match[1].trim();
+    let text = match[2];
+    if (text.startsWith("\n")) {
+      text = text.slice(1);
+    } else if (text.startsWith("\r\n")) {
+      text = text.slice(2);
+    }
+    return { imageUrl, text };
+  }
+  return {
+    imageUrl: null,
+    text: noidung,
+  };
+}
+
+function getNotificationStatus(ngaytao: string, ngayhethan: string | null): "Scheduled" | "Expired" | "Active" {
+  const now = new Date();
+  const formatted = ngaytao.replace(" ", "T");
+  const parts = formatted.split("T");
+  const [year, month, day] = parts[0].split("-").map(Number);
+  const [hours, minutes] = (parts[1] ?? "00:00").split(":").map(Number);
+  const pubDate = new Date(year, month - 1, day, hours, minutes);
+
+  if (pubDate > now) return "Scheduled";
+  if (ngayhethan) {
+    const [eyear, emonth, eday] = ngayhethan.split("-").map(Number);
+    const expDate = new Date(eyear, emonth - 1, eday, 23, 59, 59, 999);
+    if (expDate < now) return "Expired";
+  }
+  return "Active";
+}
+
+// Format date-time for datetime-local input (YYYY-MM-DDTHH:MM) using literal parsing
+const formatDateTimeLocal = (isoString?: string) => {
+  if (!isoString) return "";
+  const formatted = isoString.replace(" ", "T");
+  const parts = formatted.split("T");
+  const datePart = parts[0];
+  const timePart = parts[1]?.slice(0, 5) ?? "00:00";
+  return `${datePart}T${timePart}`;
+};
+
+// Parse a local datetime string (YYYY-MM-DDTHH:MM) correctly into a literal SQL string
+const parseDateTimeLocalLiteral = (localStr: string): string => {
+  return localStr.replace("T", " ") + ":00";
+};
+
+// ─── Form Component ───────────────────────────────────────────────────────────
+
 function NotificationForm({
   initial,
   lops,
@@ -45,16 +104,63 @@ function NotificationForm({
   loading: boolean;
   error: string;
 }) {
+  const parsed = parseNotificationContent(initial?.noidung ?? "");
+
   const [form, setForm] = useState({
     tieude: initial?.tieude ?? "",
-    noidung: initial?.noidung ?? "",
+    noidung: parsed.text,
+    imageUrl: parsed.imageUrl ?? "",
     loai: initial?.loai ?? "Chung",
     doituong: initial?.doituong ?? "Tatca",
     malop: initial?.malop ?? "",
     maphancong: initial?.maphancong ?? "",
     ngayhethan: initial?.ngayhethan?.split("T")[0] ?? "",
+    ngaytao: initial?.ngaytao ? formatDateTimeLocal(initial.ngaytao) : "",
     ghim: initial?.ghim ?? false,
   });
+
+  const [imageMode, setImageMode] = useState<"upload" | "url">(
+    parsed.imageUrl?.startsWith("data:") ? "upload" : "url"
+  );
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    if (!file.type.startsWith("image/")) {
+      alert("Vui lòng chọn tệp hình ảnh hợp lệ (PNG, JPG, WEBP, GIF,...)");
+      return;
+    }
+    if (file.size > 3 * 1024 * 1024) {
+      alert("Dung lượng ảnh tối đa là 3MB để tối ưu hóa lưu trữ.");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const base64Str = event.target?.result as string;
+      setForm((prev) => ({ ...prev, imageUrl: base64Str }));
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleFormSubmit = () => {
+    const finalNoidung = form.imageUrl.trim()
+      ? `[IMAGE_URL:${form.imageUrl.trim()}]\n${form.noidung}`
+      : form.noidung;
+
+    onSubmit({
+      tieude: form.tieude,
+      noidung: finalNoidung,
+      loai: form.loai,
+      doituong: form.doituong,
+      malop: form.malop,
+      maphancong: form.maphancong,
+      ngayhethan: form.ngayhethan || null,
+      ghim: form.ghim,
+      ngaytao: form.ngaytao ? parseDateTimeLocalLiteral(form.ngaytao) : undefined,
+    });
+  };
 
   return (
     <>
@@ -83,7 +189,7 @@ function NotificationForm({
           </select>
         </div>
         <div className="field">
-          <label>Ngày hết hạn</label>
+          <label>Ngày hết hạn (Tuỳ chọn)</label>
           <input
             type="date"
             value={form.ngayhethan}
@@ -129,6 +235,105 @@ function NotificationForm({
             ))}
           </select>
         </div>
+        
+        {/* Hình ảnh đính kèm */}
+        <div className="field full" style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+          <label style={{ fontWeight: 600, color: "#2D1B14" }}>Hình ảnh đính kèm (Tuỳ chọn)</label>
+          <div style={{ display: "flex", gap: "10px", marginBottom: "4px" }}>
+            <button
+              type="button"
+              className={imageMode === "upload" ? "btn-primary" : "btn-secondary"}
+              style={{ padding: "6px 14px", fontSize: "12px", borderRadius: "8px" }}
+              onClick={() => setImageMode("upload")}
+            >
+              📁 Tải ảnh lên từ tệp
+            </button>
+            <button
+              type="button"
+              className={imageMode === "url" ? "btn-primary" : "btn-secondary"}
+              style={{ padding: "6px 14px", fontSize: "12px", borderRadius: "8px" }}
+              onClick={() => setImageMode("url")}
+            >
+              🔗 Nhập đường dẫn ảnh (URL)
+            </button>
+          </div>
+
+          {imageMode === "upload" ? (
+            <div 
+              style={{
+                border: "2px dashed #FFDBB6",
+                borderRadius: "12px",
+                padding: "24px 16px",
+                textAlign: "center",
+                background: "#FFFDF9",
+                cursor: "pointer",
+                transition: "border-color 0.2s",
+              }}
+              onClick={() => document.getElementById("img-upload-input")?.click()}
+              onMouseOver={(e) => (e.currentTarget.style.borderColor = "#C25450")}
+              onMouseOut={(e) => (e.currentTarget.style.borderColor = "#FFDBB6")}
+            >
+              <input
+                id="img-upload-input"
+                type="file"
+                accept="image/*"
+                style={{ display: "none" }}
+                onChange={handleFileChange}
+              />
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ margin: "0 auto 8px", display: "block", color: "#C25450" }}>
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                <circle cx="8.5" cy="8.5" r="1.5" />
+                <polyline points="21 15 16 10 5 21" />
+              </svg>
+              <span style={{ fontSize: "13px", color: "#8B6F5F", fontWeight: 500 }}>
+                {form.imageUrl.startsWith("data:") ? "✓ Đã tải ảnh lên thành công" : "Nhấp vào đây để chọn ảnh từ máy của bạn"}
+              </span>
+              <span style={{ display: "block", fontSize: "11px", color: "#A08070", marginTop: "4px" }}>Hỗ trợ PNG, JPG, WEBP, GIF (Tối đa 3MB)</span>
+            </div>
+          ) : (
+            <input
+              value={form.imageUrl.startsWith("data:") ? "" : form.imageUrl}
+              onChange={(e) => setForm({ ...form, imageUrl: e.target.value })}
+              placeholder="Ví dụ: https://images.unsplash.com/... hoặc đường dẫn ảnh bất kỳ"
+            />
+          )}
+
+          {form.imageUrl.trim() && (
+            <div style={{ marginTop: "8px", background: "#FFFBF2", padding: "12px", borderRadius: "10px", border: "1px solid #FFDBB6", display: "flex", gap: "16px", alignItems: "center" }}>
+              <div style={{ flex: 1 }}>
+                <span style={{ fontSize: "11px", color: "#8B6F5F", fontWeight: 600, display: "block", marginBottom: "4px" }}>Xem trước ảnh đính kèm:</span>
+                <img 
+                  src={form.imageUrl.trim()} 
+                  alt="Xem trước ảnh đính kèm" 
+                  style={{ display: "block", maxHeight: "120px", borderRadius: "8px", border: "1px solid #FFDBB6", objectFit: "cover" }} 
+                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                />
+              </div>
+              <button
+                type="button"
+                className="btn-secondary"
+                style={{ padding: "6px 12px", fontSize: "12px", color: "#C25450", border: "1.5px solid #C25450", background: "#FFF0F0" }}
+                onClick={() => setForm((prev) => ({ ...prev, imageUrl: "" }))}
+              >
+                🗑️ Gỡ bỏ ảnh
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Lên lịch phát sóng */}
+        <div className="field full">
+          <label>Hẹn giờ phát sóng thông báo (Hẹn giờ gửi - Tuỳ chọn)</label>
+          <input
+            type="datetime-local"
+            value={form.ngaytao}
+            onChange={(e) => setForm({ ...form, ngaytao: e.target.value })}
+          />
+          <span style={{ fontSize: "11px", color: "#8B6F5F", marginTop: "4px", display: "block" }}>
+            Để trống để đăng ngay lập tức. Chọn một thời điểm trong tương lai để lên lịch phát tự động.
+          </span>
+        </div>
+
         <div className="field full">
           <label>Nội dung chi tiết *</label>
           <textarea
@@ -162,8 +367,8 @@ function NotificationForm({
         </button>
         <button
           className="btn-primary"
-          onClick={() => onSubmit(form)}
-          disabled={loading}
+          onClick={handleFormSubmit}
+          disabled={loading || !form.tieude.trim() || !form.noidung.trim()}
         >
           {loading
             ? "Đang gửi..."
@@ -190,6 +395,7 @@ export default function AdminNotificationsPage() {
   const [search, setSearch] = useState("");
   const [filterType, setFilterType] = useState("");
   const [filterTarget, setFilterTarget] = useState("");
+  const [filterStatus, setFilterStatus] = useState("");
   const [isLoading, setIsLoading] = useState(true);
 
   const [modal, setModal] = useState<{
@@ -206,6 +412,7 @@ export default function AdminNotificationsPage() {
         search,
         loai: filterType,
         doituong: filterTarget,
+        trangthai: filterStatus,
         page,
         limit: 12,
       });
@@ -216,7 +423,7 @@ export default function AdminNotificationsPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [search, filterType, filterTarget, page]);
+  }, [search, filterType, filterTarget, filterStatus, page]);
 
   useEffect(() => {
     if (!authLoading && (!user || user.vaitro !== VaiTro.Admin))
@@ -313,7 +520,7 @@ export default function AdminNotificationsPage() {
             <select
               className={styles.filterSelect}
               value={filterType}
-              onChange={(e) => setFilterType(e.target.value)}
+              onChange={(e) => { setFilterType(e.target.value); setPage(1); }}
             >
               <option value="">-- Tất cả loại --</option>
               <option value="Chung">Chung</option>
@@ -325,20 +532,31 @@ export default function AdminNotificationsPage() {
             <select
               className={styles.filterSelect}
               value={filterTarget}
-              onChange={(e) => setFilterTarget(e.target.value)}
+              onChange={(e) => { setFilterTarget(e.target.value); setPage(1); }}
             >
               <option value="">-- Tất cả đối tượng --</option>
               <option value="Tatca">Tất cả</option>
               <option value="GiangVien">Giảng viên</option>
               <option value="SinhVien">Sinh viên</option>
             </select>
-            {(search || filterTarget || filterType ) && (
+            <select
+              className={styles.filterSelect}
+              value={filterStatus}
+              onChange={(e) => { setFilterStatus(e.target.value); setPage(1); }}
+            >
+              <option value="">-- Tất cả trạng thái --</option>
+              <option value="Active">Đang hiệu lực</option>
+              <option value="Scheduled">Hẹn giờ phát sóng</option>
+              <option value="Expired">Đã hết hạn</option>
+            </select>
+            {(search || filterTarget || filterType || filterStatus) && (
               <button
                 className={styles.clearFilter}
                 onClick={() => {
                   setSearch("");
                   setFilterTarget("");
                   setFilterType("");
+                  setFilterStatus("");
                   setPage(1);
                 }}
               >
@@ -353,123 +571,137 @@ export default function AdminNotificationsPage() {
             </div>
           ) : list.length > 0 ? (
             <div className={styles.grid}>
-              {list.map((notif) => (
-                <div
-                  key={notif.mathongbao}
-                  className={`${styles.card} ${notif.ghim ? styles.cardPinned : ""}`}
-                  onClick={() => setModal({ mode: "view", item: notif })}
-                  style={{ cursor: "pointer" }}
-                  title="Click để xem toàn bộ nội dung"
-                >
-                  {notif.ghim && (
-                    <div className={styles.pinIcon} title="Đã ghim">
-                      <svg
-                        width="18"
-                        height="18"
-                        viewBox="0 0 24 24"
-                        fill="currentColor"
-                      >
-                        <path d="M16 12V4H17V2H7V4H8V12L6 14V16H11V22H13V16H18V14L16 12Z" />
-                      </svg>
-                    </div>
-                  )}
-                  <span
-                    className={`${styles.cardType} ${getLoaiClass(notif.loai)}`}
-                  >
-                    {notif.loai}
-                  </span>
-                  <h3 className={styles.cardTitle}>{notif.tieude}</h3>
-                  <p className={styles.cardContent}>{notif.noidung}</p>
+              {list.map((notif) => {
+                const parsed = parseNotificationContent(notif.noidung);
+                const status = getNotificationStatus(notif.ngaytao, notif.ngayhethan);
 
-                  <div className={styles.cardFooter}>
-                    <div className={styles.cardMeta}>
-                      <span className={styles.metaItem}>
-                        <svg
-                          width="12"
-                          height="12"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                        >
-                          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                          <circle cx="12" cy="7" r="4" />
-                        </svg>
-                        {notif.admin?.hoten || "Hệ thống"}
+                return (
+                  <div
+                    key={notif.mathongbao}
+                    className={`${styles.card} ${notif.ghim ? styles.cardPinned : ""} ${status === "Expired" ? styles.cardExpired : ""}`}
+                    onClick={() => setModal({ mode: "view", item: notif })}
+                    style={{ cursor: "pointer" }}
+                    title="Click để xem toàn bộ nội dung"
+                  >
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%", gap: "8px" }}>
+                      <span className={`${styles.cardType} ${getLoaiClass(notif.loai)}`}>
+                        {notif.loai}
                       </span>
-                      <span className={styles.metaItem}>
-                        <svg
-                          width="12"
-                          height="12"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
+                      <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                        {status === "Active" && <span className={`${styles.statusBadge} ${styles.statusActive}`}>Đang hiệu lực</span>}
+                        {status === "Scheduled" && <span className={`${styles.statusBadge} ${styles.statusScheduled}`}>Hẹn giờ gửi</span>}
+                        {status === "Expired" && <span className={`${styles.statusBadge} ${styles.statusExpired}`}>Đã hết hạn</span>}
+                        {notif.ghim && (
+                          <span className={styles.pinIconSmall} title="Đã ghim">📌</span>
+                        )}
+                      </div>
+                    </div>
+
+                    {parsed.imageUrl && (
+                      <div className={styles.cardImageWrap}>
+                        <img src={parsed.imageUrl} alt={notif.tieude} className={styles.cardImage} />
+                      </div>
+                    )}
+
+                    <h3 className={styles.cardTitle}>{notif.tieude}</h3>
+                    <p className={styles.cardContent}>{parsed.text}</p>
+
+                    <div className={styles.cardFooter}>
+                      <div className={styles.cardMeta}>
+                        <span className={styles.metaItem}>
+                          <svg
+                            width="12"
+                            height="12"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                          >
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                            <circle cx="12" cy="7" r="4" />
+                          </svg>
+                          {notif.admin?.hoten || "Hệ thống"}
+                        </span>
+                        <span className={styles.metaItem}>
+                          <svg
+                            width="12"
+                            height="12"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                          >
+                            <rect
+                              x="3"
+                              y="4"
+                              width="18"
+                              height="18"
+                              rx="2"
+                              ry="2"
+                            />
+                            <line x1="16" y1="2" x2="16" y2="6" />
+                            <line x1="8" y1="2" x2="8" y2="6" />
+                            <line x1="3" y1="10" x2="21" y2="10" />
+                          </svg>
+                          {(() => {
+                            const formatted = notif.ngaytao.replace(" ", "T");
+                            const parts = formatted.split("T");
+                            const [year, month, day] = parts[0].split("-");
+                            const timePart = parts[1]?.slice(0, 5) ?? "00:00";
+                            return `${day}/${month}/${year} ${timePart}`;
+                          })()}
+                        </span>
+                      </div>
+                      <div className={styles.cardActions}>
+                        <button
+                          className={`${styles.actionBtn} ${styles.editBtn}`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setMutError("");
+                            setModal({ mode: "edit", item: notif });
+                          }}
+                          title="Sửa"
                         >
-                          <rect
-                            x="3"
-                            y="4"
+                          <svg
                             width="18"
                             height="18"
-                            rx="2"
-                            ry="2"
-                          />
-                          <line x1="16" y1="2" x2="16" y2="6" />
-                          <line x1="8" y1="2" x2="8" y2="6" />
-                          <line x1="3" y1="10" x2="21" y2="10" />
-                        </svg>
-                        {new Date(notif.ngaytao).toLocaleDateString("vi-VN")}
-                      </span>
-                    </div>
-                    <div className={styles.cardActions}>
-                      <button
-                        className={`${styles.actionBtn} ${styles.editBtn}`}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setMutError("");
-                          setModal({ mode: "edit", item: notif });
-                        }}
-                        title="Sửa"
-                      >
-                        <svg
-                          width="18"
-                          height="18"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                          >
+                            <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                            <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                          </svg>
+                        </button>
+                        <button
+                          className={`${styles.actionBtn} ${styles.deleteBtn}`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setMutError("");
+                            setModal({ mode: "delete", item: notif });
+                          }}
+                          title="Xoá"
                         >
-                          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                        </svg>
-                      </button>
-                      <button
-                        className={`${styles.actionBtn} ${styles.deleteBtn}`}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setMutError("");
-                          setModal({ mode: "delete", item: notif });
-                        }}
-                        title="Xoá"
-                      >
-                        <svg
-                          width="18"
-                          height="18"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2"
-                        >
-                          <polyline points="3 6 5 6 21 6" />
-                          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                          <line x1="10" y1="11" x2="10" y2="17" />
-                          <line x1="14" y1="11" x2="14" y2="17" />
-                        </svg>
-                      </button>
+                          <svg
+                            width="18"
+                            height="18"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                          >
+                            <polyline points="3 6 5 6 21 6" />
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                            <line x1="10" y1="11" x2="10" y2="17" />
+                            <line x1="14" y1="11" x2="14" y2="17" />
+                          </svg>
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           ) : (
             <div style={{ padding: "40px" }}>
@@ -533,65 +765,94 @@ export default function AdminNotificationsPage() {
         </AdminModal>
       )}
 
-      {modal?.mode === "view" && modal.item && (
-        <AdminModal
-          title="Chi tiết thông báo"
-          onClose={() => setModal(null)}
-          size="md"
-        >
-          <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "8px" }}>
-              <span className={`${styles.cardType} ${getLoaiClass(modal.item.loai)}`}>
-                {modal.item.loai}
-              </span>
-              <span style={{ fontSize: "12px", color: "#8B6F5F" }}>
-                Đăng ngày: {new Date(modal.item.ngaytao).toLocaleDateString("vi-VN")} bởi <strong>{modal.item.admin?.hoten || "Hệ thống"}</strong>
-              </span>
-            </div>
-            
-            <h2 style={{ fontSize: "18px", fontWeight: 700, color: "#2D1B14", margin: 0, lineHeight: 1.4 }}>
-              {modal.item.tieude}
-            </h2>
-            
-            <div style={{ 
-              background: "#FFF0CD", 
-              padding: "8px 12px", 
-              borderRadius: "8px", 
-              fontSize: "13px", 
-              color: "#5D4037",
-              border: "1px solid #FFDBB6"
-            }}>
-              <strong>Đối tượng nhận:</strong> {
-                modal.item.doituong === "Tatca" ? "Tất cả mọi người" :
-                modal.item.doituong === "GiangVien" ? "Toàn bộ giảng viên" :
-                modal.item.doituong === "SinhVien" ? "Toàn bộ sinh viên" :
-                modal.item.doituong === "Lop" ? `Lớp hành chính: ${modal.item.malop}` :
-                `Lớp học phần: ${modal.item.maphancong}`
-              }
-            </div>
+      {modal?.mode === "view" && modal.item && (() => {
+        const parsed = parseNotificationContent(modal.item.noidung);
+        const status = getNotificationStatus(modal.item.ngaytao, modal.item.ngayhethan);
+        return (
+          <AdminModal
+            title="Chi tiết thông báo"
+            onClose={() => setModal(null)}
+            size="md"
+          >
+            <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "8px" }}>
+                <span className={`${styles.cardType} ${getLoaiClass(modal.item.loai)}`}>
+                  {modal.item.loai}
+                </span>
+                <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                  {status === "Active" && <span className={`${styles.statusBadge} ${styles.statusActive}`}>Đang hiệu lực</span>}
+                  {status === "Scheduled" && <span className={`${styles.statusBadge} ${styles.statusScheduled}`}>Hẹn giờ gửi</span>}
+                  {status === "Expired" && <span className={`${styles.statusBadge} ${styles.statusExpired}`}>Đã hết hạn</span>}
+                  <span style={{ fontSize: "12px", color: "#8B6F5F" }}>
+                    Phát sóng: {(() => {
+                      const formatted = modal.item.ngaytao.replace(" ", "T");
+                      const parts = formatted.split("T");
+                      const [year, month, day] = parts[0].split("-");
+                      const timePart = parts[1]?.slice(0, 5) ?? "00:00";
+                      return `${day}/${month}/${year} ${timePart}`;
+                    })()} bởi <strong>{modal.item.admin?.hoten || "Hệ thống"}</strong>
+                  </span>
+                </div>
+              </div>
+              
+              <h2 style={{ fontSize: "18px", fontWeight: 700, color: "#2D1B14", margin: 0, lineHeight: 1.4 }}>
+                {modal.item.tieude}
+              </h2>
 
-            <div style={{ 
-              fontSize: "14px", 
-              color: "#2D1B14", 
-              lineHeight: "1.6", 
-              whiteSpace: "pre-wrap", 
-              background: "#FEFAE3", 
-              padding: "16px 20px", 
-              borderRadius: "12px",
-              border: "1.5px solid #FFDBB6",
-              maxHeight: "40vh",
-              overflowY: "auto"
-            }}>
-              {modal.item.noidung}
+              {parsed.imageUrl && (
+                <div style={{ width: "100%" }}>
+                  <img src={parsed.imageUrl} alt={modal.item.tieude} className={styles.attachedImage} />
+                </div>
+              )}
+              
+              <div style={{ 
+                background: "#FFF0CD", 
+                padding: "8px 12px", 
+                borderRadius: "8px", 
+                fontSize: "13px", 
+                color: "#5D4037",
+                border: "1px solid #FFDBB6"
+              }}>
+                <strong>Đối tượng nhận:</strong> {
+                  modal.item.doituong === "Tatca" ? "Tất cả mọi người" :
+                  modal.item.doituong === "GiangVien" ? "Toàn bộ giảng viên" :
+                  modal.item.doituong === "SinhVien" ? "Toàn bộ sinh viên" :
+                  modal.item.doituong === "Lop" ? `Lớp hành chính: ${modal.item.malop}` :
+                  `Lớp học phần: ${modal.item.maphancong}`
+                }
+                {modal.item.ngayhethan && (
+                  <span style={{ marginLeft: "12px" }}>
+                    · <strong>Hết hạn:</strong> {(() => {
+                      const parts = modal.item.ngayhethan.split("T")[0].split("-");
+                      return `${parts[2]}/${parts[1]}/${parts[0]}`;
+                    })()}
+                  </span>
+                )}
+              </div>
+
+              <div style={{ 
+                fontSize: "14px", 
+                color: "#2D1B14", 
+                lineHeight: "1.6", 
+                whiteSpace: "pre-wrap", 
+                background: "#FEFAE3", 
+                padding: "16px 20px", 
+                borderRadius: "12px",
+                border: "1.5px solid #FFDBB6",
+                maxHeight: "40vh",
+                overflowY: "auto"
+              }}>
+                {parsed.text}
+              </div>
             </div>
-          </div>
-          <div className="modal-actions" style={{ borderTop: "none", marginTop: "12px", paddingTop: 0 }}>
-            <button className="btn-primary" onClick={() => setModal(null)}>
-              Đóng
-            </button>
-          </div>
-        </AdminModal>
-      )}
+            <div className="modal-actions" style={{ borderTop: "none", marginTop: "12px", paddingTop: 0 }}>
+              <button className="btn-primary" onClick={() => setModal(null)}>
+                Đóng
+              </button>
+            </div>
+          </AdminModal>
+        );
+      })()}
     </DashboardShell>
   );
 }

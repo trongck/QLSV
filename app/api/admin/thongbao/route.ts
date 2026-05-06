@@ -25,6 +25,7 @@ export async function GET(request: Request) {
   const search = searchParams.get("search") ?? "";
   const loai = searchParams.get("loai") ?? "";
   const doituong = searchParams.get("doituong") ?? "";
+  const trangthai = searchParams.get("trangthai") ?? "";
   const page = Math.max(1, Number(searchParams.get("page") ?? 1));
   const limit = Math.min(50, Math.max(1, Number(searchParams.get("limit") ?? 15)));
   const offset = (page - 1) * limit;
@@ -41,6 +42,15 @@ export async function GET(request: Request) {
   if (search) query = query.ilike("tieude", `%${search}%`);
   if (loai) query = query.eq("loai", loai);
   if (doituong) query = query.eq("doituong", doituong);
+
+  const nowStr = new Date().toISOString().replace("Z", "");
+  if (trangthai === "Active") {
+    query = query.lte("ngaytao", nowStr).or(`ngayhethan.is.null,ngayhethan.gte.${nowStr}`);
+  } else if (trangthai === "Scheduled") {
+    query = query.gt("ngaytao", nowStr);
+  } else if (trangthai === "Expired") {
+    query = query.lt("ngayhethan", nowStr);
+  }
 
   const { data, error, count } = await query;
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
@@ -63,7 +73,7 @@ export async function POST(request: Request) {
   }
 
   const body = await request.json();
-  const { tieude, noidung, loai, doituong, malop, maphancong, ngayhethan, ghim } = body;
+  const { tieude, noidung, loai, doituong, malop, maphancong, ngayhethan, ghim, ngaytao } = body;
 
   if (!tieude?.trim()) return NextResponse.json({ error: "Tiêu đề không được trống." }, { status: 400 });
   if (!noidung?.trim()) return NextResponse.json({ error: "Nội dung không được trống." }, { status: 400 });
@@ -88,20 +98,26 @@ export async function POST(request: Request) {
     maadmintao = anyAdmin?.maadmin ?? null;
   }
 
+  const insertPayload: Record<string, any> = {
+    tieude: tieude.trim(),
+    noidung: noidung.trim(),
+    loai,
+    doituong,
+    malop: malop || null,
+    maphancong: maphancong ? Number(maphancong) : null,
+    ngayhethan: ngayhethan || null,
+    ghim: Boolean(ghim),
+    maadmintao,
+    magvtao: null,
+  };
+
+  if (ngaytao) {
+    insertPayload.ngaytao = ngaytao;
+  }
+
   const { data, error } = await supabase
     .from("thongbao")
-    .insert({
-      tieude: tieude.trim(),
-      noidung: noidung.trim(),
-      loai,
-      doituong,
-      malop: malop || null,
-      maphancong: maphancong ? Number(maphancong) : null,
-      ngayhethan: ngayhethan || null,
-      ghim: Boolean(ghim),
-      maadmintao,
-      magvtao: null,
-    })
+    .insert(insertPayload)
     .select("*, admin:maadmintao(hoten), lop:malop(tenlop)")
     .single();
 

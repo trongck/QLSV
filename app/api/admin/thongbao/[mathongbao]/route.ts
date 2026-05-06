@@ -23,25 +23,31 @@ export async function PUT(request: Request, { params }: { params: Promise<{ math
   const { mathongbao } = await params;
   const id = Number(mathongbao);
   const body = await request.json();
-  const { tieude, noidung, loai, doituong, malop, maphancong, ngayhethan, ghim } = body;
+  const { tieude, noidung, loai, doituong, malop, maphancong, ngayhethan, ghim, ngaytao } = body;
 
   if (!tieude?.trim()) return NextResponse.json({ error: "Tiêu đề không được trống." }, { status: 400 });
   if (!noidung?.trim()) return NextResponse.json({ error: "Nội dung không được trống." }, { status: 400 });
 
   const supabase = createClient(await cookies());
 
+  const updatePayload: Record<string, any> = {
+    tieude: tieude.trim(),
+    noidung: noidung.trim(),
+    loai,
+    doituong,
+    malop: malop || null,
+    maphancong: maphancong ? Number(maphancong) : null,
+    ngayhethan: ngayhethan || null,
+    ghim: Boolean(ghim),
+  };
+
+  if (ngaytao) {
+    updatePayload.ngaytao = ngaytao;
+  }
+
   const { data, error } = await supabase
     .from("thongbao")
-    .update({
-      tieude: tieude.trim(),
-      noidung: noidung.trim(),
-      loai,
-      doituong,
-      malop: malop || null,
-      maphancong: maphancong ? Number(maphancong) : null,
-      ngayhethan: ngayhethan || null,
-      ghim: Boolean(ghim),
-    })
+    .update(updatePayload)
     .eq("mathongbao", id)
     .select("*, admin:maadmintao(hoten), lop:malop(tenlop)")
     .single();

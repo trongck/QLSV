@@ -84,6 +84,7 @@ export default function StudentDashboard() {
           .from("thongbao")
           .select("tieude, ngaytao, loai")
           .or(conditions.join(","))
+          .lte("ngaytao", new Date().toISOString().replace("Z", ""))
           .order("ngaytao", { ascending: false })
           .limit(5);
 
