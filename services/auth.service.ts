@@ -6,9 +6,7 @@ const KEY_ACCESS  = "auth_access_token";
 const KEY_REFRESH = "auth_refresh_token";
 const KEY_USER    = "auth_user";
 
-// ─── safeJson ─────────────────────────────────────────────────────────────────
-// Tránh lỗi "Unexpected token '<', <!DOCTYPE..." khi server trả HTML thay vì JSON
-// (xảy ra khi route không tồn tại → 404, hoặc server crash → 500 error page).
+
 
 async function safeJson<T>(res: Response): Promise<T | null> {
   const ct = res.headers.get("content-type") ?? "";
@@ -34,11 +32,7 @@ function clearBothStorages() {
 // ─── Token Storage ────────────────────────────────────────────────────────────
 
 export const tokenStorage = {
-  /**
-   * FIX (Issue 8) — "Duy trì đăng nhập":
-   *   remember=true  → localStorage   (tồn tại đến khi refresh token hết hạn)
-   *   remember=false → sessionStorage (tự xóa khi đóng tab/trình duyệt)
-   */
+  
   save(accessToken: string, refreshToken: string, user: UserProfile, remember = true) {
     if (typeof window === "undefined") return;
     // Xóa cả hai storage để tránh token cũ tồn tại song song

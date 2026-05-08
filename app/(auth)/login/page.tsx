@@ -19,6 +19,17 @@ export default function LoginPage() {
   }>({});
   const [mounted, setMounted] = useState(false);
 
+  // Password reset request states
+  const [showResetModal, setShowResetModal] = useState(false);
+  const [resetType, setResetType] = useState<"sinhvien" | "giangvien">("sinhvien");
+  const [resetId, setResetId] = useState("");
+  const [resetSdt, setResetSdt] = useState("");
+  const [resetEmail, setResetEmail] = useState("");
+  const [resetLydo, setResetLydo] = useState("");
+  const [resetSubmitting, setResetSubmitting] = useState(false);
+  const [resetError, setResetError] = useState<string | null>(null);
+  const [resetSuccess, setResetSuccess] = useState<string | null>(null);
+
   const emailRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -308,13 +319,202 @@ export default function LoginPage() {
             <a
               href="#"
               className={styles.activateLink}
-              onClick={(e) => e.preventDefault()}
+              onClick={(e) => {
+                e.preventDefault();
+                setShowResetModal(true);
+                setResetSuccess(null);
+                setResetError(null);
+                setResetId("");
+                setResetSdt("");
+                setResetEmail("");
+                setResetLydo("");
+              }}
             >
-              Quên mật khẩu
+              Gửi yêu cầu cấp lại mật khẩu!
             </a>
           </p>
         </div>
       </main>
+
+      {showResetModal && (
+        <div className={styles.modalOverlay}>
+          <div className={styles.modalCard}>
+            <div className={styles.modalHeader}>
+              <h2 className={styles.modalTitle}>Yêu cầu cấp lại mật khẩu</h2>
+              <button
+                type="button"
+                className={styles.modalClose}
+                onClick={() => setShowResetModal(false)}
+                aria-label="Đóng"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
+                  <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                </svg>
+              </button>
+            </div>
+
+            {resetSuccess ? (
+              <div className={styles.modalSuccess}>
+                <div className={styles.successIcon}>
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                </div>
+                <h3 className={styles.successTitle}>Gửi yêu cầu thành công</h3>
+                <p className={styles.successText}>{resetSuccess}</p>
+                <button
+                  type="button"
+                  className="btn-primary"
+                  onClick={() => setShowResetModal(false)}
+                  style={{ marginTop: 8 }}
+                >
+                  Đóng
+                </button>
+              </div>
+            ) : (
+              <form
+                onSubmit={async (e) => {
+                  e.preventDefault();
+                  if (!resetId.trim() || !resetSdt.trim() || !resetEmail.trim() || !resetLydo.trim()) {
+                    setResetError("Vui lòng điền đầy đủ các thông tin.");
+                    return;
+                  }
+                  setResetSubmitting(true);
+                  setResetError(null);
+                  try {
+                    const res = await fetch("/api/auth/reset-password-request", {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        type: resetType,
+                        id: resetId.trim(),
+                        sdt: resetSdt.trim(),
+                        email: resetEmail.trim(),
+                        lydo: resetLydo.trim(),
+                      }),
+                    });
+                    const data = await res.json();
+                    if (!res.ok) {
+                      setResetError(data.error || "Gửi yêu cầu thất bại.");
+                    } else {
+                      setResetSuccess(data.message);
+                    }
+                  } catch (err) {
+                    setResetError("Lỗi kết nối mạng. Vui lòng thử lại.");
+                  } finally {
+                    setResetSubmitting(false);
+                  }
+                }}
+              >
+                <div className={styles.modalBody}>
+                  {resetError && <div className={styles.errorBanner}>{resetError}</div>}
+
+                  {/* Account Type Tabs */}
+                  <div className={styles.modalTabs}>
+                    <button
+                      type="button"
+                      className={`${styles.modalTab} ${resetType === "sinhvien" ? styles.modalTabActive : ""}`}
+                      onClick={() => {
+                        setResetType("sinhvien");
+                        setResetError(null);
+                      }}
+                    >
+                      Sinh viên
+                    </button>
+                    <button
+                      type="button"
+                      className={`${styles.modalTab} ${resetType === "giangvien" ? styles.modalTabActive : ""}`}
+                      onClick={() => {
+                        setResetType("giangvien");
+                        setResetError(null);
+                      }}
+                    >
+                      Giảng viên
+                    </button>
+                  </div>
+
+                  {/* ID Field */}
+                  <div className={styles.field}>
+                    <label className={styles.label}>
+                      {resetType === "sinhvien" ? "Mã sinh viên" : "Mã giảng viên"}
+                    </label>
+                    <input
+                      type="text"
+                      className="input"
+                      placeholder={resetType === "sinhvien" ? "Nhập mã sinh viên (ví dụ: SV0001)..." : "Nhập mã giảng viên (ví dụ: GV0001)..."}
+                      value={resetId}
+                      onChange={(e) => setResetId(e.target.value)}
+                      disabled={resetSubmitting}
+                      required
+                    />
+                  </div>
+
+                  {/* Phone Number Field */}
+                  <div className={styles.field}>
+                    <label className={styles.label}>Số điện thoại</label>
+                    <input
+                      type="tel"
+                      className="input"
+                      placeholder="Nhập số điện thoại đã đăng ký..."
+                      value={resetSdt}
+                      onChange={(e) => setResetSdt(e.target.value)}
+                      disabled={resetSubmitting}
+                      required
+                    />
+                  </div>
+
+                  {/* Personal Email Field */}
+                  <div className={styles.field}>
+                    <label className={styles.label}>Email cá nhân</label>
+                    <input
+                      type="email"
+                      className="input"
+                      placeholder="Nhập email cá nhân liên kết..."
+                      value={resetEmail}
+                      onChange={(e) => setResetEmail(e.target.value)}
+                      disabled={resetSubmitting}
+                      required
+                    />
+                  </div>
+
+                  {/* Reason Field */}
+                  <div className={styles.field}>
+                    <label className={styles.label}>Lý do cần cấp lại</label>
+                    <textarea
+                      className="input"
+                      placeholder="Nhập lý do cần cấp lại mật khẩu..."
+                      rows={3}
+                      value={resetLydo}
+                      onChange={(e) => setResetLydo(e.target.value)}
+                      disabled={resetSubmitting}
+                      style={{ resize: "none", height: "auto", paddingTop: 8, paddingBottom: 8 }}
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className={styles.modalFooter}>
+                  <button
+                    type="button"
+                    className="btn-secondary"
+                    onClick={() => setShowResetModal(false)}
+                    disabled={resetSubmitting}
+                  >
+                    Huỷ
+                  </button>
+                  <button
+                    type="submit"
+                    className="btn-primary"
+                    disabled={resetSubmitting}
+                  >
+                    {resetSubmitting ? "Đang gửi..." : "Gửi yêu cầu"}
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

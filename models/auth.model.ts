@@ -5,11 +5,9 @@ import { VaiTro } from "@/types";
 export interface LoginRequest {
   email: string;
   matkhau: string;
-  // vaitro không cần gửi — server tự xác định từ bảng taikhoan
+  
 }
 
-// TODO: Dùng RefreshTokenRequest làm kiểu body cho POST /api/auth/refresh
-// khi muốn validate input nghiêm ngặt hơn thay vì dùng plain JSON.
 export interface RefreshTokenRequest {
   refreshToken: string;
 }

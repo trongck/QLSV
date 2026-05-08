@@ -28,9 +28,6 @@ export interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-// ─── Hook nội bộ — CHỈ dùng trong hook/useAuth.ts, không import trực tiếp ───
-// Các component phải dùng useAuth() từ @/hook/useAuth thay vì hook này.
-
 export function useAuthContext(): AuthContextValue {
   const ctx = useContext(AuthContext);
   if (!ctx) throw new Error("useAuthContext phải dùng bên trong <AuthProvider>");
