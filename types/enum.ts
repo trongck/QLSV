@@ -42,6 +42,12 @@ export enum TrangThaiDiemDanh {
   Cophep = "Cophep",
 }
 
+export enum PhuongThucDiemDanh {
+  QR = "QR",
+  Face = "Face",
+  Manual = "Manual",
+}
+
 export enum TrangThaiDonXinNghi {
   ChoDuyet = "ChoDuyet",
   DaDuyet = "DaDuyet",

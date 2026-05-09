@@ -13,7 +13,7 @@ async function requireAdmin(request: Request) {
   } catch { return null; }
 }
 
-// ─── POST /api/admin/taikhoan/bulk ────────────────────────────────────────────
+// ─── POST /api/admin/taikhoan/bulk  sửa lý tác vụ liên quan đến tài khoản ────────────────────────────────────────────
 // Body: { ids: string[]; action: "lock" | "unlock" | "reset"; matkhau?: string }
 
 export async function POST(request: Request) {

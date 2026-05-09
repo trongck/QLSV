@@ -1,6 +1,6 @@
 import {
   VaiTro, TrangThaiTaiKhoan, GioiTinh, TrangThaiSinhVien, TrangThaiSinhVienMonHoc, TrangThaiBuoiHoc,
-  TrangThaiDiemDanh, TrangThaiDonXinNghi, LoaiBaiTap, LoaiTaiLieu, LoaiCauHoi, TrangThaiKetQuaThi,
+  TrangThaiDiemDanh, PhuongThucDiemDanh, TrangThaiDonXinNghi, LoaiBaiTap, LoaiTaiLieu, LoaiCauHoi, TrangThaiKetQuaThi,
   LoaiDiem, KetQuaDiem, LoaiThongBao, DoiTuongThongBao, LoaiCuocTroChuyen, LoaiPhongHoc
 } from "./enum";
 export * from "./enum";
@@ -84,6 +84,7 @@ export interface ChiTietSinhVien {
   noicapcccd: string | null;
   dantoc: string | null;
   tongiao: string | null;
+  face_embedding: number[] | null; // mảng 128 float từ face-api.js
 }
 
 // ─── Khoa & Lớp ───────────────────────────────────────────────────────────────
@@ -170,6 +171,7 @@ export interface BuoiHoc {
   ngayhoc: Date;
   noidung: string | null;
   trangthai: TrangThaiBuoiHoc;
+  qr_secret: string | null; // null = chưa mở điểm danh, có giá trị = đang mở
   ngaytao: Date;
 }
 
@@ -178,6 +180,7 @@ export interface DiemDanh {
   mabuoihoc: number;
   masv: string;
   trangthai: TrangThaiDiemDanh;
+  phuongthuc: PhuongThucDiemDanh; // QR | Face | Manual
   ghichu: string | null;
   thoigiandiemdanh: Date | null;
   ngaytao: Date;
