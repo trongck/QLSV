@@ -9,7 +9,7 @@ import {
   type ImportRow,
   type ImportRowResult,
   type BulkImportResponse,
-} from "@/services/import.service";
+} from "@/services/admin/sinhvien.services/import.service";
 import styles from "./ImportModal.module.css";
 
 // ─── Types ────────────────────────────────────────────────────────────────────

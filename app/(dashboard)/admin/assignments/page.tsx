@@ -17,17 +17,13 @@ import {
   createPhanCong,
   updatePhanCong,
   deletePhanCong,
-  getGiangVien,
-  getMonhoc,
-  getLop,
-  getHocky,
-  getLichHoc,
   type PhanCongRow,
-  type GiangVienRow,
-  type MonhocRow,
-  type LopRow,
-  type HockyRow,
-} from "@/services/admin.service";
+} from "@/services/admin/phancong.service";
+import { getGiangVien, type GiangVienRow } from "@/services/admin/giangvien.service";
+import { getMonhoc, type MonhocRow } from "@/services/admin/monhoc.service";
+import { getLop, type LopRow } from "@/services/admin/lop.service";
+import { getHocky, type HockyRow } from "@/services/admin/hocky.service";
+import { getLichHoc } from "@/services/admin/lichhoc.service";
 import { VaiTro } from "@/types";
 import styles from "./assignment.module.css";
 
@@ -346,7 +342,7 @@ export default function AdminAssignmentsPage() {
         await createPhanCong(formData);
       }
       setModal(null);
-      // Reload schedules state to make sure "No Schedule" is accurate
+
       const resSched = await getLichHoc({ limit: 100 });
       setAssignedPhanCongIds(new Set(resSched.data.map((item) => item.maphancong)));
       loadData();

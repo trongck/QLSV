@@ -17,14 +17,11 @@ import {
   createLichHoc,
   updateLichHoc,
   deleteLichHoc,
-  getPhanCong,
-  getHocky,
-  getLop,
   type LichHocRow,
-  type PhanCongRow,
-  type HockyRow,
-  type LopRow,
-} from "@/services/admin.service";
+} from "@/services/admin/lichhoc.service";
+import { getPhanCong, type PhanCongRow } from "@/services/admin/phancong.service";
+import { getHocky, type HockyRow } from "@/services/admin/hocky.service";
+import { getLop, type LopRow } from "@/services/admin/lop.service";
 import { VaiTro } from "@/types";
 import styles from "./schedule.module.css";
 

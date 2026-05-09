@@ -17,12 +17,10 @@ import {
   createSinhVien,
   updateSinhVien,
   deleteSinhVien,
-  getKhoa,
-  getLop,
   type SinhVienRow,
-  type KhoaRow,
-  type LopRow,
-} from "@/services/admin.service";
+} from "@/services/admin/sinhvien.services/sinhvien.service";
+import { getKhoa, type KhoaRow } from "@/services/admin/khoa.service";
+import { getLop, type LopRow } from "@/services/admin/lop.service";
 import { VaiTro, TrangThaiSinhVien } from "@/types";
 import styles from "./students.module.css";
 import {

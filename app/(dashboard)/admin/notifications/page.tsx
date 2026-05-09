@@ -17,12 +17,10 @@ import {
   createThongbao,
   updateThongbao,
   deleteThongbao,
-  getLop,
-  getPhanCong,
   type ThongbaoRow,
-  type LopRow,
-  type PhanCongRow,
-} from "@/services/admin.service";
+} from "@/services/admin/thongbao.service";
+import { getLop, type LopRow } from "@/services/admin/lop.service";
+import { getPhanCong, type PhanCongRow } from "@/services/admin/phancong.service";
 import { VaiTro } from "@/types";
 import styles from "./notification.module.css";
 

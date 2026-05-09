@@ -18,7 +18,7 @@ import {
   deleteHocky,
   activateHocky,
   type HockyRow,
-} from "@/services/admin.service";
+} from "@/services/admin/hocky.service";
 import { VaiTro } from "@/types";
 import styles from "./semester.module.css";
 

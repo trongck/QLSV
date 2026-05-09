@@ -17,13 +17,15 @@ import {
   createKhoa,
   updateKhoa,
   deleteKhoa,
+  type KhoaRow,
+} from "@/services/admin/khoa.service";
+import {
   getLop,
   createLop,
   updateLop,
   deleteLop,
-  type KhoaRow,
   type LopRow,
-} from "@/services/admin.service";
+} from "@/services/admin/lop.service";
 import { VaiTro } from "@/types";
 import styles from "./classes.module.css";
 import {

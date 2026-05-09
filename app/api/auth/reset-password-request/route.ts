@@ -23,7 +23,7 @@ function writeResetLog(id: string, type: string, email: string, name: string) {
 
 // ─── Định dạng ngày sinh thành mật khẩu dd/mm/yy ──────────────────────────────
 function formatBirthdateToPassword(ngaysinhRaw: string | Date | null): string {
-  if (!ngaysinhRaw) return "12/05/01"; // Fallback mặc định nếu không có ngày sinh
+  if (!ngaysinhRaw) return "123456"; // Fallback mặc định nếu không có ngày sinh
 
   const dateStr =
     typeof ngaysinhRaw === "string"

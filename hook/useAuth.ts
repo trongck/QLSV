@@ -3,11 +3,6 @@
 import { useState, useCallback } from "react";
 import { useAuthContext } from "@/context/AuthContext";
 import type { LoginRequest } from "@/models";
-
-// ─── useAuth ──────────────────────────────────────────────────────────────────
-// Hook công khai duy nhất cho component — wraps AuthContext + local UI state.
-// Đây là nguồn dữ liệu auth duy nhất các component nên dùng.
-
 export function useAuth() {
   const { user, loading, isAuthenticated, login, logout, logoutAll } = useAuthContext();
   const [submitting, setSubmitting] = useState(false);

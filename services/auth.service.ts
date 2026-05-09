@@ -6,8 +6,6 @@ const KEY_ACCESS  = "auth_access_token";
 const KEY_REFRESH = "auth_refresh_token";
 const KEY_USER    = "auth_user";
 
-
-
 async function safeJson<T>(res: Response): Promise<T | null> {
   const ct = res.headers.get("content-type") ?? "";
   if (!ct.includes("application/json")) return null;

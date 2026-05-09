@@ -17,10 +17,9 @@ import {
   createMonhoc,
   updateMonhoc,
   deleteMonhoc,
-  getKhoa,
   type MonhocRow,
-  type KhoaRow,
-} from "@/services/admin.service";
+} from "@/services/admin/monhoc.service";
+import { getKhoa, type KhoaRow } from "@/services/admin/khoa.service";
 import { VaiTro } from "@/types";
 import styles from "./subject.module.css";
 

@@ -18,20 +18,18 @@ import {
   createGiangVien,
   updateGiangVien,
   deleteGiangVien,
-  getKhoa,
-  getHocky,
-  getMonhoc,
-  getLop,
+  type GiangVienRow,
+} from "@/services/admin/giangvien.service";
+import { getKhoa, type KhoaRow } from "@/services/admin/khoa.service";
+import { getHocky, type HockyRow } from "@/services/admin/hocky.service";
+import { getMonhoc, type MonhocRow } from "@/services/admin/monhoc.service";
+import { getLop, type LopRow } from "@/services/admin/lop.service";
+import {
   getPhanCongPaginated,
   createPhanCong,
   deletePhanCong,
-  type GiangVienRow,
-  type KhoaRow,
-  type HockyRow,
-  type MonhocRow,
-  type LopRow,
   type PhanCongRow,
-} from "@/services/admin.service";
+} from "@/services/admin/phancong.service";
 import { VaiTro } from "@/types";
 import styles from "./teachers.module.css";
 
