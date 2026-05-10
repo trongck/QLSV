@@ -88,6 +88,7 @@
 | `SinhVien` | `NhatKy` | `masv` |
 | `DapAn` | `ChiTietBaiLam` | `madapan` |
 | `Admin` | `ThongBao` | `maadmintao` |
+| `PhongHoc` | `LichHoc` | `maphong` |
 
 ---
 
@@ -117,9 +118,9 @@
 | Loại quan hệ | Số lượng |
 |:---|:---:|
 |  Quan hệ 1-1 | **6** |
-|  Quan hệ 1-N | **47** |
+|  Quan hệ 1-N | **48** |
 |  Quan hệ N-N | **12** |
-| **Tổng cộng** | **65** |
+| **Tổng cộng** | **67** |
 
 ---
 
