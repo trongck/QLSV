@@ -18,10 +18,12 @@ import {
   updateLichHoc,
   deleteLichHoc,
   type LichHocRow,
+  type PhongHocRow,
 } from "@/services/admin/lichhoc.service";
 import { getPhanCong, type PhanCongRow } from "@/services/admin/phancong.service";
 import { getHocky, type HockyRow } from "@/services/admin/hocky.service";
 import { getLop, type LopRow } from "@/services/admin/lop.service";
+import { apiFetch } from "@/services/auth.service";
 import { VaiTro } from "@/types";
 import styles from "./schedule.module.css";
 
@@ -32,7 +34,7 @@ const getDayLabel = (thu: number) => {
 };
 
 // Helper to translate room type to Vietnamese label
-const getRoomTypeLabel = (type: string | null) => {
+const getRoomTypeLabel = (type: string | null | undefined) => {
   if (type === "Lythuyet") return "Lý thuyết";
   if (type === "Thuchanh") return "Thực hành";
   if (type === "Online") return "Trực tuyến";
@@ -43,6 +45,7 @@ const getRoomTypeLabel = (type: string | null) => {
 function ScheduleForm({
   initial,
   phancongs,
+  phonghocs,
   onSubmit,
   onCancel,
   loading,
@@ -50,6 +53,7 @@ function ScheduleForm({
 }: {
   initial?: Partial<LichHocRow>;
   phancongs: PhanCongRow[];
+  phonghocs: PhongHocRow[];
   onSubmit: (data: any) => void;
   onCancel: () => void;
   loading: boolean;
@@ -60,8 +64,7 @@ function ScheduleForm({
     thutrongtuan: initial?.thutrongtuan ? String(initial.thutrongtuan) : "2",
     tietbatdau: initial?.tietbatdau ? String(initial.tietbatdau) : "1",
     tietketthuc: initial?.tietketthuc ? String(initial.tietketthuc) : "3",
-    phonghoc: initial?.phonghoc ?? "",
-    loaiphong: initial?.loaiphong ?? "Lythuyet",
+    maphong: initial?.maphong ?? "",
     ghichu: initial?.ghichu ?? "",
   });
 
@@ -129,14 +132,17 @@ function ScheduleForm({
         </div>
 
         <div className="field">
-          <label>Loại phòng học *</label>
+          <label>Phòng học</label>
           <select
-            value={form.loaiphong}
-            onChange={(e) => setForm({ ...form, loaiphong: e.target.value })}
+            value={form.maphong}
+            onChange={(e) => setForm({ ...form, maphong: e.target.value })}
           >
-            <option value="Lythuyet">Lý thuyết</option>
-            <option value="Thuchanh">Thực hành</option>
-            <option value="Online">Trực tuyến (Online)</option>
+            <option value="">-- Chưa xếp phòng --</option>
+            {phonghocs.map((ph) => (
+              <option key={ph.maphong} value={ph.maphong}>
+                {ph.maphong} ({getRoomTypeLabel(ph.loaiphong)}) - {ph.suchua} chỗ
+              </option>
+            ))}
           </select>
         </div>
 
@@ -166,15 +172,6 @@ function ScheduleForm({
               </option>
             ))}
           </select>
-        </div>
-
-        <div className="field">
-          <label>Phòng học {form.loaiphong !== "Online" ? "*" : "(Tùy chọn)"}</label>
-          <input
-            value={form.phonghoc}
-            onChange={(e) => setForm({ ...form, phonghoc: e.target.value })}
-            placeholder={form.loaiphong === "Online" ? "Học trực tuyến (Zoom/MS Teams)" : "Ví dụ: Phòng 502 - A2"}
-          />
         </div>
 
         <div className="field full">
@@ -215,6 +212,7 @@ function AdminSchedulesContent() {
   const [phancongs, setPhancongs] = useState<PhanCongRow[]>([]);
   const [lops, setLops] = useState<LopRow[]>([]);
   const [hockys, setHockys] = useState<HockyRow[]>([]);
+  const [phonghocs, setPhonghocs] = useState<PhongHocRow[]>([]);
 
   // UI representation mode: 'list' (Traditional table) | 'calendar' (Visual calendar grid)
   const [viewMode, setViewMode] = useState<"list" | "calendar">("list");
@@ -261,6 +259,11 @@ function AdminSchedulesContent() {
       getHocky()
         .then((res) => setHockys(res.data))
         .catch(() => {});
+      // Load danh sách phòng học
+      apiFetch("/api/admin/phonghoc")
+        .then((r) => r.json())
+        .then((r) => setPhonghocs(r.data ?? []))
+        .catch(() => {});
     }
   }, [user, authLoading, router]);
 
@@ -273,9 +276,9 @@ function AdminSchedulesContent() {
         thutrongtuan: filterThu,
         malop: filterLop,
         mahocky: filterHk,
-        phonghoc: filterRoom,
-        page: viewMode === "list" ? page : undefined, // only paginate list view
-        limit: viewMode === "list" ? 12 : 200, // retrieve more items for calendar visualization
+        maphong: filterRoom,
+        page: viewMode === "list" ? page : undefined,
+        limit: viewMode === "list" ? 12 : 200,
       });
       setList(res.data);
       if (viewMode === "list") {
@@ -297,16 +300,10 @@ function AdminSchedulesContent() {
   // Statistics calculation
   const stats = useMemo(() => {
     const totalSchedules = list.length;
-    const theoryRooms = list.filter((item) => item.loaiphong === "Lythuyet").length;
-    const practiceRooms = list.filter((item) => item.loaiphong === "Thuchanh").length;
-    const onlineRooms = list.filter((item) => item.loaiphong === "Online").length;
-
-    return {
-      totalSchedules,
-      theoryRooms,
-      practiceRooms,
-      onlineRooms,
-    };
+    const theoryRooms  = list.filter((item) => item.phonghoc?.loaiphong === "Lythuyet").length;
+    const practiceRooms = list.filter((item) => item.phonghoc?.loaiphong === "Thuchanh").length;
+    const onlineRooms  = list.filter((item) => item.phonghoc?.loaiphong === "Online").length;
+    return { totalSchedules, theoryRooms, practiceRooms, onlineRooms };
   }, [list]);
 
   // Calendar rendering configuration (Monday (2) to Sunday (8))
@@ -626,9 +623,13 @@ function AdminSchedulesContent() {
                           </td>
                           <td>{item.phancong?.giangvien?.hoten}</td>
                           <td>
-                            <span className={`${styles.badge} ${item.loaiphong === "Online" ? styles.typeOnline : item.loaiphong === "Thuchanh" ? styles.typePractice : styles.typeTheory}`}>
-                              {item.phonghoc || "Chưa xếp phòng"} ({getRoomTypeLabel(item.loaiphong)})
-                            </span>
+                            <span className={`${styles.badge} ${
+                            item.phonghoc?.loaiphong === "Online" ? styles.typeOnline
+                            : item.phonghoc?.loaiphong === "Thuchanh" ? styles.typePractice
+                            : styles.typeTheory
+                          }`}>
+                            {item.maphong || "Chưa xếp phòng"} ({getRoomTypeLabel(item.phonghoc?.loaiphong)})
+                          </span>
                           </td>
                           <td>
                             <div className={styles.actions}>
@@ -696,7 +697,7 @@ function AdminSchedulesContent() {
                               <div className={styles.blockSub}><strong>Tiết:</strong> {item.tietbatdau}-{item.tietketthuc}</div>
                               <div className={styles.blockSub}><strong>Lớp:</strong> {item.phancong?.lop?.tenlop}</div>
                               <div className={styles.blockSub}><strong>GV:</strong> {item.phancong?.giangvien?.hoten}</div>
-                              <div className={styles.blockSub}><strong>Phòng:</strong> {item.phonghoc || "N/A"}</div>
+                              <div className={styles.blockSub}><strong>Phòng:</strong> {item.maphong || "N/A"}</div>
                             </div>
                           ))
                         ) : (
@@ -716,8 +717,12 @@ function AdminSchedulesContent() {
                       <span className="badge-purple" style={{ padding: "2px 6px", borderRadius: 4, fontSize: 12 }}>
                         {getDayLabel(item.thutrongtuan)}
                       </span>
-                      <span className={`${styles.badge} ${item.loaiphong === "Online" ? styles.typeOnline : item.loaiphong === "Thuchanh" ? styles.typePractice : styles.typeTheory}`}>
-                        {getRoomTypeLabel(item.loaiphong)}
+                      <span className={`${styles.badge} ${
+                        item.phonghoc?.loaiphong === "Online" ? styles.typeOnline
+                        : item.phonghoc?.loaiphong === "Thuchanh" ? styles.typePractice
+                        : styles.typeTheory
+                      }`}>
+                        {getRoomTypeLabel(item.phonghoc?.loaiphong)}
                       </span>
                     </div>
 
@@ -726,7 +731,7 @@ function AdminSchedulesContent() {
                       <div><strong>Tiết học:</strong> Tiết {item.tietbatdau} - {item.tietketthuc}</div>
                       <div><strong>Giảng viên:</strong> {item.phancong?.giangvien?.hoten}</div>
                       <div><strong>Lớp hành chính:</strong> {item.phancong?.lop?.tenlop}</div>
-                      <div><strong>Phòng học:</strong> {item.phonghoc || "N/A"}</div>
+                      <div><strong>Phòng học:</strong> {item.maphong || "N/A"} {item.phonghoc ? `(${getRoomTypeLabel(item.phonghoc.loaiphong)})` : ""}</div>
                     </div>
 
                     <div className={styles.mobileCardFooter}>
@@ -791,6 +796,7 @@ function AdminSchedulesContent() {
           <ScheduleForm
             initial={modal.item}
             phancongs={phancongs}
+            phonghocs={phonghocs}
             onSubmit={handleSubmit}
             onCancel={() => setModal(null)}
             loading={mutating}

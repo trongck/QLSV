@@ -145,14 +145,19 @@ export interface PhanCong {
   ngaytao: Date;
 }
 
+export interface PhongHoc {
+  maphong: string;
+  loaiphong: "Lythuyet" | "Thuchanh" | "Online";
+  suchua: number;
+}
+
 export interface LichHoc {
   malichhoc: number;
   maphancong: number;
   thutrongtuan: number; // 2–8 (Thứ 2 → Chủ nhật)
   tietbatdau: number;   // 1–15
   tietketthuc: number;  // 1–15
-  phonghoc: string | null;
-  loaiphong: LoaiPhongHoc | null;
+  maphong: string | null;   // FK → phonghoc.maphong
   ghichu: string | null;
 }
 

@@ -21,7 +21,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ mali
   try {
     const { malichhoc } = await params;
     const body = await request.json();
-    const { maphancong, thutrongtuan, tietbatdau, tietketthuc, phonghoc, loaiphong, ghichu } = body;
+    const { maphancong, thutrongtuan, tietbatdau, tietketthuc, maphong, ghichu } = body;
 
     // Standard validations
     if (!maphancong) return NextResponse.json({ error: "Mã phân công là bắt buộc." }, { status: 400 });
@@ -94,22 +94,34 @@ export async function PUT(request: Request, { params }: { params: Promise<{ mali
     }
 
     // 3. Conflict check for Room (if not Online, excluding this schedule)
-    if (phonghoc?.trim() && loaiphong !== "Online") {
-      const { data: roomConflicts, error: rcError } = await supabase
-        .from("lichhoc")
-        .select("*, phancong!inner(mahocky, monhoc:mamon(tenmon), lop:malop(tenlop))")
-        .eq("phonghoc", phonghoc.trim())
-        .eq("phancong.mahocky", pc.mahocky)
-        .eq("thutrongtuan", thu)
-        .neq("malichhoc", scheduleId);
+    if (maphong?.trim()) {
+      const { data: phong } = await supabase
+        .from("phonghoc")
+        .select("loaiphong")
+        .eq("maphong", maphong.trim())
+        .single();
 
-      if (rcError) return NextResponse.json({ error: rcError.message }, { status: 500 });
+      if (!phong) {
+        return NextResponse.json({ error: `Phòng học "${maphong.trim()}" không tồn tại trong hệ thống.` }, { status: 400 });
+      }
 
-      for (const item of (roomConflicts || [])) {
-        if (tbd <= item.tietketthuc && item.tietbatdau <= tkt) {
-          return NextResponse.json({
-            error: `Trùng lịch phòng học: Phòng "${phonghoc.trim()}" đã được đăng ký sử dụng bởi lớp "${item.phancong.lop.tenlop}" học môn "${item.phancong.monhoc.tenmon}" vào Thứ ${thu}, Tiết ${item.tietbatdau}-${item.tietketthuc}.`
-          }, { status: 400 });
+      if (phong.loaiphong !== "Online") {
+        const { data: roomConflicts, error: rcError } = await supabase
+          .from("lichhoc")
+          .select("*, phancong!inner(mahocky, monhoc:mamon(tenmon), lop:malop(tenlop))")
+          .eq("maphong", maphong.trim())
+          .eq("phancong.mahocky", pc.mahocky)
+          .eq("thutrongtuan", thu)
+          .neq("malichhoc", scheduleId);
+
+        if (rcError) return NextResponse.json({ error: rcError.message }, { status: 500 });
+
+        for (const item of (roomConflicts || [])) {
+          if (tbd <= item.tietketthuc && item.tietbatdau <= tkt) {
+            return NextResponse.json({
+              error: `Trùng lịch phòng học: Phòng "${maphong.trim()}" đã được đăng ký sử dụng bởi lớp "${item.phancong.lop.tenlop}" học môn "${item.phancong.monhoc.tenmon}" vào Thứ ${thu}, Tiết ${item.tietbatdau}-${item.tietketthuc}.`
+            }, { status: 400 });
+          }
         }
       }
     }
@@ -122,12 +134,11 @@ export async function PUT(request: Request, { params }: { params: Promise<{ mali
         thutrongtuan: thu,
         tietbatdau: tbd,
         tietketthuc: tkt,
-        phonghoc: phonghoc?.trim() || null,
-        loaiphong: loaiphong || "Lythuyet",
+        maphong: maphong?.trim() || null,
         ghichu: ghichu?.trim() || null,
       })
       .eq("malichhoc", scheduleId)
-      .select("*, phancong(*, giangvien:magv(hoten), monhoc:mamon(tenmon), lop:malop(tenlop), hocky:mahocky(tenhocky))")
+      .select("*, phonghoc(maphong, loaiphong, suchua), phancong(*, giangvien:magv(hoten), monhoc:mamon(tenmon), lop:malop(tenlop), hocky:mahocky(tenhocky))")
       .single();
 
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });

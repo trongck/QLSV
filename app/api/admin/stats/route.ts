@@ -17,12 +17,14 @@ export interface AdminStats {
     malichhoc: number;
     tietbatdau: number;
     tietketthuc: number;
-    phonghoc: string | null;
+    maphong: string | null;
     loaiphong: string | null;
+    suchua: number | null;
     ghichu: string | null;
     monhoc: string;
     giangvien: string;
     lop: string;
+    hocky: string;
   }[];
   auditLogs?: any[];
 }
@@ -228,20 +230,30 @@ export async function GET(request: Request) {
           thutrongtuan,
           tietbatdau,
           tietketthuc,
-          phonghoc,
-          loaiphong,
+          maphong,
           ghichu,
-          phancong(
+          phonghoc(maphong, loaiphong, suchua),
+          phancong!inner(
             maphancong,
             magv,
             mamon,
             malop,
+            danghieuluc,
             giangvien:magv(hoten),
             monhoc:mamon(tenmon),
-            lop:malop(tenlop)
+            lop:malop(tenlop),
+            hocky:mahocky(
+              mahocky,
+              tenhocky,
+              danghieuluc,
+              ngaybatdau,
+              ngayketthuc
+            )
           )
         `)
         .eq("thutrongtuan", thuTrongTuan)
+        .eq("phancong.danghieuluc", true)
+        .eq("phancong.hocky.danghieuluc", true)
         .order("tietbatdau", { ascending: true }),
       supabase
         .from("nhatkyhethong")
@@ -278,17 +290,27 @@ export async function GET(request: Request) {
         tenkhoa: gv.khoa?.tenkhoa ?? "—",
         hocvi:   gv.hocvi ?? null,
       })),
+      // Lọc thêm phía server: chỉ lấy lịch có học kỳ còn hiệu lực
+      // (Supabase không hỗ trợ filter nested relation sâu qua eq nên lọc thủ công)
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      todaySchedules: (todaySchedules ?? []).map((lh: any) => ({
-        malichhoc: lh.malichhoc,
-        tietbatdau: lh.tietbatdau,
+      todaySchedules: (todaySchedules ?? []).filter((lh: any) =>
+        // Phân công còn hiệu lực
+        lh.phancong?.danghieuluc === true &&
+        // Học kỳ còn hiệu lực
+        lh.phancong?.hocky?.danghieuluc === true
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ).map((lh: any) => ({
+        malichhoc:   lh.malichhoc,
+        tietbatdau:  lh.tietbatdau,
         tietketthuc: lh.tietketthuc,
-        phonghoc: lh.phonghoc,
-        loaiphong: lh.loaiphong,
-        ghichu: lh.ghichu,
-        monhoc: lh.phancong?.monhoc?.tenmon ?? "—",
-        giangvien: lh.phancong?.giangvien?.hoten ?? "—",
-        lop: lh.phancong?.lop?.tenlop ?? "—"
+        maphong:     lh.maphong,
+        loaiphong:   lh.phonghoc?.loaiphong ?? null,
+        suchua:      lh.phonghoc?.suchua ?? null,
+        ghichu:      lh.ghichu,
+        monhoc:      lh.phancong?.monhoc?.tenmon ?? "—",
+        giangvien:   lh.phancong?.giangvien?.hoten ?? "—",
+        lop:         lh.phancong?.lop?.tenlop ?? "—",
+        hocky:       lh.phancong?.hocky?.tenhocky ?? "—",
       })),
       auditLogs: auditLogs ?? []
     };

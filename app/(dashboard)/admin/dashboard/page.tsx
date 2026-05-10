@@ -17,12 +17,14 @@ interface AdminData extends AdminStats {
     malichhoc: number;
     tietbatdau: number;
     tietketthuc: number;
-    phonghoc: string | null;
+    maphong: string | null;
     loaiphong: string | null;
+    suchua: number | null;
     ghichu: string | null;
     monhoc: string;
     giangvien: string;
     lop: string;
+    hocky: string;
   }[];
   auditLogs?: any[];
 }
@@ -491,13 +493,16 @@ export default function AdminDashboard() {
                         <div className={styles.scheduleMeta}>
                           <span className="badge badge-peach">Lớp: {schedule.lop}</span>
                           <span className="badge badge-blue">
-                            Phòng: {schedule.phonghoc || "N/A"}
+                            Phòng: {schedule.maphong || "N/A"}
                           </span>
                           {schedule.loaiphong && (
                             <span className={`badge ${schedule.loaiphong === "Thuchanh" ? "badge-yellow" : schedule.loaiphong === "Online" ? "badge-red" : "badge-green"}`}>
                               {schedule.loaiphong === "Lythuyet" ? "Lý thuyết" : schedule.loaiphong === "Thuchanh" ? "Thực hành" : "Trực tuyến"}
                             </span>
                           )}
+                          <span className="badge badge-peach" style={{ opacity: 0.75, fontSize: "10px" }}>
+                            {schedule.hocky}
+                          </span>
                         </div>
                         {schedule.ghichu && (
                           <p style={{ margin: "6px 0 0 0", fontSize: "11px", color: "#8B6F5F", fontStyle: "italic" }}>

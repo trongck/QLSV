@@ -1,14 +1,21 @@
 import { apiFetch, apiJson } from "./core.service";
 
+export interface PhongHocRow {
+  maphong: string;
+  loaiphong: "Lythuyet" | "Thuchanh" | "Online";
+  suchua: number;
+}
+
 export interface LichHocRow {
   malichhoc: number;
   maphancong: number;
   thutrongtuan: number;
   tietbatdau: number;
   tietketthuc: number;
-  phonghoc: string | null;
-  loaiphong: string | null;
+  maphong: string | null;      // FK → phonghoc.maphong
   ghichu: string | null;
+  // Relations
+  phonghoc?: PhongHocRow | null; // joined from phonghoc table
   phancong?: {
     maphancong: number;
     magv: string;
@@ -34,7 +41,7 @@ export async function getLichHoc(params: {
   magv?: string;
   malop?: string;
   mahocky?: string;
-  phonghoc?: string;
+  maphong?: string;          // filter theo mã phòng
   page?: number;
   limit?: number;
 } = {}): Promise<LichHocListResponse> {
