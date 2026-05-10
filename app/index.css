@@ -3,35 +3,40 @@
 /* ─── Lumen Design System — Tailwind v4 @theme ──────────────────────────────── */
 @theme inline {
   /* Palette */
-  --color-page-bg:        #FFF2EB;
-  --color-soft-pink:      #FFDCDC;
-  --color-light-peach:    #FFE8CD;
-  --color-peach:          #FFD6BA;
-  --color-card:           #FFFFFF;
-  --color-primary:        #C25450;
-  --color-primary-hover:  #A8443F;
-  --color-fg:             #2D1B14;
-  --color-fg-muted:       #6B4F3F;
-  --color-fg-subtle:      #8B6F5F;
-  --color-border:         #EAD9CB;
-  --color-input-bg:       #FFFFFF;
+  --color-page-bg: #fff2eb;
+  --color-soft-pink: #ffdcdc;
+  --color-light-peach: #ffe8cd;
+  --color-peach: #ffd6ba;
+  --color-card: #ffffff;
+  --color-primary: #c25450;
+  --color-primary-hover: #a8443f;
+  --color-fg: #2d1b14;
+  --color-fg-muted: #6b4f3f;
+  --color-fg-subtle: #8b6f5f;
+  --color-border: #ead9cb;
+  --color-input-bg: #ffffff;
 
   /* Font */
   --font-sans: "Be Vietnam Pro", system-ui, sans-serif;
 
   /* Radius */
-  --radius-card:   20px;
-  --radius-chip:   12px;
-  --radius-tab:    9px;
-  --radius-input:  12px;
-  --radius-btn:    12px;
-  --radius-logo:   8px;
+  --radius-card: 20px;
+  --radius-chip: 12px;
+  --radius-tab: 9px;
+  --radius-input: 12px;
+  --radius-btn: 12px;
+  --radius-logo: 8px;
 }
 
 /* ─── Base Reset ─────────────────────────────────────────────────────────────── */
-*, *::before, *::after { box-sizing: border-box; }
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
 
-html, body {
+html,
+body {
   height: 100%;
   margin: 0;
   padding: 0;
@@ -46,9 +51,19 @@ body {
 }
 
 /* ─── Scrollbar ──────────────────────────────────────────────────────────────── */
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 3px; }
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 3px;
+}
 
 /* ─── Focus visible ──────────────────────────────────────────────────────────── */
 :focus-visible {
@@ -67,28 +82,60 @@ body {
 
 /* ─── Keyframes ──────────────────────────────────────────────────────────────── */
 @keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(16px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to   { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @keyframes slideDown {
-  from { opacity: 0; transform: translateY(-8px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-.animate-fadeInUp { animation: fadeInUp 0.4s ease both; }
-.animate-fadeIn   { animation: fadeIn   0.3s ease both; }
-.animate-spin     { animation: spin 0.8s linear infinite; }
-.animate-slideDown { animation: slideDown 0.25s ease both; }
+.animate-fadeInUp {
+  animation: fadeInUp 0.4s ease both;
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease both;
+}
+
+.animate-spin {
+  animation: spin 0.8s linear infinite;
+}
+
+.animate-slideDown {
+  animation: slideDown 0.25s ease both;
+}
 
 /* ─── Dashboard Layout ───────────────────────────────────────────────────────── */
 .sidebar-item {
@@ -101,7 +148,9 @@ body {
   font-weight: 500;
   color: var(--color-fg-muted);
   cursor: pointer;
-  transition: background 0.15s, color 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s;
   text-decoration: none;
 }
 
@@ -138,11 +187,30 @@ body {
   letter-spacing: 0.02em;
 }
 
-.badge-green  { background: #D1FAE5; color: #065F46; }
-.badge-red    { background: #FEE2E2; color: #991B1B; }
-.badge-yellow { background: #FEF9C3; color: #713F12; }
-.badge-blue   { background: #DBEAFE; color: #1E40AF; }
-.badge-peach  { background: var(--color-light-peach); color: var(--color-fg-muted); }
+.badge-green {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.badge-red {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.badge-yellow {
+  background: #fef9c3;
+  color: #713f12;
+}
+
+.badge-blue {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.badge-peach {
+  background: var(--color-light-peach);
+  color: var(--color-fg-muted);
+}
 
 /* ─── Table ──────────────────────────────────────────────────────────────────── */
 .data-table {
@@ -160,7 +228,7 @@ body {
   text-transform: uppercase;
   letter-spacing: 0.06em;
   border-bottom: 1px solid var(--color-border);
-  background: #FAFAFA;
+  background: #fafafa;
 }
 
 .data-table td {
@@ -170,8 +238,13 @@ body {
   vertical-align: middle;
 }
 
-.data-table tr:last-child td { border-bottom: none; }
-.data-table tr:hover td { background: #FEFAF8; }
+.data-table tr:last-child td {
+  border-bottom: none;
+}
+
+.data-table tr:hover td {
+  background: #fefaf8;
+}
 
 /* ─── Input ──────────────────────────────────────────────────────────────────── */
 .input {
@@ -184,11 +257,15 @@ body {
   font-size: 14px;
   color: var(--color-fg);
   font-family: var(--font-sans);
-  transition: border-color 0.15s, box-shadow 0.15s;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
   outline: none;
 }
 
-.input::placeholder { color: var(--color-fg-subtle); }
+.input::placeholder {
+  color: var(--color-fg-subtle);
+}
 
 .input:focus {
   border-color: var(--color-primary);
@@ -197,7 +274,7 @@ body {
 
 .input.error {
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px rgba(194, 84, 80, 0.10);
+  box-shadow: 0 0 0 3px rgba(194, 84, 80, 0.1);
 }
 
 /* ─── Button ─────────────────────────────────────────────────────────────────── */
@@ -212,16 +289,27 @@ body {
   font-weight: 600;
   font-family: var(--font-sans);
   cursor: pointer;
-  transition: background 0.15s, transform 0.1s;
+  transition:
+    background 0.15s,
+    transform 0.1s;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
 }
 
-.btn-primary:hover:not(:disabled) { background: var(--color-primary-hover); }
-.btn-primary:active:not(:disabled) { transform: scale(0.98); }
-.btn-primary:disabled { opacity: 0.7; cursor: not-allowed; }
+.btn-primary:hover:not(:disabled) {
+  background: var(--color-primary-hover);
+}
+
+.btn-primary:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.btn-primary:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
 
 .btn-secondary {
   display: inline-flex;
@@ -240,4 +328,60 @@ body {
   transition: background 0.15s;
 }
 
-.btn-secondary:hover { background: var(--color-peach); }
+.btn-secondary:hover {
+  background: var(--color-peach);
+}
+
+/* ─── Dashboard Fixed Layout ────────────────────────────────────────────────── */
+
+.dashboard-layout {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.dashboard-main {
+  flex: 1;
+  margin-left: 260px;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.dashboard-content {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px;
+}
+
+/* ─── Dashboard Header ──────────────────────────────────────────────────────── */
+
+.dashboard-header {
+  height: 88px;
+  min-height: 88px;
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 32px;
+  position: sticky;
+  top: 0;
+  z-index: 40;
+}
+
+/* ─── Dashboard Sidebar ─────────────────────────────────────────────────────── */
+
+.dashboard-sidebar {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 260px;
+  height: 100vh;
+  background: var(--color-card);
+  border-right: 1px solid var(--color-border);
+  padding: 20px;
+  z-index: 50;
+}

@@ -22,7 +22,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="vi" className={beVietnamPro.variable} suppressHydrationWarning>
-      <body style={{ fontFamily: "var(--font-be-vietnam, var(--font-sans))" }}>
+      <body
+        style={{
+          fontFamily: "var(--font-be-vietnam, var(--font-sans))",
+        }}
+      >
         {children}
       </body>
     </html>

@@ -2,18 +2,24 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+
 import { useAuth } from "@/hook/useAuth";
 import { VaiTro } from "@/types";
+
 import styles from "./DashboardLayout.module.css";
 
-// ─── Nav items per role ────────────────────────────────────────────────────────
+// ─── Nav items per role ──────────────────────────────────────────────────────
 
 const SV_NAV = [
   { href: "/student/dashboard", label: "Tổng quan" },
+  { href: "/student/attendance", label: "Điểm danh" },
   { href: "/student/schedule", label: "Lịch học" },
   { href: "/student/grades", label: "Kết quả" },
-  { href: "/student/tasks", label: "Bài tập" },
+  { href: "/student/assignments", label: "Bài tập" },
+  { href: "/student/test", label: "Bài thi" },
   { href: "/student/messages", label: "Tin nhắn" },
+  { href: "/student/notifications", label: "Thông báo & tài liệu" },
+  { href: "/student/note", label: "Nhật ký sinh viên" },
 ];
 
 const GV_NAV = [
@@ -37,28 +43,34 @@ const ADMIN_NAV = [
   { href: "/admin/accounts", label: "Tài khoản" },
 ];
 
-// ─── Component ─────────────────────────────────────────────────────────────────
+// ─── Sidebar ─────────────────────────────────────────────────────────────────
 
 export function DashboardSidebar() {
   const { user, logout } = useAuth();
+
   const pathname = usePathname();
 
+  // Chờ load user
+  if (!user) {
+    return null;
+  }
+
   const navItems =
-    user?.vaitro === VaiTro.SinhVien
+    user.vaitro === VaiTro.SinhVien
       ? SV_NAV
-      : user?.vaitro === VaiTro.GiangVien
+      : user.vaitro === VaiTro.GiangVien
         ? GV_NAV
         : ADMIN_NAV;
 
   const roleLabel =
-    user?.vaitro === VaiTro.SinhVien
+    user.vaitro === VaiTro.SinhVien
       ? "Sinh viên"
-      : user?.vaitro === VaiTro.GiangVien
+      : user.vaitro === VaiTro.GiangVien
         ? "Giảng viên"
         : "Quản trị viên";
 
   return (
-    <>
+    <div className={styles.sidebar}>
       {/* Logo */}
       <div className={styles.sidebarLogo}>
         <div className={styles.logoIcon}>
@@ -78,35 +90,44 @@ export function DashboardSidebar() {
             />
           </svg>
         </div>
+
         <span className={styles.logoText}>Hệ thống quản lý sinh viên</span>
       </div>
 
-      {/* Nav */}
+      {/* Navigation */}
       <ul className={styles.navList} role="list">
         {navItems.map((item) => (
           <li key={item.href}>
             <Link
               href={item.href}
-              className={`sidebar-item ${pathname === item.href || pathname.startsWith(item.href + "/") ? "active" : ""}`}
+              className={`sidebar-item ${
+                pathname === item.href || pathname.startsWith(item.href + "/")
+                  ? "active"
+                  : ""
+              }`}
             >
               <span className={styles.navIcon} aria-hidden></span>
+
               {item.label}
             </Link>
           </li>
         ))}
       </ul>
 
-      {/* User info + logout */}
+      {/* User info */}
       <div className={styles.sidebarFooter}>
         <div className={styles.userInfo}>
           <div className={styles.avatar} aria-hidden>
-            {user?.hoten?.charAt(0) ?? "?"}
+            {user.hoten?.charAt(0) ?? "?"}
           </div>
+
           <div className={styles.userMeta}>
-            <span className={styles.userName}>{user?.hoten ?? "—"}</span>
+            <span className={styles.userName}>{user.hoten}</span>
+
             <span className={styles.userRole}>{roleLabel}</span>
           </div>
         </div>
+
         <button
           className={styles.logoutBtn}
           onClick={() => logout()}
@@ -130,11 +151,11 @@ export function DashboardSidebar() {
           </svg>
         </button>
       </div>
-    </>
+    </div>
   );
 }
 
-// ─── Top bar (mobile hamburger) ────────────────────────────────────────────────
+// ─── Topbar ──────────────────────────────────────────────────────────────────
 
 export function DashboardTopbar({
   title,
@@ -145,8 +166,14 @@ export function DashboardTopbar({
 }) {
   const { user, logout } = useAuth();
 
+  // Chờ load user
+  if (!user) {
+    return null;
+  }
+
   return (
     <header className={styles.topbar}>
+      {/* Menu button */}
       <button
         className={styles.menuBtn}
         onClick={onMenuClick}
@@ -162,14 +189,16 @@ export function DashboardTopbar({
           />
         </svg>
       </button>
+
+      {/* Title */}
       <h1 className={styles.topbarTitle}>{title}</h1>
+
+      {/* Right */}
       <div className={styles.topbarRight}>
-        <div
-          className={styles.avatarSm}
-          aria-label={`Xin chào, ${user?.hoten}`}
-        >
-          {user?.hoten?.charAt(0) ?? "?"}
+        <div className={styles.avatarSm} aria-label={`Xin chào, ${user.hoten}`}>
+          {user.hoten?.charAt(0) ?? "?"}
         </div>
+
         <button
           className={styles.logoutBtnSm}
           onClick={() => logout()}

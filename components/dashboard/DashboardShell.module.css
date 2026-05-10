@@ -3,7 +3,7 @@
 .shell {
   display: flex;
   min-height: 100vh;
-  background: #FFF2EB;
+  background: #fff2eb;
 }
 
 .overlay {
@@ -36,10 +36,43 @@
 /* ─── Responsive ─────────────────────────────────────────────────────────────── */
 
 @media (max-width: 1023px) {
-  .topbarWrap { display: block; }
-  .content { padding: 20px 20px 32px; }
+  .topbarWrap {
+    display: block;
+  }
+  .content {
+    padding: 20px 20px 32px;
+  }
 }
 
 @media (max-width: 639px) {
-  .content { padding: 16px 16px 40px; }
+  .content {
+    padding: 16px 16px 40px;
+  }
+}
+/* ─── Sidebar Item ───────────────────────────────────────────── */
+
+.sidebarItem {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 12px;
+
+  color: #6b4f3f;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+
+  transition:
+    background 0.15s ease,
+    color 0.15s ease;
+}
+
+.sidebarItem:hover {
+  background: #fff2eb;
+}
+
+.active {
+  background: #c25450;
+  color: #ffffff;
 }

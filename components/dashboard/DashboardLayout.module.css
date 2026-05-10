@@ -5,8 +5,8 @@
 .sidebar {
   width: 220px;
   flex-shrink: 0;
-  background: #FFFFFF;
-  border-right: 1px solid #EAD9CB;
+  background: #ffffff;
+  border-right: 1px solid #ead9cb;
   display: flex;
   flex-direction: column;
   padding: 20px 12px;
@@ -28,7 +28,7 @@
 .logoIcon {
   width: 26px;
   height: 26px;
-  background: #C25450;
+  background: #c25450;
   border-radius: 7px;
   display: flex;
   align-items: center;
@@ -39,7 +39,7 @@
 .logoText {
   font-size: 15px;
   font-weight: 700;
-  color: #2D1B14;
+  color: #2d1b14;
 }
 
 .navList {
@@ -61,7 +61,7 @@
 
 .sidebarFooter {
   padding: 12px 6px 4px;
-  border-top: 1px solid #EAD9CB;
+  border-top: 1px solid #ead9cb;
   margin-top: 12px;
   display: flex;
   align-items: center;
@@ -80,7 +80,7 @@
   width: 34px;
   height: 34px;
   border-radius: 50%;
-  background: #C25450;
+  background: #c25450;
   color: #fff;
   font-size: 13px;
   font-weight: 700;
@@ -99,7 +99,7 @@
 .userName {
   font-size: 13px;
   font-weight: 600;
-  color: #2D1B14;
+  color: #2d1b14;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -107,7 +107,7 @@
 
 .userRole {
   font-size: 11px;
-  color: #8B6F5F;
+  color: #8b6f5f;
 }
 
 .logoutBtn {
@@ -115,17 +115,19 @@
   border: none;
   cursor: pointer;
   padding: 6px;
-  color: #8B6F5F;
+  color: #8b6f5f;
   border-radius: 8px;
   display: flex;
   align-items: center;
-  transition: background 0.15s, color 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s;
   flex-shrink: 0;
 }
 
 .logoutBtn:hover {
-  background: #FEE2E2;
-  color: #C25450;
+  background: #fee2e2;
+  color: #c25450;
 }
 
 /* ── Topbar (visible on tablet & mobile) ─────────────────────────────────────── */
@@ -136,8 +138,8 @@
   gap: 12px;
   padding: 0 16px;
   height: 56px;
-  background: #FFFFFF;
-  border-bottom: 1px solid #EAD9CB;
+  background: #ffffff;
+  border-bottom: 1px solid #ead9cb;
   position: sticky;
   top: 0;
   z-index: 50;
@@ -148,19 +150,21 @@
   border: none;
   cursor: pointer;
   padding: 6px;
-  color: #6B4F3F;
+  color: #6b4f3f;
   border-radius: 8px;
   display: flex;
   align-items: center;
 }
 
-.menuBtn:hover { background: #FFF2EB; }
+.menuBtn:hover {
+  background: #fff2eb;
+}
 
 .topbarTitle {
   flex: 1;
   font-size: 15px;
   font-weight: 700;
-  color: #2D1B14;
+  color: #2d1b14;
   margin: 0;
 }
 
@@ -174,7 +178,7 @@
   width: 30px;
   height: 30px;
   border-radius: 50%;
-  background: #C25450;
+  background: #c25450;
   color: #fff;
   font-size: 12px;
   font-weight: 700;
@@ -188,18 +192,22 @@
   border: none;
   cursor: pointer;
   padding: 6px;
-  color: #8B6F5F;
+  color: #8b6f5f;
   border-radius: 8px;
   display: flex;
   align-items: center;
 }
 
-.logoutBtnSm:hover { color: #C25450; }
+.logoutBtnSm:hover {
+  color: #c25450;
+}
 
 /* ─── Responsive ─────────────────────────────────────────────────────────────── */
 
 @media (max-width: 1023px) {
-  .topbar { display: flex; }
+  .topbar {
+    display: flex;
+  }
 
   /* Sidebar becomes a drawer on tablet/mobile — handled by DashboardShell */
   .sidebar {
@@ -219,7 +227,7 @@
 }
 
 @media (max-width: 639px) {
-  .sidebar { width: 200px; }
+  .sidebar {
+    width: 200px;
+  }
 }
-
-

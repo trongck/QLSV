@@ -1,0 +1,31 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: #f9f5f2;
+  --sidebar: #ffffff;
+  --primary: #d85c57;
+  --primary-light: #fde9e8;
+  --border: #ece6e1;
+  --text: #1f1f1f;
+  --muted: #777777;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  background: var(--background);
+  font-family: Inter, sans-serif;
+}
+
+body {
+  overflow: hidden;
+}

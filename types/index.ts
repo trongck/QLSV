@@ -1,7 +1,22 @@
 import {
-  VaiTro, TrangThaiTaiKhoan, GioiTinh, TrangThaiSinhVien, TrangThaiSinhVienMonHoc, TrangThaiBuoiHoc,
-  TrangThaiDiemDanh, TrangThaiDonXinNghi, LoaiBaiTap, LoaiTaiLieu, LoaiCauHoi, TrangThaiKetQuaThi,
-  LoaiDiem, KetQuaDiem, LoaiThongBao, DoiTuongThongBao, LoaiCuocTroChuyen, LoaiPhongHoc
+  VaiTro,
+  TrangThaiTaiKhoan,
+  GioiTinh,
+  TrangThaiSinhVien,
+  TrangThaiSinhVienMonHoc,
+  TrangThaiBuoiHoc,
+  TrangThaiDiemDanh,
+  TrangThaiDonXinNghi,
+  LoaiBaiTap,
+  LoaiTaiLieu,
+  LoaiCauHoi,
+  TrangThaiKetQuaThi,
+  LoaiDiem,
+  KetQuaDiem,
+  LoaiThongBao,
+  DoiTuongThongBao,
+  LoaiCuocTroChuyen,
+  LoaiPhongHoc,
 } from "./enum";
 export * from "./enum";
 
@@ -148,8 +163,8 @@ export interface LichHoc {
   malichhoc: number;
   maphancong: number;
   thutrongtuan: number; // 2–8 (Thứ 2 → Chủ nhật)
-  tietbatdau: number;   // 1–15
-  tietketthuc: number;  // 1–15
+  tietbatdau: number; // 1–15
+  tietketthuc: number; // 1–15
   phonghoc: string | null;
   loaiphong: LoaiPhongHoc | null;
   ghichu: string | null;
@@ -445,4 +460,15 @@ export interface NhatKyHeThong {
   giatrimoi: Record<string, unknown> | null;
   diachiip: string | null;
   ngaytao: Date;
+}
+export interface CourseResult {
+  stt: number;
+  maMH: string;
+  nhom: string;
+  tenMon: string;
+  tinChi: number;
+  diem10: number;
+  diem4: number;
+  diemChu: string;
+  dat: boolean;
 }
