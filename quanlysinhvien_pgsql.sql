@@ -244,10 +244,10 @@ CREATE TABLE public.lichhoc (
   thutrongtuan integer NOT NULL CHECK (thutrongtuan >= 2 AND thutrongtuan <= 8),
   tietbatdau integer NOT NULL CHECK (tietbatdau >= 1 AND tietbatdau <= 15),
   tietketthuc integer NOT NULL CHECK (tietketthuc >= 1 AND tietketthuc <= 15),
-  phonghoc character varying,
-  loaiphong character varying DEFAULT 'Lythuyet'::character varying CHECK (loaiphong::text = ANY (ARRAY['Lythuyet'::character varying, 'Thuchanh'::character varying, 'Online'::character varying]::text[])),
+  maphong character varying,
   ghichu text,
   CONSTRAINT lichhoc_pkey PRIMARY KEY (malichhoc),
+  CONSTRAINT lichhoc_maphong_fkey FOREIGN KEY (maphong) REFERENCES public.phonghoc(maphong),
   CONSTRAINT lichhoc_maphancong_fkey FOREIGN KEY (maphancong) REFERENCES public.phancong(maphancong)
 );
 CREATE TABLE public.lop (
@@ -346,6 +346,12 @@ CREATE TABLE public.phiendangnhap (
   ngaytao timestamp without time zone DEFAULT now(),
   CONSTRAINT phiendangnhap_pkey PRIMARY KEY (maphien),
   CONSTRAINT phiendangnhap_mataikhoan_fkey FOREIGN KEY (mataikhoan) REFERENCES public.taikhoan(mataikhoan)
+);
+CREATE TABLE public.phonghoc (
+  maphong character varying NOT NULL,
+  loaiphong text NOT NULL CHECK (loaiphong = ANY (ARRAY['Lythuyet'::text, 'Thuchanh'::text, 'Online'::text])),
+  suchua smallint NOT NULL DEFAULT 40 CHECK (suchua > 0),
+  CONSTRAINT phonghoc_pkey PRIMARY KEY (maphong)
 );
 CREATE TABLE public.sinhvien (
   masv character varying NOT NULL,
