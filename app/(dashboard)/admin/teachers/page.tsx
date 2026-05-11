@@ -18,8 +18,14 @@ import { useHocky, type HockyRow } from "@/hooks/admin/useHocky";
 import { useMonhoc, type MonhocRow } from "@/hooks/admin/useMonhoc";
 import { useLop, type LopRow } from "@/hooks/admin/useLop";
 import { usePhanCong, type PhanCongRow } from "@/hooks/admin/usePhancong";
-import { VaiTro } from "@/types";
-import styles from "./teachers.module.css";
+import { VaiTro, GioiTinh } from "@/types";
+
+const GENDER_LABEL: Record<GioiTinh, string> = {
+  [GioiTinh.Nam]: "Nam",
+  [GioiTinh.Nu]: "Nữ",
+  [GioiTinh.Khac]: "Khác",
+};
+import { CreateForm, EditForm, HOCVI_LIST } from "@/components/admin/TeacherForms";
 
 import {
   validateGiangVienCreate,
@@ -27,251 +33,8 @@ import {
   firstError,
 } from "@/lib/validation/admin.validation";
 
-const HOCVI_LIST = ["Cử nhân", "Thạc sĩ", "Tiến sĩ", "Phó Giáo sư", "Giáo sư"];
 
-// ─── Create Form ──────────────────────────────────────────────────────────────
 
-function CreateForm({
-  khoas,
-  onSubmit,
-  onCancel,
-  loading,
-  error,
-}: {
-  khoas: KhoaRow[];
-  onSubmit: (d: Record<string, unknown>) => void;
-  onCancel: () => void;
-  loading: boolean;
-  error: string;
-}) {
-  const [form, setForm] = useState({
-    magv: "",
-    makhoa: "",
-    hoten: "",
-    ngaysinh: "",
-    gioitinh: "",
-    hocvi: "",
-    chuyennganh: "",
-    emailtruong: "",
-    email: "",
-    matkhau: "",
-  });
-
-  const set =
-    (k: string) =>
-    (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
-      setForm((f) => ({ ...f, [k]: e.target.value }));
-
-  return (
-    <>
-      {error && <div className="error-msg">{error}</div>}
-      <div className="form-grid">
-        <div className="field">
-          <label>Mã giảng viên *</label>
-          <input
-            value={form.magv}
-            onChange={set("magv")}
-            placeholder="VD: GV001"
-          />
-        </div>
-        <div className="field">
-          <label>Khoa</label>
-          <select value={form.makhoa} onChange={set("makhoa")}>
-            <option value="">-- Chọn khoa --</option>
-            {khoas.map((k) => (
-              <option key={k.makhoa} value={k.makhoa}>
-                {k.tenkhoa}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="field full">
-          <label>Họ và tên *</label>
-          <input
-            value={form.hoten}
-            onChange={set("hoten")}
-            placeholder="Nguyễn Văn B"
-          />
-        </div>
-        <div className="field">
-          <label>Ngày sinh</label>
-          <input type="date" value={form.ngaysinh} onChange={set("ngaysinh")} />
-        </div>
-        <div className="field">
-          <label>Giới tính</label>
-          <select value={form.gioitinh} onChange={set("gioitinh")}>
-            <option value="">-- Chọn --</option>
-            <option value="Nam">Nam</option>
-            <option value="Nu">Nữ</option>
-            <option value="Khac">Khác</option>
-          </select>
-        </div>
-        <div className="field">
-          <label>Học vị</label>
-          <select value={form.hocvi} onChange={set("hocvi")}>
-            <option value="">-- Chọn --</option>
-            {HOCVI_LIST.map((h) => (
-              <option key={h} value={h}>
-                {h}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="field">
-          <label>Chuyên ngành</label>
-          <input
-            value={form.chuyennganh}
-            onChange={set("chuyennganh")}
-            placeholder="VD: Trí tuệ nhân tạo"
-          />
-        </div>
-        <div className="field full">
-          <label>Email trường</label>
-          <input
-            type="email"
-            value={form.emailtruong}
-            onChange={set("emailtruong")}
-            placeholder="gv@truong.edu.vn"
-          />
-        </div>
-        <div className="field">
-          <label>Email đăng nhập *</label>
-          <input
-            type="email"
-            value={form.email}
-            onChange={set("email")}
-            placeholder="email@gmail.com"
-          />
-        </div>
-        <div className="field">
-          <label>Mật khẩu *</label>
-          <input
-            type="password"
-            value={form.matkhau}
-            onChange={set("matkhau")}
-            placeholder="••••••••"
-          />
-        </div>
-      </div>
-      <div className="modal-actions">
-        <button className="btn-secondary" onClick={onCancel} disabled={loading}>
-          Huỷ
-        </button>
-        <button
-          className="btn-primary"
-          onClick={() => onSubmit(form)}
-          disabled={loading}
-        >
-          {loading ? "Đang lưu…" : "Tạo giảng viên"}
-        </button>
-      </div>
-    </>
-  );
-}
-
-// ─── Edit Form ────────────────────────────────────────────────────────────────
-
-function EditForm({
-  initial,
-  khoas,
-  onSubmit,
-  onCancel,
-  loading,
-  error,
-}: {
-  initial: GiangVienRow;
-  khoas: KhoaRow[];
-  onSubmit: (d: Record<string, unknown>) => void;
-  onCancel: () => void;
-  loading: boolean;
-  error: string;
-}) {
-  const [form, setForm] = useState({
-    hoten: initial.hoten,
-    makhoa: initial.makhoa ?? "",
-    ngaysinh: initial.ngaysinh?.slice(0, 10) ?? "",
-    gioitinh: initial.gioitinh ?? "",
-    hocvi: initial.hocvi ?? "",
-    chuyennganh: initial.chuyennganh ?? "",
-    emailtruong: initial.emailtruong ?? "",
-  });
-
-  const set =
-    (k: string) =>
-    (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
-      setForm((f) => ({ ...f, [k]: e.target.value }));
-
-  return (
-    <>
-      {error && <div className="error-msg">{error}</div>}
-      <div className="form-grid">
-        <div className="field full">
-          <label>Họ và tên *</label>
-          <input value={form.hoten} onChange={set("hoten")} />
-        </div>
-        <div className="field">
-          <label>Khoa</label>
-          <select value={form.makhoa} onChange={set("makhoa")}>
-            <option value="">-- Chọn khoa --</option>
-            {khoas.map((k) => (
-              <option key={k.makhoa} value={k.makhoa}>
-                {k.tenkhoa}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="field">
-          <label>Học vị</label>
-          <select value={form.hocvi} onChange={set("hocvi")}>
-            <option value="">-- Chọn --</option>
-            {HOCVI_LIST.map((h) => (
-              <option key={h} value={h}>
-                {h}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="field">
-          <label>Ngày sinh</label>
-          <input type="date" value={form.ngaysinh} onChange={set("ngaysinh")} />
-        </div>
-        <div className="field">
-          <label>Giới tính</label>
-          <select value={form.gioitinh} onChange={set("gioitinh")}>
-            <option value="">-- Chọn --</option>
-            <option value="Nam">Nam</option>
-            <option value="Nu">Nữ</option>
-            <option value="Khac">Khác</option>
-          </select>
-        </div>
-        <div className="field full">
-          <label>Chuyên ngành</label>
-          <input value={form.chuyennganh} onChange={set("chuyennganh")} />
-        </div>
-        <div className="field full">
-          <label>Email trường</label>
-          <input
-            type="email"
-            value={form.emailtruong}
-            onChange={set("emailtruong")}
-          />
-        </div>
-      </div>
-      <div className="modal-actions">
-        <button className="btn-secondary" onClick={onCancel} disabled={loading}>
-          Huỷ
-        </button>
-        <button
-          className="btn-primary"
-          onClick={() => onSubmit(form)}
-          disabled={loading}
-        >
-          {loading ? "Đang lưu…" : "Cập nhật"}
-        </button>
-      </div>
-    </>
-  );
-}
 
 // ─── Teacher Detail & Quick Assignment Tab Modal ──────────────────────────────
 
@@ -512,13 +275,13 @@ function TeacherDetailModal({
   return (
     <div>
       {/* Detail Header */}
-      <div className={styles.detailHeader}>
-        <div className={styles.avatar}>
+      <div className="flex items-center gap-4.5 pb-4.5 border-b-2 border-border mb-5">
+        <div className="w-[60px] h-[60px] rounded-full bg-gradient-to-br from-[#FBD9D9] to-[#FFDBB6] flex items-center justify-center text-2xl font-bold text-primary border-2 border-border shadow-[inset_0_2px_4px_rgba(45,27,20,0.05)]">
           {item.hoten ? item.hoten.charAt(0).toUpperCase() : "G"}
         </div>
-        <div className={styles.meta}>
-          <h3 className={styles.name}>{detail?.hoten || item.hoten}</h3>
-          <div className={styles.codeBadge}>
+        <div className="flex flex-col gap-1">
+          <h3 className="text-lg font-bold text-fg m-0">{detail?.hoten || item.hoten}</h3>
+          <div className="flex items-center gap-1.5">
             <span className="badge badge-blue">Giảng viên</span>
             <code>Mã GV: {item.magv}</code>
             {detail?.taikhoan && (
@@ -536,15 +299,15 @@ function TeacherDetailModal({
       </div>
 
       {/* Tabs */}
-      <div className={styles.tabContainer}>
+      <div className="flex gap-2 border-b-2 border-border mb-5 pb-0.5">
         <button
-          className={`${styles.tabBtn} ${activeTab === "profile" ? styles.tabBtnActive : ""}`}
+          className={`px-5 py-2.5 border-none bg-transparent text-sm font-semibold text-fg-subtle cursor-pointer relative transition-all duration-200 rounded-t-lg hover:text-fg hover:bg-[rgba(234,217,203,0.25)] ${activeTab === "profile" ? "text-primary font-bold after:absolute after:bottom-[-4px] after:left-0 after:right-0 after:h-[3px] after:bg-primary after:rounded-full" : ""}`}
           onClick={() => setActiveTab("profile")}
         >
           Thông tin cá nhân & Công tác
         </button>
         <button
-          className={`${styles.tabBtn} ${activeTab === "schedule" ? styles.tabBtnActive : ""}`}
+          className={`px-5 py-2.5 border-none bg-transparent text-sm font-semibold text-fg-subtle cursor-pointer relative transition-all duration-200 rounded-t-lg hover:text-fg hover:bg-[rgba(234,217,203,0.25)] ${activeTab === "schedule" ? "text-primary font-bold after:absolute after:bottom-[-4px] after:left-0 after:right-0 after:h-[3px] after:bg-primary after:rounded-full" : ""}`}
           onClick={() => setActiveTab("schedule")}
         >
           Phân công giảng dạy & Lịch dạy
@@ -565,35 +328,35 @@ function TeacherDetailModal({
             <>
               {errorDetail && <div className="error-msg">{errorDetail}</div>}
               {successDetail && (
-                <div className={styles.successMsg}>{successDetail}</div>
+                <div className="bg-[#ECFDF5] text-[#059669] border border-[#A7F3D0] rounded-lg p-2.5 px-3.5 text-sm mb-3.5 flex items-center gap-1.5">{successDetail}</div>
               )}
 
-              <div className={styles.infoGrid}>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {/* Basic Section */}
-                <div className={styles.fullWidth}>
-                  <h4 className={styles.sectionTitle}>
+                <div className="md:col-span-2">
+                  <h4 className="text-xs font-bold text-primary m-[22px_0_12px] pb-1 border-b border-dashed border-border uppercase tracking-wider">
                     Thông tin học thuật & khoa
                   </h4>
                 </div>
 
-                <div className={styles.infoField}>
-                  <span className={styles.label}>Họ và tên</span>
+                <div className="flex flex-col gap-1 bg-[#FFFDF9] p-2.5 px-3.5 rounded-xl border border-border shadow-[0_1px_3px_rgba(45,27,20,0.02)]">
+                  <span className="text-[10.5px] font-semibold text-fg-subtle uppercase tracking-wide">Họ và tên</span>
                   {editing ? (
                     <input
-                      className={styles.inputField}
+                      className="border-[1.5px] border-border rounded-lg p-1.5 px-2.5 text-[13.5px] text-fg bg-white w-full outline-none font-semibold transition-all duration-150 focus:border-primary focus:shadow-[0_0_0_3px_rgba(194,84,80,0.1)]"
                       value={form.hoten}
                       onChange={setF("hoten")}
                     />
                   ) : (
-                    <span className={styles.value}>{detail?.hoten || "—"}</span>
+                    <span className="text-[13.5px] font-semibold text-fg">{detail?.hoten || "—"}</span>
                   )}
                 </div>
 
-                <div className={styles.infoField}>
-                  <span className={styles.label}>Khoa công tác</span>
+                <div className="flex flex-col gap-1 bg-[#FFFDF9] p-2.5 px-3.5 rounded-xl border border-border shadow-[0_1px_3px_rgba(45,27,20,0.02)]">
+                  <span className="text-[10.5px] font-semibold text-fg-subtle uppercase tracking-wide">Khoa công tác</span>
                   {editing ? (
                     <select
-                      className={styles.inputField}
+                      className="border-[1.5px] border-border rounded-lg p-1.5 px-2.5 text-[13.5px] text-fg bg-white w-full outline-none font-semibold transition-all duration-150 focus:border-primary focus:shadow-[0_0_0_3px_rgba(194,84,80,0.1)]"
                       value={form.makhoa}
                       onChange={setF("makhoa")}
                     >
@@ -605,17 +368,17 @@ function TeacherDetailModal({
                       ))}
                     </select>
                   ) : (
-                    <span className={styles.value}>
+                    <span className="text-[13.5px] font-semibold text-fg">
                       {detail?.khoa?.tenkhoa || "—"}
                     </span>
                   )}
                 </div>
 
-                <div className={styles.infoField}>
-                  <span className={styles.label}>Học vị / Học hàm</span>
+                <div className="flex flex-col gap-1 bg-[#FFFDF9] p-2.5 px-3.5 rounded-xl border border-border shadow-[0_1px_3px_rgba(45,27,20,0.02)]">
+                  <span className="text-[10.5px] font-semibold text-fg-subtle uppercase tracking-wide">Học vị / Học hàm</span>
                   {editing ? (
                     <select
-                      className={styles.inputField}
+                      className="border-[1.5px] border-border rounded-lg p-1.5 px-2.5 text-[13.5px] text-fg bg-white w-full outline-none font-semibold transition-all duration-150 focus:border-primary focus:shadow-[0_0_0_3px_rgba(194,84,80,0.1)]"
                       value={form.hocvi}
                       onChange={setF("hocvi")}
                     >
@@ -627,7 +390,7 @@ function TeacherDetailModal({
                       ))}
                     </select>
                   ) : (
-                    <span className={styles.value}>
+                    <span className="text-[13.5px] font-semibold text-fg">
                       {detail?.hocvi ? (
                         <span className="badge badge-blue">{detail.hocvi}</span>
                       ) : (
@@ -637,48 +400,48 @@ function TeacherDetailModal({
                   )}
                 </div>
 
-                <div className={styles.infoField}>
-                  <span className={styles.label}>Chuyên ngành</span>
+                <div className="flex flex-col gap-1 bg-[#FFFDF9] p-2.5 px-3.5 rounded-xl border border-border shadow-[0_1px_3px_rgba(45,27,20,0.02)]">
+                  <span className="text-[10.5px] font-semibold text-fg-subtle uppercase tracking-wide">Chuyên ngành</span>
                   {editing ? (
                     <input
-                      className={styles.inputField}
+                      className="border-[1.5px] border-border rounded-lg p-1.5 px-2.5 text-[13.5px] text-fg bg-white w-full outline-none font-semibold transition-all duration-150 focus:border-primary focus:shadow-[0_0_0_3px_rgba(194,84,80,0.1)]"
                       value={form.chuyennganh}
                       onChange={setF("chuyennganh")}
                     />
                   ) : (
-                    <span className={styles.value}>
+                    <span className="text-[13.5px] font-semibold text-fg">
                       {detail?.chuyennganh || "—"}
                     </span>
                   )}
                 </div>
 
-                <div className={styles.infoField}>
-                  <span className={styles.label}>Email trường cấp</span>
+                <div className="flex flex-col gap-1 bg-[#FFFDF9] p-2.5 px-3.5 rounded-xl border border-border shadow-[0_1px_3px_rgba(45,27,20,0.02)]">
+                  <span className="text-[10.5px] font-semibold text-fg-subtle uppercase tracking-wide">Email trường cấp</span>
                   {editing ? (
                     <input
-                      className={styles.inputField}
+                      className="border-[1.5px] border-border rounded-lg p-1.5 px-2.5 text-[13.5px] text-fg bg-white w-full outline-none font-semibold transition-all duration-150 focus:border-primary focus:shadow-[0_0_0_3px_rgba(194,84,80,0.1)]"
                       type="email"
                       value={form.emailtruong}
                       onChange={setF("emailtruong")}
                     />
                   ) : (
-                    <span className={styles.value}>
+                    <span className="text-[13.5px] font-semibold text-fg">
                       {detail?.emailtruong || "—"}
                     </span>
                   )}
                 </div>
 
-                <div className={styles.infoField}>
-                  <span className={styles.label}>Ngày sinh</span>
+                <div className="flex flex-col gap-1 bg-[#FFFDF9] p-2.5 px-3.5 rounded-xl border border-border shadow-[0_1px_3px_rgba(45,27,20,0.02)]">
+                  <span className="text-[10.5px] font-semibold text-fg-subtle uppercase tracking-wide">Ngày sinh</span>
                   {editing ? (
                     <input
-                      className={styles.inputField}
+                      className="border-[1.5px] border-border rounded-lg p-1.5 px-2.5 text-[13.5px] text-fg bg-white w-full outline-none font-semibold transition-all duration-150 focus:border-primary focus:shadow-[0_0_0_3px_rgba(194,84,80,0.1)]"
                       type="date"
                       value={form.ngaysinh}
                       onChange={setF("ngaysinh")}
                     />
                   ) : (
-                    <span className={styles.value}>
+                    <span className="text-[13.5px] font-semibold text-fg">
                       {detail?.ngaysinh
                         ? new Date(detail.ngaysinh).toLocaleDateString("vi-VN")
                         : "—"}
@@ -686,77 +449,79 @@ function TeacherDetailModal({
                   )}
                 </div>
 
-                <div className={styles.infoField}>
-                  <span className={styles.label}>Giới tính</span>
+                <div className="flex flex-col gap-1 bg-[#FFFDF9] p-2.5 px-3.5 rounded-xl border border-border shadow-[0_1px_3px_rgba(45,27,20,0.02)]">
+                  <span className="text-[10.5px] font-semibold text-fg-subtle uppercase tracking-wide">Giới tính</span>
                   {editing ? (
                     <select
-                      className={styles.inputField}
+                      className="border-[1.5px] border-border rounded-lg p-1.5 px-2.5 text-[13.5px] text-fg bg-white w-full outline-none font-semibold transition-all duration-150 focus:border-primary focus:shadow-[0_0_0_3px_rgba(194,84,80,0.1)]"
                       value={form.gioitinh}
                       onChange={setF("gioitinh")}
                     >
                       <option value="">-- Chọn --</option>
-                      <option value="Nam">Nam</option>
-                      <option value="Nu">Nữ</option>
-                      <option value="Khac">Khác</option>
+                      {Object.values(GioiTinh).map((g) => (
+                        <option key={g} value={g}>
+                          {GENDER_LABEL[g]}
+                        </option>
+                      ))}
                     </select>
                   ) : (
-                    <span className={styles.value}>
+                    <span className="text-[13.5px] font-semibold text-fg">
                       {detail?.gioitinh || "—"}
                     </span>
                   )}
                 </div>
 
                 {/* Extended Contact & Work Section */}
-                <div className={styles.fullWidth}>
-                  <h4 className={styles.sectionTitle}>
+                <div className="md:col-span-2">
+                  <h4 className="text-xs font-bold text-primary m-[22px_0_12px] pb-1 border-b border-dashed border-border uppercase tracking-wider">
                     Thông tin liên hệ & công tác mở rộng
                   </h4>
                 </div>
 
-                <div className={styles.infoField}>
-                  <span className={styles.label}>Số điện thoại di động</span>
+                <div className="flex flex-col gap-1 bg-[#FFFDF9] p-2.5 px-3.5 rounded-xl border border-border shadow-[0_1px_3px_rgba(45,27,20,0.02)]">
+                  <span className="text-[10.5px] font-semibold text-fg-subtle uppercase tracking-wide">Số điện thoại di động</span>
                   {editing ? (
                     <input
-                      className={styles.inputField}
+                      className="border-[1.5px] border-border rounded-lg p-1.5 px-2.5 text-[13.5px] text-fg bg-white w-full outline-none font-semibold transition-all duration-150 focus:border-primary focus:shadow-[0_0_0_3px_rgba(194,84,80,0.1)]"
                       value={form.sodienthoai}
                       onChange={setF("sodienthoai")}
                       placeholder="VD: 0987654321"
                     />
                   ) : (
-                    <span className={styles.value}>
+                    <span className="text-[13.5px] font-semibold text-fg">
                       {detail?.chitietgiangvien?.sodienthoai || "—"}
                     </span>
                   )}
                 </div>
 
-                <div className={styles.infoField}>
-                  <span className={styles.label}>Email cá nhân</span>
+                <div className="flex flex-col gap-1 bg-[#FFFDF9] p-2.5 px-3.5 rounded-xl border border-border shadow-[0_1px_3px_rgba(45,27,20,0.02)]">
+                  <span className="text-[10.5px] font-semibold text-fg-subtle uppercase tracking-wide">Email cá nhân</span>
                   {editing ? (
                     <input
-                      className={styles.inputField}
+                      className="border-[1.5px] border-border rounded-lg p-1.5 px-2.5 text-[13.5px] text-fg bg-white w-full outline-none font-semibold transition-all duration-150 focus:border-primary focus:shadow-[0_0_0_3px_rgba(194,84,80,0.1)]"
                       type="email"
                       value={form.emailcanhan}
                       onChange={setF("emailcanhan")}
                       placeholder="email@gmail.com"
                     />
                   ) : (
-                    <span className={styles.value}>
+                    <span className="text-[13.5px] font-semibold text-fg">
                       {detail?.chitietgiangvien?.emailcanhan || "—"}
                     </span>
                   )}
                 </div>
 
-                <div className={styles.infoField}>
-                  <span className={styles.label}>Ngày tiếp nhận công tác</span>
+                <div className="flex flex-col gap-1 bg-[#FFFDF9] p-2.5 px-3.5 rounded-xl border border-border shadow-[0_1px_3px_rgba(45,27,20,0.02)]">
+                  <span className="text-[10.5px] font-semibold text-fg-subtle uppercase tracking-wide">Ngày tiếp nhận công tác</span>
                   {editing ? (
                     <input
-                      className={styles.inputField}
+                      className="border-[1.5px] border-border rounded-lg p-1.5 px-2.5 text-[13.5px] text-fg bg-white w-full outline-none font-semibold transition-all duration-150 focus:border-primary focus:shadow-[0_0_0_3px_rgba(194,84,80,0.1)]"
                       type="date"
                       value={form.ngayvaotruong}
                       onChange={setF("ngayvaotruong")}
                     />
                   ) : (
-                    <span className={styles.value}>
+                    <span className="text-[13.5px] font-semibold text-fg">
                       {detail?.chitietgiangvien?.ngayvaotruong
                         ? new Date(
                             detail.chitietgiangvien.ngayvaotruong,
@@ -766,11 +531,11 @@ function TeacherDetailModal({
                   )}
                 </div>
 
-                <div className={styles.infoField}>
-                  <span className={styles.label}>Hệ số lương</span>
+                <div className="flex flex-col gap-1 bg-[#FFFDF9] p-2.5 px-3.5 rounded-xl border border-border shadow-[0_1px_3px_rgba(45,27,20,0.02)]">
+                  <span className="text-[10.5px] font-semibold text-fg-subtle uppercase tracking-wide">Hệ số lương</span>
                   {editing ? (
                     <input
-                      className={styles.inputField}
+                      className="border-[1.5px] border-border rounded-lg p-1.5 px-2.5 text-[13.5px] text-fg bg-white w-full outline-none font-semibold transition-all duration-150 focus:border-primary focus:shadow-[0_0_0_3px_rgba(194,84,80,0.1)]"
                       type="number"
                       step="0.01"
                       value={form.hesoluong}
@@ -778,7 +543,7 @@ function TeacherDetailModal({
                       placeholder="VD: 2.34"
                     />
                   ) : (
-                    <span className={styles.value}>
+                    <span className="text-[13.5px] font-semibold text-fg">
                       {detail?.chitietgiangvien?.hesoluong !== undefined &&
                       detail?.chitietgiangvien?.hesoluong !== null
                         ? Number(detail.chitietgiangvien.hesoluong).toFixed(2)
@@ -827,14 +592,14 @@ function TeacherDetailModal({
 
       {/* ─── TAB 2: SCHEDULES & ASSIGNMENTS ─── */}
       {activeTab === "schedule" && (
-        <div className={styles.assignmentsPanel}>
+        <div className="flex flex-col gap-4">
           {errorPc && <div className="error-msg">{errorPc}</div>}
 
-          <div className={styles.panelHeader}>
-            <div className={styles.panelSelector}>
-              <label>Học kỳ:</label>
+          <div className="flex justify-between items-center gap-3 flex-wrap">
+            <div className="flex items-center gap-2">
+              <label className="text-xs font-semibold text-[#6B4F3F]">Học kỳ:</label>
               <select
-                className={styles.selectSem}
+                className="p-2 px-3 border-[1.5px] border-border rounded-xl text-[13.5px] text-fg bg-white outline-none cursor-pointer font-medium focus:border-primary"
                 value={selectedSem}
                 onChange={(e) => setSelectedSem(e.target.value)}
               >
@@ -860,8 +625,8 @@ function TeacherDetailModal({
 
           {/* Inline Form */}
           {showQuickForm && (
-            <div className={styles.quickFormCard}>
-              <h4 className={styles.quickFormTitle}>
+            <div className="bg-gradient-to-br from-[#FEFAE3] to-[#FFF0CD] border border-[#FFDBB6] rounded-xl p-4 mb-4 animate-slideDown">
+              <h4 className="text-sm font-bold text-fg m-0 mb-3 flex items-center gap-1.5">
                 <svg
                   width="14"
                   height="14"
@@ -874,10 +639,11 @@ function TeacherDetailModal({
                 </svg>
                 Phân công môn dạy & lớp dạy mới
               </h4>
-              <div className={styles.quickFormGrid}>
-                <div className={styles.formField}>
-                  <label>Môn giảng dạy *</label>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[11px] font-bold text-[#6B4F3F] uppercase">Môn giảng dạy *</label>
                   <select
+                    className="border-[1.5px] border-border rounded-lg p-2 px-2.5 text-xs text-fg bg-white outline-none w-full focus:border-primary"
                     value={quickForm.mamon}
                     onChange={(e) =>
                       setQuickForm({ ...quickForm, mamon: e.target.value })
@@ -892,9 +658,10 @@ function TeacherDetailModal({
                   </select>
                 </div>
 
-                <div className={styles.formField}>
-                  <label>Lớp học hành chính *</label>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[11px] font-bold text-[#6B4F3F] uppercase">Lớp học hành chính *</label>
                   <select
+                    className="border-[1.5px] border-border rounded-lg p-2 px-2.5 text-xs text-fg bg-white outline-none w-full focus:border-primary"
                     value={quickForm.malop}
                     onChange={(e) =>
                       setQuickForm({ ...quickForm, malop: e.target.value })
@@ -909,9 +676,10 @@ function TeacherDetailModal({
                   </select>
                 </div>
 
-                <div className={styles.formField}>
-                  <label>Mã lớp học phần</label>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[11px] font-bold text-[#6B4F3F] uppercase">Mã lớp học phần</label>
                   <input
+                    className="border-[1.5px] border-border rounded-lg p-2 px-2.5 text-xs text-fg bg-white outline-none w-full focus:border-primary"
                     placeholder="VD: L01, L02..."
                     value={quickForm.malophoc}
                     onChange={(e) =>
@@ -920,9 +688,10 @@ function TeacherDetailModal({
                   />
                 </div>
 
-                <div className={styles.formField}>
-                  <label>Sĩ số tối đa</label>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-[11px] font-bold text-[#6B4F3F] uppercase">Sĩ số tối đa</label>
                   <input
+                    className="border-[1.5px] border-border rounded-lg p-2 px-2.5 text-xs text-fg bg-white outline-none w-full focus:border-primary"
                     type="number"
                     value={quickForm.sisomax}
                     onChange={(e) =>
@@ -931,10 +700,11 @@ function TeacherDetailModal({
                   />
                 </div>
 
-                <div className={`${styles.formField} ${styles.checkField}`}>
+                <div className="flex items-center gap-2 md:pt-6">
                   <input
                     type="checkbox"
                     id="danghieuluc"
+                    className="w-4 h-4 accent-primary cursor-pointer"
                     checked={quickForm.danghieuluc}
                     onChange={(e) =>
                       setQuickForm({
@@ -943,11 +713,11 @@ function TeacherDetailModal({
                       })
                     }
                   />
-                  <label htmlFor="danghieuluc">Có hiệu lực giảng dạy</label>
+                  <label htmlFor="danghieuluc" className="text-sm font-semibold text-fg cursor-pointer normal-case">Có hiệu lực giảng dạy</label>
                 </div>
               </div>
 
-              <div className={styles.quickFormActions}>
+              <div className="flex justify-end gap-2 pt-2.5 border-t border-dashed border-border">
                 <button
                   className="btn-secondary"
                   style={{ padding: "6px 12px", fontSize: "12.5px" }}
@@ -998,7 +768,7 @@ function TeacherDetailModal({
               </p>
             </div>
           ) : (
-            <div className={styles.tableWrap}>
+            <div className="w-full overflow-x-auto">
               <table className="data-table">
                 <thead>
                   <tr>
@@ -1176,12 +946,12 @@ export default function AdminTeachersPage() {
 
   return (
     <DashboardShell pageTitle="Giảng viên">
-      <div className={`animate-fadeInUp ${styles.page}`}>
+      <div className="animate-fadeInUp flex flex-col gap-5">
         {/* Header */}
-        <div className={styles.pageHeader}>
+        <div className="flex justify-between items-start flex-wrap gap-3 max-sm:flex-col max-sm:items-stretch">
           <div>
-            <h1 className={styles.pageTitle}>Quản lý Giảng viên</h1>
-            <p className={styles.pageSub}>
+            <h1 className="text-2xl font-bold text-fg m-0 max-sm:text-lg">Quản lý Giảng viên</h1>
+            <p className="text-xs text-fg-subtle mt-1">
               {total > 0
                 ? `${total} giảng viên trong hệ thống`
                 : "Quản lý đội ngũ giảng viên"}
@@ -1200,7 +970,7 @@ export default function AdminTeachersPage() {
 
         {/* Table */}
         <section className="card" style={{ padding: 0 }}>
-          <div className={styles.toolbar}>
+          <div className="flex items-center gap-2.5 p-4 border-b border-border flex-wrap max-sm:flex-col max-sm:items-stretch">
             <SearchBar
               value={search}
               onChange={(v) => {
@@ -1210,7 +980,7 @@ export default function AdminTeachersPage() {
               placeholder="Tìm mã GV hoặc tên…"
             />
             <select
-              className={styles.filter}
+              className="p-[9px_12px] border-[1.5px] border-border rounded-xl text-[13px] text-fg bg-white cursor-pointer outline-none transition-colors duration-200 focus:border-primary min-w-[160px] max-sm:w-full"
               value={filterKhoa}
               onChange={(e) => {
                 setFilterKhoa(e.target.value);
@@ -1226,7 +996,7 @@ export default function AdminTeachersPage() {
             </select>
             {(search || filterKhoa) && (
               <button
-                className={styles.clearFilter}
+                className="p-[9px_14px] border-[1.5px] border-primary rounded-xl text-[13px] text-primary bg-[#FFF5F5] cursor-pointer whitespace-nowrap transition-all hover:bg-primary hover:text-white max-sm:w-full"
                 onClick={() => {
                   setSearch("");
                   setFilterKhoa("");
@@ -1245,7 +1015,7 @@ export default function AdminTeachersPage() {
               {!gvList.length ? (
                 <EmptyState message="Không tìm thấy giảng viên nào." />
               ) : (
-                <div className={styles.tableWrap}>
+                <div className="w-full overflow-x-auto">
                   <table className="data-table">
                     <thead>
                       <tr>
@@ -1275,7 +1045,7 @@ export default function AdminTeachersPage() {
                           </td>
                           <td>
                             {gv.hocvi ? (
-                              <span className="badge badge-blue">
+                                <span className="badge badge-blue">
                                 {gv.hocvi}
                               </span>
                             ) : (
@@ -1289,7 +1059,7 @@ export default function AdminTeachersPage() {
                             {gv.emailtruong ?? "—"}
                           </td>
                           <td>
-                            <div className={styles.actions}>
+                            <div className="flex gap-1.5">
                               <button
                                 className="btn-secondary"
                                 style={{

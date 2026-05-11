@@ -19,208 +19,10 @@ import { useLop, type LopRow } from "@/hooks/admin/useLop";
 import { useHocky, type HockyRow } from "@/hooks/admin/useHocky";
 import { useLichHoc } from "@/hooks/admin/useLichhoc";
 import { VaiTro } from "@/types";
-import styles from "./assignment.module.css";
+import { AssignmentForm } from "@/components/admin/AssignmentForms";
 
-// ─── Assignment Form Component ───────────────────────────────────────────────
-function AssignmentForm({
-  initial,
-  giangviens,
-  monhocs,
-  lops,
-  hockys,
-  onSubmit,
-  onCancel,
-  loading,
-  error,
-}: {
-  initial?: Partial<PhanCongRow>;
-  giangviens: GiangVienRow[];
-  monhocs: MonhocRow[];
-  lops: LopRow[];
-  hockys: HockyRow[];
-  onSubmit: (data: any) => void;
-  onCancel: () => void;
-  loading: boolean;
-  error: string;
-}) {
-  const [form, setForm] = useState({
-    magv: initial?.magv ?? "",
-    mamon: initial?.mamon ?? "",
-    malop: initial?.malop ?? "",
-    mahocky: initial?.mahocky ? String(initial.mahocky) : "",
-    malophoc: initial?.malophoc ?? "",
-    sisomax: initial?.sisomax ? String(initial.sisomax) : "",
-    danghieuluc: initial?.danghieuluc ?? true,
-  });
 
-  const [localErr, setLocalErr] = useState("");
 
-  // Auto-generate Section Code (Mã lớp học phần) based on Class and Subject
-  useEffect(() => {
-    if (!initial?.maphancong && form.mamon && form.malop && !form.malophoc) {
-      setForm((prev) => ({
-        ...prev,
-        malophoc: `${prev.mamon.trim()}-${prev.malop.trim()}`,
-      }));
-    }
-  }, [form.mamon, form.malop, form.malophoc, initial?.maphancong]);
-
-  const handleValidateAndSubmit = () => {
-    setLocalErr("");
-    if (!form.magv) return setLocalErr("Vui lòng chọn giảng viên.");
-    if (!form.mamon) return setLocalErr("Vui lòng chọn môn học.");
-    if (!form.malop) return setLocalErr("Vui lòng chọn lớp hành chính.");
-    if (!form.mahocky) return setLocalErr("Vui lòng chọn học kỳ.");
-
-    if (form.sisomax) {
-      const size = parseInt(form.sisomax);
-      if (isNaN(size) || size <= 0) {
-        return setLocalErr("Sĩ số tối đa phải là số nguyên dương.");
-      }
-    }
-
-    onSubmit({
-      ...form,
-      mahocky: parseInt(form.mahocky),
-      sisomax: form.sisomax ? parseInt(form.sisomax) : null,
-    });
-  };
-
-  return (
-    <>
-      {(error || localErr) && (
-        <div className="error-msg">{error || localErr}</div>
-      )}
-      <div className="form-grid">
-        <div className="field">
-          <label>Giảng viên phụ trách *</label>
-          <select
-            value={form.magv}
-            onChange={(e) => setForm({ ...form, magv: e.target.value })}
-          >
-            <option value="">-- Chọn giảng viên --</option>
-            {giangviens.map((gv) => (
-              <option key={gv.magv} value={gv.magv}>
-                {gv.hoten} ({gv.magv})
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="field">
-          <label>Học kỳ *</label>
-          <select
-            value={form.mahocky}
-            onChange={(e) => setForm({ ...form, mahocky: e.target.value })}
-          >
-            <option value="">-- Chọn học kỳ --</option>
-            {hockys.map((hk) => (
-              <option key={hk.mahocky} value={hk.mahocky}>
-                {hk.tenhocky} ({hk.namhoc})
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="field">
-          <label>Môn học *</label>
-          <select
-            value={form.mamon}
-            onChange={(e) => setForm({ ...form, mamon: e.target.value })}
-          >
-            <option value="">-- Chọn môn học --</option>
-            {monhocs.map((mh) => (
-              <option key={mh.mamon} value={mh.mamon}>
-                {mh.tenmon} ({mh.mamon})
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="field">
-          <label>Lớp hành chính *</label>
-          <select
-            value={form.malop}
-            onChange={(e) => setForm({ ...form, malop: e.target.value })}
-          >
-            <option value="">-- Chọn lớp hành chính --</option>
-            {lops.map((l) => (
-              <option key={l.malop} value={l.malop}>
-                {l.tenlop} ({l.malop})
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="field">
-          <label>Mã lớp học phần (Tuỳ chọn)</label>
-          <input
-            value={form.malophoc}
-            onChange={(e) => setForm({ ...form, malophoc: e.target.value })}
-            placeholder="Ví dụ: INT1306-D21CN"
-          />
-          <span
-            style={{
-              fontSize: 11,
-              color: "#8B6F5F",
-              marginTop: 4,
-              display: "block",
-            }}
-          >
-            Tự động gợi ý dựa trên môn học và lớp học.
-          </span>
-        </div>
-
-        <div className="field">
-          <label>Sĩ số tối đa (Tuỳ chọn)</label>
-          <input
-            type="number"
-            value={form.sisomax}
-            onChange={(e) => setForm({ ...form, sisomax: e.target.value })}
-            placeholder="Ví dụ: 80"
-          />
-        </div>
-
-        <div className="field full">
-          <label
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-              cursor: "pointer",
-            }}
-          >
-            <input
-              type="checkbox"
-              checked={form.danghieuluc}
-              onChange={(e) =>
-                setForm({ ...form, danghieuluc: e.target.checked })
-              }
-            />
-            Đang hoạt động / Hiệu lực giảng dạy
-          </label>
-        </div>
-      </div>
-
-      <div className="modal-actions">
-        <button className="btn-secondary" onClick={onCancel} disabled={loading}>
-          Huỷ
-        </button>
-        <button
-          className="btn-primary"
-          onClick={handleValidateAndSubmit}
-          disabled={loading}
-        >
-          {loading
-            ? "Đang xử lý..."
-            : initial?.maphancong
-              ? "Cập nhật"
-              : "Tạo phân công"}
-        </button>
-      </div>
-    </>
-  );
-}
 
 // ─── Main Admin Assignments Page ─────────────────────────────────────────────
 export default function AdminAssignmentsPage() {
@@ -408,18 +210,18 @@ export default function AdminAssignmentsPage() {
 
   return (
     <DashboardShell pageTitle="Phân công Giảng dạy">
-      <div className={`animate-fadeInUp ${styles.page}`}>
+      <div className="animate-fadeInUp flex flex-col gap-5">
         {/* Header Section */}
-        <div className={styles.header}>
+        <div className="flex justify-between items-start flex-wrap gap-4 max-sm:flex-col max-sm:items-stretch">
           <div>
-            <h1 className={styles.title}>Quản lý Phân công Giảng dạy</h1>
-            <p className={styles.subtitle}>
+            <h1 className="text-2xl font-bold text-fg m-0">Quản lý Phân công Giảng dạy</h1>
+            <p className="text-sm text-fg-subtle mt-1">
               Giao việc giảng dạy các lớp môn học, quản lý lớp học phần cho
               giảng viên
             </p>
           </div>
           <button
-            className="btn-primary"
+            className="btn-primary max-sm:w-full"
             onClick={() => {
               setMutError("");
               setModal({ mode: "create" });
@@ -430,9 +232,9 @@ export default function AdminAssignmentsPage() {
         </div>
 
         {/* Stats Section */}
-        <div className={styles.statsGrid}>
-          <div className={styles.statCard}>
-            <div className={`${styles.statIcon} ${styles.stat1}`}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-2">
+          <div className="bg-white border border-[#FFDBB6] rounded-2xl p-4 px-5 flex items-center gap-4 shadow-[0_2px_4px_rgba(139,111,95,0.04)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_6px_12px_rgba(139,111,95,0.08)]">
+            <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-[#FBD9D9] text-primary">
               <svg
                 width="24"
                 height="24"
@@ -448,13 +250,13 @@ export default function AdminAssignmentsPage() {
               </svg>
             </div>
             <div>
-              <div className={styles.statValue}>{stats.totalAssignments}</div>
-              <div className={styles.statLabel}>Tổng lớp phân công</div>
+              <div className="text-xl font-bold text-fg">{stats.totalAssignments}</div>
+              <div className="text-xs text-fg-subtle mt-0.5">Tổng lớp phân công</div>
             </div>
           </div>
 
-          <div className={styles.statCard}>
-            <div className={`${styles.statIcon} ${styles.stat2}`}>
+          <div className="bg-white border border-[#FFDBB6] rounded-2xl p-4 px-5 flex items-center gap-4 shadow-[0_2px_4px_rgba(139,111,95,0.04)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_6px_12px_rgba(139,111,95,0.08)]">
+            <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-[#FEFAE3] text-[#8A7A00] border border-[#EAD8A0]">
               <svg
                 width="24"
                 height="24"
@@ -468,13 +270,13 @@ export default function AdminAssignmentsPage() {
               </svg>
             </div>
             <div>
-              <div className={styles.statValue}>{stats.activeAssignments}</div>
-              <div className={styles.statLabel}>Đang hoạt động</div>
+              <div className="text-xl font-bold text-fg">{stats.activeAssignments}</div>
+              <div className="text-xs text-fg-subtle mt-0.5">Đang hoạt động</div>
             </div>
           </div>
 
-          <div className={styles.statCard}>
-            <div className={`${styles.statIcon} ${styles.stat3}`}>
+          <div className="bg-white border border-[#FFDBB6] rounded-2xl p-4 px-5 flex items-center gap-4 shadow-[0_2px_4px_rgba(139,111,95,0.04)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_6px_12px_rgba(139,111,95,0.08)]">
+            <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-[#FFF0CD] text-[#B37D00]">
               <svg
                 width="24"
                 height="24"
@@ -488,13 +290,13 @@ export default function AdminAssignmentsPage() {
               </svg>
             </div>
             <div>
-              <div className={styles.statValue}>{stats.pendingSchedules}</div>
-              <div className={styles.statLabel}>Chưa xếp lịch học</div>
+              <div className="text-xl font-bold text-fg">{stats.pendingSchedules}</div>
+              <div className="text-xs text-fg-subtle mt-0.5">Chưa xếp lịch học</div>
             </div>
           </div>
 
-          <div className={styles.statCard}>
-            <div className={`${styles.statIcon} ${styles.stat4}`}>
+          <div className="bg-white border border-[#FFDBB6] rounded-2xl p-4 px-5 flex items-center gap-4 shadow-[0_2px_4px_rgba(139,111,95,0.04)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_6px_12px_rgba(139,111,95,0.08)]">
+            <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-[#E8F5E9] text-[#2E7D32]">
               <svg
                 width="24"
                 height="24"
@@ -508,15 +310,15 @@ export default function AdminAssignmentsPage() {
               </svg>
             </div>
             <div>
-              <div className={styles.statValue}>{stats.activeSemesters}</div>
-              <div className={styles.statLabel}>Học kỳ hiện hành</div>
+              <div className="text-xl font-bold text-fg">{stats.activeSemesters}</div>
+              <div className="text-xs text-fg-subtle mt-0.5">Học kỳ hiện hành</div>
             </div>
           </div>
         </div>
 
         {/* Toolbar & Filter Options */}
         <section className="card" style={{ padding: 0, overflow: "hidden" }}>
-          <div className={styles.toolbar}>
+          <div className="flex items-center gap-3 p-4 px-5 bg-[#FFF0CD] border-b border-[#FFDBB6] rounded-t-2xl flex-wrap max-sm:flex-col max-sm:items-stretch">
             <SearchBar
               value={search}
               onChange={setSearch}
@@ -524,7 +326,7 @@ export default function AdminAssignmentsPage() {
             />
 
             <select
-              className={styles.filterSelect}
+              className="p-[10px_14px] border-[1.5px] border-[#FFDBB6] rounded-lg text-[13px] bg-white cursor-pointer outline-none text-fg transition-colors duration-200 focus:border-primary max-sm:w-full"
               value={filterGv}
               onChange={(e) => setFilterGv(e.target.value)}
             >
@@ -537,7 +339,7 @@ export default function AdminAssignmentsPage() {
             </select>
 
             <select
-              className={styles.filterSelect}
+              className="p-[10px_14px] border-[1.5px] border-[#FFDBB6] rounded-lg text-[13px] bg-white cursor-pointer outline-none text-fg transition-colors duration-200 focus:border-primary max-sm:w-full"
               value={filterLop}
               onChange={(e) => setFilterLop(e.target.value)}
             >
@@ -550,7 +352,7 @@ export default function AdminAssignmentsPage() {
             </select>
 
             <select
-              className={styles.filterSelect}
+              className="p-[10px_14px] border-[1.5px] border-[#FFDBB6] rounded-lg text-[13px] bg-white cursor-pointer outline-none text-fg transition-colors duration-200 focus:border-primary max-sm:w-full"
               value={filterHk}
               onChange={(e) => setFilterHk(e.target.value)}
             >
@@ -563,7 +365,7 @@ export default function AdminAssignmentsPage() {
             </select>
 
             <select
-              className={styles.filterSelect}
+              className="p-[10px_14px] border-[1.5px] border-[#FFDBB6] rounded-lg text-[13px] bg-white cursor-pointer outline-none text-fg transition-colors duration-200 focus:border-primary max-sm:w-full"
               value={filterNoSchedule}
               onChange={(e) => setFilterNoSchedule(e.target.value)}
             >
@@ -577,7 +379,7 @@ export default function AdminAssignmentsPage() {
               filterHk ||
               filterNoSchedule !== "all") && (
               <button
-                className={styles.clearFilter}
+                className="p-[9px_14px] border-[1.5px] border-primary rounded-lg text-[13px] text-primary bg-[#FFF5F5] cursor-pointer whitespace-nowrap transition-all hover:bg-primary hover:text-white max-sm:w-full"
                 onClick={() => {
                   setSearch("");
                   setFilterGv("");
@@ -600,8 +402,8 @@ export default function AdminAssignmentsPage() {
           ) : list.length > 0 ? (
             <>
               {/* Desktop / Tablet Grid Table */}
-              <div className={styles.tableContainer}>
-                <table className={styles.customTable}>
+              <div className="hidden md:block w-full overflow-x-auto">
+                <table className="data-table">
                   <thead>
                     <tr>
                       <th>Mã phân công</th>
@@ -622,28 +424,23 @@ export default function AdminAssignmentsPage() {
                             <strong>#{pc.maphancong}</strong>
                           </td>
                           <td>
-                            <div style={{ fontWeight: 600 }}>
+                            <div className="font-semibold">
                               {pc.giangvien?.hoten}
                             </div>
-                            <span style={{ fontSize: 11, color: "#8B6F5F" }}>
+                            <span className="text-[11px] text-fg-subtle">
                               Mã GV: {pc.magv}
                             </span>
                           </td>
                           <td>
                             <div>{pc.monhoc?.tenmon}</div>
-                            <span style={{ fontSize: 11, color: "#8B6F5F" }}>
+                            <span className="text-[11px] text-fg-subtle">
                               Mã môn: {pc.mamon}
                             </span>
                           </td>
                           <td>
                             <div>{pc.lop?.tenlop}</div>
                             <span
-                              className="badge-purple"
-                              style={{
-                                fontSize: 11,
-                                padding: "2px 6px",
-                                borderRadius: 4,
-                              }}
+                              className="inline-block bg-[#F3E8FF] text-[#6B21A8] text-[11px] font-semibold px-1.5 py-0.5 rounded"
                             >
                               LHP: {pc.malophoc || "N/A"}
                             </span>
@@ -653,23 +450,19 @@ export default function AdminAssignmentsPage() {
                           </td>
                           <td>
                             {hasSched ? (
-                              <span
-                                className={`${styles.badge} ${styles.activeBadge}`}
-                              >
+                              <span className="badge badge-green">
                                 Đã xếp lịch
                               </span>
                             ) : (
-                              <span
-                                className={`${styles.badge} ${styles.inactiveBadge}`}
-                              >
+                              <span className="badge badge-red">
                                 Chưa xếp lịch
                               </span>
                             )}
                           </td>
                           <td>
-                            <div className={styles.actions}>
+                            <div className="flex gap-2">
                               <button
-                                className={`${styles.iconBtn} ${styles.editBtn}`}
+                                className="p-1.5 rounded-lg text-fg-subtle transition-all flex items-center justify-center hover:bg-[#FFF0CD] hover:text-blue-600"
                                 onClick={() => {
                                   setMutError("");
                                   setModal({ mode: "edit", item: pc });
@@ -691,14 +484,13 @@ export default function AdminAssignmentsPage() {
 
                               {/* Direct shortcut to schedules page with filter for this maphancong */}
                               <button
-                                className={styles.iconBtn}
+                                className="p-1.5 rounded-lg text-fg-subtle transition-all flex items-center justify-center hover:bg-[#FFF0CD] hover:text-[#E67E22]"
                                 onClick={() =>
                                   router.push(
                                     `/admin/schedules?maphancong=${pc.maphancong}`,
                                   )
                                 }
                                 title="Cấu hình lịch học"
-                                style={{ color: "#E67E22" }}
                               >
                                 <svg
                                   width="18"
@@ -723,7 +515,7 @@ export default function AdminAssignmentsPage() {
                               </button>
 
                               <button
-                                className={`${styles.iconBtn} ${styles.deleteBtn}`}
+                                className="p-1.5 rounded-lg text-fg-subtle transition-all flex items-center justify-center hover:bg-[#FFF0CD] hover:text-red-600"
                                 onClick={() => {
                                   setMutError("");
                                   setModal({ mode: "delete", item: pc });
@@ -752,31 +544,27 @@ export default function AdminAssignmentsPage() {
               </div>
 
               {/* Mobile responsive Cards Grid */}
-              <div className={styles.mobileCardsGrid}>
+              <div className="flex flex-col gap-3 p-4 md:hidden">
                 {list.map((pc) => {
                   const hasSched = assignedPhanCongIds.has(pc.maphancong);
                   return (
-                    <div key={pc.maphancong} className={styles.mobileCard}>
-                      <div className={styles.mobileCardHeader}>
-                        <div className={styles.mobileCardTitle}>
+                    <div key={pc.maphancong} className="bg-white border border-[#FFDBB6] rounded-xl p-4 flex flex-col gap-2.5">
+                      <div className="flex justify-between items-start">
+                        <div className="font-bold text-[15px] text-fg">
                           Phân công #{pc.maphancong}
                         </div>
                         {hasSched ? (
-                          <span
-                            className={`${styles.badge} ${styles.activeBadge}`}
-                          >
+                          <span className="badge badge-green">
                             Đã xếp lịch
                           </span>
                         ) : (
-                          <span
-                            className={`${styles.badge} ${styles.inactiveBadge}`}
-                          >
+                          <span className="badge badge-red">
                             Chưa xếp lịch
                           </span>
                         )}
                       </div>
 
-                      <div className={styles.mobileCardInfo}>
+                      <div className="text-xs text-fg-muted flex flex-col gap-1">
                         <div>
                           <strong>Giảng viên:</strong> {pc.giangvien?.hoten} (
                           {pc.magv})
@@ -796,13 +584,13 @@ export default function AdminAssignmentsPage() {
                         </div>
                       </div>
 
-                      <div className={styles.mobileCardFooter}>
+                      <div className="flex justify-between items-center border-t border-dashed border-[#FFF0CD] pt-2.5 mt-1">
                         <span style={{ fontSize: 12, color: "#8B6F5F" }}>
                           ID: {pc.maphancong}
                         </span>
-                        <div className={styles.actions}>
+                        <div className="flex gap-2">
                           <button
-                            className={`${styles.iconBtn} ${styles.editBtn}`}
+                            className="p-1.5 rounded-lg text-fg-subtle transition-all flex items-center justify-center hover:bg-[#FFF0CD] hover:text-blue-600"
                             onClick={() => {
                               setMutError("");
                               setModal({ mode: "edit", item: pc });
@@ -822,13 +610,12 @@ export default function AdminAssignmentsPage() {
                           </button>
 
                           <button
-                            className={styles.iconBtn}
+                            className="p-1.5 rounded-lg text-fg-subtle transition-all flex items-center justify-center hover:bg-[#FFF0CD] hover:text-[#E67E22]"
                             onClick={() =>
                               router.push(
                                 `/admin/schedules?maphancong=${pc.maphancong}`,
                               )
                             }
-                            style={{ color: "#E67E22" }}
                           >
                             <svg
                               width="18"
@@ -853,7 +640,7 @@ export default function AdminAssignmentsPage() {
                           </button>
 
                           <button
-                            className={`${styles.iconBtn} ${styles.deleteBtn}`}
+                            className="p-1.5 rounded-lg text-fg-subtle transition-all flex items-center justify-center hover:bg-[#FFF0CD] hover:text-red-600"
                             onClick={() => {
                               setMutError("");
                               setModal({ mode: "delete", item: pc });

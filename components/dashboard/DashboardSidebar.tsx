@@ -4,7 +4,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/hooks/auth/useAuth";
 import { VaiTro } from "@/types";
-import styles from "./DashboardLayout.module.css";
 
 // ─── Nav items per role ────────────────────────────────────────────────────────
 
@@ -61,8 +60,8 @@ export function DashboardSidebar() {
   return (
     <>
       {/* Logo */}
-      <div className={styles.sidebarLogo}>
-        <div className={styles.logoIcon}>
+      <div className="flex items-center gap-2 p-[6px_10px] mb-4">
+        <div className="w-[26px] h-[26px] bg-[#C25450] rounded-[7px] flex items-center justify-center shrink-0">
           <svg
             width="14"
             height="14"
@@ -79,18 +78,18 @@ export function DashboardSidebar() {
             />
           </svg>
         </div>
-        <span className={styles.logoText}>Hệ thống quản lý sinh viên</span>
+        <span className="text-[15px] font-bold text-[#2D1B14]">Hệ thống quản lý sinh viên</span>
       </div>
 
       {/* Nav */}
-      <ul className={styles.navList} role="list">
+      <ul className="list-none p-0 m-0 flex flex-col gap-0.5 flex-1" role="list">
         {navItems.map((item) => (
           <li key={item.href}>
             <Link
               href={item.href}
               className={`sidebar-item ${pathname === item.href || pathname.startsWith(item.href + "/") ? "active" : ""}`}
             >
-              <span className={styles.navIcon} aria-hidden></span>
+              <span className="text-base leading-none" aria-hidden></span>
               {item.label}
             </Link>
           </li>
@@ -98,18 +97,18 @@ export function DashboardSidebar() {
       </ul>
 
       {/* User info + logout */}
-      <div className={styles.sidebarFooter}>
-        <div className={styles.userInfo}>
-          <div className={styles.avatar} aria-hidden>
+      <div className="p-[12px_6px_4px] border-t border-[#EAD9CB] mt-3 flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-1 min-w-0">
+          <div className="w-[34px] h-[34px] rounded-full bg-primary text-white text-[13px] font-bold flex items-center justify-center shrink-0" aria-hidden>
             {user?.hoten?.charAt(0) ?? "?"}
           </div>
-          <div className={styles.userMeta}>
-            <span className={styles.userName}>{user?.hoten ?? "—"}</span>
-            <span className={styles.userRole}>{roleLabel}</span>
+          <div className="flex flex-col min-w-0">
+            <span className="text-[13px] font-semibold text-[#2D1B14] whitespace-nowrap overflow-hidden text-ellipsis">{user?.hoten ?? "—"}</span>
+            <span className="text-[11px] text-[#8B6F5F]">{roleLabel}</span>
           </div>
         </div>
         <button
-          className={styles.logoutBtn}
+          className="bg-none border-none cursor-pointer p-1.5 text-[#8B6F5F] rounded-lg flex items-center transition-all duration-150 hover:bg-[#FEE2E2] hover:text-[#C25450] shrink-0"
           onClick={() => logout()}
           aria-label="Đăng xuất"
           title="Đăng xuất"
@@ -147,9 +146,9 @@ export function DashboardTopbar({
   const { user, logout } = useAuth();
 
   return (
-    <header className={styles.topbar}>
+    <header className="hidden max-lg:flex items-center gap-3 p-[0_16px] h-14 bg-white border-b border-[#EAD9CB] sticky top-0 z-[50]">
       <button
-        className={styles.menuBtn}
+        className="bg-none border-none cursor-pointer p-1.5 text-[#6B4F3F] rounded-lg flex items-center hover:bg-[#FFF2EB]"
         onClick={onMenuClick}
         data-menu-btn
         aria-label="Mở menu"
@@ -163,16 +162,16 @@ export function DashboardTopbar({
           />
         </svg>
       </button>
-      <h1 className={styles.topbarTitle}>{title}</h1>
-      <div className={styles.topbarRight}>
+      <h1 className="flex-1 text-[15px] font-bold text-[#2D1B14] m-0">{title}</h1>
+      <div className="flex items-center gap-2">
         <div
-          className={styles.avatarSm}
+          className="w-[30px] h-[30px] rounded-full bg-primary text-white text-xs font-bold flex items-center justify-center"
           aria-label={`Xin chào, ${user?.hoten}`}
         >
           {user?.hoten?.charAt(0) ?? "?"}
         </div>
         <button
-          className={styles.logoutBtnSm}
+          className="bg-none border-none cursor-pointer p-1.5 text-[#8B6F5F] rounded-lg flex items-center hover:text-[#C25450]"
           onClick={() => logout()}
           aria-label="Đăng xuất"
         >
@@ -196,3 +195,4 @@ export function DashboardTopbar({
     </header>
   );
 }
+

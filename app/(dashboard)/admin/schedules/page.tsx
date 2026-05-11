@@ -17,199 +17,15 @@ import { usePhanCong, type PhanCongRow } from "@/hooks/admin/usePhancong";
 import { useHocky, type HockyRow } from "@/hooks/admin/useHocky";
 import { useLop, type LopRow } from "@/hooks/admin/useLop";
 import { usePhongHoc, type PhongHocRow } from "@/hooks/admin/usePhonghoc";
-import { VaiTro } from "@/types";
-import styles from "./schedule.module.css";
+import { VaiTro, LoaiPhongHoc } from "@/types";
+import {
+  ScheduleForm,
+  getDayLabel,
+  getRoomTypeLabel,
+} from "@/components/admin/ScheduleForm";
 
-// Helper to translate day of week to Vietnamese label
-const getDayLabel = (thu: number) => {
-  if (thu === 8) return "Chủ Nhật";
-  return `Thứ ${thu}`;
-};
 
-// Helper to translate room type to Vietnamese label
-const getRoomTypeLabel = (type: string | null | undefined) => {
-  if (type === "Lythuyet") return "Lý thuyết";
-  if (type === "Thuchanh") return "Thực hành";
-  if (type === "Online") return "Trực tuyến";
-  return "N/A";
-};
 
-// ─── Schedule Form Component ─────────────────────────────────────────────────
-function ScheduleForm({
-  initial,
-  phancongs,
-  phonghocs,
-  onSubmit,
-  onCancel,
-  loading,
-  error,
-}: {
-  initial?: Partial<LichHocRow>;
-  phancongs: PhanCongRow[];
-  phonghocs: PhongHocRow[];
-  onSubmit: (data: any) => void;
-  onCancel: () => void;
-  loading: boolean;
-  error: string;
-}) {
-  const [form, setForm] = useState({
-    maphancong: initial?.maphancong ? String(initial.maphancong) : "",
-    thutrongtuan: initial?.thutrongtuan ? String(initial.thutrongtuan) : "2",
-    tietbatdau: initial?.tietbatdau ? String(initial.tietbatdau) : "1",
-    tietketthuc: initial?.tietketthuc ? String(initial.tietketthuc) : "3",
-    maphong: initial?.maphong ?? "",
-    ghichu: initial?.ghichu ?? "",
-  });
-
-  const [localErr, setLocalErr] = useState("");
-
-  const handleValidateAndSubmit = () => {
-    setLocalErr("");
-    if (!form.maphancong)
-      return setLocalErr("Vui lòng chọn phân công giảng dạy.");
-
-    const thu = parseInt(form.thutrongtuan);
-    if (isNaN(thu) || thu < 2 || thu > 8)
-      return setLocalErr("Thứ trong tuần không hợp lệ.");
-
-    const tbd = parseInt(form.tietbatdau);
-    const tkt = parseInt(form.tietketthuc);
-    if (
-      isNaN(tbd) ||
-      tbd < 1 ||
-      tbd > 15 ||
-      isNaN(tkt) ||
-      tkt < 1 ||
-      tkt > 15
-    ) {
-      return setLocalErr("Tiết học phải thuộc khoảng từ 1 đến 15.");
-    }
-    if (tbd > tkt) {
-      return setLocalErr("Tiết bắt đầu không thể lớn hơn tiết kết thúc.");
-    }
-
-    onSubmit({
-      ...form,
-      maphancong: parseInt(form.maphancong),
-      thutrongtuan: thu,
-      tietbatdau: tbd,
-      tietketthuc: tkt,
-    });
-  };
-
-  return (
-    <>
-      {(error || localErr) && (
-        <div className="error-msg">{error || localErr}</div>
-      )}
-      <div className="form-grid">
-        <div className="field full">
-          <label>Phân công Giảng dạy (Lớp & Môn học) *</label>
-          <select
-            value={form.maphancong}
-            onChange={(e) => setForm({ ...form, maphancong: e.target.value })}
-            disabled={!!initial?.malichhoc} // Can't change assignment on edit
-          >
-            <option value="">-- Chọn phân công dạy học --</option>
-            {phancongs.map((pc) => (
-              <option key={pc.maphancong} value={pc.maphancong}>
-                #{pc.maphancong} | {pc.monhoc?.tenmon} - {pc.giangvien?.hoten} (
-                {pc.lop?.tenlop})
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="field">
-          <label>Thứ trong tuần *</label>
-          <select
-            value={form.thutrongtuan}
-            onChange={(e) => setForm({ ...form, thutrongtuan: e.target.value })}
-          >
-            <option value="2">Thứ Hai</option>
-            <option value="3">Thứ Ba</option>
-            <option value="4">Thứ Tư</option>
-            <option value="5">Thứ Năm</option>
-            <option value="6">Thứ Sáu</option>
-            <option value="7">Thứ Bảy</option>
-            <option value="8">Chủ Nhật</option>
-          </select>
-        </div>
-
-        <div className="field">
-          <label>Phòng học</label>
-          <select
-            value={form.maphong}
-            onChange={(e) => setForm({ ...form, maphong: e.target.value })}
-          >
-            <option value="">-- Chưa xếp phòng --</option>
-            {phonghocs.map((ph) => (
-              <option key={ph.maphong} value={ph.maphong}>
-                {ph.maphong} ({getRoomTypeLabel(ph.loaiphong)}) - {ph.suchua}{" "}
-                chỗ
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="field">
-          <label>Tiết bắt đầu *</label>
-          <select
-            value={form.tietbatdau}
-            onChange={(e) => setForm({ ...form, tietbatdau: e.target.value })}
-          >
-            {Array.from({ length: 15 }, (_, i) => i + 1).map((t) => (
-              <option key={t} value={t}>
-                Tiết {t}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="field">
-          <label>Tiết kết thúc *</label>
-          <select
-            value={form.tietketthuc}
-            onChange={(e) => setForm({ ...form, tietketthuc: e.target.value })}
-          >
-            {Array.from({ length: 15 }, (_, i) => i + 1).map((t) => (
-              <option key={t} value={t}>
-                Tiết {t}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="field full">
-          <label>Ghi chú lịch học</label>
-          <textarea
-            rows={3}
-            value={form.ghichu}
-            onChange={(e) => setForm({ ...form, ghichu: e.target.value })}
-            placeholder="Nhập thông tin ghi chú (nếu có)..."
-          />
-        </div>
-      </div>
-
-      <div className="modal-actions">
-        <button className="btn-secondary" onClick={onCancel} disabled={loading}>
-          Huỷ
-        </button>
-        <button
-          className="btn-primary"
-          onClick={handleValidateAndSubmit}
-          disabled={loading}
-        >
-          {loading
-            ? "Đang xếp lịch..."
-            : initial?.malichhoc
-              ? "Cập nhật"
-              : "Xếp lịch học"}
-        </button>
-      </div>
-    </>
-  );
-}
 
 // ─── Inner Component to safely read Search Params ─────────────────────────────
 function AdminSchedulesContent() {
@@ -318,13 +134,13 @@ function AdminSchedulesContent() {
   const stats = useMemo(() => {
     const totalSchedules = list.length;
     const theoryRooms = list.filter(
-      (item) => item.phonghoc?.loaiphong === "Lythuyet",
+      (item) => item.phonghoc?.loaiphong === LoaiPhongHoc.Lythuyet,
     ).length;
     const practiceRooms = list.filter(
-      (item) => item.phonghoc?.loaiphong === "Thuchanh",
+      (item) => item.phonghoc?.loaiphong === LoaiPhongHoc.Thuchanh,
     ).length;
     const onlineRooms = list.filter(
-      (item) => item.phonghoc?.loaiphong === "Online",
+      (item) => item.phonghoc?.loaiphong === LoaiPhongHoc.Online,
     ).length;
     return { totalSchedules, theoryRooms, practiceRooms, onlineRooms };
   }, [list]);
@@ -392,9 +208,9 @@ function AdminSchedulesContent() {
 
   return (
     <DashboardShell pageTitle="Quản lý Lịch học">
-      <div className={`animate-fadeInUp ${styles.page}`}>
+      <div className="animate-fadeInUp flex flex-col gap-5">
         {/* Header Section */}
-        <div className={styles.header}>
+        <div className="flex justify-between items-start flex-wrap gap-4 max-sm:flex-col max-sm:items-stretch">
           <div>
             {filterPc && (
               <button
@@ -424,8 +240,8 @@ function AdminSchedulesContent() {
                 Quay lại danh sách Phân công
               </button>
             )}
-            <h1 className={styles.title}>Quản lý Lịch học & Thời khóa biểu</h1>
-            <p className={styles.subtitle}>
+            <h1 className="text-2xl font-bold text-fg m-0 max-sm:text-lg">Quản lý Lịch học & Thời khóa biểu</h1>
+            <p className="text-xs text-fg-subtle mt-1">
               Xếp lịch học, sắp xếp phòng học, tiết học và theo dõi thời khoá
               biểu toàn trường
             </p>
@@ -433,9 +249,9 @@ function AdminSchedulesContent() {
 
           <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
             {/* View Mode Toggle Switch */}
-            <div className={styles.viewToggle}>
+            <div className="flex bg-[#FFF0CD] p-1 rounded-xl border border-[#FFDBB6] max-sm:hidden">
               <button
-                className={`${styles.toggleBtn} ${viewMode === "list" ? styles.toggleActive : ""}`}
+                className={`px-4 py-2 border-none bg-transparent rounded-lg text-xs font-semibold text-fg-subtle cursor-pointer transition-all duration-200 flex items-center gap-1.5 ${viewMode === "list" ? "bg-white text-fg shadow-[0_2px_4px_rgba(139,111,95,0.08)]" : ""}`}
                 onClick={() => {
                   setViewMode("list");
                   setPage(1);
@@ -459,7 +275,7 @@ function AdminSchedulesContent() {
                 Danh sách
               </button>
               <button
-                className={`${styles.toggleBtn} ${viewMode === "calendar" ? styles.toggleActive : ""}`}
+                className={`px-4 py-2 border-none bg-transparent rounded-lg text-xs font-semibold text-fg-subtle cursor-pointer transition-all duration-200 flex items-center gap-1.5 ${viewMode === "calendar" ? "bg-white text-fg shadow-[0_2px_4px_rgba(139,111,95,0.08)]" : ""}`}
                 onClick={() => setViewMode("calendar")}
               >
                 <svg
@@ -493,9 +309,9 @@ function AdminSchedulesContent() {
         </div>
 
         {/* Stats Summary Panel */}
-        <div className={styles.statsGrid}>
-          <div className={styles.statCard}>
-            <div className={`${styles.statIcon} ${styles.statOrange}`}>
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-2">
+          <div className="bg-white border border-[#FFDBB6] rounded-2xl p-4 flex items-center gap-4 shadow-[0_2px_4px_rgba(139,111,95,0.04)] transition-all duration-200 hover:translate-y-[-2px] hover:shadow-[0_6px_12px_rgba(139,111,95,0.08)]">
+            <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-[#FFDBB6] text-orange-700">
               <svg
                 width="24"
                 height="24"
@@ -511,13 +327,13 @@ function AdminSchedulesContent() {
               </svg>
             </div>
             <div>
-              <div className={styles.statValue}>{stats.totalSchedules}</div>
-              <div className={styles.statLabel}>Lịch xếp tuần này</div>
+              <div className="text-xl font-bold text-fg">{stats.totalSchedules}</div>
+              <div className="text-xs text-fg-subtle mt-0.5">Lịch xếp tuần này</div>
             </div>
           </div>
 
-          <div className={styles.statCard}>
-            <div className={`${styles.statIcon} ${styles.statRed}`}>
+          <div className="bg-white border border-[#FFDBB6] rounded-2xl p-4 flex items-center gap-4 shadow-[0_2px_4px_rgba(139,111,95,0.04)] transition-all duration-200 hover:translate-y-[-2px] hover:shadow-[0_6px_12px_rgba(139,111,95,0.08)]">
+            <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-[#FBD9D9] text-[#C25450]">
               <svg
                 width="24"
                 height="24"
@@ -531,13 +347,13 @@ function AdminSchedulesContent() {
               </svg>
             </div>
             <div>
-              <div className={styles.statValue}>{stats.theoryRooms}</div>
-              <div className={styles.statLabel}>Lớp lý thuyết</div>
+              <div className="text-xl font-bold text-fg">{stats.theoryRooms}</div>
+              <div className="text-xs text-fg-subtle mt-0.5">Lớp lý thuyết</div>
             </div>
           </div>
 
-          <div className={styles.statCard}>
-            <div className={`${styles.statIcon} ${styles.statYellow}`}>
+          <div className="bg-white border border-[#FFDBB6] rounded-2xl p-4 flex items-center gap-4 shadow-[0_2px_4px_rgba(139,111,95,0.04)] transition-all duration-200 hover:translate-y-[-2px] hover:shadow-[0_6px_12px_rgba(139,111,95,0.08)]">
+            <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-[#FFF0CD] text-[#B37D00]">
               <svg
                 width="24"
                 height="24"
@@ -552,13 +368,13 @@ function AdminSchedulesContent() {
               </svg>
             </div>
             <div>
-              <div className={styles.statValue}>{stats.practiceRooms}</div>
-              <div className={styles.statLabel}>Lớp thực hành</div>
+              <div className="text-xl font-bold text-fg">{stats.practiceRooms}</div>
+              <div className="text-xs text-fg-subtle mt-0.5">Lớp thực hành</div>
             </div>
           </div>
 
-          <div className={styles.statCard}>
-            <div className={`${styles.statIcon} ${styles.statCream}`}>
+          <div className="bg-white border border-[#FFDBB6] rounded-2xl p-4 flex items-center gap-4 shadow-[0_2px_4px_rgba(139,111,95,0.04)] transition-all duration-200 hover:translate-y-[-2px] hover:shadow-[0_6px_12px_rgba(139,111,95,0.08)]">
+            <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-[#FEFAE3] text-[#8A7A00] border border-[#EAD8A0]">
               <svg
                 width="24"
                 height="24"
@@ -572,15 +388,15 @@ function AdminSchedulesContent() {
               </svg>
             </div>
             <div>
-              <div className={styles.statValue}>{stats.onlineRooms}</div>
-              <div className={styles.statLabel}>Phòng học trực tuyến</div>
+              <div className="text-xl font-bold text-fg">{stats.onlineRooms}</div>
+              <div className="text-xs text-fg-subtle mt-0.5">Phòng học trực tuyến</div>
             </div>
           </div>
         </div>
 
         {/* Toolbar Filter Controls */}
         <section className="card" style={{ padding: 0, overflow: "hidden" }}>
-          <div className={styles.toolbar}>
+          <div className="flex items-center gap-2.5 p-4 border-b border-border flex-wrap max-sm:flex-col max-sm:items-stretch bg-[#FFF0CD] rounded-t-2xl">
             <SearchBar
               value={filterRoom}
               onChange={setFilterRoom}
@@ -588,7 +404,7 @@ function AdminSchedulesContent() {
             />
 
             <select
-              className={styles.filterSelect}
+              className="p-[10px_14px] border-[1.5px] border-border rounded-xl text-[13px] text-fg bg-white cursor-pointer outline-none transition-colors duration-200 focus:border-primary max-sm:w-full"
               value={filterPc}
               onChange={(e) => setFilterPc(e.target.value)}
             >
@@ -601,7 +417,7 @@ function AdminSchedulesContent() {
             </select>
 
             <select
-              className={styles.filterSelect}
+              className="p-[10px_14px] border-[1.5px] border-border rounded-xl text-[13px] text-fg bg-white cursor-pointer outline-none transition-colors duration-200 focus:border-primary max-sm:w-full"
               value={filterThu}
               onChange={(e) => setFilterThu(e.target.value)}
             >
@@ -616,7 +432,7 @@ function AdminSchedulesContent() {
             </select>
 
             <select
-              className={styles.filterSelect}
+              className="p-[10px_14px] border-[1.5px] border-border rounded-xl text-[13px] text-fg bg-white cursor-pointer outline-none transition-colors duration-200 focus:border-primary max-sm:w-full"
               value={filterLop}
               onChange={(e) => setFilterLop(e.target.value)}
             >
@@ -629,7 +445,7 @@ function AdminSchedulesContent() {
             </select>
 
             <select
-              className={styles.filterSelect}
+              className="p-[10px_14px] border-[1.5px] border-border rounded-xl text-[13px] text-fg bg-white cursor-pointer outline-none transition-colors duration-200 focus:border-primary max-sm:w-full"
               value={filterHk}
               onChange={(e) => setFilterHk(e.target.value)}
             >
@@ -643,7 +459,7 @@ function AdminSchedulesContent() {
 
             {(filterRoom || filterPc || filterThu || filterLop || filterHk) && (
               <button
-                className={styles.clearFilter}
+                className="p-[9px_14px] border-[1.5px] border-primary rounded-xl text-[13px] text-primary bg-[#FFF5F5] cursor-pointer whitespace-nowrap transition-all hover:bg-primary hover:text-white max-sm:w-full"
                 onClick={() => {
                   setFilterRoom("");
                   setFilterPc("");
@@ -666,26 +482,26 @@ function AdminSchedulesContent() {
             <>
               {/* VIEW 1: Traditional List Table View */}
               {viewMode === "list" && (
-                <div className={styles.tableContainer}>
-                  <table className={styles.customTable}>
+                <div className="w-full overflow-x-auto max-sm:hidden">
+                  <table className="w-full border-collapse text-left">
                     <thead>
                       <tr>
-                        <th>ID</th>
-                        <th>Ngày học</th>
-                        <th>Tiết học</th>
-                        <th>Môn học / Lớp</th>
-                        <th>Giảng viên</th>
-                        <th>Phòng học</th>
-                        <th>Hành động</th>
+                        <th className="bg-[#FFF0CD] text-[#5D4037] font-semibold text-[13px] p-[14px_18px] border-b-[1.5px] border-[#FFDBB6] whitespace-nowrap">ID</th>
+                        <th className="bg-[#FFF0CD] text-[#5D4037] font-semibold text-[13px] p-[14px_18px] border-b-[1.5px] border-[#FFDBB6] whitespace-nowrap">Ngày học</th>
+                        <th className="bg-[#FFF0CD] text-[#5D4037] font-semibold text-[13px] p-[14px_18px] border-b-[1.5px] border-[#FFDBB6] whitespace-nowrap">Tiết học</th>
+                        <th className="bg-[#FFF0CD] text-[#5D4037] font-semibold text-[13px] p-[14px_18px] border-b-[1.5px] border-[#FFDBB6] whitespace-nowrap">Môn học / Lớp</th>
+                        <th className="bg-[#FFF0CD] text-[#5D4037] font-semibold text-[13px] p-[14px_18px] border-b-[1.5px] border-[#FFDBB6] whitespace-nowrap">Giảng viên</th>
+                        <th className="bg-[#FFF0CD] text-[#5D4037] font-semibold text-[13px] p-[14px_18px] border-b-[1.5px] border-[#FFDBB6] whitespace-nowrap">Phòng học</th>
+                        <th className="bg-[#FFF0CD] text-[#5D4037] font-semibold text-[13px] p-[14px_18px] border-b-[1.5px] border-[#FFDBB6] whitespace-nowrap">Hành động</th>
                       </tr>
                     </thead>
                     <tbody>
                       {list.map((item) => (
-                        <tr key={item.malichhoc}>
-                          <td>
+                        <tr key={item.malichhoc} className="hover:bg-[#FEFAE3]">
+                          <td className="p-[14px_18px] text-sm text-fg border-b border-[#FFF0CD] transition-colors duration-150">
                             <strong>#{item.malichhoc}</strong>
                           </td>
-                          <td>
+                          <td className="p-[14px_18px] text-sm text-fg border-b border-[#FFF0CD] transition-colors duration-150">
                             <span
                               className="badge-purple"
                               style={{ padding: "4px 8px", borderRadius: 6 }}
@@ -693,7 +509,7 @@ function AdminSchedulesContent() {
                               {getDayLabel(item.thutrongtuan)}
                             </span>
                           </td>
-                          <td>
+                          <td className="p-[14px_18px] text-sm text-fg border-b border-[#FFF0CD] transition-colors duration-150">
                             <strong>
                               Tiết {item.tietbatdau} - {item.tietketthuc}
                             </strong>
@@ -707,7 +523,7 @@ function AdminSchedulesContent() {
                               ({item.tietketthuc - item.tietbatdau + 1} tiết)
                             </div>
                           </td>
-                          <td>
+                          <td className="p-[14px_18px] text-sm text-fg border-b border-[#FFF0CD] transition-colors duration-150">
                             <div style={{ fontWeight: 600 }}>
                               {item.phancong?.monhoc?.tenmon}
                             </div>
@@ -716,25 +532,25 @@ function AdminSchedulesContent() {
                               {item.phancong?.malophoc || "N/A"}
                             </span>
                           </td>
-                          <td>{item.phancong?.giangvien?.hoten}</td>
-                          <td>
+                          <td className="p-[14px_18px] text-sm text-fg border-b border-[#FFF0CD] transition-colors duration-150">{item.phancong?.giangvien?.hoten}</td>
+                          <td className="p-[14px_18px] text-sm text-fg border-b border-[#FFF0CD] transition-colors duration-150">
                             <span
-                              className={`${styles.badge} ${
-                                item.phonghoc?.loaiphong === "Online"
-                                  ? styles.typeOnline
-                                  : item.phonghoc?.loaiphong === "Thuchanh"
-                                    ? styles.typePractice
-                                    : styles.typeTheory
+                              className={`inline-block text-[11px] font-bold p-[3px_8px] rounded-lg ${
+                            item.phonghoc?.loaiphong === LoaiPhongHoc.Online
+                              ? "bg-[#F3E5F5] text-[#8E24AA]"
+                              : item.phonghoc?.loaiphong === LoaiPhongHoc.Thuchanh
+                                ? "bg-[#E8F5E9] text-[#2E7D32]"
+                                : "bg-[#E3F2FD] text-[#1976D2]"
                               }`}
                             >
                               {item.maphong || "Chưa xếp phòng"} (
                               {getRoomTypeLabel(item.phonghoc?.loaiphong)})
                             </span>
                           </td>
-                          <td>
-                            <div className={styles.actions}>
+                          <td className="p-[14px_18px] text-sm text-fg border-b border-[#FFF0CD] transition-colors duration-150">
+                            <div className="flex gap-2">
                               <button
-                                className={`${styles.iconBtn} ${styles.editBtn}`}
+                                className="bg-none border-none p-1.5 rounded-lg cursor-pointer text-fg-subtle transition-all duration-200 flex items-center justify-center hover:bg-[#FFF0CD] hover:text-blue-600"
                                 onClick={() => {
                                   setMutError("");
                                   setModal({ mode: "edit", item });
@@ -754,7 +570,7 @@ function AdminSchedulesContent() {
                                 </svg>
                               </button>
                               <button
-                                className={`${styles.iconBtn} ${styles.deleteBtn}`}
+                                className="bg-none border-none p-1.5 rounded-lg cursor-pointer text-fg-subtle transition-all duration-200 flex items-center justify-center hover:bg-[#FFF0CD] hover:text-red-600"
                                 onClick={() => {
                                   setMutError("");
                                   setModal({ mode: "delete", item });
@@ -784,45 +600,45 @@ function AdminSchedulesContent() {
 
               {/* VIEW 2: Premium Visual Weekly Timetable Grid View */}
               {viewMode === "calendar" && (
-                <div className={styles.calendarContainer}>
-                  <div className={styles.timetable}>
-                    <div className={styles.timeColHeader}>Thời gian</div>
+                <div className="p-5 overflow-x-auto max-sm:hidden">
+                  <div className="min-w-[800px] grid grid-cols-[80px_repeat(7,1fr)] border border-[#FFDBB6] rounded-xl overflow-hidden bg-white">
+                    <div className="bg-[#FFF0CD] text-[#5D4037] font-bold text-[13px] p-3 text-center border-b-2 border-r border-[#FFDBB6]">Thời gian</div>
                     {weekdays.map((thu) => (
-                      <div key={thu} className={styles.dayColHeader}>
+                      <div key={thu} className="bg-[#FFF0CD] text-[#5D4037] font-bold text-[13px] p-3 text-center border-b-2 border-r border-[#FFDBB6] last:border-r-0">
                         {getDayLabel(thu)}
                       </div>
                     ))}
 
                     {/* Simple rendering grouping schedule list per day column */}
-                    <div className={styles.timeSlotLabel}>Cả ngày</div>
+                    <div className="bg-[#FEFAE3] text-fg-subtle text-[11px] font-semibold flex items-center justify-center border-b border-r-2 border-[#FFDBB6] p-[14px_4px]">Cả ngày</div>
                     {weekdays.map((thu) => (
-                      <div key={thu} className={styles.gridCell}>
+                      <div key={thu} className="relative border-b border-[#FFF0CD] border-r border-[#FFDBB6] min-h-[52px] last:border-r-0">
                         {weekdaySchedules[thu].length > 0 ? (
                           weekdaySchedules[thu].map((item) => (
                             <div
                               key={item.malichhoc}
-                              className={styles.scheduleBlock}
+                              className="bg-[#FFF0CD] border-l-4 border-[#FFDBB6] rounded-lg p-1.5 m-1 shadow-[0_2px_4px_rgba(139,111,95,0.06)] cursor-pointer transition-all duration-200 flex flex-col gap-0.5 hover:scale-102 hover:shadow-[0_4px_8px_rgba(139,111,95,0.12)] hover:bg-[#FFDBB6] hover:border-l-primary"
                               onClick={() => {
                                 setMutError("");
                                 setModal({ mode: "edit", item });
                               }}
                             >
-                              <div className={styles.blockTitle}>
+                              <div className="text-[11px] font-bold text-fg whitespace-nowrap overflow-hidden text-ellipsis">
                                 {item.phancong?.monhoc?.tenmon}
                               </div>
-                              <div className={styles.blockSub}>
+                              <div className="text-[9px] text-fg-subtle">
                                 <strong>Tiết:</strong> {item.tietbatdau}-
                                 {item.tietketthuc}
                               </div>
-                              <div className={styles.blockSub}>
+                              <div className="text-[9px] text-fg-subtle">
                                 <strong>Lớp:</strong>{" "}
                                 {item.phancong?.lop?.tenlop}
                               </div>
-                              <div className={styles.blockSub}>
+                              <div className="text-[9px] text-fg-subtle">
                                 <strong>GV:</strong>{" "}
                                 {item.phancong?.giangvien?.hoten}
                               </div>
-                              <div className={styles.blockSub}>
+                              <div className="text-[9px] text-fg-subtle">
                                 <strong>Phòng:</strong> {item.maphong || "N/A"}
                               </div>
                             </div>
@@ -846,10 +662,10 @@ function AdminSchedulesContent() {
               )}
 
               {/* Mobile responsive Cards Grid */}
-              <div className={styles.mobileCardsGrid}>
+              <div className="hidden max-sm:flex flex-col gap-3 p-4">
                 {list.map((item) => (
-                  <div key={item.malichhoc} className={styles.mobileCard}>
-                    <div className={styles.mobileCardHeader}>
+                  <div key={item.malichhoc} className="bg-white border border-[#FFDBB6] rounded-xl p-4 flex flex-col gap-2.5">
+                    <div className="flex justify-between items-start">
                       <span
                         className="badge-purple"
                         style={{
@@ -861,19 +677,19 @@ function AdminSchedulesContent() {
                         {getDayLabel(item.thutrongtuan)}
                       </span>
                       <span
-                        className={`${styles.badge} ${
-                          item.phonghoc?.loaiphong === "Online"
-                            ? styles.typeOnline
-                            : item.phonghoc?.loaiphong === "Thuchanh"
-                              ? styles.typePractice
-                              : styles.typeTheory
+                        className={`inline-block text-[11px] font-bold p-[3px_8px] rounded-lg ${
+                          item.phonghoc?.loaiphong === LoaiPhongHoc.Online
+                            ? "bg-[#F3E5F5] text-[#8E24AA]"
+                            : item.phonghoc?.loaiphong === LoaiPhongHoc.Thuchanh
+                              ? "bg-[#E8F5E9] text-[#2E7D32]"
+                              : "bg-[#E3F2FD] text-[#1976D2]"
                         }`}
                       >
                         {getRoomTypeLabel(item.phonghoc?.loaiphong)}
                       </span>
                     </div>
 
-                    <div className={styles.mobileCardInfo}>
+                    <div className="text-sm text-[#5D4037] flex flex-col gap-1">
                       <div>
                         <strong>Môn học:</strong>{" "}
                         {item.phancong?.monhoc?.tenmon}
@@ -898,13 +714,13 @@ function AdminSchedulesContent() {
                       </div>
                     </div>
 
-                    <div className={styles.mobileCardFooter}>
+                    <div className="flex justify-between items-center border-t border-dashed border-[#FFF0CD] pt-2.5 mt-1">
                       <span style={{ fontSize: 12, color: "#8B6F5F" }}>
                         Mã lịch: #{item.malichhoc}
                       </span>
-                      <div className={styles.actions}>
+                      <div className="flex gap-2">
                         <button
-                          className={`${styles.iconBtn} ${styles.editBtn}`}
+                          className="bg-none border-none p-1.5 rounded-lg cursor-pointer text-fg-subtle transition-all duration-200 flex items-center justify-center hover:bg-[#FFF0CD] hover:text-blue-600"
                           onClick={() => {
                             setMutError("");
                             setModal({ mode: "edit", item });
@@ -923,7 +739,7 @@ function AdminSchedulesContent() {
                           </svg>
                         </button>
                         <button
-                          className={`${styles.iconBtn} ${styles.deleteBtn}`}
+                          className="bg-none border-none p-1.5 rounded-lg cursor-pointer text-fg-subtle transition-all duration-200 flex items-center justify-center hover:bg-[#FFF0CD] hover:text-red-600"
                           onClick={() => {
                             setMutError("");
                             setModal({ mode: "delete", item });

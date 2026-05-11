@@ -5,9 +5,9 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/auth/useAuth";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { AdminModal } from "@/components/admin/Adminmodal";
+import { ProfileDetailModal } from "@/components/admin/ProfileDetailModal";
 import { useAdminStats, type AdminStats } from "@/hooks/admin/useAdminStats";
-import { VaiTro, TrangThaiSinhVien } from "@/types";
-import styles from "./admin-dashboard.module.css";
+import { VaiTro, TrangThaiSinhVien, LoaiPhongHoc } from "@/types";
 
 // ─── Local types ──────────────────────────────────────────────────────────────
 
@@ -44,11 +44,25 @@ const SV_STATUS_BADGE: Record<string, string> = {
 
 // ─── Stat card ────────────────────────────────────────────────────────────────
 
-function StatCard({ label, value }: { label: string; value: number | string }) {
+function StatCard({
+  label,
+  value,
+  gradient,
+}: {
+  label: string;
+  value: number | string;
+  gradient: string;
+}) {
   return (
-    <div className={styles.statCard}>
-      <span className={styles.statValue}>{value}</span>
-      <span className={styles.statLabel}>{label}</span>
+    <div
+      className={`p-[24px_20px] flex flex-col-reverse gap-2 rounded-2xl border border-[#FFDBB6] shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-md ${gradient}`}
+    >
+      <span className="text-4xl font-extrabold text-[#2D1B14] leading-none">
+        {value}
+      </span>
+      <span className="text-[11px] font-bold text-[#6B4F3F] uppercase tracking-wider">
+        {label}
+      </span>
     </div>
   );
 }
@@ -164,12 +178,14 @@ export default function AdminDashboard() {
 
   return (
     <DashboardShell pageTitle="Quản trị hệ thống">
-      <div className={`animate-fadeInUp ${styles.page}`}>
+      <div className="animate-fadeInUp flex flex-col gap-6">
         {/* Header with Integrated Professional Global Search */}
-        <div className={styles.header}>
+        <div className="flex items-center justify-between flex-wrap gap-4 bg-gradient-to-br from-[#FEFAE3] to-[#FFF0CD] p-5 rounded-2xl border border-[#FFDBB6] max-sm:flex-col max-sm:items-stretch">
           <div>
-            <h1 className={styles.greeting}>Tổng quan hệ thống</h1>
-            <p className={styles.date}>
+            <h1 className="text-2xl font-extrabold text-[#2D1B14] m-0 mb-1">
+              Tổng quan hệ thống
+            </h1>
+            <p className="text-[13px] text-[#8B6F5F] m-0 font-medium capitalize">
               {new Date().toLocaleDateString("vi-VN", {
                 weekday: "long",
                 day: "2-digit",
@@ -179,10 +195,10 @@ export default function AdminDashboard() {
             </p>
           </div>
 
-          <div className={styles.searchContainer}>
-            <div className={styles.searchInputWrapper}>
+          <div className="flex-1 min-w-[280px] max-w-[500px] max-sm:max-w-full">
+            <div className="relative flex items-center">
               <svg
-                className={styles.searchIcon}
+                className="absolute left-4 text-[#8B6F5F] pointer-events-none"
                 width="18"
                 height="18"
                 viewBox="0 0 24 24"
@@ -197,14 +213,14 @@ export default function AdminDashboard() {
               </svg>
               <input
                 type="text"
-                className={styles.searchInput}
+                className="w-full h-11 pl-11 pr-10 border-2 border-[#FFDBB6] rounded-full bg-white text-sm font-medium text-[#2D1B14] outline-none transition-all duration-200 shadow-[0_2px_8px_rgba(76,38,24,0.04)] focus:border-primary focus:shadow-[0_0_0_3px_rgba(194,84,80,0.15)]"
                 placeholder="Tìm sinh viên, lớp, môn, giảng viên..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
               {search && (
                 <button
-                  className={styles.clearSearchBtn}
+                  className="absolute right-3 border-none bg-transparent text-[#8B6F5F] text-base cursor-pointer p-1 flex items-center justify-center rounded-full transition-colors duration-150 hover:bg-[#8B6F5F]/10 hover:text-[#2D1B14]"
                   onClick={() => setSearch("")}
                   title="Xóa tìm kiếm"
                 >
@@ -219,9 +235,9 @@ export default function AdminDashboard() {
 
         {/* Global Search Results Drawer */}
         {search.trim() && (
-          <div className={styles.searchResultsArea}>
+          <div className="flex flex-col gap-4 bg-white border border-[#FFDBB6] rounded-2xl p-5 shadow-lg">
             {searchLoading ? (
-              <p className={styles.emptyText}>
+              <p className="p-8 text-sm text-[#8B6F5F] text-center m-0 font-medium">
                 Đang tìm kiếm thông tin trên hệ thống...
               </p>
             ) : !searchResults ||
@@ -229,7 +245,7 @@ export default function AdminDashboard() {
                 !searchResults.giangvien.length &&
                 !searchResults.lop.length &&
                 !searchResults.monhoc.length) ? (
-              <p className={styles.emptyText}>
+              <p className="p-8 text-sm text-[#8B6F5F] text-center m-0 font-medium">
                 Không tìm thấy kết quả phù hợp cho "{search}".
               </p>
             ) : (
@@ -237,7 +253,7 @@ export default function AdminDashboard() {
                 {/* Students Match */}
                 {!!searchResults.sinhvien.length && (
                   <div>
-                    <h3 className={styles.searchSectionTitle}>
+                    <h3 className="text-sm font-bold text-[#2D1B14] m-0 mb-3 pb-1.5 border-b-2 border-[#FFDBB6] flex items-center gap-2">
                       <svg
                         width="15"
                         height="15"
@@ -253,12 +269,17 @@ export default function AdminDashboard() {
                       </svg>
                       Sinh viên ({searchResults.sinhvien.length})
                     </h3>
-                    <div className={styles.searchGrid}>
+                    <div className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-3 mb-3">
                       {searchResults.sinhvien.map((sv: any) => (
-                        <div key={sv.masv} className={styles.searchResultItem}>
-                          <div className={styles.itemInfo}>
-                            <span className={styles.itemName}>{sv.hoten}</span>
-                            <span className={styles.itemMeta}>
+                        <div
+                          key={sv.masv}
+                          className="flex items-center justify-between p-3 rounded-xl bg-[#FEFAE3] border border-[#FFDBB6] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm hover:bg-[#FFF0CD]"
+                        >
+                          <div className="flex flex-col gap-0.5">
+                            <span className="text-sm font-semibold text-[#2D1B14]">
+                              {sv.hoten}
+                            </span>
+                            <span className="text-xs text-[#8B6F5F]">
                               MSSV: <code>{sv.masv}</code> • Lớp:{" "}
                               {sv.lop?.tenlop ?? "—"}
                             </span>
@@ -279,7 +300,7 @@ export default function AdminDashboard() {
                 {/* Lecturers Match */}
                 {!!searchResults.giangvien.length && (
                   <div style={{ marginTop: "12px" }}>
-                    <h3 className={styles.searchSectionTitle}>
+                    <h3 className="text-sm font-bold text-[#2D1B14] m-0 mb-3 pb-1.5 border-b-2 border-[#FFDBB6] flex items-center gap-2">
                       <svg
                         width="15"
                         height="15"
@@ -302,12 +323,17 @@ export default function AdminDashboard() {
                       </svg>
                       Giảng viên ({searchResults.giangvien.length})
                     </h3>
-                    <div className={styles.searchGrid}>
+                    <div className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-3 mb-3">
                       {searchResults.giangvien.map((gv: any) => (
-                        <div key={gv.magv} className={styles.searchResultItem}>
-                          <div className={styles.itemInfo}>
-                            <span className={styles.itemName}>{gv.hoten}</span>
-                            <span className={styles.itemMeta}>
+                        <div
+                          key={gv.magv}
+                          className="flex items-center justify-between p-3 rounded-xl bg-[#FEFAE3] border border-[#FFDBB6] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm hover:bg-[#FFF0CD]"
+                        >
+                          <div className="flex flex-col gap-0.5">
+                            <span className="text-sm font-semibold text-[#2D1B14]">
+                              {gv.hoten}
+                            </span>
+                            <span className="text-xs text-[#8B6F5F]">
                               Mã GV: <code>{gv.magv}</code> • Khoa:{" "}
                               {gv.khoa?.tenkhoa ?? "—"}
                             </span>
@@ -328,7 +354,7 @@ export default function AdminDashboard() {
                 {/* Classes Match */}
                 {!!searchResults.lop.length && (
                   <div style={{ marginTop: "12px" }}>
-                    <h3 className={styles.searchSectionTitle}>
+                    <h3 className="text-sm font-bold text-[#2D1B14] m-0 mb-3 pb-1.5 border-b-2 border-[#FFDBB6] flex items-center gap-2">
                       <svg
                         width="15"
                         height="15"
@@ -341,12 +367,17 @@ export default function AdminDashboard() {
                       </svg>
                       Lớp học ({searchResults.lop.length})
                     </h3>
-                    <div className={styles.searchGrid}>
+                    <div className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-3 mb-3">
                       {searchResults.lop.map((lp: any) => (
-                        <div key={lp.malop} className={styles.searchResultItem}>
-                          <div className={styles.itemInfo}>
-                            <span className={styles.itemName}>{lp.tenlop}</span>
-                            <span className={styles.itemMeta}>
+                        <div
+                          key={lp.malop}
+                          className="flex items-center justify-between p-3 rounded-xl bg-[#FEFAE3] border border-[#FFDBB6] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm hover:bg-[#FFF0CD]"
+                        >
+                          <div className="flex flex-col gap-0.5">
+                            <span className="text-sm font-semibold text-[#2D1B14]">
+                              {lp.tenlop}
+                            </span>
+                            <span className="text-xs text-[#8B6F5F]">
                               Mã lớp: <code>{lp.malop}</code> • Sĩ số: {lp.siso}{" "}
                               • Khoa: {lp.khoa?.tenkhoa ?? "—"}
                             </span>
@@ -360,7 +391,7 @@ export default function AdminDashboard() {
                 {/* Subjects Match */}
                 {!!searchResults.monhoc.length && (
                   <div style={{ marginTop: "12px" }}>
-                    <h3 className={styles.searchSectionTitle}>
+                    <h3 className="text-sm font-bold text-[#2D1B14] m-0 mb-3 pb-1.5 border-b-2 border-[#FFDBB6] flex items-center gap-2">
                       <svg
                         width="15"
                         height="15"
@@ -374,12 +405,17 @@ export default function AdminDashboard() {
                       </svg>
                       Môn học ({searchResults.monhoc.length})
                     </h3>
-                    <div className={styles.searchGrid}>
+                    <div className="grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-3 mb-3">
                       {searchResults.monhoc.map((mh: any) => (
-                        <div key={mh.mamon} className={styles.searchResultItem}>
-                          <div className={styles.itemInfo}>
-                            <span className={styles.itemName}>{mh.tenmon}</span>
-                            <span className={styles.itemMeta}>
+                        <div
+                          key={mh.mamon}
+                          className="flex items-center justify-between p-3 rounded-xl bg-[#FEFAE3] border border-[#FFDBB6] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm hover:bg-[#FFF0CD]"
+                        >
+                          <div className="flex flex-col gap-0.5">
+                            <span className="text-sm font-semibold text-[#2D1B14]">
+                              {mh.tenmon}
+                            </span>
+                            <span className="text-xs text-[#8B6F5F]">
                               Mã môn: <code>{mh.mamon}</code> • Tín chỉ:{" "}
                               {mh.sotinchi} • Khoa: {mh.khoa?.tenkhoa ?? "—"}
                             </span>
@@ -395,33 +431,40 @@ export default function AdminDashboard() {
         )}
 
         {/* Stats Grid */}
-        <div className={styles.statsGrid}>
+        <div className="grid grid-cols-4 gap-4 max-lg:grid-cols-2 max-sm:grid-cols-1 max-sm:gap-3">
           <StatCard
             label="Tổng sinh viên"
             value={fetching ? "…" : (data?.totalSV ?? 0)}
+            gradient="bg-gradient-to-br from-[#FBD9D9] to-white"
           />
           <StatCard
             label="Giảng viên"
             value={fetching ? "…" : (data?.totalGV ?? 0)}
+            gradient="bg-gradient-to-br from-[#FFDBB6] to-white"
           />
           <StatCard
             label="Lớp học"
             value={fetching ? "…" : (data?.totalLop ?? 0)}
+            gradient="bg-gradient-to-br from-[#FFF0CD] to-white"
           />
           <StatCard
             label="Khoa"
             value={fetching ? "…" : (data?.totalKhoa ?? 0)}
+            gradient="bg-gradient-to-br from-[#FEFAE3] to-white"
           />
         </div>
 
         {/* Recent Lists (Tabs) */}
-        <div className={styles.tabBar} role="tablist">
+        <div
+          className="flex gap-1 bg-[#FFF0CD] rounded-xl p-1 w-fit border border-[#FFDBB6] max-sm:w-full"
+          role="tablist"
+        >
           {(["sv", "gv"] as const).map((tab) => (
             <button
               key={tab}
               role="tab"
               aria-selected={activeTab === tab}
-              className={`${styles.tab} ${activeTab === tab ? styles.tabActive : ""}`}
+              className={`p-[10px_24px] border-none rounded-lg text-sm font-semibold cursor-pointer transition-all duration-150 max-sm:flex-1 max-sm:text-center max-sm:p-[10px_12px] ${activeTab === tab ? "bg-primary text-white font-bold shadow-[0_2px_8px_rgba(194,84,80,0.25)]" : "bg-transparent text-[#6B4F3F] hover:bg-[#C25450]/8"}`}
               onClick={() => setActiveTab(tab)}
             >
               {tab === "sv" ? "Sinh viên gần đây" : "Giảng viên gần đây"}
@@ -436,12 +479,16 @@ export default function AdminDashboard() {
           }
         >
           {fetching ? (
-            <p className={styles.emptyText}>Đang tải…</p>
+            <p className="p-8 text-sm text-[#8B6F5F] text-center m-0 font-medium">
+              Đang tải…
+            </p>
           ) : activeTab === "sv" ? (
             !data?.recentSV.length ? (
-              <p className={styles.emptyText}>Chưa có sinh viên.</p>
+              <p className="p-8 text-sm text-[#8B6F5F] text-center m-0 font-medium">
+                Chưa có sinh viên.
+              </p>
             ) : (
-              <div className={styles.tableWrap}>
+              <div className="w-full overflow-x-auto">
                 <table className="data-table">
                   <thead>
                     <tr>
@@ -487,9 +534,11 @@ export default function AdminDashboard() {
               </div>
             )
           ) : !data?.recentGV.length ? (
-            <p className={styles.emptyText}>Chưa có giảng viên.</p>
+            <p className="p-8 text-sm text-[#8B6F5F] text-center m-0 font-medium">
+              Chưa có giảng viên.
+            </p>
           ) : (
-            <div className={styles.tableWrap}>
+            <div className="w-full overflow-x-auto">
               <table className="data-table">
                 <thead>
                   <tr>
@@ -535,10 +584,10 @@ export default function AdminDashboard() {
         </section>
 
         {/* Schedules & Audit Logs Grid (Lịch học hôm nay & Nhật ký hệ thống) */}
-        <div className={styles.dashboardGrid}>
+        <div className="grid grid-cols-2 gap-6 max-lg:grid-cols-1">
           {/* Column 1: Today's Class Schedule (Lịch học hôm nay - Giảng viên dạy gì) */}
-          <div className={styles.gridCol}>
-            <div className={styles.colHeader}>
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center gap-2.5 mb-1">
               <svg
                 width="20"
                 height="20"
@@ -551,38 +600,44 @@ export default function AdminDashboard() {
                 <polyline points="12 6 12 12 16 14"></polyline>
               </svg>
               <div>
-                <h2 className={styles.colTitle}>Lịch học hôm nay</h2>
-                <p className={styles.colSubtitle}>
+                <h2 className="text-lg font-bold text-[#2D1B14] m-0">
+                  Lịch học hôm nay
+                </h2>
+                <p className="text-xs text-[#8B6F5F] m-0">
                   Danh sách giảng dạy và học tập trong ngày
                 </p>
               </div>
             </div>
 
-            <div className={`card ${styles.scrollContainer}`}>
+            <div className="card max-h-[480px] overflow-y-auto pr-1.5">
               {fetching ? (
-                <p className={styles.emptyText}>Đang tải lịch học…</p>
+                <p className="p-8 text-sm text-[#8B6F5F] text-center m-0 font-medium">
+                  Đang tải lịch học…
+                </p>
               ) : !data?.todaySchedules?.length ? (
-                <p className={styles.emptyText}>
+                <p className="p-8 text-sm text-[#8B6F5F] text-center m-0 font-medium">
                   Hôm nay hệ thống không có lịch học nào.
                 </p>
               ) : (
-                <div className={styles.scheduleList}>
+                <div className="flex flex-col gap-3">
                   {data.todaySchedules.map((schedule) => (
                     <div
                       key={schedule.malichhoc}
-                      className={styles.scheduleItem}
+                      className="flex gap-4 p-4 bg-white border border-[#FFDBB6] rounded-xl transition-all duration-250 hover:translate-x-1 hover:border-primary hover:shadow-md"
                     >
-                      <div className={styles.timeBlock}>
-                        <span className={styles.timeLabel}>Tiết</span>
-                        <span className={styles.timeValue}>
+                      <div className="flex flex-col items-center justify-center bg-[#FEFAE3] border border-[#FFDBB6] rounded-xl p-2 min-w-[68px] text-center">
+                        <span className="text-[11px] font-bold text-[#6B4F3F] uppercase">
+                          Tiết
+                        </span>
+                        <span className="text-base font-extrabold text-primary mt-0.5">
                           {schedule.tietbatdau}-{schedule.tietketthuc}
                         </span>
                       </div>
-                      <div className={styles.scheduleDetails}>
-                        <h3 className={styles.scheduleSubject}>
+                      <div className="flex flex-col flex-1">
+                        <h3 className="text-sm font-bold text-[#2D1B14] mb-1">
                           {schedule.monhoc}
                         </h3>
-                        <div className={styles.scheduleTeacher}>
+                        <div className="text-xs font-medium text-[#6B4F3F] mb-1.5 flex items-center gap-1">
                           <svg
                             width="12"
                             height="12"
@@ -598,7 +653,7 @@ export default function AdminDashboard() {
                             Dạy bởi: <strong>{schedule.giangvien}</strong>
                           </span>
                         </div>
-                        <div className={styles.scheduleMeta}>
+                        <div className="flex flex-wrap gap-2">
                           <span className="badge badge-peach">
                             Lớp: {schedule.lop}
                           </span>
@@ -607,11 +662,11 @@ export default function AdminDashboard() {
                           </span>
                           {schedule.loaiphong && (
                             <span
-                              className={`badge ${schedule.loaiphong === "Thuchanh" ? "badge-yellow" : schedule.loaiphong === "Online" ? "badge-red" : "badge-green"}`}
+                              className={`badge ${schedule.loaiphong === LoaiPhongHoc.Thuchanh ? "badge-yellow" : schedule.loaiphong === LoaiPhongHoc.Online ? "badge-red" : "badge-green"}`}
                             >
-                              {schedule.loaiphong === "Lythuyet"
+                              {schedule.loaiphong === LoaiPhongHoc.Lythuyet
                                 ? "Lý thuyết"
-                                : schedule.loaiphong === "Thuchanh"
+                                : schedule.loaiphong === LoaiPhongHoc.Thuchanh
                                   ? "Thực hành"
                                   : "Trực tuyến"}
                             </span>
@@ -644,8 +699,8 @@ export default function AdminDashboard() {
           </div>
 
           {/* Column 2: System Logs (Nhật ký hệ thống) */}
-          <div className={styles.gridCol}>
-            <div className={styles.colHeader}>
+          <div className="flex flex-col gap-4">
+            <div className="flex items-center gap-2.5 mb-1">
               <svg
                 width="20"
                 height="20"
@@ -661,29 +716,38 @@ export default function AdminDashboard() {
                 <polyline points="10 9 9 9 8 9" />
               </svg>
               <div>
-                <h2 className={styles.colTitle}>Nhật ký hệ thống</h2>
-                <p className={styles.colSubtitle}>
+                <h2 className="text-lg font-bold text-[#2D1B14] m-0">
+                  Nhật ký hệ thống
+                </h2>
+                <p className="text-xs text-[#8B6F5F] m-0">
                   Giám sát lịch sử hoạt động thời gian thực
                 </p>
               </div>
             </div>
 
-            <div className={`card ${styles.scrollContainer}`}>
+            <div className="card max-h-[480px] overflow-y-auto pr-1.5">
               {fetching ? (
-                <p className={styles.emptyText}>Đang tải lịch sử nhật ký…</p>
+                <p className="p-8 text-sm text-[#8B6F5F] text-center m-0 font-medium">
+                  Đang tải lịch sử nhật ký…
+                </p>
               ) : !data?.auditLogs?.length ? (
-                <p className={styles.emptyText}>
+                <p className="p-8 text-sm text-[#8B6F5F] text-center m-0 font-medium">
                   Chưa có ghi chép lịch sử hoạt động nào.
                 </p>
               ) : (
-                <div className={styles.logList}>
+                <div className="flex flex-col gap-2.5">
                   {data.auditLogs.map((log) => (
-                    <div key={log.manhatky} className={styles.logItem}>
-                      <div className={styles.logBullet} />
-                      <div className={styles.logContent}>
-                        <p className={styles.logText}>{log.hanhdong}</p>
-                        <div className={styles.logMeta}>
-                          <span className={styles.logEmail}>
+                    <div
+                      key={log.manhatky}
+                      className="flex items-start gap-3 p-3 bg-white border border-[#FFDBB6] rounded-xl text-[13px] transition-all duration-150 hover:bg-[#FEFAE3]"
+                    >
+                      <div className="w-2 h-2 rounded-full bg-primary mt-1.5 shrink-0" />
+                      <div className="flex-1">
+                        <p className="text-[#2D1B14] font-semibold m-0 mb-1 leading-normal">
+                          {log.hanhdong}
+                        </p>
+                        <div className="flex justify-between items-center text-[11px] text-[#8B6F5F]">
+                          <span className="font-medium text-[#6B4F3F]">
                             👤{" "}
                             {log.taikhoan
                               ? `${log.taikhoan.email} (${log.taikhoan.vaitro === "Admin" ? "Quản trị" : log.taikhoan.vaitro === "GiangVien" ? "Giảng viên" : "Sinh viên"})`
@@ -695,8 +759,7 @@ export default function AdminDashboard() {
                               hour: "2-digit",
                               minute: "2-digit",
                             })}{" "}
-                            •{" "}
-                            <span className={styles.logIp}>{log.diachiip}</span>
+                            • <span className="font-mono">{log.diachiip}</span>
                           </span>
                         </div>
                       </div>
@@ -710,332 +773,13 @@ export default function AdminDashboard() {
       </div>
 
       {/* Detailed Modal Window */}
-      {showDetailModal && (
-        <AdminModal
-          title={
-            selectedType === "sv"
-              ? "Hồ sơ chi tiết Sinh viên"
-              : "Hồ sơ chi tiết Giảng viên"
-          }
-          onClose={() => setShowDetailModal(false)}
-          size="lg"
-        >
-          {detailLoading ? (
-            <p className={styles.emptyText}>
-              Đang tải chi tiết hồ sơ từ cơ sở dữ liệu…
-            </p>
-          ) : !selectedDetail ? (
-            <p className={styles.emptyText}>Không tìm thấy hồ sơ chi tiết.</p>
-          ) : selectedType === "sv" ? (
-            <div>
-              {/* Header Banner */}
-              <div className={styles.detailHeader}>
-                <div className={styles.avatarPlaceholder}>
-                  {selectedDetail.hoten?.charAt(0) || "S"}
-                </div>
-                <div className={styles.headerMeta}>
-                  <h3
-                    style={{
-                      fontSize: "19px",
-                      fontWeight: "700",
-                      color: "#2D1B14",
-                      margin: 0,
-                    }}
-                  >
-                    {selectedDetail.hoten}
-                  </h3>
-                  <div
-                    style={{ display: "flex", gap: "8px", marginTop: "4px" }}
-                  >
-                    <span className="badge badge-peach">Sinh viên</span>
-                    <span
-                      className={`badge ${SV_STATUS_BADGE[selectedDetail.trangthai] ?? "badge-peach"}`}
-                    >
-                      {STATUS_LABEL[selectedDetail.trangthai] ??
-                        selectedDetail.trangthai}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Section 1 */}
-              <h4 className={styles.modalSectionTitle}>Thông tin cá nhân</h4>
-              <div className={styles.detailGrid}>
-                <div className={styles.detailField}>
-                  <span className={styles.fieldLabel}>Ngày sinh</span>
-                  <span className={styles.fieldValue}>
-                    {selectedDetail.ngaysinh
-                      ? new Date(selectedDetail.ngaysinh).toLocaleDateString(
-                          "vi-VN",
-                        )
-                      : "—"}
-                  </span>
-                </div>
-                <div className={styles.detailField}>
-                  <span className={styles.fieldLabel}>Giới tính</span>
-                  <span className={styles.fieldValue}>
-                    {selectedDetail.gioitinh || "—"}
-                  </span>
-                </div>
-                <div className={styles.detailField}>
-                  <span className={styles.fieldLabel}>Số điện thoại</span>
-                  <span className={styles.fieldValue}>
-                    {selectedDetail.chitietsinhvien?.sodienthoai || "—"}
-                  </span>
-                </div>
-                <div className={styles.detailField}>
-                  <span className={styles.fieldLabel}>Email cá nhân</span>
-                  <span className={styles.fieldValue}>
-                    {selectedDetail.chitietsinhvien?.emailcanhan || "—"}
-                  </span>
-                </div>
-                <div
-                  className={styles.detailField}
-                  style={{ gridColumn: "span 2" }}
-                >
-                  <span className={styles.fieldLabel}>
-                    Quê quán (Hộ khẩu thường trú)
-                  </span>
-                  <span className={styles.fieldValue}>
-                    {selectedDetail.chitietsinhvien?.quequan || "—"}
-                  </span>
-                </div>
-              </div>
-
-              {/* Section 2 */}
-              <h4 className={styles.modalSectionTitle}>Thông tin học tập</h4>
-              <div className={styles.detailGrid}>
-                <div className={styles.detailField}>
-                  <span className={styles.fieldLabel}>
-                    Mã số sinh viên (MSSV)
-                  </span>
-                  <span className={styles.fieldValue}>
-                    <code>{selectedDetail.masv}</code>
-                  </span>
-                </div>
-                <div className={styles.detailField}>
-                  <span className={styles.fieldLabel}>Lớp học</span>
-                  <span className={styles.fieldValue}>
-                    {selectedDetail.lop?.tenlop || "—"}
-                  </span>
-                </div>
-                <div className={styles.detailField}>
-                  <span className={styles.fieldLabel}>Email trường cấp</span>
-                  <span className={styles.fieldValue}>
-                    {selectedDetail.emailtruong || "—"}
-                  </span>
-                </div>
-                <div className={styles.detailField}>
-                  <span className={styles.fieldLabel}>Khoa trực thuộc</span>
-                  <span className={styles.fieldValue}>
-                    {selectedDetail.lop?.khoa?.tenkhoa || "—"}
-                  </span>
-                </div>
-                <div
-                  className={styles.detailField}
-                  style={{ gridColumn: "span 2" }}
-                >
-                  <span className={styles.fieldLabel}>
-                    Địa chỉ tạm trú hiện tại
-                  </span>
-                  <span className={styles.fieldValue}>
-                    {selectedDetail.chitietsinhvien?.diachi || "—"}
-                  </span>
-                </div>
-              </div>
-
-              {/* Section 3 */}
-              <h4 className={styles.modalSectionTitle}>
-                Giấy tờ pháp lý & Thân nhân
-              </h4>
-              <div className={styles.detailGrid}>
-                <div className={styles.detailField}>
-                  <span className={styles.fieldLabel}>Số CCCD/CMND</span>
-                  <span className={styles.fieldValue}>
-                    {selectedDetail.chitietsinhvien?.cccd || "—"}
-                  </span>
-                </div>
-                <div className={styles.detailField}>
-                  <span className={styles.fieldLabel}>Cấp ngày & Nơi cấp</span>
-                  <span className={styles.fieldValue}>
-                    {selectedDetail.chitietsinhvien?.ngaycapcccd
-                      ? `${new Date(selectedDetail.chitietsinhvien.ngaycapcccd).toLocaleDateString("vi-VN")} `
-                      : ""}
-                    {selectedDetail.chitietsinhvien?.noicapcccd
-                      ? `(${selectedDetail.chitietsinhvien.noicapcccd})`
-                      : "—"}
-                  </span>
-                </div>
-                <div className={styles.detailField}>
-                  <span className={styles.fieldLabel}>
-                    Họ tên người bảo hộ (Phụ huynh)
-                  </span>
-                  <span className={styles.fieldValue}>
-                    {selectedDetail.chitietsinhvien?.tenphuhuynh || "—"}
-                  </span>
-                </div>
-                <div className={styles.detailField}>
-                  <span className={styles.fieldLabel}>
-                    SĐT liên hệ phụ huynh
-                  </span>
-                  <span className={styles.fieldValue}>
-                    {selectedDetail.chitietsinhvien?.sodienthoaiphuhuynh || "—"}
-                  </span>
-                </div>
-                <div className={styles.detailField}>
-                  <span className={styles.fieldLabel}>Dân tộc</span>
-                  <span className={styles.fieldValue}>
-                    {selectedDetail.chitietsinhvien?.dantoc || "—"}
-                  </span>
-                </div>
-                <div className={styles.detailField}>
-                  <span className={styles.fieldLabel}>Tôn giáo</span>
-                  <span className={styles.fieldValue}>
-                    {selectedDetail.chitietsinhvien?.tongiao || "—"}
-                  </span>
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div>
-              {/* Lecturer Header */}
-              <div className={styles.detailHeader}>
-                <div className={styles.avatarPlaceholder}>
-                  {selectedDetail.hoten?.charAt(0) || "G"}
-                </div>
-                <div className={styles.headerMeta}>
-                  <h3
-                    style={{
-                      fontSize: "19px",
-                      fontWeight: "700",
-                      color: "#2D1B14",
-                      margin: 0,
-                    }}
-                  >
-                    {selectedDetail.hoten}
-                  </h3>
-                  <div
-                    style={{ display: "flex", gap: "8px", marginTop: "4px" }}
-                  >
-                    <span className="badge badge-blue">Giảng viên</span>
-                    {selectedDetail.hocvi && (
-                      <span className="badge badge-green">
-                        {selectedDetail.hocvi}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Section 1 */}
-              <h4 className={styles.modalSectionTitle}>Thông tin cá nhân</h4>
-              <div className={styles.detailGrid}>
-                <div className={styles.detailField}>
-                  <span className={styles.fieldLabel}>Ngày sinh</span>
-                  <span className={styles.fieldValue}>
-                    {selectedDetail.ngaysinh
-                      ? new Date(selectedDetail.ngaysinh).toLocaleDateString(
-                          "vi-VN",
-                        )
-                      : "—"}
-                  </span>
-                </div>
-                <div className={styles.detailField}>
-                  <span className={styles.fieldLabel}>Giới tính</span>
-                  <span className={styles.fieldValue}>
-                    {selectedDetail.gioitinh || "—"}
-                  </span>
-                </div>
-                <div className={styles.detailField}>
-                  <span className={styles.fieldLabel}>
-                    Số điện thoại di động
-                  </span>
-                  <span className={styles.fieldValue}>
-                    {selectedDetail.chitietgiangvien?.sodienthoai || "—"}
-                  </span>
-                </div>
-                <div className={styles.detailField}>
-                  <span className={styles.fieldLabel}>Email cá nhân</span>
-                  <span className={styles.fieldValue}>
-                    {selectedDetail.chitietgiangvien?.emailcanhan || "—"}
-                  </span>
-                </div>
-                <div
-                  className={styles.detailField}
-                  style={{ gridColumn: "span 2" }}
-                >
-                  <span className={styles.fieldLabel}>Địa chỉ cư trú</span>
-                  <span className={styles.fieldValue}>
-                    {selectedDetail.chitietgiangvien?.diachi || "—"}
-                  </span>
-                </div>
-              </div>
-
-              {/* Section 2 */}
-              <h4 className={styles.modalSectionTitle}>
-                Học hàm học vị & Khoa
-              </h4>
-              <div className={styles.detailGrid}>
-                <div className={styles.detailField}>
-                  <span className={styles.fieldLabel}>
-                    Mã số giảng viên (Mã GV)
-                  </span>
-                  <span className={styles.fieldValue}>
-                    <code>{selectedDetail.magv}</code>
-                  </span>
-                </div>
-                <div className={styles.detailField}>
-                  <span className={styles.fieldLabel}>Khoa công tác</span>
-                  <span className={styles.fieldValue}>
-                    {selectedDetail.khoa?.tenkhoa || "—"}
-                  </span>
-                </div>
-                <div className={styles.detailField}>
-                  <span className={styles.fieldLabel}>Chuyên ngành chính</span>
-                  <span className={styles.fieldValue}>
-                    {selectedDetail.chuyennganh || "—"}
-                  </span>
-                </div>
-                <div className={styles.detailField}>
-                  <span className={styles.fieldLabel}>Trình độ / Học vị</span>
-                  <span className={styles.fieldValue}>
-                    {selectedDetail.hocvi || "—"}
-                  </span>
-                </div>
-                <div className={styles.detailField}>
-                  <span className={styles.fieldLabel}>Email trường cấp</span>
-                  <span className={styles.fieldValue}>
-                    {selectedDetail.emailtruong || "—"}
-                  </span>
-                </div>
-                <div className={styles.detailField}>
-                  <span className={styles.fieldLabel}>
-                    Ngày tiếp nhận công tác
-                  </span>
-                  <span className={styles.fieldValue}>
-                    {selectedDetail.chitietgiangvien?.ngayvaotruong
-                      ? new Date(
-                          selectedDetail.chitietgiangvien.ngayvaotruong,
-                        ).toLocaleDateString("vi-VN")
-                      : "—"}
-                  </span>
-                </div>
-                <div className={styles.detailField}>
-                  <span className={styles.fieldLabel}>Hệ số lương</span>
-                  <span className={styles.fieldValue}>
-                    {selectedDetail.chitietgiangvien?.hesoluong !== undefined &&
-                    selectedDetail.chitietgiangvien?.hesoluong !== null
-                      ? Number(
-                          selectedDetail.chitietgiangvien.hesoluong,
-                        ).toFixed(2)
-                      : "—"}
-                  </span>
-                </div>
-              </div>
-            </div>
-          )}
-        </AdminModal>
-      )}
+      <ProfileDetailModal
+        isOpen={showDetailModal}
+        type={selectedType}
+        detail={selectedDetail}
+        loading={detailLoading}
+        onClose={() => setShowDetailModal(false)}
+      />
     </DashboardShell>
   );
 }

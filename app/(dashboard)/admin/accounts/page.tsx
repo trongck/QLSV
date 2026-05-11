@@ -17,8 +17,14 @@ import {
   type TaiKhoanRow,
   type AccountStats,
 } from "@/hooks/admin/useTaikhoan";
-import { VaiTro } from "@/types";
-import styles from "./accounts.module.css";
+import { VaiTro, TrangThaiTaiKhoan } from "@/types";
+import {
+  StatsStrip,
+  QuickResetForm,
+  EditAccountForm,
+  BulkResetForm,
+  Toast,
+} from "@/components/admin/AccountForms";
 import {
   validateTaiKhoanUpdate,
   firstError,
@@ -26,384 +32,24 @@ import {
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const ROLE_LABEL: Record<string, string> = {
-  Admin: "Quản trị viên",
-  GiangVien: "Giảng viên",
-  SinhVien: "Sinh viên",
+const ROLE_LABEL: Record<VaiTro, string> = {
+  [VaiTro.Admin]: "Quản trị viên",
+  [VaiTro.GiangVien]: "Giảng viên",
+  [VaiTro.SinhVien]: "Sinh viên",
 };
-const ROLE_BADGE: Record<string, string> = {
-  Admin: "badge-red",
-  GiangVien: "badge-blue",
-  SinhVien: "badge-green",
+const ROLE_BADGE: Record<VaiTro, string> = {
+  [VaiTro.Admin]: "badge-red",
+  [VaiTro.GiangVien]: "badge-blue",
+  [VaiTro.SinhVien]: "badge-green",
 };
-const STATUS_BADGE: Record<string, string> = {
-  HoatDong: "badge-green",
-  Khoa: "badge-red",
+const STATUS_BADGE: Record<TrangThaiTaiKhoan, string> = {
+  [TrangThaiTaiKhoan.HoatDong]: "badge-green",
+  [TrangThaiTaiKhoan.Khoa]: "badge-red",
 };
-const STATUS_LABEL: Record<string, string> = {
-  HoatDong: "Hoạt động",
-  Khoa: "Khoá",
+const STATUS_LABEL: Record<TrangThaiTaiKhoan, string> = {
+  [TrangThaiTaiKhoan.HoatDong]: "Hoạt động",
+  [TrangThaiTaiKhoan.Khoa]: "Khoá",
 };
-
-// ─── Stats Strip ──────────────────────────────────────────────────────────────
-
-function StatsStrip({ stats }: { stats: AccountStats | null }) {
-  const items = [
-    { label: "Tổng tài khoản", value: stats?.total ?? "—" },
-    { label: "Hoạt động", value: stats?.hoatdong ?? "—" },
-    { label: "Đang khoá", value: stats?.khoa ?? "—" },
-    { label: "Sinh viên", value: stats?.sinhvien ?? "—" },
-  ];
-
-  return (
-    <div className={styles.statsStrip}>
-      {items.map((item) => (
-        <div key={item.label} className={styles.statCard}>
-          <div className={styles.statBody}>
-            <span className={styles.statValue}>{item.value}</span>
-            <span className={styles.statLabel}>{item.label}</span>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-// ─── Quick Reset Password Modal ───────────────────────────────────────────────
-
-function QuickResetForm({
-  item,
-  onSubmit,
-  onCancel,
-  loading,
-  error,
-}: {
-  item: TaiKhoanRow;
-  onSubmit: (pw: string) => void;
-  onCancel: () => void;
-  loading: boolean;
-  error: string;
-}) {
-  const [pw, setPw] = useState("");
-  const [confirm, setConfirm] = useState("");
-  const [show, setShow] = useState(false);
-
-  const generated = useCallback(() => {
-    const chars =
-      "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$";
-    let result = "";
-    for (let i = 0; i < 10; i++) {
-      result += chars[Math.floor(Math.random() * chars.length)];
-    }
-    setPw(result);
-    setConfirm(result);
-    setShow(true);
-  }, []);
-
-  const mismatch = confirm.length > 0 && pw !== confirm;
-
-  return (
-    <>
-      {error && <div className="error-msg">{error}</div>}
-      <div className={styles.editInfo}>
-        <span className={styles.editEmail}>{item.email}</span>
-        <span className={`badge ${ROLE_BADGE[item.vaitro] ?? "badge-peach"}`}>
-          {ROLE_LABEL[item.vaitro] ?? item.vaitro}
-        </span>
-      </div>
-
-      <div className="form-grid">
-        <div className="field full">
-          <label>Mật khẩu mới</label>
-          <div className={styles.pwWrap}>
-            <input
-              type={show ? "text" : "password"}
-              value={pw}
-              onChange={(e) => setPw(e.target.value)}
-              placeholder="Nhập mật khẩu mới (≥ 6 ký tự)…"
-              autoComplete="new-password"
-            />
-            <button
-              type="button"
-              className={styles.pwToggle}
-              onClick={() => setShow((v) => !v)}
-              aria-label={show ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
-            >
-              {show ? (
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                >
-                  <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24" />
-                  <line x1="1" y1="1" x2="23" y2="23" />
-                </svg>
-              ) : (
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                >
-                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                  <circle cx="12" cy="12" r="3" />
-                </svg>
-              )}
-            </button>
-          </div>
-        </div>
-        <div className="field full">
-          <label>Xác nhận mật khẩu</label>
-          <input
-            type={show ? "text" : "password"}
-            value={confirm}
-            onChange={(e) => setConfirm(e.target.value)}
-            placeholder="Nhập lại mật khẩu…"
-            autoComplete="new-password"
-            style={mismatch ? { borderColor: "#C25450" } : undefined}
-          />
-          {mismatch && (
-            <span style={{ fontSize: 12, color: "#C25450", marginTop: 2 }}>
-              Mật khẩu không khớp
-            </span>
-          )}
-        </div>
-      </div>
-
-      <button type="button" className={styles.generateBtn} onClick={generated}>
-        <svg
-          width="14"
-          height="14"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-        >
-          <polyline points="23 4 23 10 17 10" />
-          <polyline points="1 20 1 14 7 14" />
-          <path d="M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15" />
-        </svg>
-        Tạo mật khẩu ngẫu nhiên
-      </button>
-
-      <div className="modal-actions">
-        <button className="btn-secondary" onClick={onCancel} disabled={loading}>
-          Huỷ
-        </button>
-        <button
-          className="btn-primary"
-          onClick={() => onSubmit(pw)}
-          disabled={loading || !pw || mismatch}
-        >
-          {loading ? "Đang đặt lại…" : "Đặt lại mật khẩu"}
-        </button>
-      </div>
-    </>
-  );
-}
-
-// ─── Edit Account Form ────────────────────────────────────────────────────────
-
-function EditAccountForm({
-  item,
-  onSubmit,
-  onCancel,
-  loading,
-  error,
-}: {
-  item: TaiKhoanRow;
-  onSubmit: (d: { trangthai?: string; matkhau?: string }) => void;
-  onCancel: () => void;
-  loading: boolean;
-  error: string;
-}) {
-  const [trangthai, setTrangthai] = useState(item.trangthai);
-  const [matkhau, setMatkhau] = useState("");
-
-  return (
-    <>
-      {error && <div className="error-msg">{error}</div>}
-      <div className={styles.editInfo}>
-        <span className={styles.editEmail}>{item.email}</span>
-        <span className={`badge ${ROLE_BADGE[item.vaitro] ?? "badge-peach"}`}>
-          {ROLE_LABEL[item.vaitro] ?? item.vaitro}
-        </span>
-      </div>
-      <div className="form-grid">
-        <div className="field full">
-          <label>Trạng thái</label>
-          <select
-            value={trangthai}
-            onChange={(e) => setTrangthai(e.target.value)}
-          >
-            <option value="HoatDong">Hoạt động</option>
-            <option value="Khoa">Khoá</option>
-          </select>
-        </div>
-        <div className="field full">
-          <label>Đặt lại mật khẩu (để trống = không đổi)</label>
-          <input type="text" style={{ display: "none" }} aria-hidden="true" />
-          <input
-            type="password"
-            value={matkhau}
-            onChange={(e) => setMatkhau(e.target.value)}
-            placeholder="Mật khẩu mới…"
-            autoComplete="new-password"
-          />
-        </div>
-      </div>
-      <div className="modal-actions">
-        <button className="btn-secondary" onClick={onCancel} disabled={loading}>
-          Huỷ
-        </button>
-        <button
-          className="btn-primary"
-          onClick={() =>
-            onSubmit({ trangthai, ...(matkhau ? { matkhau } : {}) })
-          }
-          disabled={loading}
-        >
-          {loading ? "Đang lưu…" : "Cập nhật"}
-        </button>
-      </div>
-    </>
-  );
-}
-
-// ─── Bulk Reset Password Form ─────────────────────────────────────────────────
-
-function BulkResetForm({
-  count,
-  onSubmit,
-  onCancel,
-  loading,
-  error,
-}: {
-  count: number;
-  onSubmit: (pw: string) => void;
-  onCancel: () => void;
-  loading: boolean;
-  error: string;
-}) {
-  const [pw, setPw] = useState("");
-  const [show, setShow] = useState(false);
-
-  return (
-    <>
-      {error && <div className="error-msg">{error}</div>}
-      <div className={styles.bulkInfo}>
-        <svg
-          width="20"
-          height="20"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="#C25450"
-          strokeWidth="2"
-          strokeLinecap="round"
-        >
-          <path d="M12 9v4M12 17h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
-        </svg>
-        <p>
-          Đặt lại mật khẩu cho <strong>{count} tài khoản</strong> đã chọn. Hành
-          động này không thể hoàn tác.
-        </p>
-      </div>
-      <div className="form-grid">
-        <div className="field full">
-          <label>Mật khẩu mới (áp dụng cho tất cả)</label>
-          <div className={styles.pwWrap}>
-            <input
-              type={show ? "text" : "password"}
-              value={pw}
-              onChange={(e) => setPw(e.target.value)}
-              placeholder="Nhập mật khẩu mới (≥ 6 ký tự)…"
-              autoComplete="new-password"
-            />
-            <button
-              type="button"
-              className={styles.pwToggle}
-              onClick={() => setShow((v) => !v)}
-              aria-label={show ? "Ẩn" : "Hiện"}
-            >
-              {show ? "🙈" : "👁️"}
-            </button>
-          </div>
-        </div>
-      </div>
-      <div className="modal-actions">
-        <button className="btn-secondary" onClick={onCancel} disabled={loading}>
-          Huỷ
-        </button>
-        <button
-          className="btn-danger"
-          onClick={() => onSubmit(pw)}
-          disabled={loading || pw.length < 6}
-        >
-          {loading ? "Đang đặt lại…" : `Đặt lại ${count} tài khoản`}
-        </button>
-      </div>
-    </>
-  );
-}
-
-// ─── Toast notification ───────────────────────────────────────────────────────
-
-function Toast({
-  message,
-  type,
-  onDone,
-}: {
-  message: string;
-  type: "success" | "error";
-  onDone: () => void;
-}) {
-  useEffect(() => {
-    const t = setTimeout(onDone, 3000);
-    return () => clearTimeout(t);
-  }, [onDone]);
-
-  return (
-    <div
-      className={`${styles.toast} ${type === "success" ? styles.toastSuccess : styles.toastError}`}
-    >
-      {type === "success" ? (
-        <svg
-          width="16"
-          height="16"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2.5"
-          strokeLinecap="round"
-        >
-          <polyline points="20 6 9 17 4 12" />
-        </svg>
-      ) : (
-        <svg
-          width="16"
-          height="16"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2.5"
-          strokeLinecap="round"
-        >
-          <line x1="18" y1="6" x2="6" y2="18" />
-          <line x1="6" y1="6" x2="18" y2="18" />
-        </svg>
-      )}
-      {message}
-    </div>
-  );
-}
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
@@ -630,20 +276,22 @@ export default function AdminAccountsPage() {
 
   return (
     <DashboardShell pageTitle="Tài khoản">
-      <div className={`animate-fadeInUp ${styles.page}`}>
+      <div className="animate-fadeInUp flex flex-col gap-5">
         {/* Header */}
-        <div className={styles.pageHeader}>
+        <div className="flex items-center justify-between flex-wrap gap-4 mb-2">
           <div>
-            <h1 className={styles.pageTitle}>Quản lý Tài khoản</h1>
-            <p className={styles.pageSub}>
+            <h1 className="text-[22px] font-bold text-[#2D1B14] m-0 mb-1">
+              Quản lý Tài khoản
+            </h1>
+            <p className="text-[13px] text-[#8B6F5F] m-0">
               {total > 0
                 ? `${total} tài khoản trong hệ thống`
                 : "Kiểm soát truy cập toàn hệ thống"}
             </p>
           </div>
-          <div className={styles.headerActions}>
+          <div className="flex items-center gap-3">
             <button
-              className={styles.exportBtn}
+              className="inline-flex items-center gap-1.5 p-[8px_14px] rounded-xl bg-[#FEFAE3] border-[1.5px] border-[#FFDBB6] text-[#6B4F3F] text-[13px] font-semibold cursor-pointer transition-all duration-150 hover:bg-[#FFF0CD] hover:border-primary hover:text-primary hover:-translate-y-0.5"
               onClick={handleExport}
               title="Xuất CSV trang hiện tại"
             >
@@ -671,7 +319,7 @@ export default function AdminAccountsPage() {
         {/* Table Card */}
         <section className="card" style={{ padding: 0 }}>
           {/* Toolbar */}
-          <div className={styles.toolbar}>
+          <div className="flex items-center gap-2.5 p-[14px_20px] border-b border-[#EAD9CB] flex-wrap bg-[#FEFAE3] rounded-[14px_14px_0_0] max-sm:flex-col max-sm:items-stretch max-sm:p-3">
             <SearchBar
               value={search}
               onChange={(v) => {
@@ -681,7 +329,7 @@ export default function AdminAccountsPage() {
               placeholder="Tìm email hoặc mã tài khoản, MSSV…"
             />
             <select
-              className={styles.filter}
+              className="p-[9px_12px] border-[1.5px] border-[#EAD9CB] rounded-[10px] text-xs text-[#2D1B14] bg-white outline-none cursor-pointer min-w-[130px] transition-all duration-150 focus:border-primary max-sm:w-full"
               value={filterRole}
               onChange={(e) => {
                 setFilterRole(e.target.value);
@@ -696,7 +344,7 @@ export default function AdminAccountsPage() {
               ))}
             </select>
             <select
-              className={styles.filter}
+              className="p-[9px_12px] border-[1.5px] border-[#EAD9CB] rounded-[10px] text-xs text-[#2D1B14] bg-white outline-none cursor-pointer min-w-[130px] transition-all duration-150 focus:border-primary max-sm:w-full"
               value={filterStatus}
               onChange={(e) => {
                 setFilterStatus(e.target.value);
@@ -704,12 +352,15 @@ export default function AdminAccountsPage() {
               }}
             >
               <option value="">Tất cả trạng thái</option>
-              <option value="HoatDong">Hoạt động</option>
-              <option value="Khoa">Khoá</option>
+              {Object.values(TrangThaiTaiKhoan).map((st) => (
+                <option key={st} value={st}>
+                  {STATUS_LABEL[st]}
+                </option>
+              ))}
             </select>
             {(search || filterRole || filterStatus) && (
               <button
-                className={styles.clearFilter}
+                className="p-[9px_14px] border-[1.5px] border-primary rounded-[10px] text-[13px] text-primary bg-[#FFF5F5] cursor-pointer whitespace-nowrap transition-colors duration-150 hover:bg-primary hover:text-white"
                 onClick={() => {
                   setSearch("");
                   setFilterRole("");
@@ -724,15 +375,15 @@ export default function AdminAccountsPage() {
 
           {/* Bulk action bar */}
           {selected.size > 0 && (
-            <div className={styles.bulkBar}>
+            <div className="flex items-center gap-2.5 p-[10px_20px] bg-[#FFF0CD] border-b border-[#EAD9CB] text-[13px] text-[#5C3D1E] font-medium flex-wrap max-sm:flex-col max-sm:items-start max-sm:gap-2">
               <span>
                 Đã chọn{" "}
-                <span className={styles.bulkCount}>{selected.size}</span> tài
-                khoản
+                <span className="font-bold text-primary">{selected.size}</span>{" "}
+                tài khoản
               </span>
-              <div className={styles.bulkSpacer} />
+              <div className="flex-1 max-sm:hidden" />
               <button
-                className={styles.bulkBtn}
+                className="inline-flex items-center gap-1.5 p-[6px_12px] rounded-lg bg-white border-[1.5px] border-[#EAD9CB] text-[#5C3D1E] text-[12.5px] font-semibold cursor-pointer transition-all duration-150 hover:border-primary hover:text-primary hover:bg-[#FFFDF9]"
                 onClick={() => handleBulkAction("unlock")}
                 disabled={mutating}
               >
@@ -751,7 +402,7 @@ export default function AdminAccountsPage() {
                 Mở khoá
               </button>
               <button
-                className={`${styles.bulkBtn} ${styles.bulkBtnDanger}`}
+                className="inline-flex items-center gap-1.5 p-[6px_12px] rounded-lg bg-white border-[1.5px] border-[#FBD9D9] text-primary text-[12.5px] font-semibold cursor-pointer transition-all duration-150 hover:bg-[#FFF5F5] hover:border-primary hover:text-primary"
                 onClick={() => handleBulkAction("lock")}
                 disabled={mutating}
               >
@@ -770,7 +421,7 @@ export default function AdminAccountsPage() {
                 Khoá
               </button>
               <button
-                className={`${styles.bulkBtn} ${styles.bulkBtnWarning}`}
+                className="inline-flex items-center gap-1.5 p-[6px_12px] rounded-lg bg-white border-[1.5px] border-[#FFDBB6] text-[#B45309] text-[12.5px] font-semibold cursor-pointer transition-all duration-150 hover:bg-[#FFFBEB] hover:border-[#B45309]"
                 onClick={() => {
                   setMutError("");
                   setModal({ mode: "bulk-reset" });
@@ -793,7 +444,7 @@ export default function AdminAccountsPage() {
                 Đặt lại mật khẩu
               </button>
               <button
-                className={styles.bulkClear}
+                className="bg-transparent border-none text-[#8B6F5F] text-[12.5px] font-medium cursor-pointer p-[6px_10px] rounded-md transition-colors duration-150 hover:bg-[#2D1B14]/5 hover:text-[#2D1B14]"
                 onClick={() => setSelected(new Set())}
               >
                 Bỏ chọn
@@ -809,13 +460,14 @@ export default function AdminAccountsPage() {
               {!tkList.length ? (
                 <EmptyState message="Không tìm thấy tài khoản nào." />
               ) : (
-                <div className={styles.tableWrap}>
+                <div className="w-full overflow-x-auto">
                   <table className="data-table">
                     <thead>
                       <tr>
-                        <th className={styles.checkCell}>
+                        <th className="w-9 text-center p-[0_8px_!important]">
                           <input
                             type="checkbox"
+                            className="w-4 h-4 cursor-pointer accent-[#C25450]"
                             checked={allSelected}
                             onChange={toggleAll}
                             aria-label="Chọn tất cả"
@@ -834,14 +486,15 @@ export default function AdminAccountsPage() {
                           key={tk.mataikhoan}
                           className={
                             selected.has(tk.mataikhoan)
-                              ? styles.rowSelected
+                              ? "bg-[#FFFDF4_!important] transition-all duration-150 [&_td]:border-b-[1.5px_!important] [&_td]:border-b-[#FFDBB6_!important]"
                               : ""
                           }
                         >
-                          <td className={styles.checkCell}>
+                          <td className="w-9 text-center p-[0_8px_!important]">
                             {tk.vaitro !== VaiTro.Admin && (
                               <input
                                 type="checkbox"
+                                className="w-4 h-4 cursor-pointer accent-[#C25450]"
                                 checked={selected.has(tk.mataikhoan)}
                                 onChange={() => toggleOne(tk.mataikhoan)}
                                 aria-label={`Chọn ${tk.email}`}
@@ -849,30 +502,30 @@ export default function AdminAccountsPage() {
                             )}
                           </td>
                           <td>
-                            <div className={styles.emailCell}>
-                              <span className={styles.emailText}>
+                            <div className="flex flex-col gap-0.5">
+                              <span className="font-semibold text-[#2D1B14] text-[13.5px]">
                                 {tk.email}
                               </span>
-                              <code className={styles.idCode}>
+                              <code className="font-mono text-[11px] text-[#8B6F5F] bg-[#FEFAE3] p-[1px_5px] rounded border border-[#EAD9CB] self-start">
                                 {tk.mataikhoan}
                               </code>
                             </div>
                           </td>
                           <td>
                             <span
-                              className={`badge ${ROLE_BADGE[tk.vaitro] ?? "badge-peach"}`}
+                              className={`badge ${ROLE_BADGE[tk.vaitro as VaiTro] ?? "badge-peach"}`}
                             >
-                              {ROLE_LABEL[tk.vaitro] ?? tk.vaitro}
+                              {ROLE_LABEL[tk.vaitro as VaiTro] ?? tk.vaitro}
                             </span>
                           </td>
                           <td>
                             <span
-                              className={`badge ${STATUS_BADGE[tk.trangthai] ?? "badge-peach"}`}
+                              className={`badge ${STATUS_BADGE[tk.trangthai as TrangThaiTaiKhoan] ?? "badge-peach"}`}
                             >
-                              {STATUS_LABEL[tk.trangthai] ?? tk.trangthai}
+                              {STATUS_LABEL[tk.trangthai as TrangThaiTaiKhoan] ?? tk.trangthai}
                             </span>
                           </td>
-                          <td className={styles.dateCell}>
+                          <td className="text-xs text-[#6B4F3F]">
                             {tk.dangnhaplancuoi ? (
                               new Date(tk.dangnhaplancuoi).toLocaleString(
                                 "vi-VN",
@@ -890,7 +543,7 @@ export default function AdminAccountsPage() {
                             )}
                           </td>
                           <td>
-                            <div className={styles.actions}>
+                            <div className="flex gap-1.5 flex-wrap">
                               <button
                                 className="btn-secondary"
                                 style={{ fontSize: 12, padding: "4px 10px" }}
@@ -905,7 +558,7 @@ export default function AdminAccountsPage() {
                               {tk.vaitro !== VaiTro.Admin && (
                                 <>
                                   <button
-                                    className={styles.resetBtn}
+                                    className="inline-flex items-center gap-1 p-[4px_10px] text-xs rounded-md bg-[#FEFAE3] border-[1.5px] border-[#FFDBB6] text-[#6B4F3F] cursor-pointer font-medium transition-all duration-150 hover:bg-[#FFF0CD] hover:border-primary hover:text-primary"
                                     onClick={() => {
                                       setMutError("");
                                       setModal({

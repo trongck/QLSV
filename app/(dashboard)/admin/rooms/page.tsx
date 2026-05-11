@@ -12,298 +12,18 @@ import {
   ConfirmDelete,
 } from "@/components/admin/AdminTable";
 import { usePhongHoc, type PhongHocRow, type RoomSchedule, type RoomUtilization } from "@/hooks/admin/usePhonghoc";
-import { VaiTro } from "@/types";
-import styles from "./room.module.css";
+import { VaiTro, LoaiPhongHoc } from "@/types";
+import {
+  PhongHocForm,
+  ConflictCheckerForm,
+  RoomTimetableModal,
+  ROOM_TYPE_LABEL,
+  ROOM_TYPE_BADGE,
+  THU_LABELS,
+} from "@/components/admin/RoomForms";
 
-const ROOM_TYPE_LABEL: Record<string, string> = {
-  Lythuyet: "Lý thuyết",
-  Thuchanh: "Thực hành",
-  Online: "Trực tuyến",
-};
 
-const ROOM_TYPE_BADGE: Record<string, string> = {
-  Lythuyet: "badge-green",
-  Thuchanh: "badge-yellow",
-  Online: "badge-red",
-};
 
-const THU_LABELS: Record<number, string> = {
-  2: "Thứ 2",
-  3: "Thứ 3",
-  4: "Thứ 4",
-  5: "Thứ 5",
-  6: "Thứ 6",
-  7: "Thứ 7",
-  8: "Chủ nhật",
-};
-
-// ─── Room Form ───────────────────────────────────────────────────────────────
-function PhongHocForm({
-  initial,
-  onSubmit,
-  onCancel,
-  loading,
-  error,
-  isEdit = false,
-}: {
-  initial?: Partial<PhongHocRow>;
-  onSubmit: (data: any) => void;
-  onCancel: () => void;
-  loading: boolean;
-  error: string;
-  isEdit?: boolean;
-}) {
-  const [form, setForm] = useState({
-    maphong: initial?.maphong ?? "",
-    loaiphong: initial?.loaiphong ?? "Lythuyet",
-    suchua: initial?.suchua ?? 50,
-  });
-
-  return (
-    <>
-      {error && <div className="error-msg" style={{ marginBottom: 16 }}>{error}</div>}
-      <div className="form-grid">
-        <div className="field full">
-          <label>Mã phòng học *</label>
-          <input
-            value={form.maphong}
-            onChange={(e) => setForm({ ...form, maphong: e.target.value })}
-            placeholder="VD: A1-302, LAB-02"
-            disabled={isEdit}
-          />
-          {isEdit && <small style={{ color: "#8B6F5F" }}>Mã phòng học không thể thay đổi sau khi tạo.</small>}
-        </div>
-        <div className="field">
-          <label>Loại phòng *</label>
-          <select
-            value={form.loaiphong}
-            onChange={(e) => setForm({ ...form, loaiphong: e.target.value })}
-          >
-            <option value="Lythuyet">Lý thuyết</option>
-            <option value="Thuchanh">Thực hành</option>
-            <option value="Online">Trực tuyến</option>
-          </select>
-        </div>
-        <div className="field">
-          <label>Sức chứa (chỗ ngồi) *</label>
-          <input
-            type="number"
-            min={1}
-            value={form.suchua}
-            onChange={(e) => setForm({ ...form, suchua: Number(e.target.value) })}
-          />
-        </div>
-      </div>
-      <div className="modal-actions">
-        <button className="btn-secondary" onClick={onCancel} disabled={loading}>
-          Huỷ
-        </button>
-        <button
-          className="btn-primary"
-          onClick={() => onSubmit(form)}
-          disabled={loading}
-        >
-          {loading ? "Đang lưu…" : isEdit ? "Cập nhật" : "Thêm mới"}
-        </button>
-      </div>
-    </>
-  );
-}
-
-// ─── Conflict Checker Form ───────────────────────────────────────────────────
-function ConflictCheckerForm({
-  maphong,
-  onCheck,
-  loading,
-}: {
-  maphong: string;
-  onCheck: (params: { thutrongtuan: number; tietbatdau: number; tietketthuc: number }) => Promise<any>;
-  loading: boolean;
-}) {
-  const [thutrongtuan, setThutrongtuan] = useState(2);
-  const [tietbatdau, setTietbatdau] = useState(1);
-  const [tietketthuc, setTietketthuc] = useState(3);
-  const [result, setResult] = useState<{ checked: boolean; isConflict: boolean; conflicts: any[] } | null>(null);
-  const [error, setError] = useState("");
-
-  const handleSubmit = async () => {
-    setError("");
-    setResult(null);
-    if (tietbatdau > tietketthuc) {
-      setError("Tiết bắt đầu phải nhỏ hơn hoặc bằng tiết kết thúc.");
-      return;
-    }
-    try {
-      const res = await onCheck({ thutrongtuan, tietbatdau, tietketthuc });
-      setResult({
-        checked: true,
-        isConflict: res.isConflict,
-        conflicts: res.conflicts || [],
-      });
-    } catch (e: any) {
-      setError(e.message || "Lỗi kiểm tra xung đột.");
-    }
-  };
-
-  return (
-    <div style={{ padding: "8px 0" }}>
-      <p style={{ marginBottom: 16 }}>
-        Kiểm tra tình trạng trống của phòng học <strong>{maphong}</strong> tại thời gian định sẵn:
-      </p>
-
-      {error && <div className="error-msg" style={{ marginBottom: 12 }}>{error}</div>}
-
-      <div className="form-grid" style={{ marginBottom: 16 }}>
-        <div className="field">
-          <label>Thứ trong tuần *</label>
-          <select value={thutrongtuan} onChange={(e) => setThutrongtuan(Number(e.target.value))}>
-            <option value={2}>Thứ 2</option>
-            <option value={3}>Thứ 3</option>
-            <option value={4}>Thứ 4</option>
-            <option value={5}>Thứ 5</option>
-            <option value={6}>Thứ 6</option>
-            <option value={7}>Thứ 7</option>
-            <option value={8}>Chủ nhật</option>
-          </select>
-        </div>
-        <div className="field">
-          <label>Tiết bắt đầu *</label>
-          <input
-            type="number"
-            min={1}
-            max={12}
-            value={tietbatdau}
-            onChange={(e) => setTietbatdau(Number(e.target.value))}
-          />
-        </div>
-        <div className="field">
-          <label>Tiết kết thúc *</label>
-          <input
-            type="number"
-            min={1}
-            max={12}
-            value={tietketthuc}
-            onChange={(e) => setTietketthuc(Number(e.target.value))}
-          />
-        </div>
-      </div>
-
-      <button className="btn-primary" style={{ width: "100%" }} onClick={handleSubmit} disabled={loading}>
-        {loading ? "Đang kiểm tra..." : "Kiểm tra phòng trống"}
-      </button>
-
-      {result && result.checked && (
-        <div
-          style={{
-            marginTop: 20,
-            padding: 16,
-            borderRadius: 10,
-            background: result.isConflict ? "#FFF5F5" : "#F0FDF4",
-            border: result.isConflict ? "1px dashed #C25450" : "1px dashed #10B981",
-          }}
-        >
-          <h4
-            style={{
-              margin: 0,
-              fontSize: 15,
-              fontWeight: 700,
-              color: result.isConflict ? "#991B1B" : "#065F46",
-              display: "flex",
-              alignItems: "center",
-              gap: 6,
-            }}
-          >
-            {result.isConflict ? "PHÒNG ĐÃ BỊ TRÙNG LỊCH" : "PHÒNG ĐANG TRỐNG"}
-          </h4>
-          <p style={{ margin: "4px 0 0 0", fontSize: 13, color: "#8B6F5F" }}>
-            {result.isConflict
-              ? `Phòng học bận vì có lớp đang giảng dạy vào thời điểm này:`
-              : `Phòng học hoàn toàn trống và sẵn sàng để phân công giảng dạy.`}
-          </p>
-
-          {result.isConflict && (
-            <div style={{ marginTop: 12, display: "flex", flexDirection: "column", gap: 8 }}>
-              {result.conflicts.map((lh: any, idx: number) => (
-                <div
-                  key={idx}
-                  style={{
-                    padding: 10,
-                    background: "#fff",
-                    border: "1px solid #EAD9CB",
-                    borderRadius: 6,
-                    fontSize: 12,
-                  }}
-                >
-                  <strong style={{ color: "#2D1B14" }}>
-                    {lh.phancong?.monhoc?.tenmon ?? "—"}
-                  </strong>
-                  <div style={{ color: "#8B6F5F", marginTop: 2 }}>
-                    Lớp: {lh.phancong?.lop?.tenlop ?? "—"} • Tiết: {lh.tietbatdau}-{lh.tietketthuc}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ─── Timetable Visualizer ────────────────────────────────────────────────────
-function RoomTimetableModal({
-  maphong,
-  schedules,
-}: {
-  maphong: string;
-  schedules: RoomSchedule[];
-}) {
-  // Group schedules by thutrongtuan
-  const grouped: Record<number, RoomSchedule[]> = {};
-  [2, 3, 4, 5, 6, 7, 8].forEach((thu) => {
-    grouped[thu] = schedules
-      .filter((s) => s.thutrongtuan === thu)
-      .sort((a, b) => a.tietbatdau - b.tietbatdau);
-  });
-
-  return (
-    <div>
-      <p style={{ marginBottom: 16 }}>
-        Thời khóa biểu chi tiết trong học kỳ hiện tại của phòng <strong>{maphong}</strong>:
-      </p>
-
-      <div className={styles.timetableGrid}>
-        {[2, 3, 4, 5, 6, 7, 8].map((thu, index, arr) => {
-          const isLast = index === arr.length - 1;
-          const dayClasses = grouped[thu] || [];
-
-          return (
-            <div className={styles.timetableRow} key={thu}>
-              <div className={`${styles.timetableDayLabel} ${isLast ? styles.timetableDayLabelLast : ""}`}>
-                {THU_LABELS[thu]}
-              </div>
-              <div className={`${styles.timetableSlots} ${isLast ? styles.timetableSlotsLast : ""}`}>
-                {dayClasses.length === 0 ? (
-                  <span className={styles.emptyTimetableDay}>Không có lịch học</span>
-                ) : (
-                  dayClasses.map((cl) => (
-                    <div key={cl.malichhoc} className={styles.timetableClassItem}>
-                      <div className={styles.timetableClassTitle}>{cl.monhoc}</div>
-                      <div className={styles.timetableClassMeta}>
-                        Tiết: <strong>{cl.tietbatdau}-{cl.tietketthuc}</strong> • Lớp: {cl.lop} • GV: {cl.giangvien}
-                      </div>
-                      {cl.ghichu && <div style={{ fontSize: 10, fontStyle: "italic", marginTop: 2, color: "#8B6F5F" }}>* Ghi chú: {cl.ghichu}</div>}
-                    </div>
-                  ))
-                )}
-              </div>
-            </div>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function AdminRoomsPage() {
@@ -439,11 +159,11 @@ export default function AdminRoomsPage() {
 
   return (
     <DashboardShell pageTitle="Quản lý Phòng học">
-      <div className={`animate-fadeInUp ${styles.page}`}>
-        <div className={styles.pageHeader}>
+      <div className="animate-fadeInUp flex flex-col gap-5">
+        <div className="flex justify-between items-center flex-wrap gap-4 max-sm:flex-col max-sm:items-stretch mb-2">
           <div>
-            <h1 className={styles.pageTitle}>Quản lý Phòng học</h1>
-            <p className={styles.pageSub}>
+            <h1 className="text-2xl font-bold text-fg m-0 max-sm:text-lg">Quản lý Phòng học</h1>
+            <p className="text-xs text-fg-subtle mt-1">
               Cấu hình thông tin phòng học, sức chứa, kiểm tra lịch trống và thống kê sử dụng
             </p>
           </div>
@@ -459,22 +179,22 @@ export default function AdminRoomsPage() {
         </div>
 
         {/* Dashboard Room Stats Card */}
-        <div className={styles.statsSection}>
-          <div className={styles.statsGrid}>
-            <div className={styles.statCard}>
-              <span className={styles.statValue}>{totalRooms}</span>
-              <span className={styles.statLabel}>Tổng số phòng học</span>
+        <div className="mb-2">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-white border border-[#EAD9CB] rounded-2xl p-5 flex flex-col gap-1.5 shadow-[0_2px_4px_rgba(45,27,20,0.02)]">
+              <span className="text-2xl font-bold text-[#C25450]">{totalRooms}</span>
+              <span className="text-xs text-fg-subtle font-medium">Tổng số phòng học</span>
             </div>
-            <div className={styles.statCard}>
-              <span className={styles.statValue}>{totalSeats}</span>
-              <span className={styles.statLabel}>Tổng chỗ ngồi cung cấp</span>
+            <div className="bg-white border border-[#EAD9CB] rounded-2xl p-5 flex flex-col gap-1.5 shadow-[0_2px_4px_rgba(45,27,20,0.02)]">
+              <span className="text-2xl font-bold text-[#C25450]">{totalSeats}</span>
+              <span className="text-xs text-fg-subtle font-medium">Tổng chỗ ngồi cung cấp</span>
             </div>
-            <div className={styles.statCard}>
-              <span className={styles.statValue}>{averageUtilization}%</span>
-              <span className={styles.statLabel}>Hiệu suất sử dụng TB</span>
-              <div className={styles.statProgressWrap}>
+            <div className="bg-white border border-[#EAD9CB] rounded-2xl p-5 flex flex-col gap-1.5 shadow-[0_2px_4px_rgba(45,27,20,0.02)]">
+              <span className="text-2xl font-bold text-[#C25450]">{averageUtilization}%</span>
+              <span className="text-xs text-fg-subtle font-medium">Hiệu suất sử dụng TB</span>
+              <div className="mt-1 bg-gray-200 rounded-full h-1.5 overflow-hidden w-full">
                 <div
-                  className={styles.statProgressBar}
+                  className="h-full rounded-full"
                   style={{
                     width: `${averageUtilization}%`,
                     backgroundColor: averageUtilization > 60 ? "#EF4444" : averageUtilization > 15 ? "#10B981" : "#3B82F6",
@@ -487,26 +207,28 @@ export default function AdminRoomsPage() {
 
         {/* Search & filters */}
         <section className="card" style={{ padding: 0 }}>
-          <div className={styles.toolbar}>
+          <div className="flex items-center gap-2.5 p-4 border-b border-border flex-wrap max-sm:flex-col max-sm:items-stretch bg-[#FEFAE3] rounded-t-2xl">
             <SearchBar
               value={search}
               onChange={setSearch}
               placeholder="Tìm mã phòng..."
             />
             <select
-              className={styles.filter}
+              className="p-[9px_12px] border-[1.5px] border-[#EAD9CB] rounded-xl text-[13px] text-fg bg-white cursor-pointer outline-none transition-colors duration-200 focus:border-primary max-sm:w-full"
               value={filterType}
               onChange={(e) => setFilterType(e.target.value)}
             >
               <option value="">Tất cả loại phòng</option>
-              <option value="Lythuyet">Lý thuyết</option>
-              <option value="Thuchanh">Thực hành</option>
-              <option value="Online">Trực tuyến</option>
+              {Object.values(LoaiPhongHoc).map((t) => (
+                <option key={t} value={t}>
+                  {ROOM_TYPE_LABEL[t]}
+                </option>
+              ))}
             </select>
 
             {(search || filterType) && (
               <button
-                className={styles.clearFilter}
+                className="p-[9px_14px] border-[1.5px] border-primary rounded-xl text-[13px] text-primary bg-[#FFF5F5] cursor-pointer whitespace-nowrap transition-all hover:bg-primary hover:text-white max-sm:w-full"
                 onClick={() => {
                   setSearch("");
                   setFilterType("");
@@ -520,7 +242,7 @@ export default function AdminRoomsPage() {
           {tkLoading ? (
             <TableSkeleton cols={5} rows={5} />
           ) : (
-            <div className={styles.tableWrap}>
+            <div className="w-full overflow-x-auto">
               <table className="data-table">
                 <thead>
                   <tr>
@@ -537,33 +259,33 @@ export default function AdminRoomsPage() {
                     const rate = util ? util.utilizationRate : 0;
                     const status = util ? util.status : "Idle";
 
-                    let statusBadgeClass = styles.badgeIdle;
-                    if (status === "Healthy") statusBadgeClass = styles.badgeHealthy;
-                    else if (status === "Underutilized") statusBadgeClass = styles.badgeUnder;
-                    else if (status === "Overutilized") statusBadgeClass = styles.badgeOver;
+                    let statusBadgeClass = "bg-gray-100 text-gray-700 border border-gray-300/20";
+                    if (status === "Healthy") statusBadgeClass = "bg-[#D1FAE5] text-[#065F46] border border-emerald-500/20";
+                    else if (status === "Underutilized") statusBadgeClass = "bg-[#DBEAFE] text-[#1E40AF] border border-blue-500/20";
+                    else if (status === "Overutilized") statusBadgeClass = "bg-[#FEE2E2] text-[#991B1B] border border-red-500/20";
 
-                    let barColorClass = styles.bgIdle;
-                    if (status === "Healthy") barColorClass = styles.bgHealthy;
-                    else if (status === "Underutilized") barColorClass = styles.bgUnder;
-                    else if (status === "Overutilized") barColorClass = styles.bgOver;
+                    let barColorClass = "bg-gray-500";
+                    if (status === "Healthy") barColorClass = "bg-emerald-500";
+                    else if (status === "Underutilized") barColorClass = "bg-blue-500";
+                    else if (status === "Overutilized") barColorClass = "bg-red-500";
 
                     return (
                       <tr key={room.maphong}>
                         <td style={{ fontWeight: 700, color: "#2D1B14" }}>{room.maphong}</td>
                         <td>
-                          <span className={`badge ${ROOM_TYPE_BADGE[room.loaiphong] ?? "badge-peach"}`}>
-                            {ROOM_TYPE_LABEL[room.loaiphong] ?? room.loaiphong}
+                          <span className={`badge ${ROOM_TYPE_BADGE[room.loaiphong as LoaiPhongHoc] ?? "badge-peach"}`}>
+                            {ROOM_TYPE_LABEL[room.loaiphong as LoaiPhongHoc] ?? room.loaiphong}
                           </span>
                         </td>
                         <td>
                           <strong>{room.suchua}</strong> chỗ ngồi
                         </td>
                         <td>
-                          <div className={styles.utilProgressContainer}>
-                            <div className={styles.utilBarOuter}>
-                              <div className={`${styles.utilBarInner} ${barColorClass}`} style={{ width: `${rate}%` }} />
+                          <div className="flex items-center gap-2.5 min-w-[150px]">
+                            <div className="flex-1 bg-gray-200 h-2 rounded-full overflow-hidden">
+                              <div className={`h-full rounded-full ${barColorClass}`} style={{ width: `${rate}%` }} />
                             </div>
-                            <span className={styles.utilText}>{rate}%</span>
+                            <span className="text-xs font-semibold w-8 text-right">{rate}%</span>
                             <span className={`badge ${statusBadgeClass}`} style={{ fontSize: "10px", padding: "2px 6px" }}>
                               {status === "Overutilized"
                                 ? "Quá tải"
@@ -576,7 +298,7 @@ export default function AdminRoomsPage() {
                           </div>
                         </td>
                         <td>
-                          <div className={styles.actions}>
+                          <div className="flex gap-1.5 items-center">
                             <button
                               className="btn-primary"
                               style={{ fontSize: 11, padding: "4px 8px" }}
@@ -595,8 +317,8 @@ export default function AdminRoomsPage() {
                               className="btn-secondary"
                               style={{ fontSize: 11, padding: "4px 8px" }}
                               onClick={() => {
-                                setMutError("");
-                                setModal({ mode: "edit", item: room });
+                                  setMutError("");
+                                  setModal({ mode: "edit", item: room });
                               }}
                             >
                               Sửa
@@ -605,8 +327,8 @@ export default function AdminRoomsPage() {
                               className="btn-danger"
                               style={{ fontSize: 11, padding: "4px 8px" }}
                               onClick={() => {
-                                setMutError("");
-                                setModal({ mode: "delete", item: room });
+                                  setMutError("");
+                                  setModal({ mode: "delete", item: room });
                               }}
                             >
                               Xoá

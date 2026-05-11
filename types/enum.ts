@@ -24,7 +24,7 @@ export enum TrangThaiSinhVien {
 }
 
 export enum TrangThaiSinhVienMonHoc {
-  Danghoc = "Danghoc",
+  Dang  = "Danghoc",
   Hoan = "Hoan",
   Huy = "Huy",
 }

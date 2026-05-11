@@ -13,97 +13,10 @@ import {
 } from "@/components/admin/AdminTable";
 import { useHocky, type HockyRow } from "@/hooks/admin/useHocky";
 import { VaiTro } from "@/types";
-import styles from "./semester.module.css";
+import { HockyForm } from "@/components/admin/SemesterForm";
 
-// ─── Form Component ───────────────────────────────────────────────────────────
 
-function HockyForm({
-  initial,
-  onSubmit,
-  onCancel,
-  loading,
-  error,
-}: {
-  initial?: Partial<HockyRow>;
-  onSubmit: (data: any) => void;
-  onCancel: () => void;
-  loading: boolean;
-  error: string;
-}) {
-  const [form, setForm] = useState({
-    tenhocky: initial?.tenhocky ?? "",
-    namhoc: initial?.namhoc ?? new Date().getFullYear(),
-    ky: initial?.ky ?? 1,
-    ngaybatdau: initial?.ngaybatdau ?? "",
-    ngayketthuc: initial?.ngayketthuc ?? "",
-    danghieuluc: initial?.danghieuluc ?? false,
-  });
 
-  return (
-    <>
-      {error && <div className="error-msg">{error}</div>}
-      <div className="form-grid">
-        <div className="field full">
-          <label>Tên học kỳ *</label>
-          <input
-            value={form.tenhocky}
-            onChange={(e) => setForm({ ...form, tenhocky: e.target.value })}
-            placeholder="VD: Học kỳ 1 năm học 2023-2024"
-          />
-        </div>
-        <div className="field">
-          <label>Năm học (năm bắt đầu) *</label>
-          <input
-            type="number"
-            value={form.namhoc}
-            onChange={(e) =>
-              setForm({ ...form, namhoc: Number(e.target.value) })
-            }
-          />
-        </div>
-        <div className="field">
-          <label>Kỳ *</label>
-          <select
-            value={form.ky}
-            onChange={(e) => setForm({ ...form, ky: Number(e.target.value) })}
-          >
-            <option value={1}>Học kỳ 1</option>
-            <option value={2}>Học kỳ 2</option>
-            <option value={3}>Học kỳ hè</option>
-          </select>
-        </div>
-        <div className="field">
-          <label>Ngày bắt đầu</label>
-          <input
-            type="date"
-            value={form.ngaybatdau}
-            onChange={(e) => setForm({ ...form, ngaybatdau: e.target.value })}
-          />
-        </div>
-        <div className="field">
-          <label>Ngày kết thúc</label>
-          <input
-            type="date"
-            value={form.ngayketthuc}
-            onChange={(e) => setForm({ ...form, ngayketthuc: e.target.value })}
-          />
-        </div>
-      </div>
-      <div className="modal-actions">
-        <button className="btn-secondary" onClick={onCancel} disabled={loading}>
-          Huỷ
-        </button>
-        <button
-          className="btn-primary"
-          onClick={() => onSubmit(form)}
-          disabled={loading}
-        >
-          {loading ? "Đang lưu…" : initial?.mahocky ? "Cập nhật" : "Thêm mới"}
-        </button>
-      </div>
-    </>
-  );
-}
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
@@ -199,11 +112,11 @@ export default function AdminSemestersPage() {
 
   return (
     <DashboardShell pageTitle="Quản lý Học kỳ">
-      <div className={`animate-fadeInUp ${styles.page}`}>
-        <div className={styles.pageHeader}>
+      <div className="animate-fadeInUp flex flex-col gap-5">
+        <div className="flex justify-between items-center flex-wrap gap-4 max-sm:flex-col max-sm:items-stretch mb-2">
           <div>
-            <h1 className={styles.pageTitle}>Quản lý Học kỳ</h1>
-            <p className={styles.pageSub}>
+            <h1 className="text-2xl font-bold text-fg m-0 max-sm:text-lg">Quản lý Học kỳ</h1>
+            <p className="text-xs text-fg-subtle mt-1">
               Thiết lập thời gian và học kỳ hiện tại cho hệ thống
             </p>
           </div>
@@ -219,7 +132,7 @@ export default function AdminSemestersPage() {
         </div>
 
         <section className="card" style={{ padding: 0 }}>
-          <div className={styles.toolbar}>
+          <div className="flex items-center gap-2.5 p-4 border-b border-border flex-wrap max-sm:flex-col max-sm:items-stretch bg-[#FEFAE3] rounded-t-2xl">
             <SearchBar
               value={search}
               onChange={setSearch}
@@ -227,7 +140,7 @@ export default function AdminSemestersPage() {
             />
             <input
               type="number"
-              className={styles.filter}
+              className="p-[9px_12px] border-[1.5px] border-[#EAD9CB] rounded-xl text-[13px] text-fg bg-white cursor-pointer outline-none transition-colors duration-200 focus:border-primary max-sm:w-full"
               placeholder="Năm học..."
               value={filterNam ?? ""}
               onChange={(e) =>
@@ -239,7 +152,7 @@ export default function AdminSemestersPage() {
 
             {(search || filterNam) && (
               <button
-                className={styles.clearFilter}
+                className="p-[9px_14px] border-[1.5px] border-primary rounded-xl text-[13px] text-primary bg-[#FFF5F5] cursor-pointer whitespace-nowrap transition-all hover:bg-primary hover:text-white max-sm:w-full"
                 onClick={() => {
                   setSearch("");
                   setFilterNam(undefined);
@@ -253,7 +166,7 @@ export default function AdminSemestersPage() {
           {tkLoading ? (
             <TableSkeleton cols={5} rows={5} />
           ) : (
-            <div className={styles.tableWrap}>
+            <div className="w-full overflow-x-auto">
               <table className="data-table">
                 <thead>
                   <tr>
@@ -298,17 +211,17 @@ export default function AdminSemestersPage() {
                         </td>
                         <td>
                           {isCurrent ? (
-                            <span className={styles.activeBadge}>
+                            <span className="bg-[#D1FAE5] text-[#047857] p-[4px_10px] rounded-full text-xs font-semibold border border-[#047857]/20">
                               Đang hiệu lực
                             </span>
                           ) : (
-                            <span className={styles.inactiveBadge}>
+                            <span className="bg-gray-100 text-gray-500 p-[4px_10px] rounded-full text-xs font-semibold border border-gray-500/20">
                               Không hiệu lực
                             </span>
                           )}
                         </td>
                         <td>
-                          <div className={styles.actions}>
+                          <div className="flex gap-2">
                             {/* Học kỳ tương lai: Kích hoạt, Sửa, Xoá */}
                             {isFuture && (
                               <>

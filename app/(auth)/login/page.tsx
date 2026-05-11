@@ -3,7 +3,6 @@
 import { useState, useRef, useEffect, FormEvent } from "react";
 import { useAuth } from "@/hooks/auth/useAuth";
 import Image from "next/image";
-import styles from "./login.module.css";
 
 // ─── Login Page ───────────────────────────────────────────────────────────────
 export default function LoginPage() {
@@ -67,14 +66,14 @@ export default function LoginPage() {
   };
 
   return (
-    <div className={styles.page}>
-      <div className={styles.blobTopLeft} aria-hidden />
-      <div className={styles.blobBotRight} aria-hidden />
+    <div className="relative flex min-h-screen overflow-hidden bg-[#FFF2EB] max-lg:flex-col max-lg:items-center">
+      <div className="absolute -top-20 -left-30 w-[420px] h-[420px] bg-[#FFDCDC] rounded-full opacity-60 pointer-events-none z-0 max-sm:opacity-40 max-sm:w-[260px] max-sm:h-[260px] max-sm:-top-15 max-sm:-left-20" aria-hidden />
+      <div className="absolute -bottom-[100px] right-[30%] w-[260px] h-[260px] bg-[#FFE8CD] rounded-full opacity-70 pointer-events-none z-0 max-lg:right-[5%] max-sm:opacity-40 max-sm:w-[180px] max-sm:h-[180px] max-sm:-right-10 max-sm:-bottom-15" aria-hidden />
 
       {/* LEFT PANEL */}
-      <aside className={`${styles.left} ${mounted ? styles.leftVisible : ""}`}>
-        <div className={styles.logo}>
-          <div className={styles.logoIcon}>
+      <aside className={`flex-1 flex flex-col justify-between p-12 relative z-10 transition-all duration-[450ms] ease-out max-lg:w-full max-lg:flex-none max-lg:p-[28px_24px_0] max-lg:flex-col max-lg:items-start max-lg:translate-x-0 max-lg:opacity-100 max-sm:hidden ${mounted ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-5"}`}>
+        <div className="flex items-center gap-2.5 no-underline w-fit">
+          <div className="w-7 h-7 bg-primary rounded-lg flex items-center justify-center shrink-0">
             <svg
               width="16"
               height="16"
@@ -91,25 +90,25 @@ export default function LoginPage() {
               />
             </svg>
           </div>
-          <span className={styles.logoWord}>Hệ Thống quản lý sinh viên</span>
+          <span className="text-[17px] font-bold text-[#2D1B14] tracking-tight">Hệ Thống quản lý sinh viên</span>
         </div>
 
-        <div className={styles.introImageWrapper}>
+        <div className="flex justify-center items-center w-full max-w-[600px] m-auto animate-fadeInUp bg-transparent max-lg:mt-4 max-lg:max-w-[400px]">
           <Image
             src="/intro.png"
             alt="Giới thiệu hệ thống"
             width={600}
             height={500}
-            className={styles.introImage}
+            className="w-full h-auto block object-contain rounded-[24px] shadow-[0_12px_32px_rgba(76,38,24,0.08)]"
             priority
           />
         </div>
       </aside>
 
       {/* RIGHT PANEL */}
-      <main className={`${styles.right} ${mounted ? styles.rightVisible : ""}`}>
-        <div className={styles.mobileLogo} aria-label="Lumen University">
-          <div className={styles.logoIcon}>
+      <main className={`flex-1 flex flex-col items-center justify-center p-[48px_56px] relative z-10 transition-all duration-[450ms] delay-100 ease-out max-lg:flex-none max-lg:w-full max-lg:max-w-[480px] max-lg:p-[24px_24px_48px] max-lg:translate-x-0 max-lg:opacity-100 max-lg:self-center max-sm:p-[32px_20px_48px] max-sm:justify-start max-sm:min-h-screen ${mounted ? "opacity-100 translate-x-0" : "opacity-0 translate-x-5"}`}>
+        <div className="hidden items-center gap-2 mb-6 max-sm:flex" aria-label="Lumen University">
+          <div className="w-7 h-7 bg-primary rounded-lg flex items-center justify-center shrink-0">
             <svg
               width="14"
               height="14"
@@ -126,26 +125,26 @@ export default function LoginPage() {
               />
             </svg>
           </div>
-          <span className={styles.logoWord} style={{ fontSize: "15px" }}>
+          <span className="text-[17px] font-bold text-[#2D1B14] tracking-tight" style={{ fontSize: "15px" }}>
             Hệ thống quản lý sinh viên
           </span>
         </div>
 
-        <div className={styles.formWrap}>
-          <p className={styles.eyebrow}>Hệ thống quản lý sinh viên - VNUA</p>
-          <h1 className={styles.heading}>
+        <div className="w-full max-w-[420px] max-sm:max-w-full">
+          <p className="text-[13px] font-semibold text-primary uppercase tracking-[0.08em] m-0 mb-3 max-sm:text-[11px]">Hệ thống quản lý sinh viên - VNUA</p>
+          <h1 className="text-[38px] font-bold text-[#2D1B14] leading-tight tracking-tight m-0 mb-3 max-lg:text-[32px] max-sm:text-[28px]">
             Xin chào,
             <br />
             đăng nhập nào.
           </h1>
-          <p className={styles.subtitle}>
+          <p className="text-sm text-[#6B4F3F] m-0 mb-6 leading-relaxed">
             Nhập thông tin của bạn để tiếp tục vào hệ thống.
           </p>
 
           {/* Error banner */}
           {error && (
             <div
-              className={styles.errorBanner}
+              className="flex items-center gap-2 bg-primary/10 border border-primary/25 rounded-xl p-[10px_14px] text-[13px] font-medium text-primary mb-4 animate-slideDown"
               role="alert"
               aria-live="assertive"
             >
@@ -175,9 +174,9 @@ export default function LoginPage() {
           )}
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className={styles.form} noValidate>
-            <div className={styles.field}>
-              <label className={styles.label} htmlFor="field-email">
+          <form onSubmit={handleSubmit} className="flex flex-col gap-4" noValidate>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-semibold text-[#6B4F3F] tracking-wide" htmlFor="field-email">
                 Mã tài khoản / Email
               </label>
               <input
@@ -188,25 +187,25 @@ export default function LoginPage() {
                 placeholder="Nhập mã tài khoản hoặc email..."
                 value={email}
                 onChange={(e) => handleEmailChange(e.target.value)}
-                className={`input ${fieldErrors.email ? "error" : ""} ${styles.inputOverride}`}
+                className={`input ${fieldErrors.email ? "error" : ""}`}
                 aria-describedby={fieldErrors.email ? "err-email" : undefined}
                 aria-invalid={!!fieldErrors.email}
                 disabled={submitting}
               />
               {fieldErrors.email && (
-                <span id="err-email" className={styles.fieldError} role="alert">
+                <span id="err-email" className="text-xs text-primary font-medium" role="alert">
                   {fieldErrors.email}
                 </span>
               )}
             </div>
 
-            <div className={styles.field}>
-              <div className={styles.labelRow}>
-                <label className={styles.label} htmlFor="field-password">
+            <div className="flex flex-col gap-1.5">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-semibold text-[#6B4F3F] tracking-wide" htmlFor="field-password">
                   Mật khẩu
                 </label>
               </div>
-              <div className={styles.pwWrap}>
+              <div className="relative">
                 <input
                   id="field-password"
                   type={showPw ? "text" : "password"}
@@ -214,14 +213,14 @@ export default function LoginPage() {
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => handlePasswordChange(e.target.value)}
-                  className={`input ${fieldErrors.password ? "error" : ""} ${styles.inputOverride}`}
+                  className={`input ${fieldErrors.password ? "error" : ""} pr-11`}
                   aria-describedby={fieldErrors.password ? "err-pw" : undefined}
                   aria-invalid={!!fieldErrors.password}
                   disabled={submitting}
                 />
                 <button
                   type="button"
-                  className={styles.eyeBtn}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 bg-none border-none cursor-pointer p-1 flex items-center justify-center text-[#8B6F5F]"
                   onClick={() => setShowPw((v) => !v)}
                   aria-label={showPw ? "Ẩn mật khẩu" : "Hiện mật khẩu"}
                   tabIndex={-1}
@@ -277,21 +276,21 @@ export default function LoginPage() {
                 </button>
               </div>
               {fieldErrors.password && (
-                <span id="err-pw" className={styles.fieldError} role="alert">
+                <span id="err-pw" className="text-xs text-primary font-medium" role="alert">
                   {fieldErrors.password}
                 </span>
               )}
             </div>
 
-            <label className={styles.remember}>
+            <label className="flex items-center gap-2 cursor-pointer">
               <input
                 type="checkbox"
                 checked={remember}
                 onChange={(e) => setRemember(e.target.checked)}
-                className={styles.checkbox}
+                className="w-4 h-4 accent-primary cursor-pointer shrink-0"
                 disabled={submitting}
               />
-              <span className={styles.rememberText}>Duy trì đăng nhập</span>
+              <span className="text-[13px] text-[#6B4F3F]">Duy trì đăng nhập</span>
             </label>
 
             <button
@@ -304,7 +303,7 @@ export default function LoginPage() {
               {submitting ? (
                 <>
                   <span
-                    className={`animate-spin ${styles.spinner}`}
+                    className="animate-spin inline-block w-4 h-4 border-2 border-white/35 border-t-white rounded-full"
                     aria-hidden
                   />
                   Đang đăng nhập…
@@ -315,11 +314,11 @@ export default function LoginPage() {
             </button>
           </form>
 
-          <p className={styles.activateText}>
+          <p className="mt-5 text-[13px] text-[#8B6F5F] text-center">
             Bạn quên mật khẩu?{" "}
             <a
               href="#"
-              className={styles.activateLink}
+              className="text-primary font-semibold no-underline hover:underline"
               onClick={(e) => {
                 e.preventDefault();
                 setShowResetModal(true);
@@ -338,13 +337,13 @@ export default function LoginPage() {
       </main>
 
       {showResetModal && (
-        <div className={styles.modalOverlay}>
-          <div className={styles.modalCard}>
-            <div className={styles.modalHeader}>
-              <h2 className={styles.modalTitle}>Yêu cầu cấp lại mật khẩu</h2>
+        <div className="fixed inset-0 bg-[#2D1B14]/45 backdrop-blur-md flex items-center justify-center z-[1000] p-4 animate-fadeIn">
+          <div className="bg-white rounded-[20px] w-full max-w-[460px] shadow-[0_20px_48px_rgba(76,38,24,0.15)] border border-primary/10 overflow-hidden animate-scaleUp flex flex-col">
+            <div className="flex items-center justify-between p-[20px_24px] border-b border-[#FFE8CD] bg-[#FFF2EB]">
+              <h2 className="text-lg font-bold text-[#2D1B14]">Yêu cầu cấp lại mật khẩu</h2>
               <button
                 type="button"
-                className={styles.modalClose}
+                className="bg-transparent border-none cursor-pointer text-[#8B6F5F] flex items-center justify-center w-8 h-8 rounded-full transition-all duration-200 hover:bg-primary/10 hover:text-primary"
                 onClick={() => setShowResetModal(false)}
                 aria-label="Đóng"
               >
@@ -366,8 +365,8 @@ export default function LoginPage() {
             </div>
 
             {resetSuccess ? (
-              <div className={styles.modalSuccess}>
-                <div className={styles.successIcon}>
+              <div className="text-center p-[40px_24px] flex flex-col items-center gap-4">
+                <div className="w-14 h-14 bg-green-500/10 text-green-500 rounded-full flex items-center justify-center">
                   <svg
                     width="28"
                     height="28"
@@ -379,8 +378,8 @@ export default function LoginPage() {
                     <polyline points="20 6 9 17 4 12" />
                   </svg>
                 </div>
-                <h3 className={styles.successTitle}>Gửi yêu cầu thành công</h3>
-                <p className={styles.successText}>{resetSuccess}</p>
+                <h3 className="text-xl font-bold text-[#2D1B14]">Gửi yêu cầu thành công</h3>
+                <p className="text-sm text-[#6B4F3F] leading-relaxed">{resetSuccess}</p>
                 <button
                   type="button"
                   className="btn-primary"
@@ -433,16 +432,16 @@ export default function LoginPage() {
                   }
                 }}
               >
-                <div className={styles.modalBody}>
+                <div className="p-6 flex flex-col gap-4">
                   {resetError && (
-                    <div className={styles.errorBanner}>{resetError}</div>
+                    <div className="flex items-center gap-2 bg-primary/10 border border-primary/25 rounded-xl p-[10px_14px] text-[13px] font-medium text-primary mb-4 animate-slideDown">{resetError}</div>
                   )}
 
                   {/* Account Type Tabs */}
-                  <div className={styles.modalTabs}>
+                  <div className="flex bg-[#FFF2EB] rounded-xl p-[3px] gap-0.5">
                     <button
                       type="button"
-                      className={`${styles.modalTab} ${resetType === "sinhvien" ? styles.modalTabActive : ""}`}
+                      className={`flex-1 h-9 border-none rounded-lg text-[13px] font-medium cursor-pointer transition-all duration-150 ${resetType === "sinhvien" ? "bg-primary text-white font-semibold" : "bg-transparent text-[#6B4F3F]"}`}
                       onClick={() => {
                         setResetType("sinhvien");
                         setResetError(null);
@@ -452,7 +451,7 @@ export default function LoginPage() {
                     </button>
                     <button
                       type="button"
-                      className={`${styles.modalTab} ${resetType === "giangvien" ? styles.modalTabActive : ""}`}
+                      className={`flex-1 h-9 border-none rounded-lg text-[13px] font-medium cursor-pointer transition-all duration-150 ${resetType === "giangvien" ? "bg-primary text-white font-semibold" : "bg-transparent text-[#6B4F3F]"}`}
                       onClick={() => {
                         setResetType("giangvien");
                         setResetError(null);
@@ -463,8 +462,8 @@ export default function LoginPage() {
                   </div>
 
                   {/* ID Field */}
-                  <div className={styles.field}>
-                    <label className={styles.label}>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-semibold text-[#6B4F3F] tracking-wide">
                       {resetType === "sinhvien"
                         ? "Mã sinh viên"
                         : "Mã giảng viên"}
@@ -485,8 +484,8 @@ export default function LoginPage() {
                   </div>
 
                   {/* Phone Number Field */}
-                  <div className={styles.field}>
-                    <label className={styles.label}>Số điện thoại</label>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-semibold text-[#6B4F3F] tracking-wide">Số điện thoại</label>
                     <input
                       type="tel"
                       className="input"
@@ -499,8 +498,8 @@ export default function LoginPage() {
                   </div>
 
                   {/* Personal Email Field */}
-                  <div className={styles.field}>
-                    <label className={styles.label}>Email cá nhân</label>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-semibold text-[#6B4F3F] tracking-wide">Email cá nhân</label>
                     <input
                       type="email"
                       className="input"
@@ -513,8 +512,8 @@ export default function LoginPage() {
                   </div>
 
                   {/* Reason Field */}
-                  <div className={styles.field}>
-                    <label className={styles.label}>Lý do cần cấp lại</label>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-semibold text-[#6B4F3F] tracking-wide">Lý do cần cấp lại</label>
                     <textarea
                       className="input"
                       placeholder="Nhập lý do cần cấp lại mật khẩu..."
@@ -533,7 +532,7 @@ export default function LoginPage() {
                   </div>
                 </div>
 
-                <div className={styles.modalFooter}>
+                <div className="flex items-center justify-end gap-3 p-[0_24px_24px]">
                   <button
                     type="button"
                     className="btn-secondary"

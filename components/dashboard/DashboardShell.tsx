@@ -2,8 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { DashboardSidebar, DashboardTopbar } from "./DashboardSidebar";
-import styles from "./DashboardShell.module.css";
-import sidebarStyles from "./DashboardLayout.module.css";
 
 interface DashboardShellProps {
   children: React.ReactNode;
@@ -26,11 +24,11 @@ export function DashboardShell({ children, pageTitle }: DashboardShellProps) {
   }, [sidebarOpen]);
 
   return (
-    <div className={styles.shell}>
+    <div className="flex min-h-screen bg-[#FFF2EB]">
       {/* Overlay (tablet/mobile) */}
       {sidebarOpen && (
         <div
-          className={styles.overlay}
+          className="fixed inset-0 bg-[#2D1B14]/35 z-[90] backdrop-blur-[2px]"
           onClick={() => setSidebarOpen(false)}
           aria-hidden
         />
@@ -39,15 +37,15 @@ export function DashboardShell({ children, pageTitle }: DashboardShellProps) {
       {/* Sidebar */}
       <div
         data-sidebar
-        className={`${sidebarStyles.sidebar} ${sidebarOpen ? sidebarStyles.open : ""}`}
+        className={`w-[220px] shrink-0 bg-white border-r border-[#EAD9CB] flex flex-col p-[20px_12px] gap-1 h-screen sticky top-0 overflow-y-auto max-lg:fixed max-lg:left-0 max-lg:top-0 max-lg:z-[100] max-lg:h-screen max-lg:transition-transform max-lg:duration-250 max-lg:ease max-lg:shadow-[4px_0_24px_rgba(76,38,24,0.12)] max-sm:w-[200px] ${sidebarOpen ? "max-lg:translate-x-0" : "max-lg:-translate-x-full"}`}
       >
         <DashboardSidebar />
       </div>
 
       {/* Main area */}
-      <div className={styles.main}>
+      <div className="flex-1 flex flex-col min-w-0">
         {/* Topbar — tablet & mobile only */}
-        <div className={styles.topbarWrap}>
+        <div className="hidden max-lg:block">
           <DashboardTopbar
             title={pageTitle}
             onMenuClick={() => setSidebarOpen(v => !v)}
@@ -55,10 +53,11 @@ export function DashboardShell({ children, pageTitle }: DashboardShellProps) {
         </div>
 
         {/* Page content */}
-        <div className={styles.content}>
+        <div className="flex-1 p-[28px_32px] max-w-[1200px] w-full m-[0_auto] max-lg:p-[20px_20px_32px] max-sm:p-[16px_16px_40px]">
           {children}
         </div>
       </div>
     </div>
   );
 }
+

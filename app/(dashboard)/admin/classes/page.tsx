@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/auth/useAuth";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { AdminModal } from "@/components/admin/Adminmodal";
+import { KhoaForm, LopForm } from "@/components/admin/ClassesForms";
 import {
   Pagination,
   SearchBar,
@@ -15,7 +16,6 @@ import {
 import { useKhoa, type KhoaRow } from "@/hooks/admin/useKhoa";
 import { useLop, type LopRow } from "@/hooks/admin/useLop";
 import { VaiTro } from "@/types";
-import styles from "./classes.module.css";
 import {
   validateKhoa,
   validateLop,
@@ -37,189 +37,7 @@ interface LopModalState {
   item?: LopRow;
 }
 
-// ─── Khoa Form ────────────────────────────────────────────────────────────────
 
-function KhoaForm({
-  initial,
-  onSubmit,
-  onCancel,
-  loading,
-  error,
-}: {
-  initial?: KhoaRow;
-  onSubmit: (d: Omit<KhoaRow, "ngaytao">) => void;
-  onCancel: () => void;
-  loading: boolean;
-  error: string;
-}) {
-  const [form, setForm] = useState({
-    makhoa: initial?.makhoa ?? "",
-    tenkhoa: initial?.tenkhoa ?? "",
-    dienthoai: initial?.dienthoai ?? "",
-    email: initial?.email ?? "",
-  });
-
-  const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement>) =>
-    setForm((f) => ({ ...f, [k]: e.target.value }));
-
-  return (
-    <>
-      {error && <div className="error-msg">{error}</div>}
-      <div className="form-grid">
-        <div className="field">
-          <label>Mã khoa *</label>
-          <input
-            value={form.makhoa}
-            onChange={set("makhoa")}
-            placeholder="VD: CNTT"
-            disabled={!!initial}
-          />
-        </div>
-        <div className="field full">
-          <label>Tên khoa *</label>
-          <input
-            value={form.tenkhoa}
-            onChange={set("tenkhoa")}
-            placeholder="VD: Công nghệ thông tin"
-          />
-        </div>
-        <div className="field">
-          <label>Điện thoại</label>
-          <input
-            value={form.dienthoai}
-            onChange={set("dienthoai")}
-            placeholder="028 xxxx xxxx"
-          />
-        </div>
-        <div className="field">
-          <label>Email</label>
-          <input
-            type="email"
-            value={form.email}
-            onChange={set("email")}
-            placeholder="khoa@truong.edu.vn"
-          />
-        </div>
-      </div>
-      <div className="modal-actions">
-        <button className="btn-secondary" onClick={onCancel} disabled={loading}>
-          Huỷ
-        </button>
-        <button
-          className="btn-primary"
-          onClick={() => onSubmit(form)}
-          disabled={loading}
-        >
-          {loading ? "Đang lưu…" : initial ? "Cập nhật" : "Tạo khoa"}
-        </button>
-      </div>
-    </>
-  );
-}
-
-// ─── Lop Form ─────────────────────────────────────────────────────────────────
-
-function LopForm({
-  initial,
-  khoas,
-  onSubmit,
-  onCancel,
-  loading,
-  error,
-}: {
-  initial?: LopRow;
-  khoas: KhoaRow[];
-  onSubmit: (d: Omit<LopRow, "siso">) => void;
-  onCancel: () => void;
-  loading: boolean;
-  error: string;
-}) {
-  const [form, setForm] = useState({
-    malop: initial?.malop ?? "",
-    tenlop: initial?.tenlop ?? "",
-    makhoa: initial?.makhoa ?? "",
-    nganh: initial?.nganh ?? "",
-    khoahoc: initial?.khoahoc ?? "",
-    magv: initial?.magv ?? "",
-  });
-
-  const set =
-    (k: string) =>
-    (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
-      setForm((f) => ({ ...f, [k]: e.target.value }));
-
-  return (
-    <>
-      {error && <div className="error-msg">{error}</div>}
-      <div className="form-grid">
-        <div className="field">
-          <label>Mã lớp *</label>
-          <input
-            value={form.malop}
-            onChange={set("malop")}
-            placeholder="VD: CNTT01"
-            disabled={!!initial}
-          />
-        </div>
-        <div className="field full">
-          <label>Tên lớp *</label>
-          <input
-            value={form.tenlop}
-            onChange={set("tenlop")}
-            placeholder="VD: Lớp Công nghệ thông tin 01"
-          />
-        </div>
-        <div className="field">
-          <label>Khoa</label>
-          <select value={form.makhoa} onChange={set("makhoa")}>
-            <option value="">-- Chọn khoa --</option>
-            {khoas.map((k) => (
-              <option key={k.makhoa} value={k.makhoa}>
-                {k.tenkhoa}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="field">
-          <label>Ngành học</label>
-          <input
-            value={form.nganh}
-            onChange={set("nganh")}
-            placeholder="VD: Kỹ thuật phần mềm"
-          />
-        </div>
-        <div className="field">
-          <label>Khoá học</label>
-          <input
-            value={form.khoahoc}
-            onChange={set("khoahoc")}
-            placeholder="VD: 2022-2026"
-          />
-        </div>
-        <div className="field">
-          <label>Mã GVCN</label>
-          <input
-            value={form.magv}
-            onChange={set("magv")}
-            placeholder="VD: GV001"
-          />
-        </div>
-      </div>
-      <div className="modal-actions">
-        <button className="btn-secondary" onClick={onCancel} disabled={loading}>
-          Huỷ
-        </button>
-        <button
-          className="btn-primary"
-          onClick={() => onSubmit(form)}
-          disabled={loading}
-        >
-          {loading ? "Đang lưu…" : initial ? "Cập nhật" : "Tạo lớp"}
-        </button>
-      </div>
-    </>
-  );
-}
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
@@ -386,23 +204,23 @@ export default function AdminClassesPage() {
 
   return (
     <DashboardShell pageTitle="Lớp - Khoa">
-      <div className={`animate-fadeInUp ${styles.page}`}>
+      <div className="animate-fadeInUp flex flex-col gap-5">
         {/* Header */}
-        <div className={styles.pageHeader}>
+        <div className="flex justify-between items-start flex-wrap gap-3">
           <div>
-            <h1 className={styles.pageTitle}>Quản lý Lớp &amp; Khoa</h1>
-            <p className={styles.pageSub}>Tổ chức cơ cấu đào tạo của trường</p>
+            <h1 className="text-2xl font-bold text-fg m-0 mb-1 max-sm:text-lg">Quản lý Lớp &amp; Khoa</h1>
+            <p className="text-xs text-fg-subtle m-0">Tổ chức cơ cấu đào tạo của trường</p>
           </div>
         </div>
 
         {/* Tabs */}
-        <div className={styles.tabBar} role="tablist">
+        <div className="flex gap-1 bg-[#FFE8CD] rounded-xl p-1 w-fit max-lg:w-full" role="tablist">
           {(["khoa", "lop"] as const).map((t) => (
             <button
               key={t}
               role="tab"
               aria-selected={tab === t}
-              className={`${styles.tab} ${tab === t ? styles.tabActive : ""}`}
+              className={`p-[8px_20px] border-none rounded-lg text-sm font-medium cursor-pointer transition-all duration-150 max-lg:flex-1 max-lg:text-center ${tab === t ? "bg-primary text-white font-semibold" : "bg-transparent text-[#6B4F3F] hover:bg-[#C25450]/8"}`}
               onClick={() => setTab(t)}
             >
               {t === "khoa" ? "Khoa" : "Lớp học"}
@@ -413,7 +231,7 @@ export default function AdminClassesPage() {
         {/* ── KHOA TAB ── */}
         {tab === "khoa" && (
           <section className="card" style={{ padding: 0 }}>
-            <div className={styles.tableToolbar}>
+            <div className="flex items-center gap-2.5 p-4 border-b border-border flex-wrap max-sm:flex-col max-sm:items-stretch">
               <SearchBar
                 value={khoaSearch}
                 onChange={setKhoaSearch}
@@ -437,7 +255,7 @@ export default function AdminClassesPage() {
                 {!khoas.length ? (
                   <EmptyState message="Chưa có khoa nào." />
                 ) : (
-                  <div className={styles.tableWrap}>
+                  <div className="w-full overflow-x-auto">
                     <table className="data-table">
                       <thead>
                         <tr>
@@ -466,7 +284,7 @@ export default function AdminClassesPage() {
                               {new Date(k.ngaytao).toLocaleDateString("vi-VN")}
                             </td>
                             <td>
-                              <div className={styles.actions}>
+                              <div className="flex gap-1.5">
                                 <button
                                   className="btn-secondary"
                                   style={{ fontSize: 12, padding: "4px 10px" }}
@@ -503,7 +321,7 @@ export default function AdminClassesPage() {
         {/* ── LOP TAB ── */}
         {tab === "lop" && (
           <section className="card" style={{ padding: 0 }}>
-            <div className={styles.tableToolbar}>
+            <div className="flex items-center gap-2.5 p-4 border-b border-border flex-wrap max-sm:flex-col max-sm:items-stretch">
               <SearchBar
                 value={lopSearch}
                 onChange={(v) => {
@@ -513,7 +331,7 @@ export default function AdminClassesPage() {
                 placeholder="Tìm tên lớp…"
               />
               <select
-                className={styles.filterSelect}
+                className="p-[9px_12px] border-[1.5px] border-border rounded-xl text-sm text-fg bg-white outline-none cursor-pointer focus:border-primary max-sm:w-full"
                 value={lopKhoa}
                 onChange={(e) => {
                   setLopKhoa(e.target.value);
@@ -545,7 +363,7 @@ export default function AdminClassesPage() {
                 {!lops.length ? (
                   <EmptyState message="Chưa có lớp nào." />
                 ) : (
-                  <div className={styles.tableWrap}>
+                  <div className="w-full overflow-x-auto">
                     <table className="data-table">
                       <thead>
                         <tr>
@@ -577,7 +395,7 @@ export default function AdminClassesPage() {
                               <span className="badge badge-blue">{l.siso}</span>
                             </td>
                             <td>
-                              <div className={styles.actions}>
+                              <div className="flex gap-1.5">
                                 <button
                                   className="btn-secondary"
                                   style={{ fontSize: 12, padding: "4px 10px" }}

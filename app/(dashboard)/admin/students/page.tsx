@@ -16,250 +16,35 @@ import { useSinhVien, type SinhVienRow } from "@/hooks/admin/useSinhvien";
 import { useKhoa, type KhoaRow } from "@/hooks/admin/useKhoa";
 import { useLop, type LopRow } from "@/hooks/admin/useLop";
 import { VaiTro, TrangThaiSinhVien } from "@/types";
-import styles from "./students.module.css";
 import {
   validateSinhVienCreate,
   validateSinhVienUpdate,
   firstError,
 } from "@/lib/validation/admin.validation";
 import ImportModal from "@/components/admin/ImportModal";
+import { CreateForm, EditForm } from "@/components/admin/StudentForms";
 
 // ─── Status config ────────────────────────────────────────────────────────────
 
-const STATUS_LABEL: Record<string, string> = {
-  Danghoc: "Đang học",
-  Baoluu: "Bảo lưu",
-  Thoi: "Thôi học",
-  Totnghiep: "Tốt nghiệp",
+const STATUS_LABEL: Record<TrangThaiSinhVien, string> = {
+  [TrangThaiSinhVien.Danghoc]: "Đang học",
+  [TrangThaiSinhVien.Baoluu]: "Bảo lưu",
+  [TrangThaiSinhVien.Thoi]: "Thôi học",
+  [TrangThaiSinhVien.Totnghiep]: "Tốt nghiệp",
 };
-const STATUS_BADGE: Record<string, string> = {
-  Danghoc: "badge-green",
-  Baoluu: "badge-yellow",
-  Thoi: "badge-red",
-  Totnghiep: "badge-blue",
+const STATUS_BADGE: Record<TrangThaiSinhVien, string> = {
+  [TrangThaiSinhVien.Danghoc]: "badge-green",
+  [TrangThaiSinhVien.Baoluu]: "badge-yellow",
+  [TrangThaiSinhVien.Thoi]: "badge-red",
+  [TrangThaiSinhVien.Totnghiep]: "badge-blue",
 };
-
-// ─── Create Form ──────────────────────────────────────────────────────────────
-
-function CreateForm({
-  lops,
-  onSubmit,
-  onCancel,
-  loading,
-  error,
-}: {
-  lops: LopRow[];
-  onSubmit: (d: Record<string, unknown>) => void;
-  onCancel: () => void;
-  loading: boolean;
-  error: string;
-}) {
-  const [form, setForm] = useState({
-    masv: "",
-    malop: "",
-    hoten: "",
-    ngaysinh: "",
-    gioitinh: "",
-    emailtruong: "",
-    email: "",
-    matkhau: "",
-  });
-
-  const set =
-    (k: string) =>
-    (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
-      setForm((f) => ({ ...f, [k]: e.target.value }));
-
-  return (
-    <>
-      {error && <div className="error-msg">{error}</div>}
-      <div className="form-grid">
-        <div className="field">
-          <label>MSSV *</label>
-          <input
-            value={form.masv}
-            onChange={set("masv")}
-            placeholder="VD: SV001"
-          />
-        </div>
-        <div className="field">
-          <label>Lớp *</label>
-          <select value={form.malop} onChange={set("malop")}>
-            <option value="">-- Chọn lớp --</option>
-            {lops.map((l) => (
-              <option key={l.malop} value={l.malop}>
-                {l.tenlop}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="field full">
-          <label>Họ và tên *</label>
-          <input
-            value={form.hoten}
-            onChange={set("hoten")}
-            placeholder="Nguyễn Văn A"
-          />
-        </div>
-        <div className="field">
-          <label>Ngày sinh</label>
-          <input type="date" value={form.ngaysinh} onChange={set("ngaysinh")} />
-        </div>
-        <div className="field">
-          <label>Giới tính</label>
-          <select value={form.gioitinh} onChange={set("gioitinh")}>
-            <option value="">-- Chọn --</option>
-            <option value="Nam">Nam</option>
-            <option value="Nu">Nữ</option>
-            <option value="Khac">Khác</option>
-          </select>
-        </div>
-        <div className="field">
-          <label>Email trường</label>
-          <input
-            type="email"
-            value={form.emailtruong}
-            onChange={set("emailtruong")}
-            placeholder="sv@truong.edu.vn"
-          />
-        </div>
-        <div className="field">
-          <label>Email đăng nhập *</label>
-          <input
-            type="email"
-            value={form.email}
-            onChange={set("email")}
-            placeholder="email@gmail.com"
-          />
-        </div>
-        <div className="field">
-          <label>Mật khẩu *</label>
-          <input
-            type="password"
-            value={form.matkhau}
-            onChange={set("matkhau")}
-            placeholder="••••••••"
-          />
-        </div>
-      </div>
-      <div className="modal-actions">
-        <button className="btn-secondary" onClick={onCancel} disabled={loading}>
-          Huỷ
-        </button>
-        <button
-          className="btn-primary"
-          onClick={() => onSubmit(form)}
-          disabled={loading}
-        >
-          {loading ? "Đang lưu…" : "Tạo sinh viên"}
-        </button>
-      </div>
-    </>
-  );
-}
-
-// ─── Edit Form ────────────────────────────────────────────────────────────────
-
-function EditForm({
-  initial,
-  lops,
-  onSubmit,
-  onCancel,
-  loading,
-  error,
-}: {
-  initial: SinhVienRow;
-  lops: LopRow[];
-  onSubmit: (d: Record<string, unknown>) => void;
-  onCancel: () => void;
-  loading: boolean;
-  error: string;
-}) {
-  const [form, setForm] = useState({
-    hoten: initial.hoten,
-    malop: initial.malop,
-    ngaysinh: initial.ngaysinh?.slice(0, 10) ?? "",
-    gioitinh: initial.gioitinh ?? "",
-    emailtruong: initial.emailtruong ?? "",
-    trangthai: initial.trangthai,
-  });
-
-  const set =
-    (k: string) =>
-    (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
-      setForm((f) => ({ ...f, [k]: e.target.value }));
-
-  return (
-    <>
-      {error && <div className="error-msg">{error}</div>}
-      <div className="form-grid">
-        <div className="field full">
-          <label>Họ và tên *</label>
-          <input value={form.hoten} onChange={set("hoten")} />
-        </div>
-        <div className="field">
-          <label>Lớp</label>
-          <select value={form.malop} onChange={set("malop")}>
-            {lops.map((l) => (
-              <option key={l.malop} value={l.malop}>
-                {l.tenlop}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="field">
-          <label>Trạng thái</label>
-          <select value={form.trangthai} onChange={set("trangthai")}>
-            {Object.values(TrangThaiSinhVien).map((s) => (
-              <option key={s} value={s}>
-                {STATUS_LABEL[s]}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="field">
-          <label>Ngày sinh</label>
-          <input type="date" value={form.ngaysinh} onChange={set("ngaysinh")} />
-        </div>
-        <div className="field">
-          <label>Giới tính</label>
-          <select value={form.gioitinh} onChange={set("gioitinh")}>
-            <option value="">-- Chọn --</option>
-            <option value="Nam">Nam</option>
-            <option value="Nu">Nữ</option>
-            <option value="Khac">Khác</option>
-          </select>
-        </div>
-        <div className="field full">
-          <label>Email trường</label>
-          <input
-            type="email"
-            value={form.emailtruong}
-            onChange={set("emailtruong")}
-          />
-        </div>
-      </div>
-      <div className="modal-actions">
-        <button className="btn-secondary" onClick={onCancel} disabled={loading}>
-          Huỷ
-        </button>
-        <button
-          className="btn-primary"
-          onClick={() => onSubmit(form)}
-          disabled={loading}
-        >
-          {loading ? "Đang lưu…" : "Cập nhật"}
-        </button>
-      </div>
-    </>
-  );
-}
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function AdminStudentsPage() {
   const { user, loading } = useAuth();
-  const { getSinhVien, createSinhVien, updateSinhVien, deleteSinhVien } = useSinhVien();
+  const { getSinhVien, createSinhVien, updateSinhVien, deleteSinhVien } =
+    useSinhVien();
   const { getKhoa } = useKhoa();
   const { getLop } = useLop();
   const router = useRouter();
@@ -376,12 +161,14 @@ export default function AdminStudentsPage() {
 
   return (
     <DashboardShell pageTitle="Sinh viên">
-      <div className={`animate-fadeInUp ${styles.page}`}>
+      <div className="animate-fadeInUp flex flex-col gap-5">
         {/* Header */}
-        <div className={styles.pageHeader}>
+        <div className="flex justify-between items-start flex-wrap gap-3 max-sm:flex-col max-sm:items-stretch">
           <div>
-            <h1 className={styles.pageTitle}>Quản lý Sinh viên</h1>
-            <p className={styles.pageSub}>
+            <h1 className="text-2xl font-bold text-fg m-0 max-sm:text-lg">
+              Quản lý Sinh viên
+            </h1>
+            <p className="text-xs text-fg-subtle mt-1">
               {total > 0
                 ? `${total} sinh viên trong hệ thống`
                 : "Quản lý toàn bộ sinh viên"}
@@ -421,7 +208,7 @@ export default function AdminStudentsPage() {
 
         {/* Filters */}
         <section className="card" style={{ padding: 0 }}>
-          <div className={styles.toolbar}>
+          <div className="flex items-center gap-2.5 p-4 border-b border-border flex-wrap max-sm:flex-col max-sm:items-stretch">
             <SearchBar
               value={search}
               onChange={(v) => {
@@ -431,7 +218,7 @@ export default function AdminStudentsPage() {
               placeholder="Tìm MSSV hoặc tên…"
             />
             <select
-              className={styles.filter}
+              className="p-[9px_12px] border-[1.5px] border-border rounded-xl text-[13px] text-fg bg-white cursor-pointer outline-none transition-colors duration-200 focus:border-primary min-w-[130px] max-sm:w-full"
               value={filterKhoa}
               onChange={(e) => {
                 setFilterKhoa(e.target.value);
@@ -447,7 +234,7 @@ export default function AdminStudentsPage() {
               ))}
             </select>
             <select
-              className={styles.filter}
+              className="p-[9px_12px] border-[1.5px] border-border rounded-xl text-[13px] text-fg bg-white cursor-pointer outline-none transition-colors duration-200 focus:border-primary min-w-[130px] max-sm:w-full"
               value={filterLop}
               onChange={(e) => {
                 setFilterLop(e.target.value);
@@ -462,7 +249,7 @@ export default function AdminStudentsPage() {
               ))}
             </select>
             <select
-              className={styles.filter}
+              className="p-[9px_12px] border-[1.5px] border-border rounded-xl text-[13px] text-fg bg-white cursor-pointer outline-none transition-colors duration-200 focus:border-primary min-w-[130px] max-sm:w-full"
               value={filterStatus}
               onChange={(e) => {
                 setFilterStatus(e.target.value);
@@ -479,7 +266,7 @@ export default function AdminStudentsPage() {
 
             {(search || filterKhoa || filterLop || filterStatus) && (
               <button
-                className={styles.clearFilter}
+                className="p-[9px_14px] border-[1.5px] border-primary rounded-xl text-[13px] text-primary bg-[#FFF5F5] cursor-pointer whitespace-nowrap transition-all hover:bg-primary hover:text-white max-sm:w-full"
                 onClick={() => {
                   setSearch("");
                   setFilterKhoa("");
@@ -500,7 +287,7 @@ export default function AdminStudentsPage() {
               {!svList.length ? (
                 <EmptyState message="Không tìm thấy sinh viên nào." />
               ) : (
-                <div className={styles.tableWrap}>
+                <div className="w-full overflow-x-auto">
                   <table className="data-table">
                     <thead>
                       <tr>
@@ -535,13 +322,13 @@ export default function AdminStudentsPage() {
                           </td>
                           <td>
                             <span
-                              className={`badge ${STATUS_BADGE[sv.trangthai] ?? "badge-peach"}`}
+                              className={`badge ${STATUS_BADGE[sv.trangthai as TrangThaiSinhVien] ?? "badge-peach"}`}
                             >
-                              {STATUS_LABEL[sv.trangthai] ?? sv.trangthai}
+                              {STATUS_LABEL[sv.trangthai as TrangThaiSinhVien] ?? sv.trangthai}
                             </span>
                           </td>
                           <td>
-                            <div className={styles.actions}>
+                            <div className="flex gap-1.5">
                               <button
                                 className="btn-secondary"
                                 style={{ fontSize: 12, padding: "4px 10px" }}
