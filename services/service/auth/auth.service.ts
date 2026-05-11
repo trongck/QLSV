@@ -1,4 +1,4 @@
-import type { LoginRequest, LoginResponse, UserProfile } from "@/models";
+import type { LoginRequest, LoginResponse, UserProfile } from "@/types";
 
 // ─── Token Storage Keys ────────────────────────────────────────────────────────
 

@@ -9,7 +9,7 @@ import {
   type ReactNode,
 } from "react";
 import { useRouter } from "next/navigation";
-import type { UserProfile, LoginRequest } from "@/models";
+import type { UserProfile, LoginRequest } from "@/types";
 import { authService } from "@/services/service/auth/auth.service";
 import { VaiTro } from "@/types";
 

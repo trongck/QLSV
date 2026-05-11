@@ -1,6 +1,6 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { VaiTro } from "@/types";
-import type { UserProfile } from "@/models";
+import type { UserProfile } from "@/types";
 import {
   verifyToken,
   signAccessToken,

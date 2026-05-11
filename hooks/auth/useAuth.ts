@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from "react";
 import { useAuthContext } from "@/context/AuthContext";
-import type { LoginRequest } from "@/models";
+import type { LoginRequest } from "@/types";
 
 export function useAuth() {
   const { user, loading, isAuthenticated, login, logout, logoutAll } = useAuthContext();

@@ -1,11 +1,10 @@
-import { VaiTro } from "@/types";
+import { VaiTro } from "./enum";
 
 // ─── Request ──────────────────────────────────────────────────────────────────
 
 export interface LoginRequest {
   email: string;
   matkhau: string;
-  
 }
 
 export interface RefreshTokenRequest {
@@ -31,16 +30,12 @@ export interface LoginResponse {
   user: UserProfile;
 }
 
-// TODO: Dùng RefreshTokenResponse làm kiểu trả về của POST /api/auth/refresh
-// sau khi thêm strong typing cho các API route handler.
 export interface RefreshTokenResponse {
   accessToken: string;
   refreshToken: string;
 }
 
 // ─── JWT Payload (dùng trong lib/utils/jwt.ts) ────────────────────────────────
-// TODO: Dùng JwtPayload làm kiểu cho payload được decode từ verifyToken()
-// để thống nhất với AppJwtPayload trong lib/utils/jwt.ts.
 
 export interface JwtPayload {
   mataikhoan: string;
