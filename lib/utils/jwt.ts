@@ -1,5 +1,5 @@
 import { SignJWT, jwtVerify, type JWTPayload } from "jose";
-import type { VaiTro } from "@/types";
+import { VaiTro } from "@/types";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -30,6 +30,8 @@ export async function signAccessToken(payload: Omit<AppJwtPayload, keyof JWTPayl
     .sign(getSecret());
 }
 
+// ─── Sign Refresh ─────────────────────────────────────────────────────────────
+
 export async function signRefreshToken(payload: Omit<AppJwtPayload, keyof JWTPayload>): Promise<string> {
   return new SignJWT({ ...payload })
     .setProtectedHeader({ alg: "HS256" })
@@ -57,4 +59,21 @@ export function extractBearer(authHeader: string | null): string | null {
 export function refreshTokenExpiresAt(): Date {
   // Default 7 ngày
   return new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+}
+
+// ─── Role / Authorization Helpers ─────────────────────────────────────────────
+
+export async function requireRole(request: Request, allowedRole: VaiTro): Promise<AppJwtPayload | null> {
+  const token = extractBearer(request.headers.get("authorization"));
+  if (!token) return null;
+  try {
+    const payload = await verifyToken(token);
+    return payload.vaitro === allowedRole ? payload : null;
+  } catch {
+    return null;
+  }
+}
+
+export async function requireAdmin(request: Request): Promise<AppJwtPayload | null> {
+  return requireRole(request, VaiTro.Admin);
 }

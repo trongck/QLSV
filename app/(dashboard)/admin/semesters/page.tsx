@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/hook/useAuth";
+import { useAuth } from "@/hooks/auth/useAuth";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { AdminModal } from "@/components/admin/Adminmodal";
 import {
@@ -11,14 +11,7 @@ import {
   EmptyState,
   ConfirmDelete,
 } from "@/components/admin/AdminTable";
-import {
-  getHocky,
-  createHocky,
-  updateHocky,
-  deleteHocky,
-  activateHocky,
-  type HockyRow,
-} from "@/services/admin/hocky.service";
+import { useHocky, type HockyRow } from "@/hooks/admin/useHocky";
 import { VaiTro } from "@/types";
 import styles from "./semester.module.css";
 
@@ -63,7 +56,9 @@ function HockyForm({
           <input
             type="number"
             value={form.namhoc}
-            onChange={(e) => setForm({ ...form, namhoc: Number(e.target.value) })}
+            onChange={(e) =>
+              setForm({ ...form, namhoc: Number(e.target.value) })
+            }
           />
         </div>
         <div className="field">
@@ -114,6 +109,8 @@ function HockyForm({
 
 export default function AdminSemestersPage() {
   const { user, loading } = useAuth();
+  const { getHocky, createHocky, updateHocky, deleteHocky, activateHocky } =
+    useHocky();
   const router = useRouter();
 
   const [list, setList] = useState<HockyRow[]>([]);
@@ -206,7 +203,9 @@ export default function AdminSemestersPage() {
         <div className={styles.pageHeader}>
           <div>
             <h1 className={styles.pageTitle}>Quản lý Học kỳ</h1>
-            <p className={styles.pageSub}>Thiết lập thời gian và học kỳ hiện tại cho hệ thống</p>
+            <p className={styles.pageSub}>
+              Thiết lập thời gian và học kỳ hiện tại cho hệ thống
+            </p>
           </div>
           <button
             className="btn-primary"
@@ -231,10 +230,14 @@ export default function AdminSemestersPage() {
               className={styles.filter}
               placeholder="Năm học..."
               value={filterNam ?? ""}
-              onChange={(e) => setFilterNam(e.target.value ? Number(e.target.value) : undefined)}
+              onChange={(e) =>
+                setFilterNam(
+                  e.target.value ? Number(e.target.value) : undefined,
+                )
+              }
             />
 
-             {(search || filterNam) && (
+            {(search || filterNam) && (
               <button
                 className={styles.clearFilter}
                 onClick={() => {
@@ -246,7 +249,7 @@ export default function AdminSemestersPage() {
               </button>
             )}
           </div>
-           
+
           {tkLoading ? (
             <TableSkeleton cols={5} rows={5} />
           ) : (
@@ -262,7 +265,7 @@ export default function AdminSemestersPage() {
                 </thead>
                 <tbody>
                   {list.map((hk) => {
-                    const activeHK = list.find(item => item.danghieuluc);
+                    const activeHK = list.find((item) => item.danghieuluc);
                     let isOld = false;
                     let isFuture = false;
                     const isCurrent = hk.danghieuluc;
@@ -281,14 +284,27 @@ export default function AdminSemestersPage() {
                       <tr key={hk.mahocky}>
                         <td style={{ fontWeight: 600 }}>{hk.tenhocky}</td>
                         <td>
-                          {hk.ngaybatdau ? new Date(hk.ngaybatdau).toLocaleDateString("vi-VN") : "?"}{" "}
-                          - {hk.ngayketthuc ? new Date(hk.ngayketthuc).toLocaleDateString("vi-VN") : "?"}
+                          {hk.ngaybatdau
+                            ? new Date(hk.ngaybatdau).toLocaleDateString(
+                                "vi-VN",
+                              )
+                            : "?"}{" "}
+                          -{" "}
+                          {hk.ngayketthuc
+                            ? new Date(hk.ngayketthuc).toLocaleDateString(
+                                "vi-VN",
+                              )
+                            : "?"}
                         </td>
                         <td>
                           {isCurrent ? (
-                            <span className={styles.activeBadge}>Đang hiệu lực</span>
+                            <span className={styles.activeBadge}>
+                              Đang hiệu lực
+                            </span>
                           ) : (
-                            <span className={styles.inactiveBadge}>Không hiệu lực</span>
+                            <span className={styles.inactiveBadge}>
+                              Không hiệu lực
+                            </span>
                           )}
                         </td>
                         <td>
@@ -299,7 +315,9 @@ export default function AdminSemestersPage() {
                                 <button
                                   className="btn-primary"
                                   style={{ fontSize: 11, padding: "4px 8px" }}
-                                  onClick={() => setModal({ mode: "activate", item: hk })}
+                                  onClick={() =>
+                                    setModal({ mode: "activate", item: hk })
+                                  }
                                 >
                                   Kích hoạt
                                 </button>
@@ -369,7 +387,9 @@ export default function AdminSemestersPage() {
       {/* Modals */}
       {(modal?.mode === "create" || modal?.mode === "edit") && (
         <AdminModal
-          title={modal.mode === "create" ? "Thêm học kỳ mới" : "Chỉnh sửa học kỳ"}
+          title={
+            modal.mode === "create" ? "Thêm học kỳ mới" : "Chỉnh sửa học kỳ"
+          }
           onClose={() => setModal(null)}
         >
           <HockyForm
@@ -390,25 +410,49 @@ export default function AdminSemestersPage() {
             onCancel={() => setModal(null)}
             loading={mutating}
           />
-          {mutError && <p className="error-msg" style={{ marginTop: 10 }}>{mutError}</p>}
+          {mutError && (
+            <p className="error-msg" style={{ marginTop: 10 }}>
+              {mutError}
+            </p>
+          )}
         </AdminModal>
       )}
 
       {modal?.mode === "activate" && modal.item && (
-        <AdminModal title="Kích hoạt học kỳ" onClose={() => setModal(null)} size="sm">
+        <AdminModal
+          title="Kích hoạt học kỳ"
+          onClose={() => setModal(null)}
+          size="sm"
+        >
           <div style={{ padding: "10px 0" }}>
-            <p>Bạn có chắc muốn kích hoạt <strong>{modal.item.tenhocky}</strong>?</p>
+            <p>
+              Bạn có chắc muốn kích hoạt <strong>{modal.item.tenhocky}</strong>?
+            </p>
             <p style={{ fontSize: 13, color: "#8B6F5F", marginTop: 8 }}>
               Các học kỳ khác sẽ tự động bị huỷ kích hoạt.
             </p>
           </div>
           <div className="modal-actions">
-            <button className="btn-secondary" onClick={() => setModal(null)} disabled={mutating}>Huỷ</button>
-            <button className="btn-primary" onClick={handleActivate} disabled={mutating}>
+            <button
+              className="btn-secondary"
+              onClick={() => setModal(null)}
+              disabled={mutating}
+            >
+              Huỷ
+            </button>
+            <button
+              className="btn-primary"
+              onClick={handleActivate}
+              disabled={mutating}
+            >
               {mutating ? "Đang xử lý..." : "Xác nhận kích hoạt"}
             </button>
           </div>
-          {mutError && <p className="error-msg" style={{ marginTop: 10 }}>{mutError}</p>}
+          {mutError && (
+            <p className="error-msg" style={{ marginTop: 10 }}>
+              {mutError}
+            </p>
+          )}
         </AdminModal>
       )}
     </DashboardShell>

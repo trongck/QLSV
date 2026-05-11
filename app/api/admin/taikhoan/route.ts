@@ -1,56 +1,39 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/utils/supabase/server";
-import { verifyToken, extractBearer } from "@/lib/utils/jwt";
-import { VaiTro } from "@/types";
-
-async function requireAdmin(request: Request) {
-  const token = extractBearer(request.headers.get("authorization"));
-  if (!token) return null;
-  try {
-    const payload = await verifyToken(token);
-    return payload.vaitro === VaiTro.Admin ? payload : null;
-  } catch { return null; }
-}
-
-// ─── GET /api/admin/taikhoan ──────────────────────────────────────────────────
+import { requireAdmin } from "@/lib/utils/jwt";
+import { getTaiKhoanListService } from "@/services/service/admin/taikhoan.service";
 
 export async function GET(request: Request) {
-  if (!(await requireAdmin(request)))
+  if (!(await requireAdmin(request))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
   const { searchParams } = new URL(request.url);
-  const search    = searchParams.get("search") ?? "";
-  const vaitro    = searchParams.get("vaitro") ?? "";
+  const search = searchParams.get("search") ?? "";
+  const vaitro = searchParams.get("vaitro") ?? "";
   const trangthai = searchParams.get("trangthai") ?? "";
-  const page      = Math.max(1, parseInt(searchParams.get("page") ?? "1"));
-  const limit     = Math.min(50, parseInt(searchParams.get("limit") ?? "20"));
-  const from      = (page - 1) * limit;
+  const page = Math.max(1, parseInt(searchParams.get("page") ?? "1"));
+  const limit = Math.min(50, parseInt(searchParams.get("limit") ?? "20"));
 
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
+  try {
+    const cookieStore = await cookies();
+    const supabase = createClient(cookieStore);
 
-  let query = supabase
-    .from("taikhoan")
-    .select("mataikhoan, email, vaitro, trangthai, dangnhaplancuoi", { count: "exact" });
+    const { data, total } = await getTaiKhoanListService(supabase, {
+      search,
+      vaitro,
+      trangthai,
+      page,
+      limit,
+    });
 
-  if (search) {
-    query = query.or(`email.ilike.%${search}%,mataikhoan.ilike.%${search}%`);
+    return NextResponse.json({
+      success: true,
+      data,
+      pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
+    });
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 });
   }
-  if (vaitro)    query = query.eq("vaitro", vaitro);
-  if (trangthai) query = query.eq("trangthai", trangthai);
-
-  // Apply ordering and range on the query
-  const finalQuery = query
-    .order("mataikhoan", { ascending: true })
-    .range(from, from + limit - 1);
-
-  const { data, count, error } = await finalQuery;
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-
-  return NextResponse.json({
-    success: true,
-    data,
-    pagination: { page, limit, total: count ?? 0, totalPages: Math.ceil((count ?? 0) / limit) },
-  });
 }

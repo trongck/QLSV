@@ -1,17 +1,13 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/utils/supabase/server";
-import { verifyToken, extractBearer } from "@/lib/utils/jwt";
-import { VaiTro } from "@/types";
-
-async function requireAdmin(request: Request) {
-  const token = extractBearer(request.headers.get("authorization"));
-  if (!token) return null;
-  try {
-    const payload = await verifyToken(token);
-    return payload.vaitro === VaiTro.Admin ? payload : null;
-  } catch { return null; }
-}
+import { requireAdmin } from "@/lib/utils/jwt";
+import { validateSinhVienUpdate } from "@/lib/validation/admin.validation";
+import {
+  getSinhVienByIdService,
+  updateSinhVienService,
+  deleteSinhVienService,
+} from "@/services/service/admin/sinhvien.service";
 
 // ─── GET /api/admin/sinhvien/[masv] ────────────────────────────────────────────
 
@@ -20,17 +16,14 @@ export async function GET(request: Request, { params }: { params: Promise<{ masv
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { masv } = await params;
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
+  const supabase = createClient(await cookies());
 
-  const { data, error } = await supabase
-    .from("sinhvien")
-    .select(`*, lop(tenlop, makhoa, khoa(tenkhoa)), chitietsinhvien(*), taikhoan(email, vaitro, trangthai)`)
-    .eq("masv", masv)
-    .single();
-
-  if (error) return NextResponse.json({ error: error.message }, { status: 404 });
-  return NextResponse.json({ success: true, data });
+  try {
+    const data = await getSinhVienByIdService(supabase, masv);
+    return NextResponse.json({ success: true, data });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 404 });
+  }
 }
 
 // ─── PUT /api/admin/sinhvien/[masv] ────────────────────────────────────────────
@@ -41,34 +34,21 @@ export async function PUT(request: Request, { params }: { params: Promise<{ masv
 
   const { masv } = await params;
   const body = await request.json();
-  const { hoten, ngaysinh, gioitinh, malop, trangthai, emailtruong, chiTiet } = body;
 
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
-
-  const update: Record<string, unknown> = {};
-  if (hoten)      update.hoten = hoten.trim();
-  if (ngaysinh !== undefined) update.ngaysinh = ngaysinh || null;
-  if (gioitinh !== undefined) update.gioitinh = gioitinh || null;
-  if (malop)      update.malop = malop;
-  if (trangthai)  update.trangthai = trangthai;
-  if (emailtruong !== undefined) update.emailtruong = emailtruong || null;
-
-  const { data, error } = await supabase
-    .from("sinhvien")
-    .update(update)
-    .eq("masv", masv)
-    .select()
-    .single();
-
-  if (error) return NextResponse.json({ error: error.message }, { status: 400 });
-
-  // Upsert chi tiết
-  if (chiTiet && Object.keys(chiTiet).length > 0) {
-    await supabase.from("chitietsinhvien").upsert({ masv: masv, ...chiTiet });
+  // Sử dụng validateSinhVienUpdate chuẩn hóa
+  const validationErrors = validateSinhVienUpdate(body);
+  if (validationErrors.length > 0) {
+    return NextResponse.json({ error: validationErrors[0].message, errors: validationErrors }, { status: 400 });
   }
 
-  return NextResponse.json({ success: true, data });
+  const supabase = createClient(await cookies());
+
+  try {
+    const data = await updateSinhVienService(supabase, masv, body);
+    return NextResponse.json({ success: true, data });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 400 });
+  }
 }
 
 // ─── DELETE /api/admin/sinhvien/[masv] ─────────────────────────────────────────
@@ -78,19 +58,12 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ m
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { masv } = await params;
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
+  const supabase = createClient(await cookies());
 
-  // Lấy mataikhoan để xoá tài khoản sau
-  const { data: sv } = await supabase.from("sinhvien").select("mataikhoan").eq("masv", masv).single();
-
-  const { error } = await supabase.from("sinhvien").delete().eq("masv", masv);
-  if (error) return NextResponse.json({ error: error.message }, { status: 400 });
-
-  // Xoá tài khoản liên kết
-  if (sv?.mataikhoan) {
-    await supabase.from("taikhoan").delete().eq("mataikhoan", sv.mataikhoan);
+  try {
+    await deleteSinhVienService(supabase, masv);
+    return NextResponse.json({ success: true });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 400 });
   }
-
-  return NextResponse.json({ success: true });
 }

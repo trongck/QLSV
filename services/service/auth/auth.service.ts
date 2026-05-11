@@ -2,9 +2,9 @@ import type { LoginRequest, LoginResponse, UserProfile } from "@/models";
 
 // ─── Token Storage Keys ────────────────────────────────────────────────────────
 
-const KEY_ACCESS  = "auth_access_token";
+const KEY_ACCESS = "auth_access_token";
 const KEY_REFRESH = "auth_refresh_token";
-const KEY_USER    = "auth_user";
+const KEY_USER = "auth_user";
 
 async function safeJson<T>(res: Response): Promise<T | null> {
   const ct = res.headers.get("content-type") ?? "";
@@ -30,15 +30,15 @@ function clearBothStorages() {
 // ─── Token Storage ────────────────────────────────────────────────────────────
 
 export const tokenStorage = {
-  
+
   save(accessToken: string, refreshToken: string, user: UserProfile, remember = true) {
     if (typeof window === "undefined") return;
     // Xóa cả hai storage để tránh token cũ tồn tại song song
     clearBothStorages();
     const s = remember ? localStorage : sessionStorage;
-    s.setItem(KEY_ACCESS,  accessToken);
+    s.setItem(KEY_ACCESS, accessToken);
     s.setItem(KEY_REFRESH, refreshToken);
-    s.setItem(KEY_USER,    JSON.stringify(user));
+    s.setItem(KEY_USER, JSON.stringify(user));
   },
 
   clear() {
@@ -46,7 +46,7 @@ export const tokenStorage = {
     clearBothStorages();
   },
 
-  getAccessToken():  string | null { return typeof window === "undefined" ? null : readFromEither(KEY_ACCESS);  },
+  getAccessToken(): string | null { return typeof window === "undefined" ? null : readFromEither(KEY_ACCESS); },
   getRefreshToken(): string | null { return typeof window === "undefined" ? null : readFromEither(KEY_REFRESH); },
 
   getCachedUser(): UserProfile | null {
@@ -92,7 +92,7 @@ export const authService = {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ refreshToken }),
-      }).catch(() => {/* best-effort */});
+      }).catch(() => {/* best-effort */ });
     }
     tokenStorage.clear();
   },

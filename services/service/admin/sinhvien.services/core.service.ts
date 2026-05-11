@@ -1,4 +1,4 @@
-import { apiFetch } from "../auth.service";
+import { apiFetch } from "../../auth/auth.service";
 
 export { apiFetch };
 

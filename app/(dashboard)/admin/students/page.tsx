@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/hook/useAuth";
+import { useAuth } from "@/hooks/auth/useAuth";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { AdminModal } from "@/components/admin/Adminmodal";
 import {
@@ -12,15 +12,9 @@ import {
   EmptyState,
   ConfirmDelete,
 } from "@/components/admin/AdminTable";
-import {
-  getSinhVien,
-  createSinhVien,
-  updateSinhVien,
-  deleteSinhVien,
-  type SinhVienRow,
-} from "@/services/admin/sinhvien.services/sinhvien.service";
-import { getKhoa, type KhoaRow } from "@/services/admin/khoa.service";
-import { getLop, type LopRow } from "@/services/admin/lop.service";
+import { useSinhVien, type SinhVienRow } from "@/hooks/admin/useSinhvien";
+import { useKhoa, type KhoaRow } from "@/hooks/admin/useKhoa";
+import { useLop, type LopRow } from "@/hooks/admin/useLop";
 import { VaiTro, TrangThaiSinhVien } from "@/types";
 import styles from "./students.module.css";
 import {
@@ -265,6 +259,9 @@ function EditForm({
 
 export default function AdminStudentsPage() {
   const { user, loading } = useAuth();
+  const { getSinhVien, createSinhVien, updateSinhVien, deleteSinhVien } = useSinhVien();
+  const { getKhoa } = useKhoa();
+  const { getLop } = useLop();
   const router = useRouter();
   const [showImport, setShowImport] = useState(false);
   const [svList, setSvList] = useState<SinhVienRow[]>([]);

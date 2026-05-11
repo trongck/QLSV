@@ -10,7 +10,7 @@ import {
 } from "react";
 import { useRouter } from "next/navigation";
 import type { UserProfile, LoginRequest } from "@/models";
-import { authService } from "@/services/auth.service";
+import { authService } from "@/services/service/auth/auth.service";
 import { VaiTro } from "@/types";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -30,7 +30,8 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 
 export function useAuthContext(): AuthContextValue {
   const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error("useAuthContext phải dùng bên trong <AuthProvider>");
+  if (!ctx)
+    throw new Error("useAuthContext phải dùng bên trong <AuthProvider>");
   return ctx;
 }
 
@@ -53,19 +54,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .finally(() => setLoading(false));
   }, []);
 
-  
+  const login = useCallback(
+    async (payload: LoginRequest, remember = false) => {
+      const response = await authService.login(payload, remember);
+      setUser(response.user);
 
-  const login = useCallback(async (payload: LoginRequest, remember = false) => {
-    const response = await authService.login(payload, remember);
-    setUser(response.user);
-
-    // Redirect theo vai trò — chạy bất kể remember hay không
-    switch (response.user.vaitro) {
-      case VaiTro.SinhVien:  router.push("/student/dashboard");  break;
-      case VaiTro.GiangVien: router.push("/teacher/dashboard");  break;
-      case VaiTro.Admin:     router.push("/admin/dashboard");    break;
-    }
-  }, [router]);
+      // Redirect theo vai trò — chạy bất kể remember hay không
+      switch (response.user.vaitro) {
+        case VaiTro.SinhVien:
+          router.push("/student/dashboard");
+          break;
+        case VaiTro.GiangVien:
+          router.push("/teacher/dashboard");
+          break;
+        case VaiTro.Admin:
+          router.push("/admin/dashboard");
+          break;
+      }
+    },
+    [router],
+  );
 
   // ── Đăng xuất ──────────────────────────────────────────────────────────────
 
@@ -91,7 +99,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider
-      value={{ user, loading, isAuthenticated: !!user, login, logout, logoutAll }}
+      value={{
+        user,
+        loading,
+        isAuthenticated: !!user,
+        login,
+        logout,
+        logoutAll,
+      }}
     >
       {children}
     </AuthContext.Provider>

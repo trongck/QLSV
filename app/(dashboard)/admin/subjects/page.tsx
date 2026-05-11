@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/hook/useAuth";
+import { useAuth } from "@/hooks/auth/useAuth";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { AdminModal } from "@/components/admin/Adminmodal";
 import {
@@ -12,14 +12,8 @@ import {
   ConfirmDelete,
   Pagination,
 } from "@/components/admin/AdminTable";
-import {
-  getMonhoc,
-  createMonhoc,
-  updateMonhoc,
-  deleteMonhoc,
-  type MonhocRow,
-} from "@/services/admin/monhoc.service";
-import { getKhoa, type KhoaRow } from "@/services/admin/khoa.service";
+import { useMonhoc, type MonhocRow } from "@/hooks/admin/useMonhoc";
+import { useKhoa, type KhoaRow } from "@/hooks/admin/useKhoa";
 import { VaiTro } from "@/types";
 import styles from "./subject.module.css";
 
@@ -208,6 +202,8 @@ function SubjectForm({
 
 export default function AdminSubjectsPage() {
   const { user, loading: authLoading } = useAuth();
+  const { getKhoa } = useKhoa();
+  const { getMonhoc, createMonhoc, updateMonhoc, deleteMonhoc } = useMonhoc();
   const router = useRouter();
 
   const [list, setList] = useState<MonhocRow[]>([]);

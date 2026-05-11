@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/hook/useAuth";
+import { useAuth } from "@/hooks/auth/useAuth";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { AdminModal } from "@/components/admin/Adminmodal";
 import {
@@ -13,15 +13,10 @@ import {
   ConfirmDelete,
 } from "@/components/admin/AdminTable";
 import {
-  getTaiKhoan,
-  updateTaiKhoan,
-  deleteTaiKhoan,
-  getAccountStats,
-  bulkAccountAction,
-  exportAccountsCSV,
+  useTaiKhoan,
   type TaiKhoanRow,
   type AccountStats,
-} from "@/services/admin/taikhoan.service";
+} from "@/hooks/admin/useTaikhoan";
 import { VaiTro } from "@/types";
 import styles from "./accounts.module.css";
 import {
@@ -416,6 +411,14 @@ type ModalMode = "edit" | "delete" | "quick-reset" | "bulk-reset";
 
 export default function AdminAccountsPage() {
   const { user, loading } = useAuth();
+  const {
+    getTaiKhoan,
+    updateTaiKhoan,
+    deleteTaiKhoan,
+    getAccountStats,
+    bulkAccountAction,
+    exportAccountsCSV,
+  } = useTaiKhoan();
   const router = useRouter();
 
   // Data

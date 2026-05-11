@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/hook/useAuth";
+import { useAuth } from "@/hooks/auth/useAuth";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { AdminModal } from "@/components/admin/Adminmodal";
 import {
@@ -12,20 +12,8 @@ import {
   EmptyState,
   ConfirmDelete,
 } from "@/components/admin/AdminTable";
-import {
-  getKhoa,
-  createKhoa,
-  updateKhoa,
-  deleteKhoa,
-  type KhoaRow,
-} from "@/services/admin/khoa.service";
-import {
-  getLop,
-  createLop,
-  updateLop,
-  deleteLop,
-  type LopRow,
-} from "@/services/admin/lop.service";
+import { useKhoa, type KhoaRow } from "@/hooks/admin/useKhoa";
+import { useLop, type LopRow } from "@/hooks/admin/useLop";
 import { VaiTro } from "@/types";
 import styles from "./classes.module.css";
 import {
@@ -237,6 +225,8 @@ function LopForm({
 
 export default function AdminClassesPage() {
   const { user, loading } = useAuth();
+  const { getKhoa, createKhoa, updateKhoa, deleteKhoa } = useKhoa();
+  const { getLop, createLop, updateLop, deleteLop } = useLop();
   const router = useRouter();
   const [tab, setTab] = useState<ActiveTab>("khoa");
 
@@ -312,7 +302,10 @@ export default function AdminClassesPage() {
 
   async function handleKhoaSubmit(form: Omit<KhoaRow, "ngaytao">) {
     // ── Validate trước khi gọi API ──
-    const errors = validateKhoa(form as KhoaPayload, khoaModal?.mode === "create");
+    const errors = validateKhoa(
+      form as KhoaPayload,
+      khoaModal?.mode === "create",
+    );
     if (errors.length) {
       setKhoaError(firstError(errors));
       return;

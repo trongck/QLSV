@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/hook/useAuth";
+import { useAuth } from "@/hooks/auth/useAuth";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { AdminModal } from "@/components/admin/Adminmodal";
 import {
@@ -12,15 +12,9 @@ import {
   ConfirmDelete,
   Pagination,
 } from "@/components/admin/AdminTable";
-import {
-  getThongbao,
-  createThongbao,
-  updateThongbao,
-  deleteThongbao,
-  type ThongbaoRow,
-} from "@/services/admin/thongbao.service";
-import { getLop, type LopRow } from "@/services/admin/lop.service";
-import { getPhanCong, type PhanCongRow } from "@/services/admin/phancong.service";
+import { useThongbao, type ThongbaoRow } from "@/hooks/admin/useThongbao";
+import { useLop, type LopRow } from "@/hooks/admin/useLop";
+import { usePhanCong, type PhanCongRow } from "@/hooks/admin/usePhancong";
 import { VaiTro } from "@/types";
 import styles from "./notification.module.css";
 
@@ -51,7 +45,10 @@ function parseNotificationContent(noidung: string): ParsedContent {
   };
 }
 
-function getNotificationStatus(ngaytao: string, ngayhethan: string | null): "Scheduled" | "Expired" | "Active" {
+function getNotificationStatus(
+  ngaytao: string,
+  ngayhethan: string | null,
+): "Scheduled" | "Expired" | "Active" {
   const now = new Date();
   const formatted = ngaytao.replace(" ", "T");
   const parts = formatted.split("T");
@@ -118,13 +115,13 @@ function NotificationForm({
   });
 
   const [imageMode, setImageMode] = useState<"upload" | "url">(
-    parsed.imageUrl?.startsWith("data:") ? "upload" : "url"
+    parsed.imageUrl?.startsWith("data:") ? "upload" : "url",
   );
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    
+
     if (!file.type.startsWith("image/")) {
       alert("Vui lòng chọn tệp hình ảnh hợp lệ (PNG, JPG, WEBP, GIF,...)");
       return;
@@ -156,7 +153,9 @@ function NotificationForm({
       maphancong: form.maphancong,
       ngayhethan: form.ngayhethan || null,
       ghim: form.ghim,
-      ngaytao: form.ngaytao ? parseDateTimeLocalLiteral(form.ngaytao) : undefined,
+      ngaytao: form.ngaytao
+        ? parseDateTimeLocalLiteral(form.ngaytao)
+        : undefined,
     });
   };
 
@@ -228,20 +227,32 @@ function NotificationForm({
             <option value="">-- Không gắn --</option>
             {phancongs.map((p) => (
               <option key={p.maphancong} value={p.maphancong}>
-                [{p.maphancong}] {p.monhoc?.tenmon} - {p.giangvien?.hoten} ({p.lop?.tenlop})
+                [{p.maphancong}] {p.monhoc?.tenmon} - {p.giangvien?.hoten} (
+                {p.lop?.tenlop})
               </option>
             ))}
           </select>
         </div>
-        
+
         {/* Hình ảnh đính kèm */}
-        <div className="field full" style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-          <label style={{ fontWeight: 600, color: "#2D1B14" }}>Hình ảnh đính kèm (Tuỳ chọn)</label>
+        <div
+          className="field full"
+          style={{ display: "flex", flexDirection: "column", gap: "8px" }}
+        >
+          <label style={{ fontWeight: 600, color: "#2D1B14" }}>
+            Hình ảnh đính kèm (Tuỳ chọn)
+          </label>
           <div style={{ display: "flex", gap: "10px", marginBottom: "4px" }}>
             <button
               type="button"
-              className={imageMode === "upload" ? "btn-primary" : "btn-secondary"}
-              style={{ padding: "6px 14px", fontSize: "12px", borderRadius: "8px" }}
+              className={
+                imageMode === "upload" ? "btn-primary" : "btn-secondary"
+              }
+              style={{
+                padding: "6px 14px",
+                fontSize: "12px",
+                borderRadius: "8px",
+              }}
               onClick={() => setImageMode("upload")}
             >
               📁 Tải ảnh lên từ tệp
@@ -249,7 +260,11 @@ function NotificationForm({
             <button
               type="button"
               className={imageMode === "url" ? "btn-primary" : "btn-secondary"}
-              style={{ padding: "6px 14px", fontSize: "12px", borderRadius: "8px" }}
+              style={{
+                padding: "6px 14px",
+                fontSize: "12px",
+                borderRadius: "8px",
+              }}
               onClick={() => setImageMode("url")}
             >
               🔗 Nhập đường dẫn ảnh (URL)
@@ -257,7 +272,7 @@ function NotificationForm({
           </div>
 
           {imageMode === "upload" ? (
-            <div 
+            <div
               style={{
                 border: "2px dashed #FFDBB6",
                 borderRadius: "12px",
@@ -267,9 +282,15 @@ function NotificationForm({
                 cursor: "pointer",
                 transition: "border-color 0.2s",
               }}
-              onClick={() => document.getElementById("img-upload-input")?.click()}
-              onMouseOver={(e) => (e.currentTarget.style.borderColor = "#C25450")}
-              onMouseOut={(e) => (e.currentTarget.style.borderColor = "#FFDBB6")}
+              onClick={() =>
+                document.getElementById("img-upload-input")?.click()
+              }
+              onMouseOver={(e) =>
+                (e.currentTarget.style.borderColor = "#C25450")
+              }
+              onMouseOut={(e) =>
+                (e.currentTarget.style.borderColor = "#FFDBB6")
+              }
             >
               <input
                 id="img-upload-input"
@@ -278,15 +299,40 @@ function NotificationForm({
                 style={{ display: "none" }}
                 onChange={handleFileChange}
               />
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ margin: "0 auto 8px", display: "block", color: "#C25450" }}>
+              <svg
+                width="28"
+                height="28"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                style={{
+                  margin: "0 auto 8px",
+                  display: "block",
+                  color: "#C25450",
+                }}
+              >
                 <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
                 <circle cx="8.5" cy="8.5" r="1.5" />
                 <polyline points="21 15 16 10 5 21" />
               </svg>
-              <span style={{ fontSize: "13px", color: "#8B6F5F", fontWeight: 500 }}>
-                {form.imageUrl.startsWith("data:") ? "✓ Đã tải ảnh lên thành công" : "Nhấp vào đây để chọn ảnh từ máy của bạn"}
+              <span
+                style={{ fontSize: "13px", color: "#8B6F5F", fontWeight: 500 }}
+              >
+                {form.imageUrl.startsWith("data:")
+                  ? "✓ Đã tải ảnh lên thành công"
+                  : "Nhấp vào đây để chọn ảnh từ máy của bạn"}
               </span>
-              <span style={{ display: "block", fontSize: "11px", color: "#A08070", marginTop: "4px" }}>Hỗ trợ PNG, JPG, WEBP, GIF (Tối đa 3MB)</span>
+              <span
+                style={{
+                  display: "block",
+                  fontSize: "11px",
+                  color: "#A08070",
+                  marginTop: "4px",
+                }}
+              >
+                Hỗ trợ PNG, JPG, WEBP, GIF (Tối đa 3MB)
+              </span>
             </div>
           ) : (
             <input
@@ -297,20 +343,55 @@ function NotificationForm({
           )}
 
           {form.imageUrl.trim() && (
-            <div style={{ marginTop: "8px", background: "#FFFBF2", padding: "12px", borderRadius: "10px", border: "1px solid #FFDBB6", display: "flex", gap: "16px", alignItems: "center" }}>
+            <div
+              style={{
+                marginTop: "8px",
+                background: "#FFFBF2",
+                padding: "12px",
+                borderRadius: "10px",
+                border: "1px solid #FFDBB6",
+                display: "flex",
+                gap: "16px",
+                alignItems: "center",
+              }}
+            >
               <div style={{ flex: 1 }}>
-                <span style={{ fontSize: "11px", color: "#8B6F5F", fontWeight: 600, display: "block", marginBottom: "4px" }}>Xem trước ảnh đính kèm:</span>
-                <img 
-                  src={form.imageUrl.trim()} 
-                  alt="Xem trước ảnh đính kèm" 
-                  style={{ display: "block", maxHeight: "120px", borderRadius: "8px", border: "1px solid #FFDBB6", objectFit: "cover" }} 
-                  onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                <span
+                  style={{
+                    fontSize: "11px",
+                    color: "#8B6F5F",
+                    fontWeight: 600,
+                    display: "block",
+                    marginBottom: "4px",
+                  }}
+                >
+                  Xem trước ảnh đính kèm:
+                </span>
+                <img
+                  src={form.imageUrl.trim()}
+                  alt="Xem trước ảnh đính kèm"
+                  style={{
+                    display: "block",
+                    maxHeight: "120px",
+                    borderRadius: "8px",
+                    border: "1px solid #FFDBB6",
+                    objectFit: "cover",
+                  }}
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).style.display = "none";
+                  }}
                 />
               </div>
               <button
                 type="button"
                 className="btn-secondary"
-                style={{ padding: "6px 12px", fontSize: "12px", color: "#C25450", border: "1.5px solid #C25450", background: "#FFF0F0" }}
+                style={{
+                  padding: "6px 12px",
+                  fontSize: "12px",
+                  color: "#C25450",
+                  border: "1.5px solid #C25450",
+                  background: "#FFF0F0",
+                }}
                 onClick={() => setForm((prev) => ({ ...prev, imageUrl: "" }))}
               >
                 🗑️ Gỡ bỏ ảnh
@@ -327,8 +408,16 @@ function NotificationForm({
             value={form.ngaytao}
             onChange={(e) => setForm({ ...form, ngaytao: e.target.value })}
           />
-          <span style={{ fontSize: "11px", color: "#8B6F5F", marginTop: "4px", display: "block" }}>
-            Để trống để đăng ngay lập tức. Chọn một thời điểm trong tương lai để lên lịch phát tự động.
+          <span
+            style={{
+              fontSize: "11px",
+              color: "#8B6F5F",
+              marginTop: "4px",
+              display: "block",
+            }}
+          >
+            Để trống để đăng ngay lập tức. Chọn một thời điểm trong tương lai để
+            lên lịch phát tự động.
           </span>
         </div>
 
@@ -383,6 +472,10 @@ function NotificationForm({
 
 export default function AdminNotificationsPage() {
   const { user, loading: authLoading } = useAuth();
+  const { getLop } = useLop();
+  const { getPhanCong } = usePhanCong();
+  const { getThongbao, createThongbao, updateThongbao, deleteThongbao } =
+    useThongbao();
   const router = useRouter();
 
   const [list, setList] = useState<ThongbaoRow[]>([]);
@@ -518,7 +611,10 @@ export default function AdminNotificationsPage() {
             <select
               className={styles.filterSelect}
               value={filterType}
-              onChange={(e) => { setFilterType(e.target.value); setPage(1); }}
+              onChange={(e) => {
+                setFilterType(e.target.value);
+                setPage(1);
+              }}
             >
               <option value="">-- Tất cả loại --</option>
               <option value="Chung">Chung</option>
@@ -530,7 +626,10 @@ export default function AdminNotificationsPage() {
             <select
               className={styles.filterSelect}
               value={filterTarget}
-              onChange={(e) => { setFilterTarget(e.target.value); setPage(1); }}
+              onChange={(e) => {
+                setFilterTarget(e.target.value);
+                setPage(1);
+              }}
             >
               <option value="">-- Tất cả đối tượng --</option>
               <option value="Tatca">Tất cả</option>
@@ -540,7 +639,10 @@ export default function AdminNotificationsPage() {
             <select
               className={styles.filterSelect}
               value={filterStatus}
-              onChange={(e) => { setFilterStatus(e.target.value); setPage(1); }}
+              onChange={(e) => {
+                setFilterStatus(e.target.value);
+                setPage(1);
+              }}
             >
               <option value="">-- Tất cả trạng thái --</option>
               <option value="Active">Đang hiệu lực</option>
@@ -571,7 +673,10 @@ export default function AdminNotificationsPage() {
             <div className={styles.grid}>
               {list.map((notif) => {
                 const parsed = parseNotificationContent(notif.noidung);
-                const status = getNotificationStatus(notif.ngaytao, notif.ngayhethan);
+                const status = getNotificationStatus(
+                  notif.ngaytao,
+                  notif.ngayhethan,
+                );
 
                 return (
                   <div
@@ -581,23 +686,63 @@ export default function AdminNotificationsPage() {
                     style={{ cursor: "pointer" }}
                     title="Click để xem toàn bộ nội dung"
                   >
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%", gap: "8px" }}>
-                      <span className={`${styles.cardType} ${getLoaiClass(notif.loai)}`}>
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        width: "100%",
+                        gap: "8px",
+                      }}
+                    >
+                      <span
+                        className={`${styles.cardType} ${getLoaiClass(notif.loai)}`}
+                      >
                         {notif.loai}
                       </span>
-                      <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                        {status === "Active" && <span className={`${styles.statusBadge} ${styles.statusActive}`}>Đang hiệu lực</span>}
-                        {status === "Scheduled" && <span className={`${styles.statusBadge} ${styles.statusScheduled}`}>Hẹn giờ gửi</span>}
-                        {status === "Expired" && <span className={`${styles.statusBadge} ${styles.statusExpired}`}>Đã hết hạn</span>}
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "6px",
+                        }}
+                      >
+                        {status === "Active" && (
+                          <span
+                            className={`${styles.statusBadge} ${styles.statusActive}`}
+                          >
+                            Đang hiệu lực
+                          </span>
+                        )}
+                        {status === "Scheduled" && (
+                          <span
+                            className={`${styles.statusBadge} ${styles.statusScheduled}`}
+                          >
+                            Hẹn giờ gửi
+                          </span>
+                        )}
+                        {status === "Expired" && (
+                          <span
+                            className={`${styles.statusBadge} ${styles.statusExpired}`}
+                          >
+                            Đã hết hạn
+                          </span>
+                        )}
                         {notif.ghim && (
-                          <span className={styles.pinIconSmall} title="Đã ghim">📌</span>
+                          <span className={styles.pinIconSmall} title="Đã ghim">
+                            📌
+                          </span>
                         )}
                       </div>
                     </div>
 
                     {parsed.imageUrl && (
                       <div className={styles.cardImageWrap}>
-                        <img src={parsed.imageUrl} alt={notif.tieude} className={styles.cardImage} />
+                        <img
+                          src={parsed.imageUrl}
+                          alt={notif.tieude}
+                          className={styles.cardImage}
+                        />
                       </div>
                     )}
 
@@ -763,94 +908,167 @@ export default function AdminNotificationsPage() {
         </AdminModal>
       )}
 
-      {modal?.mode === "view" && modal.item && (() => {
-        const parsed = parseNotificationContent(modal.item.noidung);
-        const status = getNotificationStatus(modal.item.ngaytao, modal.item.ngayhethan);
-        return (
-          <AdminModal
-            title="Chi tiết thông báo"
-            onClose={() => setModal(null)}
-            size="md"
-          >
-            <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "8px" }}>
-                <span className={`${styles.cardType} ${getLoaiClass(modal.item.loai)}`}>
-                  {modal.item.loai}
-                </span>
-                <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
-                  {status === "Active" && <span className={`${styles.statusBadge} ${styles.statusActive}`}>Đang hiệu lực</span>}
-                  {status === "Scheduled" && <span className={`${styles.statusBadge} ${styles.statusScheduled}`}>Hẹn giờ gửi</span>}
-                  {status === "Expired" && <span className={`${styles.statusBadge} ${styles.statusExpired}`}>Đã hết hạn</span>}
-                  <span style={{ fontSize: "12px", color: "#8B6F5F" }}>
-                    Phát sóng: {(() => {
-                      const formatted = modal.item.ngaytao.replace(" ", "T");
-                      const parts = formatted.split("T");
-                      const [year, month, day] = parts[0].split("-");
-                      const timePart = parts[1]?.slice(0, 5) ?? "00:00";
-                      return `${day}/${month}/${year} ${timePart}`;
-                    })()} bởi <strong>{modal.item.admin?.hoten || "Hệ thống"}</strong>
+      {modal?.mode === "view" &&
+        modal.item &&
+        (() => {
+          const parsed = parseNotificationContent(modal.item.noidung);
+          const status = getNotificationStatus(
+            modal.item.ngaytao,
+            modal.item.ngayhethan,
+          );
+          return (
+            <AdminModal
+              title="Chi tiết thông báo"
+              onClose={() => setModal(null)}
+              size="md"
+            >
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "16px",
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    flexWrap: "wrap",
+                    gap: "8px",
+                  }}
+                >
+                  <span
+                    className={`${styles.cardType} ${getLoaiClass(modal.item.loai)}`}
+                  >
+                    {modal.item.loai}
                   </span>
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: "8px",
+                      alignItems: "center",
+                    }}
+                  >
+                    {status === "Active" && (
+                      <span
+                        className={`${styles.statusBadge} ${styles.statusActive}`}
+                      >
+                        Đang hiệu lực
+                      </span>
+                    )}
+                    {status === "Scheduled" && (
+                      <span
+                        className={`${styles.statusBadge} ${styles.statusScheduled}`}
+                      >
+                        Hẹn giờ gửi
+                      </span>
+                    )}
+                    {status === "Expired" && (
+                      <span
+                        className={`${styles.statusBadge} ${styles.statusExpired}`}
+                      >
+                        Đã hết hạn
+                      </span>
+                    )}
+                    <span style={{ fontSize: "12px", color: "#8B6F5F" }}>
+                      Phát sóng:{" "}
+                      {(() => {
+                        const formatted = modal.item.ngaytao.replace(" ", "T");
+                        const parts = formatted.split("T");
+                        const [year, month, day] = parts[0].split("-");
+                        const timePart = parts[1]?.slice(0, 5) ?? "00:00";
+                        return `${day}/${month}/${year} ${timePart}`;
+                      })()}{" "}
+                      bởi{" "}
+                      <strong>{modal.item.admin?.hoten || "Hệ thống"}</strong>
+                    </span>
+                  </div>
                 </div>
-              </div>
-              
-              <h2 style={{ fontSize: "18px", fontWeight: 700, color: "#2D1B14", margin: 0, lineHeight: 1.4 }}>
-                {modal.item.tieude}
-              </h2>
 
-              {parsed.imageUrl && (
-                <div style={{ width: "100%" }}>
-                  <img src={parsed.imageUrl} alt={modal.item.tieude} className={styles.attachedImage} />
-                </div>
-              )}
-              
-              <div style={{ 
-                background: "#FFF0CD", 
-                padding: "8px 12px", 
-                borderRadius: "8px", 
-                fontSize: "13px", 
-                color: "#5D4037",
-                border: "1px solid #FFDBB6"
-              }}>
-                <strong>Đối tượng nhận:</strong> {
-                  modal.item.doituong === "Tatca" ? "Tất cả mọi người" :
-                  modal.item.doituong === "GiangVien" ? "Toàn bộ giảng viên" :
-                  modal.item.doituong === "SinhVien" ? "Toàn bộ sinh viên" :
-                  modal.item.doituong === "Lop" ? `Lớp hành chính: ${modal.item.malop}` :
-                  `Lớp học phần: ${modal.item.maphancong}`
-                }
-                {modal.item.ngayhethan && (
-                  <span style={{ marginLeft: "12px" }}>
-                    · <strong>Hết hạn:</strong> {(() => {
-                      const parts = modal.item.ngayhethan.split("T")[0].split("-");
-                      return `${parts[2]}/${parts[1]}/${parts[0]}`;
-                    })()}
-                  </span>
+                <h2
+                  style={{
+                    fontSize: "18px",
+                    fontWeight: 700,
+                    color: "#2D1B14",
+                    margin: 0,
+                    lineHeight: 1.4,
+                  }}
+                >
+                  {modal.item.tieude}
+                </h2>
+
+                {parsed.imageUrl && (
+                  <div style={{ width: "100%" }}>
+                    <img
+                      src={parsed.imageUrl}
+                      alt={modal.item.tieude}
+                      className={styles.attachedImage}
+                    />
+                  </div>
                 )}
-              </div>
 
-              <div style={{ 
-                fontSize: "14px", 
-                color: "#2D1B14", 
-                lineHeight: "1.6", 
-                whiteSpace: "pre-wrap", 
-                background: "#FEFAE3", 
-                padding: "16px 20px", 
-                borderRadius: "12px",
-                border: "1.5px solid #FFDBB6",
-                maxHeight: "40vh",
-                overflowY: "auto"
-              }}>
-                {parsed.text}
+                <div
+                  style={{
+                    background: "#FFF0CD",
+                    padding: "8px 12px",
+                    borderRadius: "8px",
+                    fontSize: "13px",
+                    color: "#5D4037",
+                    border: "1px solid #FFDBB6",
+                  }}
+                >
+                  <strong>Đối tượng nhận:</strong>{" "}
+                  {modal.item.doituong === "Tatca"
+                    ? "Tất cả mọi người"
+                    : modal.item.doituong === "GiangVien"
+                      ? "Toàn bộ giảng viên"
+                      : modal.item.doituong === "SinhVien"
+                        ? "Toàn bộ sinh viên"
+                        : modal.item.doituong === "Lop"
+                          ? `Lớp hành chính: ${modal.item.malop}`
+                          : `Lớp học phần: ${modal.item.maphancong}`}
+                  {modal.item.ngayhethan && (
+                    <span style={{ marginLeft: "12px" }}>
+                      · <strong>Hết hạn:</strong>{" "}
+                      {(() => {
+                        const parts = modal.item.ngayhethan
+                          .split("T")[0]
+                          .split("-");
+                        return `${parts[2]}/${parts[1]}/${parts[0]}`;
+                      })()}
+                    </span>
+                  )}
+                </div>
+
+                <div
+                  style={{
+                    fontSize: "14px",
+                    color: "#2D1B14",
+                    lineHeight: "1.6",
+                    whiteSpace: "pre-wrap",
+                    background: "#FEFAE3",
+                    padding: "16px 20px",
+                    borderRadius: "12px",
+                    border: "1.5px solid #FFDBB6",
+                    maxHeight: "40vh",
+                    overflowY: "auto",
+                  }}
+                >
+                  {parsed.text}
+                </div>
               </div>
-            </div>
-            <div className="modal-actions" style={{ borderTop: "none", marginTop: "12px", paddingTop: 0 }}>
-              <button className="btn-primary" onClick={() => setModal(null)}>
-                Đóng
-              </button>
-            </div>
-          </AdminModal>
-        );
-      })()}
+              <div
+                className="modal-actions"
+                style={{ borderTop: "none", marginTop: "12px", paddingTop: 0 }}
+              >
+                <button className="btn-primary" onClick={() => setModal(null)}>
+                  Đóng
+                </button>
+              </div>
+            </AdminModal>
+          );
+        })()}
     </DashboardShell>
   );
 }

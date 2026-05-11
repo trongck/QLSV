@@ -1,69 +1,49 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/utils/supabase/server";
-import { verifyToken, extractBearer } from "@/lib/utils/jwt";
-import { VaiTro } from "@/types";
-
-async function requireAdmin(request: Request) {
-  const token = extractBearer(request.headers.get("authorization"));
-  if (!token) return null;
-  try {
-    const payload = await verifyToken(token);
-    return payload.vaitro === VaiTro.Admin ? payload : null;
-  } catch { return null; }
-}
-
-// ─── PUT /api/admin/taikhoan/[mataikhoan] — đổi trạng thái hoặc reset mật khẩu ───────
+import { requireAdmin } from "@/lib/utils/jwt";
+import { validateTaiKhoanUpdate } from "@/lib/validation/admin.validation";
+import { updateTaiKhoanService, deleteTaiKhoanService } from "@/services/service/admin/taikhoan.service";
 
 export async function PUT(request: Request, { params }: { params: Promise<{ mataikhoan: string }> }) {
-  if (!(await requireAdmin(request)))
+  if (!(await requireAdmin(request))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  const { mataikhoan } = await params;
-  const body = await request.json();
-  const { trangthai, matkhau } = body;
-
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
-
-  const update: Record<string, unknown> = {};
-  if (trangthai) update.trangthai = trangthai;
-
-  if (matkhau?.trim()) {
-    const { data: hashed, error: hashErr } = await supabase
-      .rpc("hash_password", { password: matkhau.trim() });
-
-    if (hashErr || !hashed) {
-      return NextResponse.json({ error: "Lỗi mã hoá mật khẩu mới." }, { status: 500 });
-    }
-    update.matkhau = hashed;
   }
 
-  if (Object.keys(update).length === 0)
-    return NextResponse.json({ error: "Không có thông tin cập nhật." }, { status: 400 });
+  try {
+    const { mataikhoan } = await params;
+    const body = await request.json();
 
-  const { data, error } = await supabase
-    .from("taikhoan")
-    .update(update)
-    .eq("mataikhoan", mataikhoan)
-    .select("mataikhoan, email, vaitro, trangthai, dangnhaplancuoi")
-    .single();
+    const validationErrors = validateTaiKhoanUpdate(body);
+    if (validationErrors.length > 0) {
+      return NextResponse.json({ error: validationErrors[0].message, errors: validationErrors }, { status: 400 });
+    }
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 400 });
-  return NextResponse.json({ success: true, data });
+    const cookieStore = await cookies();
+    const supabase = createClient(cookieStore);
+
+    const data = await updateTaiKhoanService(supabase, mataikhoan, body);
+
+    return NextResponse.json({ success: true, data });
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 400 });
+  }
 }
 
-// ─── DELETE /api/admin/taikhoan/[mataikhoan] ─────────────────────────────────────────
-
 export async function DELETE(request: Request, { params }: { params: Promise<{ mataikhoan: string }> }) {
-  if (!(await requireAdmin(request)))
+  if (!(await requireAdmin(request))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
 
-  const { mataikhoan } = await params;
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
+  try {
+    const { mataikhoan } = await params;
+    const cookieStore = await cookies();
+    const supabase = createClient(cookieStore);
 
-  const { error } = await supabase.from("taikhoan").delete().eq("mataikhoan", mataikhoan);
-  if (error) return NextResponse.json({ error: error.message }, { status: 400 });
-  return NextResponse.json({ success: true });
+    await deleteTaiKhoanService(supabase, mataikhoan);
+
+    return NextResponse.json({ success: true });
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 400 });
+  }
 }

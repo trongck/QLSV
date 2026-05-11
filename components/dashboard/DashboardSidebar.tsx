@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useAuth } from "@/hook/useAuth";
+import { useAuth } from "@/hooks/auth/useAuth";
 import { VaiTro } from "@/types";
 import styles from "./DashboardLayout.module.css";
 
@@ -31,6 +31,7 @@ const ADMIN_NAV = [
   { href: "/admin/classes", label: "Lớp - Khoa" },
   { href: "/admin/semesters", label: "Học kỳ" },
   { href: "/admin/subjects", label: "Môn học" },
+  { href: "/admin/rooms", label: "Phòng học" },
   { href: "/admin/notifications", label: "Thông báo" },
   { href: "/admin/assignments", label: "Phân công" },
   { href: "/admin/schedules", label: "Lịch học" },

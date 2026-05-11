@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/hook/useAuth";
+import { useAuth } from "@/hooks/auth/useAuth";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { AdminModal } from "@/components/admin/Adminmodal";
 import {
@@ -12,24 +12,12 @@ import {
   EmptyState,
   ConfirmDelete,
 } from "@/components/admin/AdminTable";
-import {
-  getGiangVien,
-  getGiangVienById,
-  createGiangVien,
-  updateGiangVien,
-  deleteGiangVien,
-  type GiangVienRow,
-} from "@/services/admin/giangvien.service";
-import { getKhoa, type KhoaRow } from "@/services/admin/khoa.service";
-import { getHocky, type HockyRow } from "@/services/admin/hocky.service";
-import { getMonhoc, type MonhocRow } from "@/services/admin/monhoc.service";
-import { getLop, type LopRow } from "@/services/admin/lop.service";
-import {
-  getPhanCongPaginated,
-  createPhanCong,
-  deletePhanCong,
-  type PhanCongRow,
-} from "@/services/admin/phancong.service";
+import { useGiangVien, type GiangVienRow } from "@/hooks/admin/useGiangvien";
+import { useKhoa, type KhoaRow } from "@/hooks/admin/useKhoa";
+import { useHocky, type HockyRow } from "@/hooks/admin/useHocky";
+import { useMonhoc, type MonhocRow } from "@/hooks/admin/useMonhoc";
+import { useLop, type LopRow } from "@/hooks/admin/useLop";
+import { usePhanCong, type PhanCongRow } from "@/hooks/admin/usePhancong";
 import { VaiTro } from "@/types";
 import styles from "./teachers.module.css";
 
@@ -298,6 +286,13 @@ function TeacherDetailModal({
 }) {
   const [activeTab, setActiveTab] = useState<"profile" | "schedule">("profile");
 
+  const { getGiangVienById, updateGiangVien } = useGiangVien();
+  const { getHocky } = useHocky();
+  const { getPhanCongPaginated, createPhanCong, deletePhanCong } =
+    usePhanCong();
+  const { getMonhoc } = useMonhoc();
+  const { getLop } = useLop();
+
   // ── Tab 1: Profile State & Loading ──
   const [detail, setDetail] = useState<any>(null);
   const [loadingDetail, setLoadingDetail] = useState(true);
@@ -359,11 +354,21 @@ function TeacherDetailModal({
           gioitinh: data.gioitinh || "",
           sodienthoai: data.chitietgiangvien?.sodienthoai || "",
           emailcanhan: data.chitietgiangvien?.emailcanhan || "",
-          ngayvaotruong: data.chitietgiangvien?.ngayvaotruong ? data.chitietgiangvien.ngayvaotruong.slice(0, 10) : "",
-          hesoluong: data.chitietgiangvien?.hesoluong !== undefined && data.chitietgiangvien?.hesoluong !== null ? String(data.chitietgiangvien.hesoluong) : "",
+          ngayvaotruong: data.chitietgiangvien?.ngayvaotruong
+            ? data.chitietgiangvien.ngayvaotruong.slice(0, 10)
+            : "",
+          hesoluong:
+            data.chitietgiangvien?.hesoluong !== undefined &&
+            data.chitietgiangvien?.hesoluong !== null
+              ? String(data.chitietgiangvien.hesoluong)
+              : "",
         });
       } catch (err) {
-        setErrorDetail(err instanceof Error ? err.message : "Không thể tải chi tiết giảng viên.");
+        setErrorDetail(
+          err instanceof Error
+            ? err.message
+            : "Không thể tải chi tiết giảng viên.",
+        );
       } finally {
         setLoadingDetail(false);
       }
@@ -374,12 +379,13 @@ function TeacherDetailModal({
   // Load semesters
   useEffect(() => {
     getHocky()
-      .then((res) => {
+      .then((res: any) => {
         setSemesters(res.data);
         // Find active semester
-        const active = res.data.find((h) => h.danghieuluc);
+        const active = res.data.find((h: any) => h.danghieuluc);
         if (active) setSelectedSem(String(active.mahocky));
-        else if (res.data.length > 0) setSelectedSem(String(res.data[0].mahocky));
+        else if (res.data.length > 0)
+          setSelectedSem(String(res.data[0].mahocky));
       })
       .catch(() => {});
   }, []);
@@ -411,17 +417,19 @@ function TeacherDetailModal({
   useEffect(() => {
     if (showQuickForm) {
       getMonhoc({ limit: 100 })
-        .then((res) => setSubjects(res.data))
+        .then((res: any) => setSubjects(res.data))
         .catch(() => {});
       getLop({ limit: 100 })
-        .then((res) => setClasses(res.data))
+        .then((res: any) => setClasses(res.data))
         .catch(() => {});
     }
   }, [showQuickForm]);
 
-  const setF = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
-    setForm((f) => ({ ...f, [k]: e.target.value }));
-  };
+  const setF =
+    (k: string) =>
+    (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+      setForm((f) => ({ ...f, [k]: e.target.value }));
+    };
 
   const handleSaveProfile = async () => {
     setSaving(true);
@@ -441,7 +449,7 @@ function TeacherDetailModal({
           emailcanhan: form.emailcanhan || null,
           ngayvaotruong: form.ngayvaotruong || null,
           hesoluong: form.hesoluong ? parseFloat(form.hesoluong) : null,
-        }
+        },
       };
       await updateGiangVien(item.magv, gvPayload);
       setSuccessDetail("Cập nhật thông tin giảng viên thành công!");
@@ -483,7 +491,9 @@ function TeacherDetailModal({
       setShowQuickForm(false);
       await loadAssignments();
     } catch (err) {
-      setErrorPc(err instanceof Error ? err.message : "Không thể tạo phân công.");
+      setErrorPc(
+        err instanceof Error ? err.message : "Không thể tạo phân công.",
+      );
     } finally {
       setSavingPc(false);
     }
@@ -512,8 +522,13 @@ function TeacherDetailModal({
             <span className="badge badge-blue">Giảng viên</span>
             <code>Mã GV: {item.magv}</code>
             {detail?.taikhoan && (
-              <span className={`badge ${detail.taikhoan.trangthai === "HoatDong" ? "badge-green" : "badge-red"}`}>
-                Tài khoản: {detail.taikhoan.trangthai === "HoatDong" ? "Hoạt động" : "Đã khoá"}
+              <span
+                className={`badge ${detail.taikhoan.trangthai === "HoatDong" ? "badge-green" : "badge-red"}`}
+              >
+                Tài khoản:{" "}
+                {detail.taikhoan.trangthai === "HoatDong"
+                  ? "Hoạt động"
+                  : "Đã khoá"}
               </span>
             )}
           </div>
@@ -526,13 +541,13 @@ function TeacherDetailModal({
           className={`${styles.tabBtn} ${activeTab === "profile" ? styles.tabBtnActive : ""}`}
           onClick={() => setActiveTab("profile")}
         >
-           Thông tin cá nhân & Công tác
+          Thông tin cá nhân & Công tác
         </button>
         <button
           className={`${styles.tabBtn} ${activeTab === "schedule" ? styles.tabBtnActive : ""}`}
           onClick={() => setActiveTab("schedule")}
         >
-           Phân công giảng dạy & Lịch dạy
+          Phân công giảng dạy & Lịch dạy
         </button>
       </div>
 
@@ -540,22 +555,35 @@ function TeacherDetailModal({
       {activeTab === "profile" && (
         <div>
           {loadingDetail ? (
-            <p className="empty-msg" style={{ textAlign: "center", padding: 20 }}>Đang tải dữ liệu hồ sơ…</p>
+            <p
+              className="empty-msg"
+              style={{ textAlign: "center", padding: 20 }}
+            >
+              Đang tải dữ liệu hồ sơ…
+            </p>
           ) : (
             <>
               {errorDetail && <div className="error-msg">{errorDetail}</div>}
-              {successDetail && <div className={styles.successMsg}>{successDetail}</div>}
+              {successDetail && (
+                <div className={styles.successMsg}>{successDetail}</div>
+              )}
 
               <div className={styles.infoGrid}>
                 {/* Basic Section */}
                 <div className={styles.fullWidth}>
-                  <h4 className={styles.sectionTitle}>Thông tin học thuật & khoa</h4>
+                  <h4 className={styles.sectionTitle}>
+                    Thông tin học thuật & khoa
+                  </h4>
                 </div>
 
                 <div className={styles.infoField}>
                   <span className={styles.label}>Họ và tên</span>
                   {editing ? (
-                    <input className={styles.inputField} value={form.hoten} onChange={setF("hoten")} />
+                    <input
+                      className={styles.inputField}
+                      value={form.hoten}
+                      onChange={setF("hoten")}
+                    />
                   ) : (
                     <span className={styles.value}>{detail?.hoten || "—"}</span>
                   )}
@@ -564,111 +592,195 @@ function TeacherDetailModal({
                 <div className={styles.infoField}>
                   <span className={styles.label}>Khoa công tác</span>
                   {editing ? (
-                    <select className={styles.inputField} value={form.makhoa} onChange={setF("makhoa")}>
+                    <select
+                      className={styles.inputField}
+                      value={form.makhoa}
+                      onChange={setF("makhoa")}
+                    >
                       <option value="">-- Chọn khoa --</option>
                       {khoas.map((k) => (
-                        <option key={k.makhoa} value={k.makhoa}>{k.tenkhoa}</option>
+                        <option key={k.makhoa} value={k.makhoa}>
+                          {k.tenkhoa}
+                        </option>
                       ))}
                     </select>
                   ) : (
-                    <span className={styles.value}>{detail?.khoa?.tenkhoa || "—"}</span>
+                    <span className={styles.value}>
+                      {detail?.khoa?.tenkhoa || "—"}
+                    </span>
                   )}
                 </div>
 
                 <div className={styles.infoField}>
                   <span className={styles.label}>Học vị / Học hàm</span>
                   {editing ? (
-                    <select className={styles.inputField} value={form.hocvi} onChange={setF("hocvi")}>
+                    <select
+                      className={styles.inputField}
+                      value={form.hocvi}
+                      onChange={setF("hocvi")}
+                    >
                       <option value="">-- Chọn --</option>
                       {HOCVI_LIST.map((h) => (
-                        <option key={h} value={h}>{h}</option>
+                        <option key={h} value={h}>
+                          {h}
+                        </option>
                       ))}
                     </select>
                   ) : (
-                    <span className={styles.value}>{detail?.hocvi ? <span className="badge badge-blue">{detail.hocvi}</span> : "—"}</span>
+                    <span className={styles.value}>
+                      {detail?.hocvi ? (
+                        <span className="badge badge-blue">{detail.hocvi}</span>
+                      ) : (
+                        "—"
+                      )}
+                    </span>
                   )}
                 </div>
 
                 <div className={styles.infoField}>
                   <span className={styles.label}>Chuyên ngành</span>
                   {editing ? (
-                    <input className={styles.inputField} value={form.chuyennganh} onChange={setF("chuyennganh")} />
+                    <input
+                      className={styles.inputField}
+                      value={form.chuyennganh}
+                      onChange={setF("chuyennganh")}
+                    />
                   ) : (
-                    <span className={styles.value}>{detail?.chuyennganh || "—"}</span>
+                    <span className={styles.value}>
+                      {detail?.chuyennganh || "—"}
+                    </span>
                   )}
                 </div>
 
                 <div className={styles.infoField}>
                   <span className={styles.label}>Email trường cấp</span>
                   {editing ? (
-                    <input className={styles.inputField} type="email" value={form.emailtruong} onChange={setF("emailtruong")} />
+                    <input
+                      className={styles.inputField}
+                      type="email"
+                      value={form.emailtruong}
+                      onChange={setF("emailtruong")}
+                    />
                   ) : (
-                    <span className={styles.value}>{detail?.emailtruong || "—"}</span>
+                    <span className={styles.value}>
+                      {detail?.emailtruong || "—"}
+                    </span>
                   )}
                 </div>
 
                 <div className={styles.infoField}>
                   <span className={styles.label}>Ngày sinh</span>
                   {editing ? (
-                    <input className={styles.inputField} type="date" value={form.ngaysinh} onChange={setF("ngaysinh")} />
+                    <input
+                      className={styles.inputField}
+                      type="date"
+                      value={form.ngaysinh}
+                      onChange={setF("ngaysinh")}
+                    />
                   ) : (
-                    <span className={styles.value}>{detail?.ngaysinh ? new Date(detail.ngaysinh).toLocaleDateString("vi-VN") : "—"}</span>
+                    <span className={styles.value}>
+                      {detail?.ngaysinh
+                        ? new Date(detail.ngaysinh).toLocaleDateString("vi-VN")
+                        : "—"}
+                    </span>
                   )}
                 </div>
 
                 <div className={styles.infoField}>
                   <span className={styles.label}>Giới tính</span>
                   {editing ? (
-                    <select className={styles.inputField} value={form.gioitinh} onChange={setF("gioitinh")}>
+                    <select
+                      className={styles.inputField}
+                      value={form.gioitinh}
+                      onChange={setF("gioitinh")}
+                    >
                       <option value="">-- Chọn --</option>
                       <option value="Nam">Nam</option>
                       <option value="Nu">Nữ</option>
                       <option value="Khac">Khác</option>
                     </select>
                   ) : (
-                    <span className={styles.value}>{detail?.gioitinh || "—"}</span>
+                    <span className={styles.value}>
+                      {detail?.gioitinh || "—"}
+                    </span>
                   )}
                 </div>
 
                 {/* Extended Contact & Work Section */}
                 <div className={styles.fullWidth}>
-                  <h4 className={styles.sectionTitle}>Thông tin liên hệ & công tác mở rộng</h4>
+                  <h4 className={styles.sectionTitle}>
+                    Thông tin liên hệ & công tác mở rộng
+                  </h4>
                 </div>
 
                 <div className={styles.infoField}>
                   <span className={styles.label}>Số điện thoại di động</span>
                   {editing ? (
-                    <input className={styles.inputField} value={form.sodienthoai} onChange={setF("sodienthoai")} placeholder="VD: 0987654321" />
+                    <input
+                      className={styles.inputField}
+                      value={form.sodienthoai}
+                      onChange={setF("sodienthoai")}
+                      placeholder="VD: 0987654321"
+                    />
                   ) : (
-                    <span className={styles.value}>{detail?.chitietgiangvien?.sodienthoai || "—"}</span>
+                    <span className={styles.value}>
+                      {detail?.chitietgiangvien?.sodienthoai || "—"}
+                    </span>
                   )}
                 </div>
 
                 <div className={styles.infoField}>
                   <span className={styles.label}>Email cá nhân</span>
                   {editing ? (
-                    <input className={styles.inputField} type="email" value={form.emailcanhan} onChange={setF("emailcanhan")} placeholder="email@gmail.com" />
+                    <input
+                      className={styles.inputField}
+                      type="email"
+                      value={form.emailcanhan}
+                      onChange={setF("emailcanhan")}
+                      placeholder="email@gmail.com"
+                    />
                   ) : (
-                    <span className={styles.value}>{detail?.chitietgiangvien?.emailcanhan || "—"}</span>
+                    <span className={styles.value}>
+                      {detail?.chitietgiangvien?.emailcanhan || "—"}
+                    </span>
                   )}
                 </div>
 
                 <div className={styles.infoField}>
                   <span className={styles.label}>Ngày tiếp nhận công tác</span>
                   {editing ? (
-                    <input className={styles.inputField} type="date" value={form.ngayvaotruong} onChange={setF("ngayvaotruong")} />
+                    <input
+                      className={styles.inputField}
+                      type="date"
+                      value={form.ngayvaotruong}
+                      onChange={setF("ngayvaotruong")}
+                    />
                   ) : (
-                    <span className={styles.value}>{detail?.chitietgiangvien?.ngayvaotruong ? new Date(detail.chitietgiangvien.ngayvaotruong).toLocaleDateString("vi-VN") : "—"}</span>
+                    <span className={styles.value}>
+                      {detail?.chitietgiangvien?.ngayvaotruong
+                        ? new Date(
+                            detail.chitietgiangvien.ngayvaotruong,
+                          ).toLocaleDateString("vi-VN")
+                        : "—"}
+                    </span>
                   )}
                 </div>
 
                 <div className={styles.infoField}>
                   <span className={styles.label}>Hệ số lương</span>
                   {editing ? (
-                    <input className={styles.inputField} type="number" step="0.01" value={form.hesoluong} onChange={setF("hesoluong")} placeholder="VD: 2.34" />
+                    <input
+                      className={styles.inputField}
+                      type="number"
+                      step="0.01"
+                      value={form.hesoluong}
+                      onChange={setF("hesoluong")}
+                      placeholder="VD: 2.34"
+                    />
                   ) : (
                     <span className={styles.value}>
-                      {detail?.chitietgiangvien?.hesoluong !== undefined && detail?.chitietgiangvien?.hesoluong !== null
+                      {detail?.chitietgiangvien?.hesoluong !== undefined &&
+                      detail?.chitietgiangvien?.hesoluong !== null
                         ? Number(detail.chitietgiangvien.hesoluong).toFixed(2)
                         : "—"}
                     </span>
@@ -680,13 +792,30 @@ function TeacherDetailModal({
               <div className="modal-actions">
                 {editing ? (
                   <>
-                    <button className="btn-secondary" onClick={() => setEditing(false)} disabled={saving}>Huỷ</button>
-                    <button className="btn-primary" onClick={handleSaveProfile} disabled={saving}>
+                    <button
+                      className="btn-secondary"
+                      onClick={() => setEditing(false)}
+                      disabled={saving}
+                    >
+                      Huỷ
+                    </button>
+                    <button
+                      className="btn-primary"
+                      onClick={handleSaveProfile}
+                      disabled={saving}
+                    >
                       {saving ? "Đang lưu…" : "Lưu thay đổi"}
                     </button>
                   </>
                 ) : (
-                  <button className="btn-primary" onClick={() => { setSuccessDetail(""); setErrorDetail(""); setEditing(true); }}>
+                  <button
+                    className="btn-primary"
+                    onClick={() => {
+                      setSuccessDetail("");
+                      setErrorDetail("");
+                      setEditing(true);
+                    }}
+                  >
                     Chỉnh sửa hồ sơ
                   </button>
                 )}
@@ -704,17 +833,26 @@ function TeacherDetailModal({
           <div className={styles.panelHeader}>
             <div className={styles.panelSelector}>
               <label>Học kỳ:</label>
-              <select className={styles.selectSem} value={selectedSem} onChange={(e) => setSelectedSem(e.target.value)}>
+              <select
+                className={styles.selectSem}
+                value={selectedSem}
+                onChange={(e) => setSelectedSem(e.target.value)}
+              >
                 {semesters.map((s) => (
                   <option key={s.mahocky} value={s.mahocky}>
-                    {s.tenhocky} ({s.namhoc}) {s.danghieuluc ? " [Hiện tại]" : ""}
+                    {s.tenhocky} ({s.namhoc}){" "}
+                    {s.danghieuluc ? " [Hiện tại]" : ""}
                   </option>
                 ))}
               </select>
             </div>
 
             {!showQuickForm && (
-              <button className="btn-primary" style={{ padding: "8px 14px", fontSize: "13px" }} onClick={() => setShowQuickForm(true)}>
+              <button
+                className="btn-primary"
+                style={{ padding: "8px 14px", fontSize: "13px" }}
+                onClick={() => setShowQuickForm(true)}
+              >
                 + Thêm phân công nhanh
               </button>
             )}
@@ -724,28 +862,49 @@ function TeacherDetailModal({
           {showQuickForm && (
             <div className={styles.quickFormCard}>
               <h4 className={styles.quickFormTitle}>
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <path d="M12 5v14M5 12h14"/>
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                >
+                  <path d="M12 5v14M5 12h14" />
                 </svg>
                 Phân công môn dạy & lớp dạy mới
               </h4>
               <div className={styles.quickFormGrid}>
                 <div className={styles.formField}>
                   <label>Môn giảng dạy *</label>
-                  <select value={quickForm.mamon} onChange={(e) => setQuickForm({ ...quickForm, mamon: e.target.value })}>
+                  <select
+                    value={quickForm.mamon}
+                    onChange={(e) =>
+                      setQuickForm({ ...quickForm, mamon: e.target.value })
+                    }
+                  >
                     <option value="">-- Chọn môn --</option>
                     {subjects.map((m) => (
-                      <option key={m.mamon} value={m.mamon}>{m.tenmon} ({m.mamon})</option>
+                      <option key={m.mamon} value={m.mamon}>
+                        {m.tenmon} ({m.mamon})
+                      </option>
                     ))}
                   </select>
                 </div>
 
                 <div className={styles.formField}>
                   <label>Lớp học hành chính *</label>
-                  <select value={quickForm.malop} onChange={(e) => setQuickForm({ ...quickForm, malop: e.target.value })}>
+                  <select
+                    value={quickForm.malop}
+                    onChange={(e) =>
+                      setQuickForm({ ...quickForm, malop: e.target.value })
+                    }
+                  >
                     <option value="">-- Chọn lớp --</option>
                     {classes.map((l) => (
-                      <option key={l.malop} value={l.malop}>{l.tenlop}</option>
+                      <option key={l.malop} value={l.malop}>
+                        {l.tenlop}
+                      </option>
                     ))}
                   </select>
                 </div>
@@ -755,7 +914,9 @@ function TeacherDetailModal({
                   <input
                     placeholder="VD: L01, L02..."
                     value={quickForm.malophoc}
-                    onChange={(e) => setQuickForm({ ...quickForm, malophoc: e.target.value })}
+                    onChange={(e) =>
+                      setQuickForm({ ...quickForm, malophoc: e.target.value })
+                    }
                   />
                 </div>
 
@@ -764,7 +925,9 @@ function TeacherDetailModal({
                   <input
                     type="number"
                     value={quickForm.sisomax}
-                    onChange={(e) => setQuickForm({ ...quickForm, sisomax: e.target.value })}
+                    onChange={(e) =>
+                      setQuickForm({ ...quickForm, sisomax: e.target.value })
+                    }
                   />
                 </div>
 
@@ -773,15 +936,32 @@ function TeacherDetailModal({
                     type="checkbox"
                     id="danghieuluc"
                     checked={quickForm.danghieuluc}
-                    onChange={(e) => setQuickForm({ ...quickForm, danghieuluc: e.target.checked })}
+                    onChange={(e) =>
+                      setQuickForm({
+                        ...quickForm,
+                        danghieuluc: e.target.checked,
+                      })
+                    }
                   />
                   <label htmlFor="danghieuluc">Có hiệu lực giảng dạy</label>
                 </div>
               </div>
 
               <div className={styles.quickFormActions}>
-                <button className="btn-secondary" style={{ padding: "6px 12px", fontSize: "12.5px" }} onClick={() => setShowQuickForm(false)} disabled={savingPc}>Huỷ</button>
-                <button className="btn-primary" style={{ padding: "6px 14px", fontSize: "12.5px" }} onClick={handleCreatePc} disabled={savingPc}>
+                <button
+                  className="btn-secondary"
+                  style={{ padding: "6px 12px", fontSize: "12.5px" }}
+                  onClick={() => setShowQuickForm(false)}
+                  disabled={savingPc}
+                >
+                  Huỷ
+                </button>
+                <button
+                  className="btn-primary"
+                  style={{ padding: "6px 14px", fontSize: "12.5px" }}
+                  onClick={handleCreatePc}
+                  disabled={savingPc}
+                >
                   {savingPc ? "Đang lưu…" : "Lưu phân công"}
                 </button>
               </div>
@@ -790,10 +970,30 @@ function TeacherDetailModal({
 
           {/* Assignments list */}
           {loadingPc ? (
-            <p className="empty-msg" style={{ textAlign: "center", padding: 20 }}>Đang tải danh sách phân công…</p>
+            <p
+              className="empty-msg"
+              style={{ textAlign: "center", padding: 20 }}
+            >
+              Đang tải danh sách phân công…
+            </p>
           ) : !assignments.length ? (
-            <div style={{ textAlign: "center", padding: "30px 20px", background: "#FFFDF9", borderRadius: 12, border: "1px solid #EAD9CB" }}>
-              <p style={{ margin: 0, color: "#8B6F5F", fontSize: "13.5px", fontWeight: 500 }}>
+            <div
+              style={{
+                textAlign: "center",
+                padding: "30px 20px",
+                background: "#FFFDF9",
+                borderRadius: 12,
+                border: "1px solid #EAD9CB",
+              }}
+            >
+              <p
+                style={{
+                  margin: 0,
+                  color: "#8B6F5F",
+                  fontSize: "13.5px",
+                  fontWeight: 500,
+                }}
+              >
                 Giảng viên chưa có phân công giảng dạy nào trong học kỳ này.
               </p>
             </div>
@@ -817,17 +1017,25 @@ function TeacherDetailModal({
                         <code>{pc.malophoc ?? "—"}</code>
                       </td>
                       <td>
-                        <strong style={{ color: "#2D1B14" }}>{pc.monhoc?.tenmon}</strong>
-                        <span style={{ display: "block", fontSize: 11, color: "#8B6F5F" }}>Mã môn: {pc.mamon}</span>
+                        <strong style={{ color: "#2D1B14" }}>
+                          {pc.monhoc?.tenmon}
+                        </strong>
+                        <span
+                          style={{
+                            display: "block",
+                            fontSize: 11,
+                            color: "#8B6F5F",
+                          }}
+                        >
+                          Mã môn: {pc.mamon}
+                        </span>
                       </td>
+                      <td>{pc.lop?.tenlop}</td>
+                      <td>{pc.sisomax ?? "—"}</td>
                       <td>
-                        {pc.lop?.tenlop}
-                      </td>
-                      <td>
-                        {pc.sisomax ?? "—"}
-                      </td>
-                      <td>
-                        <span className={`badge ${pc.danghieuluc ? "badge-green" : "badge-red"}`}>
+                        <span
+                          className={`badge ${pc.danghieuluc ? "badge-green" : "badge-red"}`}
+                        >
                           {pc.danghieuluc ? "Đang hiệu lực" : "Ngưng học"}
                         </span>
                       </td>
@@ -856,6 +1064,17 @@ function TeacherDetailModal({
 
 export default function AdminTeachersPage() {
   const { user, loading } = useAuth();
+  const { getKhoa } = useKhoa();
+  const { getLop } = useLop();
+  const {
+    getGiangVien,
+    getGiangVienById,
+    createGiangVien,
+    updateGiangVien,
+    deleteGiangVien,
+  } = useGiangVien();
+  const { getPhanCongPaginated, createPhanCong, deletePhanCong } =
+    usePhanCong();
   const router = useRouter();
 
   const [gvList, setGvList] = useState<GiangVienRow[]>([]);
@@ -913,26 +1132,32 @@ export default function AdminTeachersPage() {
   if (loading || !user) return null;
 
   async function handleSubmit(form: Record<string, unknown>) {
-  // ── Validate theo mode ──
-  const isEdit = modal?.mode === "edit";
-  const errors = isEdit
-    ? validateGiangVienUpdate(form)
-    : validateGiangVienCreate(form);
-  if (errors.length) { setMutError(firstError(errors)); return; }
-
-  setMutating(true); setMutError("");
-  try {
-    if (isEdit && modal.item) {
-      await updateGiangVien(modal.item.magv, form);
-    } else {
-      await createGiangVien(form);
+    // ── Validate theo mode ──
+    const isEdit = modal?.mode === "edit";
+    const errors = isEdit
+      ? validateGiangVienUpdate(form)
+      : validateGiangVienCreate(form);
+    if (errors.length) {
+      setMutError(firstError(errors));
+      return;
     }
-    setModal(null);
-    await loadGV();
-  } catch (e) {
-    setMutError(e instanceof Error ? e.message : "Lỗi không xác định.");
-  } finally { setMutating(false); }
-}
+
+    setMutating(true);
+    setMutError("");
+    try {
+      if (isEdit && modal.item) {
+        await updateGiangVien(modal.item.magv, form);
+      } else {
+        await createGiangVien(form);
+      }
+      setModal(null);
+      await loadGV();
+    } catch (e) {
+      setMutError(e instanceof Error ? e.message : "Lỗi không xác định.");
+    } finally {
+      setMutating(false);
+    }
+  }
 
   async function handleDelete() {
     if (!modal?.item) return;
@@ -1073,7 +1298,7 @@ export default function AdminTeachersPage() {
                                   background: "#FEFAE3",
                                   borderColor: "#FFDBB6",
                                   color: "#6B4F3F",
-                                  fontWeight: 600
+                                  fontWeight: 600,
                                 }}
                                 onClick={() => {
                                   setMutError("");

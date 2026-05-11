@@ -1,59 +1,32 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/utils/supabase/server";
-import { verifyToken, extractBearer } from "@/lib/utils/jwt";
-import { VaiTro } from "@/types";
-
-async function requireAdmin(request: Request) {
-  const token = extractBearer(request.headers.get("authorization"));
-  if (!token) return null;
-  try {
-    const payload = await verifyToken(token);
-    return payload.vaitro === VaiTro.Admin ? payload : null;
-  } catch {
-    return null;
-  }
-}
+import { requireAdmin } from "@/lib/utils/jwt";
+import { validateThongBao } from "@/lib/validation/admin.validation";
+import { updateThongbaoService, deleteThongbaoService } from "@/services/service/admin/thongbao.service";
 
 export async function PUT(request: Request, { params }: { params: Promise<{ mathongbao: string }> }) {
   if (!(await requireAdmin(request))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { mathongbao } = await params;
-  const id = Number(mathongbao);
-  const body = await request.json();
-  const { tieude, noidung, loai, doituong, malop, maphancong, ngayhethan, ghim, ngaytao } = body;
+  try {
+    const { mathongbao } = await params;
+    const id = Number(mathongbao);
+    const body = await request.json();
 
-  if (!tieude?.trim()) return NextResponse.json({ error: "Tiêu đề không được trống." }, { status: 400 });
-  if (!noidung?.trim()) return NextResponse.json({ error: "Nội dung không được trống." }, { status: 400 });
+    const validationErrors = validateThongBao(body, false);
+    if (validationErrors.length > 0) {
+      return NextResponse.json({ error: validationErrors[0].message, errors: validationErrors }, { status: 400 });
+    }
 
-  const supabase = createClient(await cookies());
+    const supabase = createClient(await cookies());
+    const data = await updateThongbaoService(supabase, id, body);
 
-  const updatePayload: Record<string, any> = {
-    tieude: tieude.trim(),
-    noidung: noidung.trim(),
-    loai,
-    doituong,
-    malop: malop || null,
-    maphancong: maphancong ? Number(maphancong) : null,
-    ngayhethan: ngayhethan || null,
-    ghim: Boolean(ghim),
-  };
-
-  if (ngaytao) {
-    updatePayload.ngaytao = ngaytao;
+    return NextResponse.json({ data });
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 });
   }
-
-  const { data, error } = await supabase
-    .from("thongbao")
-    .update(updatePayload)
-    .eq("mathongbao", id)
-    .select("*, admin:maadmintao(hoten), lop:malop(tenlop)")
-    .single();
-
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ data });
 }
 
 export async function DELETE(request: Request, { params }: { params: Promise<{ mathongbao: string }> }) {
@@ -61,13 +34,17 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ m
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { mathongbao } = await params;
-  const id = Number(mathongbao);
-  const supabase = createClient(await cookies());
+  try {
+    const { mathongbao } = await params;
+    const id = Number(mathongbao);
+    const supabase = createClient(await cookies());
 
-  const { error } = await supabase.from("thongbao").delete().eq("mathongbao", id);
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ success: true });
+    await deleteThongbaoService(supabase, id);
+
+    return NextResponse.json({ success: true });
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 });
+  }
 }
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ mathongbao: string }> }) {
@@ -75,24 +52,26 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ ma
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { mathongbao } = await params;
-  const id = Number(mathongbao);
-  const body = await request.json();
+  try {
+    const { mathongbao } = await params;
+    const id = Number(mathongbao);
+    const body = await request.json();
 
-  // Sanitize body: empty strings to null for nullable fields IF they are provided
-  if (body.malop === "") body.malop = null;
-  if (body.maphancong === "") body.maphancong = null;
-  else if (body.maphancong !== undefined && body.maphancong !== null) body.maphancong = Number(body.maphancong);
+    const validationErrors = validateThongBao(body, false);
+    if (validationErrors.length > 0) {
+      return NextResponse.json({ error: validationErrors[0].message, errors: validationErrors }, { status: 400 });
+    }
 
-  const supabase = createClient(await cookies());
+    // Sanitize empty values
+    if (body.malop === "") body.malop = null;
+    if (body.maphancong === "") body.maphancong = null;
+    else if (body.maphancong !== undefined && body.maphancong !== null) body.maphancong = Number(body.maphancong);
 
-  const { data, error } = await supabase
-    .from("thongbao")
-    .update(body)
-    .eq("mathongbao", id)
-    .select("*, admin:maadmintao(hoten), lop:malop(tenlop)")
-    .single();
+    const supabase = createClient(await cookies());
+    const data = await updateThongbaoService(supabase, id, body);
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ data });
+    return NextResponse.json({ data });
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 });
+  }
 }

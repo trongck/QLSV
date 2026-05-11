@@ -1,22 +1,9 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/utils/supabase/server";
-import { verifyToken, extractBearer } from "@/lib/utils/jwt";
-import { VaiTro } from "@/types";
-
-// ─── Auth helper ──────────────────────────────────────────────────────────────
-
-async function requireAdmin(request: Request) {
-  const token = extractBearer(request.headers.get("authorization"));
-  if (!token) return null;
-  try {
-    const payload = await verifyToken(token);
-    if (payload.vaitro !== VaiTro.Admin) return null;
-    return payload;
-  } catch {
-    return null;
-  }
-}
+import { requireAdmin } from "@/lib/utils/jwt";
+import { validateKhoa } from "@/lib/validation/admin.validation";
+import { getKhoaListService, createKhoaService } from "@/services/service/admin/khoa.service";
 
 // ─── GET /api/admin/khoa ──────────────────────────────────────────────────────
 
@@ -27,20 +14,14 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const search = searchParams.get("search") ?? "";
 
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
-
-  let query = supabase
-    .from("khoa")
-    .select("makhoa, tenkhoa, dienthoai, email, ngaytao")
-    .order("ngaytao", { ascending: false });
-
-  if (search) query = query.ilike("tenkhoa", `%${search}%`);
-
-  const { data, error } = await query;
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-
-  return NextResponse.json({ success: true, data });
+  try {
+    const cookieStore = await cookies();
+    const supabase = createClient(cookieStore);
+    const data = await getKhoaListService(supabase, search);
+    return NextResponse.json({ success: true, data });
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 });
+  }
 }
 
 // ─── POST /api/admin/khoa ─────────────────────────────────────────────────────
@@ -49,21 +30,21 @@ export async function POST(request: Request) {
   if (!(await requireAdmin(request)))
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-  const body = await request.json();
-  const { makhoa, tenkhoa, dienthoai, email } = body;
+  try {
+    const body = await request.json();
+    
+    // Sử dụng bộ giải pháp validate chuẩn hóa từ admin.validation.ts
+    const validationErrors = validateKhoa(body, true);
+    if (validationErrors.length > 0) {
+      return NextResponse.json({ error: validationErrors[0].message, errors: validationErrors }, { status: 400 });
+    }
 
-  if (!makhoa?.trim() || !tenkhoa?.trim())
-    return NextResponse.json({ error: "Mã khoa và tên khoa là bắt buộc." }, { status: 400 });
+    const cookieStore = await cookies();
+    const supabase = createClient(cookieStore);
+    const data = await createKhoaService(supabase, body);
 
-  const cookieStore = await cookies();
-  const supabase = createClient(cookieStore);
-
-  const { data, error } = await supabase
-    .from("khoa")
-    .insert({ makhoa: makhoa.trim(), tenkhoa: tenkhoa.trim(), dienthoai: dienthoai || null, email: email || null })
-    .select()
-    .single();
-
-  if (error) return NextResponse.json({ error: error.message }, { status: 400 });
-  return NextResponse.json({ success: true, data }, { status: 201 });
+    return NextResponse.json({ success: true, data }, { status: 201 });
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 400 });
+  }
 }

@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback, useMemo, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useAuth } from "@/hook/useAuth";
+import { useAuth } from "@/hooks/auth/useAuth";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { AdminModal } from "@/components/admin/Adminmodal";
 import {
@@ -12,18 +12,11 @@ import {
   ConfirmDelete,
   Pagination,
 } from "@/components/admin/AdminTable";
-import {
-  getLichHoc,
-  createLichHoc,
-  updateLichHoc,
-  deleteLichHoc,
-  type LichHocRow,
-  type PhongHocRow,
-} from "@/services/admin/lichhoc.service";
-import { getPhanCong, type PhanCongRow } from "@/services/admin/phancong.service";
-import { getHocky, type HockyRow } from "@/services/admin/hocky.service";
-import { getLop, type LopRow } from "@/services/admin/lop.service";
-import { apiFetch } from "@/services/auth.service";
+import { useLichHoc, type LichHocRow } from "@/hooks/admin/useLichhoc";
+import { usePhanCong, type PhanCongRow } from "@/hooks/admin/usePhancong";
+import { useHocky, type HockyRow } from "@/hooks/admin/useHocky";
+import { useLop, type LopRow } from "@/hooks/admin/useLop";
+import { usePhongHoc, type PhongHocRow } from "@/hooks/admin/usePhonghoc";
 import { VaiTro } from "@/types";
 import styles from "./schedule.module.css";
 
@@ -72,14 +65,23 @@ function ScheduleForm({
 
   const handleValidateAndSubmit = () => {
     setLocalErr("");
-    if (!form.maphancong) return setLocalErr("Vui lòng chọn phân công giảng dạy.");
-    
+    if (!form.maphancong)
+      return setLocalErr("Vui lòng chọn phân công giảng dạy.");
+
     const thu = parseInt(form.thutrongtuan);
-    if (isNaN(thu) || thu < 2 || thu > 8) return setLocalErr("Thứ trong tuần không hợp lệ.");
+    if (isNaN(thu) || thu < 2 || thu > 8)
+      return setLocalErr("Thứ trong tuần không hợp lệ.");
 
     const tbd = parseInt(form.tietbatdau);
     const tkt = parseInt(form.tietketthuc);
-    if (isNaN(tbd) || tbd < 1 || tbd > 15 || isNaN(tkt) || tkt < 1 || tkt > 15) {
+    if (
+      isNaN(tbd) ||
+      tbd < 1 ||
+      tbd > 15 ||
+      isNaN(tkt) ||
+      tkt < 1 ||
+      tkt > 15
+    ) {
       return setLocalErr("Tiết học phải thuộc khoảng từ 1 đến 15.");
     }
     if (tbd > tkt) {
@@ -97,7 +99,9 @@ function ScheduleForm({
 
   return (
     <>
-      {(error || localErr) && <div className="error-msg">{error || localErr}</div>}
+      {(error || localErr) && (
+        <div className="error-msg">{error || localErr}</div>
+      )}
       <div className="form-grid">
         <div className="field full">
           <label>Phân công Giảng dạy (Lớp & Môn học) *</label>
@@ -109,7 +113,8 @@ function ScheduleForm({
             <option value="">-- Chọn phân công dạy học --</option>
             {phancongs.map((pc) => (
               <option key={pc.maphancong} value={pc.maphancong}>
-                #{pc.maphancong} | {pc.monhoc?.tenmon} - {pc.giangvien?.hoten} ({pc.lop?.tenlop})
+                #{pc.maphancong} | {pc.monhoc?.tenmon} - {pc.giangvien?.hoten} (
+                {pc.lop?.tenlop})
               </option>
             ))}
           </select>
@@ -140,7 +145,8 @@ function ScheduleForm({
             <option value="">-- Chưa xếp phòng --</option>
             {phonghocs.map((ph) => (
               <option key={ph.maphong} value={ph.maphong}>
-                {ph.maphong} ({getRoomTypeLabel(ph.loaiphong)}) - {ph.suchua} chỗ
+                {ph.maphong} ({getRoomTypeLabel(ph.loaiphong)}) - {ph.suchua}{" "}
+                chỗ
               </option>
             ))}
           </select>
@@ -194,7 +200,11 @@ function ScheduleForm({
           onClick={handleValidateAndSubmit}
           disabled={loading}
         >
-          {loading ? "Đang xếp lịch..." : initial?.malichhoc ? "Cập nhật" : "Xếp lịch học"}
+          {loading
+            ? "Đang xếp lịch..."
+            : initial?.malichhoc
+              ? "Cập nhật"
+              : "Xếp lịch học"}
         </button>
       </div>
     </>
@@ -204,6 +214,12 @@ function ScheduleForm({
 // ─── Inner Component to safely read Search Params ─────────────────────────────
 function AdminSchedulesContent() {
   const { user, loading: authLoading } = useAuth();
+  const { getLop } = useLop();
+  const { getHocky } = useHocky();
+  const { getPhanCong } = usePhanCong();
+  const { getPhongHoc } = usePhongHoc();
+  const { getLichHoc, createLichHoc, updateLichHoc, deleteLichHoc } =
+    useLichHoc();
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -220,7 +236,9 @@ function AdminSchedulesContent() {
   // Filter & Pagination states
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
-  const [filterPc, setFilterPc] = useState(searchParams.get("maphancong") ?? "");
+  const [filterPc, setFilterPc] = useState(
+    searchParams.get("maphancong") ?? "",
+  );
   const [filterThu, setFilterThu] = useState("");
   const [filterLop, setFilterLop] = useState("");
   const [filterHk, setFilterHk] = useState("");
@@ -260,9 +278,8 @@ function AdminSchedulesContent() {
         .then((res) => setHockys(res.data))
         .catch(() => {});
       // Load danh sách phòng học
-      apiFetch("/api/admin/phonghoc")
-        .then((r) => r.json())
-        .then((r) => setPhonghocs(r.data ?? []))
+      getPhongHoc()
+        .then((data) => setPhonghocs(data))
         .catch(() => {});
     }
   }, [user, authLoading, router]);
@@ -300,9 +317,15 @@ function AdminSchedulesContent() {
   // Statistics calculation
   const stats = useMemo(() => {
     const totalSchedules = list.length;
-    const theoryRooms  = list.filter((item) => item.phonghoc?.loaiphong === "Lythuyet").length;
-    const practiceRooms = list.filter((item) => item.phonghoc?.loaiphong === "Thuchanh").length;
-    const onlineRooms  = list.filter((item) => item.phonghoc?.loaiphong === "Online").length;
+    const theoryRooms = list.filter(
+      (item) => item.phonghoc?.loaiphong === "Lythuyet",
+    ).length;
+    const practiceRooms = list.filter(
+      (item) => item.phonghoc?.loaiphong === "Thuchanh",
+    ).length;
+    const onlineRooms = list.filter(
+      (item) => item.phonghoc?.loaiphong === "Online",
+    ).length;
     return { totalSchedules, theoryRooms, practiceRooms, onlineRooms };
   }, [list]);
 
@@ -312,7 +335,13 @@ function AdminSchedulesContent() {
   // Map schedules by weekdays for Visual Scheduler rendering
   const weekdaySchedules = useMemo(() => {
     const map: Record<number, LichHocRow[]> = {
-      2: [], 3: [], 4: [], 5: [], 6: [], 7: [], 8: []
+      2: [],
+      3: [],
+      4: [],
+      5: [],
+      6: [],
+      7: [],
+      8: [],
     };
     list.forEach((item) => {
       if (map[item.thutrongtuan]) {
@@ -381,7 +410,14 @@ function AdminSchedulesContent() {
                   cursor: "pointer",
                 }}
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
                   <line x1="19" y1="12" x2="5" y2="12" strokeWidth="2.5" />
                   <polyline points="12 19 5 12 12 5" strokeWidth="2.5" />
                 </svg>
@@ -390,7 +426,8 @@ function AdminSchedulesContent() {
             )}
             <h1 className={styles.title}>Quản lý Lịch học & Thời khóa biểu</h1>
             <p className={styles.subtitle}>
-              Xếp lịch học, sắp xếp phòng học, tiết học và theo dõi thời khoá biểu toàn trường
+              Xếp lịch học, sắp xếp phòng học, tiết học và theo dõi thời khoá
+              biểu toàn trường
             </p>
           </div>
 
@@ -404,7 +441,14 @@ function AdminSchedulesContent() {
                   setPage(1);
                 }}
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
                   <line x1="8" y1="6" x2="21" y2="6" />
                   <line x1="8" y1="12" x2="21" y2="12" />
                   <line x1="8" y1="18" x2="21" y2="18" />
@@ -418,7 +462,14 @@ function AdminSchedulesContent() {
                 className={`${styles.toggleBtn} ${viewMode === "calendar" ? styles.toggleActive : ""}`}
                 onClick={() => setViewMode("calendar")}
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
                   <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
                   <line x1="9" y1="3" x2="9" y2="21" />
                   <line x1="15" y1="3" x2="15" y2="21" />
@@ -445,7 +496,14 @@ function AdminSchedulesContent() {
         <div className={styles.statsGrid}>
           <div className={styles.statCard}>
             <div className={`${styles.statIcon} ${styles.statOrange}`}>
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <svg
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
                 <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
                 <line x1="16" y1="2" x2="16" y2="6" />
                 <line x1="8" y1="2" x2="8" y2="6" />
@@ -460,7 +518,14 @@ function AdminSchedulesContent() {
 
           <div className={styles.statCard}>
             <div className={`${styles.statIcon} ${styles.statRed}`}>
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <svg
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
                 <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
                 <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
               </svg>
@@ -473,7 +538,14 @@ function AdminSchedulesContent() {
 
           <div className={styles.statCard}>
             <div className={`${styles.statIcon} ${styles.statYellow}`}>
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <svg
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
                 <path d="M12 2L2 7l10 5 10-5-10-5z" />
                 <path d="M2 17l10 5 10-5" />
                 <path d="M2 12l10 5 10-5" />
@@ -487,7 +559,14 @@ function AdminSchedulesContent() {
 
           <div className={styles.statCard}>
             <div className={`${styles.statIcon} ${styles.statCream}`}>
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <svg
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
                 <path d="M23 7a2 2 0 0 0-2.45-1.45L11 8 1 5v4l10 3 12-3z" />
                 <path d="M23 11a2 2 0 0 0-2.45-1.45L11 12 1 9v4l10 3 12-3z" />
               </svg>
@@ -603,33 +682,54 @@ function AdminSchedulesContent() {
                     <tbody>
                       {list.map((item) => (
                         <tr key={item.malichhoc}>
-                          <td><strong>#{item.malichhoc}</strong></td>
                           <td>
-                            <span className="badge-purple" style={{ padding: "4px 8px", borderRadius: 6 }}>
+                            <strong>#{item.malichhoc}</strong>
+                          </td>
+                          <td>
+                            <span
+                              className="badge-purple"
+                              style={{ padding: "4px 8px", borderRadius: 6 }}
+                            >
                               {getDayLabel(item.thutrongtuan)}
                             </span>
                           </td>
                           <td>
-                            <strong>Tiết {item.tietbatdau} - {item.tietketthuc}</strong>
-                            <div style={{ fontSize: 11, color: "#8B6F5F", marginTop: 2 }}>
+                            <strong>
+                              Tiết {item.tietbatdau} - {item.tietketthuc}
+                            </strong>
+                            <div
+                              style={{
+                                fontSize: 11,
+                                color: "#8B6F5F",
+                                marginTop: 2,
+                              }}
+                            >
                               ({item.tietketthuc - item.tietbatdau + 1} tiết)
                             </div>
                           </td>
                           <td>
-                            <div style={{ fontWeight: 600 }}>{item.phancong?.monhoc?.tenmon}</div>
+                            <div style={{ fontWeight: 600 }}>
+                              {item.phancong?.monhoc?.tenmon}
+                            </div>
                             <span style={{ fontSize: 11, color: "#8B6F5F" }}>
-                              Lớp: {item.phancong?.lop?.tenlop} | LHP: {item.phancong?.malophoc || "N/A"}
+                              Lớp: {item.phancong?.lop?.tenlop} | LHP:{" "}
+                              {item.phancong?.malophoc || "N/A"}
                             </span>
                           </td>
                           <td>{item.phancong?.giangvien?.hoten}</td>
                           <td>
-                            <span className={`${styles.badge} ${
-                            item.phonghoc?.loaiphong === "Online" ? styles.typeOnline
-                            : item.phonghoc?.loaiphong === "Thuchanh" ? styles.typePractice
-                            : styles.typeTheory
-                          }`}>
-                            {item.maphong || "Chưa xếp phòng"} ({getRoomTypeLabel(item.phonghoc?.loaiphong)})
-                          </span>
+                            <span
+                              className={`${styles.badge} ${
+                                item.phonghoc?.loaiphong === "Online"
+                                  ? styles.typeOnline
+                                  : item.phonghoc?.loaiphong === "Thuchanh"
+                                    ? styles.typePractice
+                                    : styles.typeTheory
+                              }`}
+                            >
+                              {item.maphong || "Chưa xếp phòng"} (
+                              {getRoomTypeLabel(item.phonghoc?.loaiphong)})
+                            </span>
                           </td>
                           <td>
                             <div className={styles.actions}>
@@ -641,7 +741,14 @@ function AdminSchedulesContent() {
                                 }}
                                 title="Sửa lịch học"
                               >
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <svg
+                                  width="18"
+                                  height="18"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="2"
+                                >
                                   <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
                                   <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
                                 </svg>
@@ -654,7 +761,14 @@ function AdminSchedulesContent() {
                                 }}
                                 title="Xoá lịch học"
                               >
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <svg
+                                  width="18"
+                                  height="18"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="2"
+                                >
                                   <polyline points="3 6 5 6 21 6" />
                                   <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
                                 </svg>
@@ -693,15 +807,37 @@ function AdminSchedulesContent() {
                                 setModal({ mode: "edit", item });
                               }}
                             >
-                              <div className={styles.blockTitle}>{item.phancong?.monhoc?.tenmon}</div>
-                              <div className={styles.blockSub}><strong>Tiết:</strong> {item.tietbatdau}-{item.tietketthuc}</div>
-                              <div className={styles.blockSub}><strong>Lớp:</strong> {item.phancong?.lop?.tenlop}</div>
-                              <div className={styles.blockSub}><strong>GV:</strong> {item.phancong?.giangvien?.hoten}</div>
-                              <div className={styles.blockSub}><strong>Phòng:</strong> {item.maphong || "N/A"}</div>
+                              <div className={styles.blockTitle}>
+                                {item.phancong?.monhoc?.tenmon}
+                              </div>
+                              <div className={styles.blockSub}>
+                                <strong>Tiết:</strong> {item.tietbatdau}-
+                                {item.tietketthuc}
+                              </div>
+                              <div className={styles.blockSub}>
+                                <strong>Lớp:</strong>{" "}
+                                {item.phancong?.lop?.tenlop}
+                              </div>
+                              <div className={styles.blockSub}>
+                                <strong>GV:</strong>{" "}
+                                {item.phancong?.giangvien?.hoten}
+                              </div>
+                              <div className={styles.blockSub}>
+                                <strong>Phòng:</strong> {item.maphong || "N/A"}
+                              </div>
                             </div>
                           ))
                         ) : (
-                          <div style={{ color: "#EAD9CB", fontSize: 11, textAlign: "center", paddingTop: 16 }}>Trống</div>
+                          <div
+                            style={{
+                              color: "#EAD9CB",
+                              fontSize: 11,
+                              textAlign: "center",
+                              paddingTop: 16,
+                            }}
+                          >
+                            Trống
+                          </div>
                         )}
                       </div>
                     ))}
@@ -714,28 +850,58 @@ function AdminSchedulesContent() {
                 {list.map((item) => (
                   <div key={item.malichhoc} className={styles.mobileCard}>
                     <div className={styles.mobileCardHeader}>
-                      <span className="badge-purple" style={{ padding: "2px 6px", borderRadius: 4, fontSize: 12 }}>
+                      <span
+                        className="badge-purple"
+                        style={{
+                          padding: "2px 6px",
+                          borderRadius: 4,
+                          fontSize: 12,
+                        }}
+                      >
                         {getDayLabel(item.thutrongtuan)}
                       </span>
-                      <span className={`${styles.badge} ${
-                        item.phonghoc?.loaiphong === "Online" ? styles.typeOnline
-                        : item.phonghoc?.loaiphong === "Thuchanh" ? styles.typePractice
-                        : styles.typeTheory
-                      }`}>
+                      <span
+                        className={`${styles.badge} ${
+                          item.phonghoc?.loaiphong === "Online"
+                            ? styles.typeOnline
+                            : item.phonghoc?.loaiphong === "Thuchanh"
+                              ? styles.typePractice
+                              : styles.typeTheory
+                        }`}
+                      >
                         {getRoomTypeLabel(item.phonghoc?.loaiphong)}
                       </span>
                     </div>
 
                     <div className={styles.mobileCardInfo}>
-                      <div><strong>Môn học:</strong> {item.phancong?.monhoc?.tenmon}</div>
-                      <div><strong>Tiết học:</strong> Tiết {item.tietbatdau} - {item.tietketthuc}</div>
-                      <div><strong>Giảng viên:</strong> {item.phancong?.giangvien?.hoten}</div>
-                      <div><strong>Lớp hành chính:</strong> {item.phancong?.lop?.tenlop}</div>
-                      <div><strong>Phòng học:</strong> {item.maphong || "N/A"} {item.phonghoc ? `(${getRoomTypeLabel(item.phonghoc.loaiphong)})` : ""}</div>
+                      <div>
+                        <strong>Môn học:</strong>{" "}
+                        {item.phancong?.monhoc?.tenmon}
+                      </div>
+                      <div>
+                        <strong>Tiết học:</strong> Tiết {item.tietbatdau} -{" "}
+                        {item.tietketthuc}
+                      </div>
+                      <div>
+                        <strong>Giảng viên:</strong>{" "}
+                        {item.phancong?.giangvien?.hoten}
+                      </div>
+                      <div>
+                        <strong>Lớp hành chính:</strong>{" "}
+                        {item.phancong?.lop?.tenlop}
+                      </div>
+                      <div>
+                        <strong>Phòng học:</strong> {item.maphong || "N/A"}{" "}
+                        {item.phonghoc
+                          ? `(${getRoomTypeLabel(item.phonghoc.loaiphong)})`
+                          : ""}
+                      </div>
                     </div>
 
                     <div className={styles.mobileCardFooter}>
-                      <span style={{ fontSize: 12, color: "#8B6F5F" }}>Mã lịch: #{item.malichhoc}</span>
+                      <span style={{ fontSize: 12, color: "#8B6F5F" }}>
+                        Mã lịch: #{item.malichhoc}
+                      </span>
                       <div className={styles.actions}>
                         <button
                           className={`${styles.iconBtn} ${styles.editBtn}`}
@@ -744,7 +910,14 @@ function AdminSchedulesContent() {
                             setModal({ mode: "edit", item });
                           }}
                         >
-                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <svg
+                            width="18"
+                            height="18"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                          >
                             <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
                             <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
                           </svg>
@@ -756,7 +929,14 @@ function AdminSchedulesContent() {
                             setModal({ mode: "delete", item });
                           }}
                         >
-                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <svg
+                            width="18"
+                            height="18"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                          >
                             <polyline points="3 6 5 6 21 6" />
                             <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
                           </svg>
@@ -790,7 +970,9 @@ function AdminSchedulesContent() {
       {/* Modals */}
       {(modal?.mode === "create" || modal?.mode === "edit") && (
         <AdminModal
-          title={modal.mode === "create" ? "Xếp lịch học mới" : "Chỉnh sửa lịch học"}
+          title={
+            modal.mode === "create" ? "Xếp lịch học mới" : "Chỉnh sửa lịch học"
+          }
           onClose={() => setModal(null)}
         >
           <ScheduleForm
@@ -806,7 +988,11 @@ function AdminSchedulesContent() {
       )}
 
       {modal?.mode === "delete" && modal.item && (
-        <AdminModal title="Xoá lịch học" onClose={() => setModal(null)} size="sm">
+        <AdminModal
+          title="Xoá lịch học"
+          onClose={() => setModal(null)}
+          size="sm"
+        >
           <ConfirmDelete
             label={`Lịch học Thứ ${modal.item.thutrongtuan} Tiết ${modal.item.tietbatdau}-${modal.item.tietketthuc}`}
             onConfirm={handleDelete}
@@ -827,13 +1013,15 @@ function AdminSchedulesContent() {
 // ─── Main Schedules Page Wrapper with Suspense ──────────────────────────────
 export default function AdminSchedulesPage() {
   return (
-    <Suspense fallback={
-      <DashboardShell pageTitle="Quản lý Lịch học">
-        <div style={{ padding: "40px" }}>
-          <TableSkeleton cols={5} rows={6} />
-        </div>
-      </DashboardShell>
-    }>
+    <Suspense
+      fallback={
+        <DashboardShell pageTitle="Quản lý Lịch học">
+          <div style={{ padding: "40px" }}>
+            <TableSkeleton cols={5} rows={6} />
+          </div>
+        </DashboardShell>
+      }
+    >
       <AdminSchedulesContent />
     </Suspense>
   );

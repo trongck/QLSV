@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, FormEvent } from "react";
-import { useAuth } from "@/hook/useAuth";
+import { useAuth } from "@/hooks/auth/useAuth";
 import Image from "next/image";
 import styles from "./login.module.css";
 
@@ -21,7 +21,9 @@ export default function LoginPage() {
 
   // Password reset request states
   const [showResetModal, setShowResetModal] = useState(false);
-  const [resetType, setResetType] = useState<"sinhvien" | "giangvien">("sinhvien");
+  const [resetType, setResetType] = useState<"sinhvien" | "giangvien">(
+    "sinhvien",
+  );
   const [resetId, setResetId] = useState("");
   const [resetSdt, setResetSdt] = useState("");
   const [resetEmail, setResetEmail] = useState("");
@@ -50,8 +52,7 @@ export default function LoginPage() {
 
   const validate = () => {
     const errs: { email?: string; password?: string } = {};
-    if (!email.trim())
-      errs.email = "Vui lòng nhập mã tài khoản hoặc email.";
+    if (!email.trim()) errs.email = "Vui lòng nhập mã tài khoản hoặc email.";
     if (!password.trim()) errs.password = "Vui lòng nhập mật khẩu.";
     else if (password.length < 6) errs.password = "Mật khẩu tối thiểu 6 ký tự.";
     setFieldErrors(errs);
@@ -61,7 +62,7 @@ export default function LoginPage() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
-    
+
     await login({ email: email.trim(), matkhau: password }, remember);
   };
 
@@ -347,8 +348,19 @@ export default function LoginPage() {
                 onClick={() => setShowResetModal(false)}
                 aria-label="Đóng"
               >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
-                  <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  aria-hidden
+                >
+                  <path
+                    d="M18 6L6 18M6 6l12 12"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                  />
                 </svg>
               </button>
             </div>
@@ -356,7 +368,14 @@ export default function LoginPage() {
             {resetSuccess ? (
               <div className={styles.modalSuccess}>
                 <div className={styles.successIcon}>
-                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                  <svg
+                    width="28"
+                    height="28"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="3"
+                  >
                     <polyline points="20 6 9 17 4 12" />
                   </svg>
                 </div>
@@ -375,24 +394,32 @@ export default function LoginPage() {
               <form
                 onSubmit={async (e) => {
                   e.preventDefault();
-                  if (!resetId.trim() || !resetSdt.trim() || !resetEmail.trim() || !resetLydo.trim()) {
+                  if (
+                    !resetId.trim() ||
+                    !resetSdt.trim() ||
+                    !resetEmail.trim() ||
+                    !resetLydo.trim()
+                  ) {
                     setResetError("Vui lòng điền đầy đủ các thông tin.");
                     return;
                   }
                   setResetSubmitting(true);
                   setResetError(null);
                   try {
-                    const res = await fetch("/api/auth/reset-password-request", {
-                      method: "POST",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({
-                        type: resetType,
-                        id: resetId.trim(),
-                        sdt: resetSdt.trim(),
-                        email: resetEmail.trim(),
-                        lydo: resetLydo.trim(),
-                      }),
-                    });
+                    const res = await fetch(
+                      "/api/auth/reset-password-request",
+                      {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                          type: resetType,
+                          id: resetId.trim(),
+                          sdt: resetSdt.trim(),
+                          email: resetEmail.trim(),
+                          lydo: resetLydo.trim(),
+                        }),
+                      },
+                    );
                     const data = await res.json();
                     if (!res.ok) {
                       setResetError(data.error || "Gửi yêu cầu thất bại.");
@@ -407,7 +434,9 @@ export default function LoginPage() {
                 }}
               >
                 <div className={styles.modalBody}>
-                  {resetError && <div className={styles.errorBanner}>{resetError}</div>}
+                  {resetError && (
+                    <div className={styles.errorBanner}>{resetError}</div>
+                  )}
 
                   {/* Account Type Tabs */}
                   <div className={styles.modalTabs}>
@@ -436,12 +465,18 @@ export default function LoginPage() {
                   {/* ID Field */}
                   <div className={styles.field}>
                     <label className={styles.label}>
-                      {resetType === "sinhvien" ? "Mã sinh viên" : "Mã giảng viên"}
+                      {resetType === "sinhvien"
+                        ? "Mã sinh viên"
+                        : "Mã giảng viên"}
                     </label>
                     <input
                       type="text"
                       className="input"
-                      placeholder={resetType === "sinhvien" ? "Nhập mã sinh viên (ví dụ: SV0001)..." : "Nhập mã giảng viên (ví dụ: GV0001)..."}
+                      placeholder={
+                        resetType === "sinhvien"
+                          ? "Nhập mã sinh viên (ví dụ: SV0001)..."
+                          : "Nhập mã giảng viên (ví dụ: GV0001)..."
+                      }
                       value={resetId}
                       onChange={(e) => setResetId(e.target.value)}
                       disabled={resetSubmitting}
@@ -487,7 +522,12 @@ export default function LoginPage() {
                       value={resetLydo}
                       onChange={(e) => setResetLydo(e.target.value)}
                       disabled={resetSubmitting}
-                      style={{ resize: "none", height: "auto", paddingTop: 8, paddingBottom: 8 }}
+                      style={{
+                        resize: "none",
+                        height: "auto",
+                        paddingTop: 8,
+                        paddingBottom: 8,
+                      }}
                       required
                     />
                   </div>

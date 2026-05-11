@@ -1,4 +1,4 @@
-import { apiFetch, apiJson } from "../core.service";
+import { apiFetch, apiJson } from "./core.service";
 
 export interface SinhVienRow {
   masv: string;
