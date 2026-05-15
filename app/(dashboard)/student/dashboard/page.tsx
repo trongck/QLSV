@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useAuth } from "@/hook/useAuth";
 import { createClient } from "@/lib/utils/supabase/client";
 import { VaiTro } from "@/types";
@@ -324,9 +325,27 @@ export default function StudentDashboard() {
         {/* Thông báo */}
         <section className="card" aria-labelledby="notifications">
           <div className={styles.cardHeader}>
-            <h2 id="notifications" className={styles.sectionTitle}>
-              Thông báo gần đây
-            </h2>
+            <Link href="/student/notifications">
+              <h2
+                id="notifications"
+                className={styles.sectionTitle}
+                style={{ cursor: "pointer", textDecoration: "none" }}
+              >
+                Thông báo gần đây
+              </h2>
+            </Link>
+            <Link
+              href="/student/notifications"
+              style={{
+                fontSize: "0.82rem",
+                color: "var(--color-primary)",
+                fontWeight: 500,
+                textDecoration: "none",
+                whiteSpace: "nowrap",
+              }}
+            >
+              Xem tất cả →
+            </Link>
           </div>
           {fetching ? (
             <p className={styles.emptyText}>Đang tải…</p>
@@ -335,14 +354,20 @@ export default function StudentDashboard() {
           ) : (
             <ul className={styles.notifList} role="list">
               {data.thongBaoGanDay.map((tb, i) => (
-                <li key={i} className={styles.notifItem}>
-                  <div className={styles.notifDot} aria-hidden />
-                  <div className={styles.notifContent}>
-                    <span className={styles.notifTitle}>{tb.tieude}</span>
-                    <span className={styles.notifMeta}>
-                      {tb.ngaytao} · {tb.loai}
-                    </span>
-                  </div>
+                <li key={i}>
+                  <Link
+                    href="/student/notifications"
+                    className={styles.notifItem}
+                    style={{ textDecoration: "none", display: "flex", alignItems: "flex-start", gap: "0.75rem", cursor: "pointer" }}
+                  >
+                    <div className={styles.notifDot} aria-hidden />
+                    <div className={styles.notifContent}>
+                      <span className={styles.notifTitle}>{tb.tieude}</span>
+                      <span className={styles.notifMeta}>
+                        {tb.ngaytao} · {tb.loai}
+                      </span>
+                    </div>
+                  </Link>
                 </li>
               ))}
             </ul>

@@ -417,7 +417,6 @@ export interface NhatKy {
   tieude: string | null;
   noidung: string;
   tamtrang: 1 | 2 | 3 | 4 | 5 | null;
-  riengtu: boolean;
   maphancong: number | null;
   ngaytao: Date;
   ngaycapnhat: Date;

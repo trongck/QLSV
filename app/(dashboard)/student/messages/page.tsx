@@ -1,319 +1,300 @@
-"use client"; // Bắt buộc phải có dòng này để sử dụng useState trong Next.js App Router
-
-import React, { useState } from "react";
+"use client";
+import React, { useState, useEffect, useCallback, useRef } from "react";
+import { Search, Edit3, Info, Paperclip, Send, X, ChevronDown, ChevronRight, Image as Img, FileText, Trash2 } from "lucide-react";
+import { useAuth } from "@/hook/useAuth";
 import {
-  Search,
-  Edit3,
-  Phone,
-  Video,
-  Info,
-  Paperclip,
-  Send,
-  Image as ImageIcon,
-  FileText,
-  MoreHorizontal,
-} from "lucide-react";
+  getConversations, getMessages, sendMessage, getConversationMembers,
+  searchUsers, createOrGetConversation, deleteConversation,
+  getConversationDisplayName, getInitials, formatMsgTime,
+  type ConversationRow, type MessageRow, type ConversationMember, type UserSearchResult,
+} from "@/services/messages.service";
 
-// 1. DỮ LIỆU DANH SÁCH NGƯỜI NHẮN TIN
-const chatList = [
-  {
-    id: 1,
-    name: "Nguyễn Văn Minh",
-    avatar: "NM",
-    lastMsg: "Cảm ơn thầy rất nhiều ạ!",
-    time: "10:30",
-    unread: 2,
-    role: "Sinh viên",
-  },
-  {
-    id: 2,
-    name: "Trần Thị Mai",
-    avatar: "TM",
-    lastMsg: "Mai: Oke An nhé!",
-    time: "09:15",
-    unread: 1,
-    role: "Sinh viên",
-  },
-  {
-    id: 3,
-    name: "Thầy Lê Hoàng Nam",
-    avatar: "LH",
-    lastMsg: "Bài tập tuần sau nộp trước thứ 6.",
-    time: "Hôm qua",
-    unread: 0,
-    role: "Giảng viên",
-  },
-  {
-    id: 4,
-    name: "Nhóm: CTDL & GT",
-    avatar: "NH",
-    lastMsg: "Minh: Mọi người xem tài liệu nhé",
-    time: "Hôm qua",
-    unread: 0,
-    role: "Nhóm học tập",
-  },
-];
+function isImg(url: string | null) {
+  if (!url) return false;
+  if (url.startsWith("data:image/")) return true;
+  return ["jpg","jpeg","png","gif","webp","bmp","svg"].includes(url.split("?")[0].split(".").pop()?.toLowerCase() ?? "");
+}
+function extractImg(s: string): string | null {
+  const m = s.match(/^\s*\[IMAGE_URL:([^\]]+)\]/i);
+  return m ? m[1].trim() : null;
+}
+function Av({ name, size = 44 }: { name: string; size?: number }) {
+  return <div style={{ width:size, height:size, borderRadius:"50%", background:"#FFDAB9", display:"flex", alignItems:"center", justifyContent:"center", fontSize:size*0.3, fontWeight:700, color:"#E57373", flexShrink:0 }}>{getInitials(name)}</div>;
+}
 
-// 2. DỮ LIỆU TIN NHẮN RIÊNG BIỆT CHO TỪNG NGƯỜI
-const allMessages: Record<number, any[]> = {
-  1: [
-    { id: 1, content: "Chào An 👋", time: "10:28", isMine: false },
-    {
-      id: 2,
-      content: "Bạn có thể gửi mình tài liệu môn Cơ sở dữ liệu được không?",
-      time: "10:28",
-      isMine: false,
-    },
-    {
-      id: 3,
-      content: "Chào Minh! Mình có đây nè",
-      time: "10:29",
-      isMine: true,
-    },
-    {
-      id: 4,
-      type: "file",
-      fileName: "CSDL_Notes_Chuong1-4.pdf",
-      fileSize: "2.4 MB",
-      time: "10:29",
-      isMine: true,
-    },
-  ],
-  2: [
-    {
-      id: 1,
-      content: "An ơi, chiều nay có đi học không?",
-      time: "08:30",
-      isMine: false,
-    },
-    {
-      id: 2,
-      content: "Có chứ Mai, mình đi sớm 15p nhé",
-      time: "08:35",
-      isMine: true,
-    },
-    { id: 3, content: "Oke An nhé!", time: "09:15", isMine: false },
-  ],
-  3: [
-    {
-      id: 1,
-      content: "Chào em, bài tập lớn nhóm em làm đến đâu rồi?",
-      time: "Hôm qua",
-      isMine: false,
-    },
-    {
-      id: 2,
-      content: "Dạ thưa thầy, nhóm em đang hoàn thiện phần Database ạ",
-      time: "Hôm qua",
-      isMine: true,
-    },
-    {
-      id: 3,
-      content: "Tốt, bài tập tuần sau nộp trước thứ 6 nhé.",
-      time: "Hôm qua",
-      isMine: false,
-    },
-  ],
-  4: [
-    {
-      id: 1,
-      content: "Mọi người ơi nộp slide ở đâu nhỉ?",
-      time: "Hôm qua",
-      isMine: false,
-    },
-    {
-      id: 2,
-      content: "Minh: Mọi người xem tài liệu ở file nhé, có link nộp trong đó",
-      time: "Hôm qua",
-      isMine: false,
-    },
-  ],
-};
+function NewChat({ onClose, onSelect }: { onClose:()=>void; onSelect:(u:UserSearchResult)=>void }) {
+  const [q,setQ]=useState(""); const [res,setRes]=useState<UserSearchResult[]>([]); const [loading,setLoading]=useState(false);
+  useEffect(()=>{
+    if(!q.trim()){setRes([]);return;}
+    const t=setTimeout(async()=>{setLoading(true);try{setRes(await searchUsers(q));}finally{setLoading(false);}},300);
+    return()=>clearTimeout(t);
+  },[q]);
+  return (
+    <div style={{position:"fixed",inset:0,background:"rgba(0,0,0,.45)",display:"flex",alignItems:"center",justifyContent:"center",zIndex:1000}}>
+      <div style={{background:"#fff",borderRadius:16,width:420,maxHeight:"70vh",display:"flex",flexDirection:"column",overflow:"hidden",boxShadow:"0 20px 60px rgba(0,0,0,.2)"}}>
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"16px 20px",borderBottom:"1px solid #f0e9e4"}}>
+          <h2 style={{margin:0,fontSize:16,fontWeight:700,color:"#2D1B14"}}>Tin nhắn mới</h2>
+          <button onClick={onClose} style={{background:"none",border:"none",cursor:"pointer"}}><X size={20}/></button>
+        </div>
+        <div style={{padding:"12px 20px",borderBottom:"1px solid #f0e9e4"}}>
+          <input autoFocus value={q} onChange={e=>setQ(e.target.value)} placeholder="Tìm sinh viên, giảng viên..." style={{width:"100%",padding:"8px 12px",borderRadius:10,border:"1.5px solid #FFDBB6",fontSize:13,outline:"none",boxSizing:"border-box"}}/>
+        </div>
+        <div style={{overflowY:"auto",flex:1}}>
+          {loading&&<p style={{textAlign:"center",color:"#8B6F5F",padding:20,fontSize:13}}>Đang tìm...</p>}
+          {!loading&&res.length===0&&q.trim()&&<p style={{textAlign:"center",color:"#8B6F5F",padding:20,fontSize:13}}>Không có kết quả.</p>}
+          {res.map(u=>(
+            <div key={u.id} onClick={()=>onSelect(u)} style={{display:"flex",gap:12,padding:"12px 20px",cursor:"pointer",alignItems:"center",borderBottom:"1px solid #fdf5f0"}} onMouseOver={e=>(e.currentTarget.style.background="#FFF8F4")} onMouseOut={e=>(e.currentTarget.style.background="")}>
+              <Av name={u.hoten} size={38}/>
+              <div><p style={{margin:0,fontWeight:600,fontSize:13.5,color:"#2D1B14"}}>{u.hoten}</p><p style={{margin:0,fontSize:11,color:"#8B6F5F"}}>{u.role==="SinhVien"?"Sinh viên":"Giảng viên"}{u.extra?` · ${u.extra}`:""}</p></div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function InfoPanel({ conv, members, messages, onClose }: { conv:ConversationRow; members:ConversationMember[]; messages:MessageRow[]; onClose:()=>void }) {
+  const [showPhotos,setShowPhotos]=useState(false);
+  const [showFiles,setShowFiles]=useState(false);
+  const other=members.find(m=>!m.isSelf)??members[0];
+  const profile=other?.sinhvien??other?.giangvien;
+  const name=profile?.hoten??"Người dùng";
+  const role=other?.sinhvien?"Sinh viên":other?.giangvien?"Giảng viên":"";
+  const email=(profile as any)?.emailtruong??null;
+  const photos:string[]=[];
+  const files:MessageRow[]=[];
+  messages.forEach(m=>{
+    const i=extractImg(m.noidung);
+    if(i)photos.push(i);
+    else if(m.filedinh){if(isImg(m.filedinh))photos.push(m.filedinh);else files.push(m);}
+  });
+  return (
+    <div style={{width:288,background:"#fff",borderLeft:"1px solid #f0e9e4",display:"flex",flexDirection:"column",overflowY:"auto",flexShrink:0}}>
+      <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"14px 16px",borderBottom:"1px solid #f0e9e4"}}>
+        <span style={{fontWeight:700,fontSize:13,color:"#2D1B14"}}>Thông tin hội thoại</span>
+        <button onClick={onClose} style={{background:"none",border:"none",cursor:"pointer",color:"#8B6F5F"}}><X size={17}/></button>
+      </div>
+      <div style={{padding:"20px 16px 14px",display:"flex",flexDirection:"column",alignItems:"center",borderBottom:"1px solid #f0e9e4"}}>
+        <Av name={name} size={68}/>
+        <p style={{margin:"10px 0 2px",fontWeight:700,fontSize:14,color:"#2D1B14",textAlign:"center"}}>{name}</p>
+        <p style={{margin:"0 0 4px",fontSize:12,color:"#E57373",fontWeight:600}}>{role}</p>
+        {email&&<p style={{margin:0,fontSize:11,color:"#8B6F5F"}}>{email}</p>}
+        {other?.ngaythamgia&&<p style={{margin:"6px 0 0",fontSize:11,color:"#A08070"}}>Tham gia: {new Date(other.ngaythamgia).toLocaleDateString("vi-VN")}</p>}
+      </div>
+      {/* Ảnh */}
+      <button onClick={()=>setShowPhotos(v=>!v)} style={{width:"100%",display:"flex",justifyContent:"space-between",alignItems:"center",padding:"13px 16px",background:"none",border:"none",borderBottom:"1px solid #f0e9e4",cursor:"pointer"}}>
+        <div style={{display:"flex",alignItems:"center",gap:8}}><Img size={15} color="#E57373"/><span style={{fontSize:12.5,fontWeight:600,color:"#2D1B14"}}>Ảnh & Phương tiện</span><span style={{fontSize:10,color:"#A08070",background:"#f5f0ec",borderRadius:99,padding:"1px 6px"}}>{photos.length}</span></div>
+        {showPhotos?<ChevronDown size={14} color="#A08070"/>:<ChevronRight size={14} color="#A08070"/>}
+      </button>
+      {showPhotos&&(
+        <div style={{padding:"10px 16px 6px",borderBottom:"1px solid #f0e9e4"}}>
+          {photos.length===0?<p style={{fontSize:12,color:"#A08070",textAlign:"center",padding:"6px 0"}}>Chưa có ảnh.</p>
+          :<div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:5}}>
+            {photos.map((src,i)=><a key={i} href={src} target="_blank" rel="noreferrer"><img src={src} alt="" style={{width:"100%",aspectRatio:"1",objectFit:"cover",borderRadius:7,border:"1px solid #f0e9e4"}} onError={e=>((e.target as HTMLImageElement).style.display="none")}/></a>)}
+          </div>}
+        </div>
+      )}
+      {/* File */}
+      <button onClick={()=>setShowFiles(v=>!v)} style={{width:"100%",display:"flex",justifyContent:"space-between",alignItems:"center",padding:"13px 16px",background:"none",border:"none",borderBottom:"1px solid #f0e9e4",cursor:"pointer"}}>
+        <div style={{display:"flex",alignItems:"center",gap:8}}><FileText size={15} color="#C25450"/><span style={{fontSize:12.5,fontWeight:600,color:"#2D1B14"}}>File & Tài liệu</span><span style={{fontSize:10,color:"#A08070",background:"#f5f0ec",borderRadius:99,padding:"1px 6px"}}>{files.length}</span></div>
+        {showFiles?<ChevronDown size={14} color="#A08070"/>:<ChevronRight size={14} color="#A08070"/>}
+      </button>
+      {showFiles&&(
+        <div style={{padding:"8px 16px 10px",borderBottom:"1px solid #f0e9e4"}}>
+          {files.length===0?<p style={{fontSize:12,color:"#A08070",textAlign:"center",padding:"6px 0"}}>Chưa có file.</p>
+          :files.map(f=><a key={f.matinnhan} href={f.filedinh!} target="_blank" rel="noreferrer" style={{display:"flex",alignItems:"center",gap:8,padding:"7px 10px",borderRadius:9,border:"1px solid #f0e9e4",marginBottom:5,textDecoration:"none",background:"#FFFDF9"}}>
+            <div style={{background:"#C25450",borderRadius:5,padding:"4px 6px",color:"#fff",fontSize:9,fontWeight:700,flexShrink:0}}>FILE</div>
+            <span style={{fontSize:11.5,color:"#2D1B14",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{f.filedinh!.split("/").pop()}</span>
+          </a>)}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function MessagesPage() {
-  // State quản lý ID người đang được chọn
-  const [selectedChatId, setSelectedChatId] = useState(1);
-  const [inputText, setInputText] = useState("");
+  const { user } = useAuth();
+  const [convs,setConvs]=useState<ConversationRow[]>([]);
+  const [selId,setSelId]=useState<number|null>(null);
+  const [msgs,setMsgs]=useState<MessageRow[]>([]);
+  const [members,setMembers]=useState<ConversationMember[]>([]);
+  const [me,setMe]=useState<{masv:string|null;magv:string|null}>({masv:null,magv:null});
+  const [loadingConvs,setLoadingConvs]=useState(true);
+  const [loadingMsgs,setLoadingMsgs]=useState(false);
+  const [sending,setSending]=useState(false);
+  const [input,setInput]=useState("");
+  const [showNew,setShowNew]=useState(false);
+  const [showInfo,setShowInfo]=useState(false);
+  const [searchQ,setSearchQ]=useState("");
+  const [errMsg,setErrMsg]=useState("");
+  const endRef=useRef<HTMLDivElement>(null);
+  const pollRef=useRef<ReturnType<typeof setInterval>|null>(null);
 
-  // Lấy thông tin người được chọn và tin nhắn tương ứng
-  const selectedChat =
-    chatList.find((c) => c.id === selectedChatId) || chatList[0];
-  const messages = allMessages[selectedChatId] || [];
+  const loadConvs=useCallback(async()=>{
+    try{const d=await getConversations();setConvs(d);if(!selId&&d.length>0)setSelId(d[0].macuoctrochuyen);}
+    catch(e:any){setErrMsg(e.message);}finally{setLoadingConvs(false);}
+  },[selId]);
+
+  useEffect(()=>{if(user)loadConvs();},[user,loadConvs]);
+
+  const loadMsgs=useCallback(async(id:number)=>{
+    setLoadingMsgs(true);setErrMsg("");
+    try{
+      const mr=await getMessages(id);
+      setMsgs(mr.data);setMe(mr.me);
+      setConvs(p=>p.map(c=>c.macuoctrochuyen===id?{...c,unread:0}:c));
+      // Load members riêng — lỗi không ảnh hưởng tin nhắn
+      getConversationMembers(id).then(setMembers).catch(()=>setMembers([]));
+    }catch(e:any){setErrMsg(e.message);}
+    finally{setLoadingMsgs(false);}
+  },[]);
+
+  useEffect(()=>{if(selId){setShowInfo(false);loadMsgs(selId);}},[ selId,loadMsgs]);
+  useEffect(()=>{endRef.current?.scrollIntoView({behavior:"smooth"});},[msgs]);
+
+  useEffect(()=>{
+    if(!selId)return;
+    pollRef.current=setInterval(()=>getMessages(selId).then(r=>{setMsgs(r.data);setMe(r.me);}).catch(()=>{}),5000);
+    return()=>{if(pollRef.current)clearInterval(pollRef.current);};
+  },[selId]);
+
+  const handleSend=async()=>{
+    if(!input.trim()||!selId||sending)return;
+    const text=input.trim();setInput("");setSending(true);
+    try{
+      const nm=await sendMessage(selId,text);
+      setMsgs(p=>[...p,nm]);
+      setConvs(p=>p.map(c=>c.macuoctrochuyen===selId?{...c,lastMsg:{matinnhan:nm.matinnhan,noidung:nm.noidung,masvgui:nm.masvgui,magvgui:nm.magvgui,ngaytao:nm.ngaytao}}:c));
+    }catch(e:any){setErrMsg(e.message);}finally{setSending(false);}
+  };
+
+  const handleDelete=async(convId:number,e:React.MouseEvent)=>{
+    e.stopPropagation();
+    if(!confirm("Xóa toàn bộ hội thoại này?"))return;
+    try{
+      await deleteConversation(convId);
+      setConvs(p=>p.filter(c=>c.macuoctrochuyen!==convId));
+      if(selId===convId){setSelId(null);setMsgs([]);setMembers([]);}
+    }catch(e:any){alert(e.message);}
+  };
+
+  const handleNew=async(u:UserSearchResult)=>{
+    setShowNew(false);
+    try{const r=await createOrGetConversation(u.masv??undefined,u.magv??undefined);await loadConvs();setSelId(r.data.macuoctrochuyen);}
+    catch(e:any){alert(e.message);}
+  };
+
+  const selConv=convs.find(c=>c.macuoctrochuyen===selId);
+  const selName=selConv?getConversationDisplayName(selConv,me.masv,me.magv):"";
+  const filtered=searchQ.trim()?convs.filter(c=>getConversationDisplayName(c,me.masv,me.magv).toLowerCase().includes(searchQ.toLowerCase())):convs;
+  const isMine=(m:MessageRow)=>(me.masv&&m.masvgui===me.masv)||(me.magv&&m.magvgui===me.magv);
+  const senderName=(m:MessageRow)=>{
+    const mem=members.find(mb=>(m.masvgui&&mb.masv===m.masvgui)||(m.magvgui&&mb.magv===m.magvgui));
+    return mem?.sinhvien?.hoten??mem?.giangvien?.hoten??"";
+  };
 
   return (
-    <div className="flex h-full bg-[#FDF8F6] overflow-hidden">
-      {/* --- CỘT 1: DANH SÁCH CHAT --- */}
-      <div className="w-[350px] flex flex-col bg-white border-r border-gray-100">
-        <div className="p-4 space-y-4">
-          <div className="flex justify-between items-center">
-            <h1 className="text-xl font-bold text-gray-800">Tin nhắn</h1>
-            <button className="p-2 bg-[#E57373] text-white rounded-lg hover:bg-[#d32f2f] transition">
-              <Edit3 size={18} />
-            </button>
+    <div style={{display:"flex",height:"100%",background:"#FDF8F6",overflow:"hidden"}}>
+      {/* LEFT */}
+      <div style={{width:310,display:"flex",flexDirection:"column",background:"#fff",borderRight:"1px solid #f0e9e4",flexShrink:0}}>
+        <div style={{padding:"14px 14px 10px",borderBottom:"1px solid #f5f0ec"}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}>
+            <h1 style={{margin:0,fontSize:18,fontWeight:700,color:"#2D1B14"}}>Tin nhắn</h1>
+            <button onClick={()=>setShowNew(true)} style={{padding:"7px 8px",background:"#E57373",color:"#fff",border:"none",borderRadius:9,cursor:"pointer",display:"flex"}}><Edit3 size={15}/></button>
           </div>
-          <div className="relative">
-            <Search
-              className="absolute left-3 top-2.5 text-gray-400"
-              size={16}
-            />
-            <input
-              type="text"
-              placeholder="Tìm kiếm"
-              className="w-full pl-10 pr-4 py-2 bg-gray-50 rounded-md border-none text-sm"
-            />
-          </div>
+          <input value={searchQ} onChange={e=>setSearchQ(e.target.value)} placeholder="Tìm kiếm..." style={{width:"100%",padding:"7px 10px",borderRadius:9,border:"1.5px solid #f0e9e4",fontSize:12.5,background:"#FDF8F6",outline:"none",boxSizing:"border-box"}}/>
         </div>
-
-        <div className="flex-1 overflow-y-auto">
-          {chatList.map((chat) => (
-            <div
-              key={chat.id}
-              onClick={() => setSelectedChatId(chat.id)} // SỰ KIỆN ĐỔI NGƯỜI
-              className={`p-4 flex gap-3 items-center cursor-pointer hover:bg-gray-50 transition ${
-                selectedChatId === chat.id
-                  ? "bg-red-50 border-r-4 border-red-500"
-                  : ""
-              }`}
-            >
-              <div className="w-12 h-12 rounded-full bg-[#FFDAB9] flex items-center justify-center text-[#E57373] font-bold flex-shrink-0">
-                {chat.avatar}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex justify-between items-center mb-1">
-                  <h3 className="font-bold text-sm text-gray-800 truncate">
-                    {chat.name}
-                  </h3>
-                  <span className="text-[10px] text-gray-400">{chat.time}</span>
-                </div>
-                <div className="flex justify-between items-center text-xs">
-                  <p className="text-gray-500 truncate">{chat.lastMsg}</p>
-                  {chat.unread > 0 && (
-                    <span className="bg-red-500 text-white rounded-full px-1.5 py-0.5 ml-2">
-                      {chat.unread}
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* --- CỘT 2: NỘI DUNG CHAT --- */}
-      <div className="flex-1 flex flex-col min-w-0">
-        <div className="p-4 bg-white border-b border-gray-100 flex justify-between items-center shadow-sm">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-[#FFDAB9] flex items-center justify-center text-[#E57373] font-bold">
-              {selectedChat.avatar}
-            </div>
-            <div>
-              <h2 className="font-bold text-sm text-gray-800">
-                {selectedChat.name}
-              </h2>
-              <p className="text-[10px] text-green-500 font-medium">
-                {selectedChat.role}
-              </p>
-            </div>
-          </div>
-          <div className="flex gap-4 text-gray-400">
-            <Phone size={18} className="cursor-pointer hover:text-gray-600" />
-            <Video size={18} className="cursor-pointer hover:text-gray-600" />
-            <Info size={18} className="cursor-pointer hover:text-gray-600" />
-          </div>
-        </div>
-
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
-          {messages.map((msg, index) => (
-            <div
-              key={index}
-              className={`flex flex-col ${msg.isMine ? "items-end" : "items-start"} gap-1`}
-            >
-              {msg.type === "file" ? (
-                <div className="bg-white p-3 rounded-2xl border border-gray-100 flex items-center gap-3 shadow-sm">
-                  <div className="bg-red-500 p-2 rounded text-white font-bold text-[10px]">
-                    PDF
+        {errMsg&&<p style={{margin:0,padding:"8px 14px",fontSize:11,color:"#C25450",background:"#FFF0F0"}}>{errMsg}</p>}
+        <div style={{flex:1,overflowY:"auto"}}>
+          {loadingConvs?[1,2,3].map(i=><div key={i} style={{display:"flex",gap:10,padding:"12px 14px",alignItems:"center"}}><div style={{width:42,height:42,borderRadius:"50%",background:"#f0e9e4",flexShrink:0}}/><div style={{flex:1}}><div style={{height:10,width:"55%",background:"#f0e9e4",borderRadius:6,marginBottom:7}}/><div style={{height:9,width:"75%",background:"#f5f0ec",borderRadius:6}}/></div></div>)
+          :filtered.length===0?<div style={{padding:"36px 16px",textAlign:"center"}}><p style={{color:"#8B6F5F",fontSize:13}}>Chưa có hội thoại nào.</p><button onClick={()=>setShowNew(true)} style={{marginTop:8,padding:"7px 14px",background:"#E57373",color:"#fff",border:"none",borderRadius:9,cursor:"pointer",fontSize:12}}>+ Bắt đầu nhắn tin</button></div>
+          :filtered.map(conv=>{
+            const name=getConversationDisplayName(conv,me.masv,me.magv);
+            const active=conv.macuoctrochuyen===selId;
+            return(
+              <div key={conv.macuoctrochuyen} onClick={()=>setSelId(conv.macuoctrochuyen)}
+                style={{padding:"12px 14px",display:"flex",gap:10,alignItems:"center",cursor:"pointer",background:active?"#FFF0EC":"transparent",borderRight:`3px solid ${active?"#E57373":"transparent"}`,borderBottom:"1px solid #fdf5f0",position:"relative"}}
+                onMouseOver={e=>{(e.currentTarget.querySelector(".del-btn") as HTMLElement)?.style.setProperty("opacity","1");}}
+                onMouseOut={e=>{(e.currentTarget.querySelector(".del-btn") as HTMLElement)?.style.setProperty("opacity","0");}}>
+                <Av name={name} size={42}/>
+                <div style={{flex:1,minWidth:0}}>
+                  <div style={{display:"flex",justifyContent:"space-between",marginBottom:2}}>
+                    <span style={{fontWeight:conv.unread>0?700:600,fontSize:12.5,color:"#2D1B14",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{name}</span>
+                    <span style={{fontSize:10,color:"#A08070",flexShrink:0,marginLeft:4}}>{conv.lastMsg?formatMsgTime(conv.lastMsg.ngaytao):""}</span>
                   </div>
-                  <div>
-                    <p className="text-xs font-medium text-gray-800">
-                      {msg.fileName}
-                    </p>
-                    <p className="text-[10px] text-gray-400">{msg.fileSize}</p>
+                  <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+                    <p style={{margin:0,fontSize:11,color:"#8B6F5F",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",flex:1}}>{conv.lastMsg?.noidung??"Chưa có tin nhắn"}</p>
+                    {conv.unread>0&&<span style={{background:"#E57373",color:"#fff",borderRadius:999,padding:"1px 6px",fontSize:10,fontWeight:700,marginLeft:4,flexShrink:0}}>{conv.unread}</span>}
                   </div>
                 </div>
-              ) : (
-                <div
-                  className={`p-3 rounded-2xl text-sm max-w-[70%] shadow-sm ${
-                    msg.isMine
-                      ? "bg-[#E57373] text-white rounded-tr-none"
-                      : "bg-white text-gray-700 rounded-tl-none border border-gray-50"
-                  }`}
-                >
-                  {msg.content}
+                <button className="del-btn" onClick={e=>handleDelete(conv.macuoctrochuyen,e)}
+                  style={{opacity:0,transition:"opacity .15s",background:"none",border:"none",cursor:"pointer",color:"#C25450",padding:"4px",display:"flex",flexShrink:0}}
+                  title="Xóa hội thoại"><Trash2 size={14}/></button>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* CENTER */}
+      <div style={{flex:1,display:"flex",flexDirection:"column",minWidth:0}}>
+        {!selConv?<div style={{flex:1,display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:12}}><span style={{fontSize:48}}>💬</span><p style={{color:"#8B6F5F",fontSize:14}}>Chọn một cuộc trò chuyện để bắt đầu</p></div>:<>
+          <div style={{padding:"12px 18px",background:"#fff",borderBottom:"1px solid #f0e9e4",display:"flex",justifyContent:"space-between",alignItems:"center",flexShrink:0}}>
+            <div style={{display:"flex",alignItems:"center",gap:10}}>
+              <Av name={selName} size={38}/>
+              <div>
+                <p style={{margin:0,fontWeight:700,fontSize:13.5,color:"#2D1B14"}}>{selName}</p>
+                <p style={{margin:0,fontSize:10,color:"#4CAF50",fontWeight:600}}>{selConv.loai==="NhomMon"?"Nhóm học tập":selConv.otherMembers[0]?.sinhvien?"Sinh viên":selConv.otherMembers[0]?.giangvien?"Giảng viên":""}</p>
+              </div>
+            </div>
+            <button onClick={()=>setShowInfo(v=>!v)} title="Thông tin hội thoại"
+              style={{padding:"7px 8px",background:showInfo?"#E57373":"#f5f0ec",color:showInfo?"#fff":"#8B6F5F",border:"none",borderRadius:9,cursor:"pointer",display:"flex",transition:"all .15s"}}>
+              <Info size={16}/>
+            </button>
+          </div>
+
+          <div style={{flex:1,overflowY:"auto",padding:"18px 22px",display:"flex",flexDirection:"column",gap:12}}>
+            {loadingMsgs?<p style={{textAlign:"center",color:"#8B6F5F",fontSize:13,paddingTop:40}}>Đang tải...</p>
+            :errMsg?<p style={{textAlign:"center",color:"#C25450",fontSize:13,paddingTop:40}}>{errMsg}</p>
+            :msgs.length===0?<p style={{textAlign:"center",color:"#8B6F5F",fontSize:13,paddingTop:40}}>Chưa có tin nhắn. Hãy bắt đầu cuộc trò chuyện!</p>
+            :msgs.map(msg=>{
+              const mine=isMine(msg);
+              const imgUrl=extractImg(msg.noidung);
+              const txt=imgUrl?msg.noidung.replace(/^\s*\[IMAGE_URL:[^\]]+\]\n?/i,""):msg.noidung;
+              return(
+                <div key={msg.matinnhan} style={{display:"flex",flexDirection:"column",alignItems:mine?"flex-end":"flex-start",gap:3}}>
+                  {!mine&&<span style={{fontSize:10.5,color:"#A08070",paddingLeft:4}}>{senderName(msg)}</span>}
+                  {imgUrl&&<img src={imgUrl} alt="" style={{maxWidth:220,borderRadius:11,border:"1px solid #f0e9e4",marginBottom:3}} onError={e=>((e.target as HTMLImageElement).style.display="none")}/>}
+                  {txt&&<div style={{padding:"9px 13px",borderRadius:17,fontSize:13,maxWidth:"68%",background:mine?"#E57373":"#fff",color:mine?"#fff":"#2D1B14",borderTopRightRadius:mine?3:17,borderTopLeftRadius:mine?17:3,boxShadow:"0 1px 3px rgba(0,0,0,.07)",border:mine?"none":"1px solid #f0e9e4",wordBreak:"break-word"}}>{txt}</div>}
+                  {msg.filedinh&&!isImg(msg.filedinh)&&<a href={msg.filedinh} target="_blank" rel="noreferrer" style={{display:"flex",alignItems:"center",gap:7,padding:"7px 11px",borderRadius:11,background:"#fff",border:"1px solid #f0e9e4",textDecoration:"none",maxWidth:260}}>
+                    <div style={{background:"#C25450",borderRadius:5,padding:"4px 6px",color:"#fff",fontSize:9,fontWeight:700}}>FILE</div>
+                    <span style={{fontSize:11.5,color:"#2D1B14",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap"}}>{msg.filedinh.split("/").pop()}</span>
+                  </a>}
+                  <span style={{fontSize:10,color:"#A08070",padding:"0 4px"}}>{formatMsgTime(msg.ngaytao)}</span>
                 </div>
-              )}
-              <span className="text-[10px] text-gray-400 px-1">{msg.time}</span>
-            </div>
-          ))}
-        </div>
-
-        <div className="p-4 bg-white border-t border-gray-100">
-          <div className="flex items-center gap-2 bg-gray-50 p-2 rounded-xl">
-            <button className="p-2 text-gray-400 hover:text-gray-600">
-              <Paperclip size={20} />
-            </button>
-            <input
-              type="text"
-              value={inputText}
-              onChange={(e) => setInputText(e.target.value)}
-              placeholder="Nhập tin nhắn..."
-              className="flex-1 bg-transparent border-none focus:ring-0 text-sm py-2"
-            />
-            <button className="p-2 bg-[#E57373] text-white rounded-lg">
-              <Send size={18} />
-            </button>
+              );
+            })}
+            <div ref={endRef}/>
           </div>
-        </div>
+
+          <div style={{padding:"10px 18px",background:"#fff",borderTop:"1px solid #f0e9e4",flexShrink:0}}>
+            {errMsg&&<p style={{margin:"0 0 6px",fontSize:11,color:"#C25450"}}>{errMsg}</p>}
+            <div style={{display:"flex",alignItems:"center",gap:7,background:"#FDF8F6",padding:"7px 11px",borderRadius:13,border:"1.5px solid #f0e9e4"}}>
+              <button style={{background:"none",border:"none",cursor:"pointer",color:"#A08070",display:"flex"}}><Paperclip size={17}/></button>
+              <input type="text" value={input} onChange={e=>setInput(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();handleSend();}}} placeholder="Nhập tin nhắn... (Enter để gửi)" style={{flex:1,background:"transparent",border:"none",outline:"none",fontSize:13,color:"#2D1B14"}}/>
+              <button onClick={handleSend} disabled={!input.trim()||sending}
+                style={{padding:"6px 8px",background:input.trim()?"#E57373":"#f0e9e4",color:input.trim()?"#fff":"#A08070",border:"none",borderRadius:9,cursor:input.trim()?"pointer":"default",display:"flex",transition:"all .15s"}}>
+                <Send size={15}/>
+              </button>
+            </div>
+          </div>
+        </>}
       </div>
 
-      {/* --- CỘT 3: THÔNG TIN HỘI THOẠI --- */}
-      <div className="w-[320px] bg-white border-l border-gray-100 p-6 flex flex-col items-center">
-        <h3 className="text-sm font-bold text-gray-800 mb-6">
-          Thông tin hội thoại
-        </h3>
-        <div className="w-20 h-20 rounded-full bg-[#FFDAB9] flex items-center justify-center text-[#E57373] font-bold text-2xl shadow-inner mb-3">
-          {selectedChat.avatar}
-        </div>
-        <h4 className="font-bold text-sm text-gray-800">{selectedChat.name}</h4>
-        <p className="text-[10px] text-gray-400 uppercase tracking-widest mb-4">
-          {selectedChat.role}
-        </p>
-
-        <button className="w-full py-2 border border-gray-100 rounded-lg text-xs font-semibold text-gray-600 mb-8 hover:bg-gray-50 transition">
-          Xem trang cá nhân
-        </button>
-
-        <div className="w-full space-y-4 pt-4 border-t border-gray-50">
-          <div className="flex justify-between items-center">
-            <span className="text-xs font-bold text-gray-800">
-              Ảnh, tài liệu, link
-            </span>
-            <span className="text-[10px] text-red-500 font-bold cursor-pointer">
-              Xem tất cả
-            </span>
-          </div>
-          <div className="grid grid-cols-3 gap-2">
-            <div className="aspect-square bg-gray-50 rounded-lg flex items-center justify-center">
-              <ImageIcon size={20} className="text-gray-200" />
-            </div>
-            <div className="aspect-square bg-gray-50 rounded-lg flex items-center justify-center">
-              <FileText size={20} className="text-red-200" />
-            </div>
-            <div className="aspect-square bg-gray-50 rounded-lg flex items-center justify-center text-[10px] font-bold text-gray-400">
-              +8
-            </div>
-          </div>
-        </div>
-      </div>
+      {/* RIGHT */}
+      {showInfo&&selConv&&<InfoPanel conv={selConv} members={members} messages={msgs} onClose={()=>setShowInfo(false)}/>}
+      {showNew&&<NewChat onClose={()=>setShowNew(false)} onSelect={handleNew}/>}
     </div>
   );
 }

@@ -1,311 +1,383 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
+import { ChevronLeft, ChevronRight, Loader2, AlertCircle, BookOpen, RefreshCw, LayoutGrid, List, MapPin, Clock } from "lucide-react";
 import {
-  ChevronLeft,
-  ChevronRight,
-  Calendar as CalendarIcon,
-  Clock,
-  MapPin,
-  Info,
-  Bell,
-  Filter,
-} from "lucide-react";
+  getWeekSchedule, getSemesterSchedule, shortHocKy, THU_NUMS, THU_LABELS,
+  tietToTime, type WeekScheduleItem, type SemesterSubjectItem, type HocKyItem,
+} from "@/services/schedule.service";
 
-// 1. CẤU HÌNH DỮ LIỆU MÔN HỌC (MOCK DATA)
-const scheduleData = [
-  {
-    id: 1,
-    day: "Thứ 2",
-    date: "04/05",
-    subject: "Toán cao cấp 1",
-    room: "A203",
-    time: "07:00 - 09:00",
-    color: "bg-red-50 text-red-700 border-red-200",
-    teacher: "TS. Nguyễn Văn A",
-    floor: 2,
-    building: "Nhà A",
-    distance: "150m",
-  },
-  {
-    id: 2,
-    day: "Thứ 2",
-    date: "04/05",
-    subject: "Tiếng Anh 2",
-    room: "C202",
-    time: "11:00 - 13:00",
-    color: "bg-orange-50 text-orange-700 border-orange-200",
-    teacher: "Ms. Jenny",
-    floor: 3,
-    building: "Nhà C",
-    distance: "210m",
-  },
-  {
-    id: 3,
-    day: "Thứ 2",
-    date: "04/05",
-    subject: "Kỹ năng mềm",
-    room: "D301",
-    time: "15:00 - 17:00",
-    color: "bg-purple-50 text-purple-700 border-purple-200",
-    teacher: "Thầy Lê Văn B",
-    floor: 3,
-    building: "Nhà D",
-    distance: "90m",
-  },
-  {
-    id: 4,
-    day: "Thứ 3",
-    date: "05/05",
-    subject: "Lập trình cơ bản",
-    room: "B101",
-    time: "09:00 - 11:00",
-    color: "bg-blue-50 text-blue-700 border-blue-200",
-    teacher: "Thầy Phạm C",
-    floor: 1,
-    building: "Nhà B",
-    distance: "120m",
-  },
-  {
-    id: 5,
-    day: "Thứ 3",
-    date: "05/05",
-    subject: "Cơ sở dữ liệu",
-    room: "A205",
-    time: "13:00 - 15:00",
-    color: "bg-orange-100 text-orange-800 border-orange-300",
-    teacher: "Thầy Lê Hoàng Nam",
-    floor: 2,
-    building: "Nhà A",
-    distance: "160m",
-  },
-  {
-    id: 6,
-    day: "Thứ 4",
-    date: "06/05",
-    subject: "Toán cao cấp 1",
-    room: "A203",
-    time: "07:00 - 09:00",
-    color: "bg-red-50 text-red-700 border-red-200",
-    teacher: "TS. Nguyễn Văn A",
-    floor: 2,
-    building: "Nhà A",
-    distance: "150m",
-  },
-];
+// ─── Tiết rows (1–13) ────────────────────────────────────────────────────────
+const ALL_TIETS = [1,2,3,4,5,6,7,8,9,10,11,12,13];
 
-const timeSlots = [
-  "07:00 - 09:00",
-  "09:00 - 11:00",
-  "11:00 - 13:00",
-  "13:00 - 15:00",
-  "15:00 - 17:00",
-  "17:00 - 19:00",
-  "19:00 - 21:00",
-];
+const TIET_DISPLAY_TIME: Record<number,string> = {
+  1:"07:00", 2:"07:55", 3:"08:50", 4:"09:55", 5:"10:50",
+  6:"12:45", 7:"13:40", 8:"14:35", 9:"15:40", 10:"16:35",
+  11:"18:00", 12:"18:55", 13:"19:50",
+};
 
-const daysOfWeek = [
-  { label: "Thứ 2", date: "04/05" },
-  { label: "Thứ 3", date: "05/05", isToday: true },
-  { label: "Thứ 4", date: "06/05" },
-  { label: "Thứ 5", date: "07/05" },
-  { label: "Thứ 6", date: "08/05" },
-  { label: "Thứ 7", date: "09/05" },
-  { label: "Chủ nhật", date: "10/05" },
-];
+// ─── Week helpers ─────────────────────────────────────────────────────────────
+function getMonday(date: Date): Date {
+  const d = new Date(date);
+  const day = d.getDay(); // 0=CN
+  const diff = day === 0 ? -6 : 1 - day;
+  d.setDate(d.getDate() + diff);
+  d.setHours(0,0,0,0);
+  return d;
+}
 
+function addDays(date: Date, n: number): Date {
+  const d = new Date(date);
+  d.setDate(d.getDate() + n);
+  return d;
+}
+
+function fmtDDMM(d: Date): string {
+  return `${String(d.getDate()).padStart(2,"0")}/${String(d.getMonth()+1).padStart(2,"0")}`;
+}
+
+// ─── Component ────────────────────────────────────────────────────────────────
 export default function SchedulePage() {
-  const [selectedSubject, setSelectedSubject] = useState<any>(null);
+  const [view, setView]           = useState<"week"|"semester">("week");
+  const [mahocky, setMahocky]     = useState<number|undefined>(undefined);
+  const [hocKyList, setHocKyList] = useState<HocKyItem[]>([]);
+  const [hocKy, setHocKy]         = useState<HocKyItem|null>(null);
+  const [weekData, setWeekData]   = useState<WeekScheduleItem[]>([]);
+  const [semData, setSemData]     = useState<SemesterSubjectItem[]>([]);
+  const [selectedItem, setSelectedItem] = useState<WeekScheduleItem|null>(null);
+  const [loading, setLoading]     = useState(true);
+  const [error, setError]         = useState<string|null>(null);
+  const [weekOffset, setWeekOffset] = useState(0); // tuần hiện tại = 0
 
-  return (
-    // THAY ĐỔI 1: Thêm min-h-screen và overflow-y-auto để đảm bảo trang luôn cuộn được
-    <div className="p-6 bg-[#FDF8F6] min-h-screen pb-20 overflow-y-auto">
-      {/* --- HEADER --- */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-800">Lịch học</h1>
-          <p className="text-sm text-gray-500">
-            Tuần 1 - Tháng 5, 2026 (04/05/2026 - 10/05/2026)
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <div className="flex bg-white rounded-lg shadow-sm border border-gray-100 p-1">
-            <button className="p-2 hover:bg-gray-50 rounded-md transition">
-              <ChevronLeft size={18} />
-            </button>
-            <div className="px-4 flex items-center gap-2 text-sm font-bold text-gray-700">
-              <CalendarIcon size={16} className="text-red-500" />
-              Tuần 1 - Tháng 5, 2026
-            </div>
-            <button className="p-2 hover:bg-gray-50 rounded-md transition">
-              <ChevronRight size={18} />
-            </button>
-          </div>
-          <button className="px-4 py-2 bg-white text-gray-600 rounded-lg border border-gray-100 text-sm font-bold shadow-sm flex items-center gap-2">
-            <CalendarIcon size={16} /> Hôm nay
-          </button>
-        </div>
+  // Tính ngày thứ 2 của tuần đang xem
+  const monday = addDays(getMonday(new Date()), weekOffset * 7);
+  // Mảng ngày trong tuần [T2, T3, T4, T5, T6, T7, CN]
+  const weekDates = Array.from({length:7}, (_,i) => addDays(monday, i));
+  const todayStr = fmtDDMM(new Date());
+
+  // ─── Tải dữ liệu ──────────────────────────────────────────────────────────
+  const fetchData = useCallback(async (v:"week"|"semester", mhk?:number) => {
+    setLoading(true); setError(null); setSelectedItem(null);
+    try {
+      if (v === "week") {
+        const res = await getWeekSchedule(mhk);
+        setHocKyList(res.hocKyList); setHocKy(res.hocKy); setWeekData(res.data);
+        if (!mahocky && res.mahocky) setMahocky(res.mahocky);
+      } else {
+        const res = await getSemesterSchedule(mhk);
+        setHocKyList(res.hocKyList); setHocKy(res.hocKy); setSemData(res.data);
+        if (!mahocky && res.mahocky) setMahocky(res.mahocky);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Không thể tải lịch học.");
+    } finally { setLoading(false); }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  useEffect(() => { fetchData(view, mahocky); }, [view, mahocky, fetchData]);
+
+  // ─── Điều hướng học kỳ ────────────────────────────────────────────────────
+  function goHocKy(delta:number) {
+    const idx = hocKyList.findIndex(hk => hk.mahocky === mahocky);
+    const next = idx + delta;
+    if (next >= 0 && next < hocKyList.length) setMahocky(hocKyList[next].mahocky);
+  }
+  const currentIdx = hocKyList.findIndex(hk => hk.mahocky === mahocky);
+
+  // ─── Build occupied map (cho rowspan) ─────────────────────────────────────
+  // occupied[thu][tiet] = true nếu ô đó đã được cover bởi rowspan từ trên
+  const occupied: Record<number, Record<number,boolean>> = {};
+  weekData.forEach(item => {
+    for (let t = item.tietBatDau + 1; t <= item.tietKetThuc; t++) {
+      if (!occupied[item.thu]) occupied[item.thu] = {};
+      occupied[item.thu][t] = true;
+    }
+  });
+
+  // Tra cứu nhanh weekData theo [thu][tietBatDau]
+  const byCell: Record<number, Record<number, WeekScheduleItem>> = {};
+  weekData.forEach(item => {
+    if (!byCell[item.thu]) byCell[item.thu] = {};
+    byCell[item.thu][item.tietBatDau] = item;
+  });
+
+  // Tổng tín chỉ học kỳ
+  const totalTinchi = semData.reduce((s,m) => s + (m.sotinchi ?? 0), 0);
+
+  // ─── Header toolbar ────────────────────────────────────────────────────────
+  const toolbar = (
+    <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+      <div>
+        <h1 className="text-2xl font-bold text-gray-800">Lịch học</h1>
+        <p className="text-sm text-gray-500">
+          {hocKy ? hocKy.tenhocky : "Chọn học kỳ"}
+          {hocKy?.ngaybatdau ? ` • ${new Date(hocKy.ngaybatdau).toLocaleDateString("vi-VN")} – ${new Date(hocKy.ngayketthuc!).toLocaleDateString("vi-VN")}` : ""}
+        </p>
       </div>
 
-      {/* THAY ĐỔI 2: ĐƯA CARD CHI TIẾT LÊN ĐÂY ĐỂ LUÔN NHÌN THẤY */}
-      {selectedSubject && (
-        <div className="mb-8 p-6 bg-white rounded-2xl border border-red-200 shadow-xl animate-in fade-in slide-in-from-top-4 duration-300">
-          <div className="flex justify-between items-start mb-4">
-            <div>
-              <h3 className="text-xl font-bold text-red-600">
-                {selectedSubject.subject || "Chưa có tên môn"}
-              </h3>
-              <p className="text-gray-500 text-sm font-medium">
-                Chi tiết lịch học tập
-              </p>
-            </div>
-            <button
-              onClick={() => setSelectedSubject(null)}
-              className="p-2 hover:bg-gray-100 rounded-full text-gray-400 transition-colors"
-            >
-              ✕
-            </button>
-          </div>
+      <div className="flex flex-wrap items-center gap-2">
+        {/* Toggle view */}
+        <div className="flex bg-white rounded-lg border border-gray-100 shadow-sm p-1 gap-1">
+          <button onClick={() => setView("week")}
+            className={`px-3 py-1.5 rounded-md text-sm font-bold flex items-center gap-1.5 transition ${view==="week" ? "bg-red-500 text-white" : "text-gray-500 hover:bg-gray-50"}`}>
+            <LayoutGrid size={14}/> Theo tuần
+          </button>
+          <button onClick={() => setView("semester")}
+            className={`px-3 py-1.5 rounded-md text-sm font-bold flex items-center gap-1.5 transition ${view==="semester" ? "bg-red-500 text-white" : "text-gray-500 hover:bg-gray-50"}`}>
+            <List size={14}/> Theo học kỳ
+          </button>
+        </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Thông tin phòng */}
-            <div className="space-y-1">
-              <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold">
-                Địa điểm
-              </p>
-              <div className="flex items-center gap-2">
-                <span className="px-2 py-1 bg-red-100 text-red-700 rounded-md text-xs font-bold">
-                  {selectedSubject.building || "N/A"}
-                </span>
-                <span className="text-sm text-gray-700 font-semibold">
-                  Phòng {selectedSubject.room || "---"} (Tầng{" "}
-                  {selectedSubject.floor || "0"})
-                </span>
-              </div>
-            </div>
+        {/* Chọn học kỳ */}
+        <div className="flex bg-white rounded-lg border border-gray-100 shadow-sm p-1 items-center">
+          <button onClick={() => goHocKy(1)} disabled={currentIdx >= hocKyList.length-1}
+            className="p-1.5 hover:bg-gray-50 rounded-md transition disabled:opacity-30">
+            <ChevronLeft size={16}/>
+          </button>
+          <span className="px-3 text-sm font-bold text-gray-700 min-w-[140px] text-center">
+            {hocKy ? shortHocKy(hocKy) : "---"}
+            {hocKy?.danghieuluc && <span className="ml-1 text-[9px] bg-green-100 text-green-700 px-1 rounded-full font-bold">Hiện tại</span>}
+          </span>
+          <button onClick={() => goHocKy(-1)} disabled={currentIdx <= 0}
+            className="p-1.5 hover:bg-gray-50 rounded-md transition disabled:opacity-30">
+            <ChevronRight size={16}/>
+          </button>
+        </div>
 
-            {/* Thông tin giảng viên */}
-            <div className="space-y-1">
-              <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold">
-                Giảng viên
-              </p>
-              <p className="text-sm text-gray-700 font-semibold">
-                {selectedSubject.teacher || "Đang cập nhật"}
-              </p>
-            </div>
+        {/* Dropdown học kỳ */}
+        {hocKyList.length > 0 && (
+          <select value={mahocky ?? ""} onChange={e => setMahocky(Number(e.target.value))}
+            className="px-3 py-2 bg-white border border-gray-100 rounded-lg text-sm text-gray-700 shadow-sm outline-none cursor-pointer">
+            {hocKyList.map(hk => <option key={hk.mahocky} value={hk.mahocky}>{hk.tenhocky}</option>)}
+          </select>
+        )}
 
-            {/* Thông tin thời gian */}
-            <div className="space-y-1">
-              <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold">
-                Khung giờ
-              </p>
-              <p className="text-sm text-gray-700 font-semibold">
-                {selectedSubject.time || "---"}
-              </p>
-            </div>
-          </div>
+        <button onClick={() => fetchData(view, mahocky)}
+          className="p-2 bg-white border border-gray-100 rounded-lg text-gray-400 hover:text-red-500 shadow-sm transition" title="Làm mới">
+          <RefreshCw size={16}/>
+        </button>
+      </div>
+    </div>
+  );
 
-          <div className="mt-6 pt-4 border-t border-gray-100">
-            <button
-              onClick={() => {
-                const query = encodeURIComponent(
-                  `${selectedSubject.building} Học viện Nông nghiệp Việt Nam`,
-                );
-                window.open(
-                  `https://www.google.com/maps/search/?api=1&query=${query}`,
-                  "_blank",
-                );
-              }}
-              className="w-full md:w-auto px-6 py-2 bg-red-500 hover:bg-red-600 text-white rounded-xl text-sm font-bold shadow-md shadow-red-100 transition-all flex items-center justify-center gap-2"
-            >
-              <MapPin size={16} /> Xem vị trí trên bản đồ
-            </button>
-          </div>
+  // ─── Day header row ────────────────────────────────────────────────────────
+  const CELL_DARK = { backgroundColor: '#374151', color: '#ffffff' }; // gray-700
+  const CELL_TODAY = { backgroundColor: '#dc2626', color: '#ffffff' }; // red-600
+
+  const dayHeader = (
+    <tr className="text-sm">
+      <td className="p-2 border border-gray-600 w-16 text-center" style={CELL_DARK}>
+        {view === "week" && (
+          <button onClick={() => setWeekOffset(w => w-1)} className="hover:text-red-300 transition">
+            <ChevronLeft size={18}/>
+          </button>
+        )}
+      </td>
+      {THU_NUMS.map((thu, idx) => {
+        const d = weekDates[idx];
+        const dateStr = fmtDDMM(d);
+        const isToday = dateStr === todayStr;
+        return (
+          <td key={thu}
+            className="p-2 border border-gray-600 text-center font-bold min-w-[120px]"
+            style={isToday ? CELL_TODAY : CELL_DARK}
+          >
+            {THU_LABELS[idx]}<br/>
+            <span className="text-xs font-normal opacity-90">({dateStr})</span>
+          </td>
+        );
+      })}
+      <td className="p-2 border border-gray-600 w-16 text-center text-xs font-normal" style={{ ...CELL_DARK, color: '#9ca3af' }}>Giờ</td>
+      <td className="p-2 border border-gray-600 w-10 text-center" style={CELL_DARK}>
+        {view === "week" && (
+          <button onClick={() => setWeekOffset(w => w+1)} className="hover:text-red-300 transition">
+            <ChevronRight size={18}/>
+          </button>
+        )}
+      </td>
+    </tr>
+  );
+
+  return (
+    <div className="p-4 bg-[#FDF8F6] min-h-screen pb-20 overflow-y-auto">
+      {toolbar}
+
+      {/* Loading / Error */}
+      {loading && (
+        <div className="flex flex-col items-center justify-center h-60 gap-3 text-gray-400">
+          <Loader2 size={36} className="animate-spin text-red-400"/>
+          <span className="text-sm">Đang tải lịch học...</span>
+        </div>
+      )}
+      {!loading && error && (
+        <div className="flex flex-col items-center justify-center h-60 gap-3 text-red-400">
+          <AlertCircle size={36}/><span className="text-sm">{error}</span>
         </div>
       )}
 
-      {/* --- BẢNG LỊCH HỌC --- */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse">
-            <thead>
-              <tr className="bg-gray-50/50">
-                <th className="p-4 text-xs font-bold text-gray-400 uppercase tracking-wider border-b border-gray-100 w-32">
-                  Thời gian
-                </th>
-                {daysOfWeek.map((day, idx) => (
-                  <th
-                    key={idx}
-                    className={`p-4 border-b border-gray-100 min-w-[150px] ${
-                      day.isToday ? "bg-red-50/30" : ""
-                    }`}
-                  >
-                    <div
-                      className={`text-xs font-bold uppercase ${
-                        day.isToday ? "text-red-500" : "text-gray-400"
-                      }`}
-                    >
-                      {day.label}
+      {!loading && !error && (
+        <>
+          {/* ─── BẢNG LỊCH TUẦN (dạng tiết × thứ) ─────────────────────── */}
+          {view === "week" && (
+            <>
+              {/* Chi tiết môn khi click */}
+              {selectedItem && (
+                <div className="mb-4 p-5 bg-white rounded-2xl border border-red-200 shadow-lg">
+                  <div className="flex justify-between items-start mb-3">
+                    <div>
+                      <h3 className="text-lg font-bold text-red-600">{selectedItem.tenmon}</h3>
+                      <p className="text-xs text-gray-400">{selectedItem.thuLabel} • Tiết {selectedItem.tietBatDau}–{selectedItem.tietKetThuc} ({selectedItem.gioVao}–{selectedItem.gioRa})</p>
                     </div>
-                    <div
-                      className={`text-sm font-black ${
-                        day.isToday ? "text-red-600" : "text-gray-700"
-                      }`}
-                    >
-                      {day.date}
-                    </div>
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {timeSlots.map((slot, sIdx) => (
-                <tr key={sIdx}>
-                  <td className="p-4 text-center border-b border-r border-gray-50 text-xs font-bold text-gray-500 bg-gray-50/30">
-                    {slot}
-                  </td>
-                  {daysOfWeek.map((day, dIdx) => {
-                    const match = scheduleData.find(
-                      (i) => i.day === day.label && i.time === slot,
-                    );
-                    return (
-                      <td
-                        key={dIdx}
-                        className={`p-2 border-b border-r border-gray-50 align-top h-24 ${
-                          day.isToday ? "bg-red-50/10" : ""
-                        }`}
-                      >
-                        {match && (
-                          <div
-                            onClick={() => setSelectedSubject(match)}
-                            className={`p-3 rounded-xl border text-left cursor-pointer transition-all hover:shadow-md hover:scale-[1.02] active:scale-95 ${
-                              match.color
-                            } ${
-                              selectedSubject?.id === match.id
-                                ? "ring-2 ring-red-400 shadow-md"
-                                : ""
-                            }`}
-                          >
-                            <div className="font-bold text-[13px] mb-1 leading-tight">
-                              {match.subject}
-                            </div>
-                            <div className="flex items-center gap-1 text-[10px] opacity-80 font-bold uppercase">
-                              <MapPin size={10} /> Phòng: {match.room}
-                            </div>
-                            <div className="flex items-center gap-1 text-[10px] opacity-80 mt-1">
-                              <Clock size={10} /> {match.time}
+                    <button onClick={() => setSelectedItem(null)} className="p-1.5 hover:bg-gray-100 rounded-full text-gray-400">✕</button>
+                  </div>
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+                    <div><p className="text-[10px] text-gray-400 uppercase font-bold mb-1">Phòng</p><p className="font-semibold text-gray-700">{selectedItem.phonghoc}</p></div>
+                    <div><p className="text-[10px] text-gray-400 uppercase font-bold mb-1">Giảng viên</p><p className="font-semibold text-gray-700">{selectedItem.giangvien}</p></div>
+                    <div><p className="text-[10px] text-gray-400 uppercase font-bold mb-1">Mã môn</p><p className="font-semibold text-gray-700">{selectedItem.mamon}</p></div>
+                  </div>
+                  {selectedItem.ghichu && <p className="mt-3 text-xs text-gray-500 italic border-t pt-2">📌 {selectedItem.ghichu}</p>}
+                </div>
+              )}
+
+              {weekData.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-60 gap-3 text-gray-300">
+                  <BookOpen size={48} strokeWidth={1}/>
+                  <p className="text-sm">Không có lịch học trong học kỳ này.</p>
+                </div>
+              ) : (
+                <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="w-full border-collapse text-xs">
+                      <thead>{dayHeader}</thead>
+                      <tbody>
+                        {ALL_TIETS.map(tiet => (
+                          <tr key={tiet} className="hover:bg-gray-50/40">
+                            {/* Cột tiết */}
+                            <td className="border border-gray-200 p-1 text-center font-bold text-gray-500 bg-gray-50 w-16">
+                              Tiết {tiet}
+                            </td>
+                            {/* Cột thứ */}
+                            {THU_NUMS.map(thu => {
+                              // Bỏ qua nếu đã bị chiếm bởi rowspan
+                              if (occupied[thu]?.[tiet]) return null;
+                              const item = byCell[thu]?.[tiet];
+                              const rowspan = item ? (item.tietKetThuc - item.tietBatDau + 1) : 1;
+                              const isToday = fmtDDMM(weekDates[thu-2]) === todayStr;
+                              return (
+                                <td key={thu}
+                                  rowSpan={rowspan}
+                                  className={`border border-gray-200 p-1 align-top ${isToday ? "bg-red-50/20" : ""} ${item ? "cursor-pointer" : ""}`}
+                                  onClick={() => item && setSelectedItem(item)}
+                                >
+                                  {item && (
+                                    <div className={`p-2 rounded-lg border h-full flex flex-col gap-0.5 transition hover:shadow-md hover:scale-[1.02] active:scale-95 ${item.color} ${selectedItem?.maphancong === item.maphancong && selectedItem?.thu === item.thu && selectedItem?.tietBatDau === item.tietBatDau ? "ring-2 ring-red-400" : ""}`}>
+                                      <div className="font-bold text-[11px] leading-tight">{item.tenmon}</div>
+                                      <div className="text-[10px] opacity-75">({item.mamon})</div>
+                                      <div className="flex items-center gap-0.5 text-[10px] opacity-80 mt-0.5">
+                                        <MapPin size={8}/> {item.phonghoc}
+                                      </div>
+                                      <div className="text-[10px] opacity-75">GV: {item.giangvien}</div>
+                                      <div className="flex items-center gap-0.5 text-[10px] opacity-80">
+                                        <Clock size={8}/> {item.gioVao} → {item.gioRa}
+                                      </div>
+                                    </div>
+                                  )}
+                                </td>
+                              );
+                            })}
+                            {/* Cột giờ */}
+                            <td className="border border-gray-200 p-1 text-center text-[11px] font-bold text-gray-500 bg-gray-50 w-16">
+                              {TIET_DISPLAY_TIME[tiet]}
+                            </td>
+                            {/* Placeholder cột nút */}
+                            <td className="border border-gray-200 w-10 bg-gray-50"/>
+                          </tr>
+                        ))}
+                        {/* Footer row */}
+                        <tr className="text-sm">
+                          <td className="p-2 border border-gray-600 text-center" style={CELL_DARK}>
+                            <button onClick={() => setWeekOffset(w => w-1)} className="hover:text-red-300">
+                              <ChevronLeft size={18}/>
+                            </button>
+                          </td>
+                          {THU_NUMS.map((thu,idx) => {
+                            const d = weekDates[idx];
+                            const isToday = fmtDDMM(d) === todayStr;
+                            return (
+                              <td key={thu}
+                                className="p-2 border border-gray-600 text-center font-bold"
+                                style={isToday ? CELL_TODAY : CELL_DARK}
+                              >
+                                {THU_LABELS[idx]}<br/>
+                                <span className="text-xs font-normal opacity-90">({fmtDDMM(d)})</span>
+                              </td>
+                            );
+                          })}
+                          <td className="p-2 border border-gray-600" style={CELL_DARK}/>
+                          <td className="p-2 border border-gray-600 text-center" style={CELL_DARK}>
+                            <button onClick={() => setWeekOffset(w => w+1)} className="hover:text-red-300">
+                              <ChevronRight size={18}/>
+                            </button>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+
+          {/* ─── DANH SÁCH MÔN THEO HỌC KỲ ─────────────────────────────── */}
+          {view === "semester" && (
+            semData.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-60 gap-3 text-gray-300">
+                <BookOpen size={48} strokeWidth={1}/>
+                <p className="text-sm">Không có môn học đăng ký trong học kỳ này.</p>
+              </div>
+            ) : (
+              <>
+                <div className="mb-4 flex gap-3">
+                  <div className="px-4 py-2 bg-white rounded-xl border border-gray-100 shadow-sm text-sm">
+                    <span className="text-gray-500">Số môn: </span><span className="font-bold">{semData.length}</span>
+                  </div>
+                  <div className="px-4 py-2 bg-white rounded-xl border border-gray-100 shadow-sm text-sm">
+                    <span className="text-gray-500">Tổng tín chỉ: </span><span className="font-bold text-red-600">{totalTinchi}</span>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                  {semData.map(mon => (
+                    <div key={mon.maphancong} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-md transition-shadow">
+                      <div className={`px-5 py-4 border-b border-gray-50 border-l-4 ${mon.color.split(" ").find(c=>c.startsWith("border-")) ?? "border-red-400"}`}>
+                        <div className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold mb-2 ${mon.color}`}>{mon.mamon}</div>
+                        <h3 className="font-bold text-gray-800 text-sm">{mon.tenmon}</h3>
+                        <p className="text-xs text-gray-500 mt-1">👤 {mon.giangvien}</p>
+                      </div>
+                      <div className="px-5 py-3 flex justify-between text-xs text-gray-500 border-b border-gray-50">
+                        <span>📚 {mon.sotinchi} tín chỉ</span>
+                        <span className="font-medium text-gray-700">{mon.scheduleItems.length} buổi/tuần</span>
+                      </div>
+                      <div className="px-5 py-3 space-y-2">
+                        {mon.scheduleItems.length === 0 ? (
+                          <p className="text-xs text-gray-400 italic">Chưa xếp lịch</p>
+                        ) : mon.scheduleItems.map(lh => (
+                          <div key={lh.malichhoc} className="flex items-start gap-2 text-xs">
+                            <span className={`px-2 py-0.5 rounded-md font-bold whitespace-nowrap ${mon.color}`}>{lh.thuLabel}</span>
+                            <div>
+                              <div className="font-medium text-gray-700">Tiết {lh.tietBatDau}–{lh.tietKetThuc} <span className="text-gray-400">({lh.gioVao}–{lh.gioRa})</span></div>
+                              <div className="flex items-center gap-1 text-gray-400 mt-0.5"><MapPin size={9}/> Phòng {lh.phonghoc}</div>
                             </div>
                           </div>
-                        )}
-                      </td>
-                    );
-                  })}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )
+          )}
+        </>
+      )}
     </div>
   );
 }
