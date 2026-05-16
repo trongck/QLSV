@@ -1,127 +1,77 @@
 import React from "react";
+import { CheckCircle2, XCircle } from "lucide-react";
 
-// Dữ liệu mẫu dựa trên Ảnh 2
-const mockData = [
-  {
-    stt: 1,
-    id: "GT01023",
-    name: "Cờ vua",
-    credits: 1,
-    score10: 6.0,
-    score4: 2.0,
-    letter: "C",
-    passed: true,
-  },
-  {
-    stt: 2,
-    id: "KN01001",
-    name: "Kỹ năng giao tiếp",
-    credits: 2,
-    score10: 7.6,
-    score4: 3.0,
-    letter: "B",
-    passed: true,
-  },
-  {
-    stt: 3,
-    id: "KQ01211",
-    name: "Quản trị học",
-    credits: 3,
-    score10: 7.2,
-    score4: 3.0,
-    letter: "B",
-    passed: true,
-  },
-  {
-    stt: 4,
-    id: "KQ02209",
-    name: "Quản trị doanh nghiệp",
-    credits: 3,
-    score10: 6.6,
-    score4: 2.5,
-    letter: "C+",
-    passed: true,
-  },
-  {
-    stt: 5,
-    id: "MT01008",
-    name: "Sinh thái môi trường",
-    credits: 2,
-    score10: 6.3,
-    score4: 2.0,
-    letter: "C",
-    passed: true,
-  },
-  {
-    stt: 6,
-    id: "TH03115",
-    name: "Phát triển ứng dụng GIS",
-    credits: 3,
-    score10: 7.1,
-    score4: 3.0,
-    letter: "B",
-    passed: true,
-  },
-  {
-    stt: 7,
-    id: "TH03133",
-    name: "Phát triển ứng dụng web",
-    credits: 4,
-    score10: 6.1,
-    score4: 2.0,
-    letter: "C",
-    passed: true,
-  },
-];
+interface GradeRow {
+  stt: number;
+  mamon: string;
+  tenmon: string;
+  sotinchi: number;
+  diem10: number | null;
+  diem4: number | null;
+  diemchu: string | null;
+  dat: boolean;
+}
 
-export default function ResultTable() {
+interface ResultTableProps {
+  data?: GradeRow[];
+}
+
+export default function ResultTable({ data = [] }: ResultTableProps) {
+  if (!data || data.length === 0) {
+    return (
+      <div className="py-20 text-center bg-gray-50 rounded-3xl border-2 border-dashed border-gray-100">
+        <p className="text-gray-400 font-medium italic">Chưa có dữ liệu điểm cho học kỳ này.</p>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full overflow-x-auto">
       <table className="w-full text-sm text-center border-collapse">
-        {/* Tiêu đề bảng */}
-        <thead className="bg-red-50 text-gray-700 font-semibold">
-          <tr>
-            <th className="py-4 px-2 rounded-tl-lg">Stt</th>
-            <th className="py-4 px-2">Mã MH</th>
-            <th className="py-4 px-2 text-left">Tên môn học</th>
-            <th className="py-4 px-2">Tín chỉ</th>
-            <th className="py-4 px-2">Điểm (10)</th>
-            <th className="py-4 px-2">Điểm (4)</th>
-            <th className="py-4 px-2">Điểm chữ</th>
-            <th className="py-4 px-2 rounded-tr-lg">Kết quả</th>
+        <thead>
+          <tr className="text-gray-400 border-b border-gray-100">
+            <th className="py-4 px-2 text-[10px] uppercase font-black tracking-widest text-left pl-6">Mã MH</th>
+            <th className="py-4 px-2 text-[10px] uppercase font-black tracking-widest text-left">Tên môn học</th>
+            <th className="py-4 px-2 text-[10px] uppercase font-black tracking-widest">Tín chỉ</th>
+            <th className="py-4 px-2 text-[10px] uppercase font-black tracking-widest">Điểm (10)</th>
+            <th className="py-4 px-2 text-[10px] uppercase font-black tracking-widest">Điểm (4)</th>
+            <th className="py-4 px-2 text-[10px] uppercase font-black tracking-widest">Điểm chữ</th>
+            <th className="py-4 px-2 text-[10px] uppercase font-black tracking-widest pr-6">Kết quả</th>
           </tr>
         </thead>
 
-        {/* Nội dung bảng */}
         <tbody>
-          {mockData.map((row, index) => (
+          {data.map((row, index) => (
             <tr
               key={index}
-              className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
+              className="group hover:bg-gray-50/50 transition-all border-b border-gray-50 last:border-0"
             >
-              <td className="py-4 px-2 text-gray-400">{row.stt}</td>
-              <td className="py-4 px-2 font-medium">{row.id}</td>
-              <td className="py-4 px-2 text-left">{row.name}</td>
-              <td className="py-4 px-2">{row.credits}</td>
-              <td className="py-4 px-2">{row.score10.toFixed(1)}</td>
-              <td className="py-4 px-2">{row.score4.toFixed(1)}</td>
-              <td className="py-4 px-2 font-medium">{row.letter}</td>
-              <td className="py-4 px-2 flex justify-center">
-                {row.passed && (
-                  /* Icon dấu tick xanh */
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-5 w-5 text-green-500"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                )}
+              <td className="py-5 px-2 text-left pl-6 font-bold text-gray-500 uppercase">{row.mamon}</td>
+              <td className="py-5 px-2 text-left font-black text-gray-900">{row.tenmon}</td>
+              <td className="py-5 px-2 font-bold text-gray-700">{row.sotinchi}</td>
+              <td className="py-5 px-2">
+                <span className={`px-3 py-1 rounded-full font-black text-xs ${row.diem10 !== null ? "bg-gray-100 text-gray-900" : "text-gray-300"}`}>
+                    {row.diem10 !== null ? row.diem10.toFixed(1) : "—"}
+                </span>
+              </td>
+              <td className="py-5 px-2 font-black text-gray-900">{row.diem4 !== null ? row.diem4.toFixed(1) : "—"}</td>
+              <td className="py-5 px-2">
+                <div className={`w-8 h-8 mx-auto flex items-center justify-center rounded-lg font-black text-xs border ${
+                    row.dat ? "bg-green-50 text-green-600 border-green-100" : row.diemchu ? "bg-red-50 text-red-600 border-red-100" : "bg-gray-50 text-gray-300 border-gray-100"
+                }`}>
+                    {row.diemchu ?? "—"}
+                </div>
+              </td>
+              <td className="py-5 px-2 pr-6">
+                <div className="flex justify-center">
+                  {row.dat ? (
+                    <CheckCircle2 className="text-green-500" size={18} />
+                  ) : row.diem10 !== null ? (
+                    <XCircle className="text-red-400" size={18} />
+                  ) : (
+                    <div className="w-4 h-4 rounded-full border-2 border-gray-100" />
+                  )}
+                </div>
               </td>
             </tr>
           ))}

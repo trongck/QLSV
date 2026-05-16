@@ -27,7 +27,7 @@ async function getCurrentStudent(request: NextRequest) {
 export async function GET(request: NextRequest) {
     try {
         const sv = await getCurrentStudent(request);
-        const { data, error } = await scheduleRepo.getHocKyList(sv.malop);
+        const { data, error } = await scheduleRepo.getHocKyList(sv.masv);
         if (error) throw new Error(error.message);
 
         return NextResponse.json({ success: true, data: data ?? [] });

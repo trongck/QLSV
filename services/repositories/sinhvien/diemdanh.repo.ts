@@ -41,6 +41,20 @@ export interface DiemDanhRecord {
     };
 }
 
+export interface AttendanceSubjectStat {
+    maphancong: number;
+    tenmon: string;
+    mamon: string;
+    sotinchi: number;
+    tenhocky: string;
+    total: number;
+    coMat: number;
+    muon: number;
+    vangCoPhep: number;
+    vangKhongPhep: number;
+    records: any[];
+}
+
 const DIEMDANH_SELECT = `
     madiemdanh, masv, mabuoihoc, thoigiandiemdanh, trangthai, phuongthuc, ghichu,
     buoihoc:mabuoihoc (
@@ -74,7 +88,7 @@ export const diemdanhRepo = {
             .from('diemdanh')
             .select(DIEMDANH_SELECT)
             .eq('masv', masv)
-            .order('thoigian', { ascending: false });
+            .order('thoigiandiemdanh', { ascending: false }); // Sửa 'thoigian' thành 'thoigiandiemdanh'
 
         if (options?.limit) {
             query = query.limit(options.limit);
@@ -117,24 +131,12 @@ export const diemdanhRepo = {
             .from('diemdanh')
             .select(DIEMDANH_SELECT)
             .eq('masv', masv)
-            .order('thoigian', { ascending: false });
+            .order('thoigiandiemdanh', { ascending: false }); // Sửa 'thoigian' thành 'thoigiandiemdanh'
 
         if (error) return { data: null, error };
 
         // Nhóm theo môn học
-        const bySubject: Record<string, {
-            maphancong: number;
-            tenmon: string;
-            mamon: string;
-            sotinchi: number;
-            tenhocky: string;
-            total: number;
-            coMat: number;
-            muon: number;
-            vangCoPhep: number;
-            vangKhongPhep: number;
-            records: any[];
-        }> = {};
+        const bySubject: Record<string, AttendanceSubjectStat> = {};
 
         for (const dd of data ?? []) {
             const pc = (dd as any).buoihoc?.lichhoc?.phancong;
@@ -180,7 +182,7 @@ export const diemdanhRepo = {
         const supabase = await getSupabase();
         return await supabase
             .from('diemdanh')
-            .select('madiemdanh, trangthai, thoigian')
+            .select('madiemdanh, trangthai, thoigiandiemdanh') // Sửa 'thoigian' thành 'thoigiandiemdanh'
             .eq('masv', masv)
             .eq('mabuoihoc', mabuoihoc)
             .maybeSingle();
@@ -238,7 +240,7 @@ export const diemdanhRepo = {
     /**
      * Lấy buổi học hôm nay của sinh viên (để hiển thị nút điểm danh)
      */
-    getTodaySessions: async (malop: string) => {
+    getTodaySessions: async (masv: string) => { // Sửa malop thành masv
         const supabase = await getSupabase();
         const today = new Date();
         const yyyy = today.getFullYear();
@@ -250,7 +252,16 @@ export const diemdanhRepo = {
         const dow = today.getDay(); // 0=Sun,1=Mon,...
         const thuTrongTuan = dow === 0 ? 8 : dow + 1;
 
-        // Lấy phân công của lớp trong học kỳ hiệu lực
+        // Lấy danh sách maphancong sinh viên đang học
+        const { data: svMonHocs } = await supabase
+            .from('sinhvienmonhoc')
+            .select('maphancong')
+            .eq('masv', masv);
+        
+        if (!svMonHocs || svMonHocs.length === 0) return { data: [], error: null };
+        const maphancongList = svMonHocs.map(m => m.maphancong);
+
+        // Lấy phân công của SV trong học kỳ hiệu lực
         const { data: phanCongs } = await supabase
             .from('phancong')
             .select(`
@@ -260,7 +271,7 @@ export const diemdanhRepo = {
                 hocky:mahocky ( mahocky, tenhocky, ngaybatdau, ngayketthuc, danghieuluc ),
                 lichhoc ( malichhoc, thutrongtuan, tietbatdau, tietketthuc, maphong )
             `)
-            .eq('malop', malop);
+            .in('maphancong', maphancongList);
 
         if (!phanCongs) return { data: [], error: null };
 
@@ -299,8 +310,17 @@ export const diemdanhRepo = {
     /**
      * Lấy danh sách môn học của SV trong học kỳ (để lọc)
      */
-    getSubjectList: async (malop: string, mahocky?: number) => {
+    getSubjectList: async (masv: string, mahocky?: number) => { // Sửa malop thành masv
         const supabase = await getSupabase();
+
+        // Lấy danh sách maphancong sinh viên đang học
+        const { data: svMonHocs } = await supabase
+            .from('sinhvienmonhoc')
+            .select('maphancong')
+            .eq('masv', masv);
+        
+        if (!svMonHocs || svMonHocs.length === 0) return { data: [], error: null };
+        const maphancongList = svMonHocs.map(m => m.maphancong);
 
         let query = supabase
             .from('phancong')
@@ -309,7 +329,7 @@ export const diemdanhRepo = {
                 monhoc:mamon ( mamon, tenmon, sotinchi ),
                 hocky:mahocky ( mahocky, tenhocky, namhoc, ky, danghieuluc )
             `)
-            .eq('malop', malop);
+            .in('maphancong', maphancongList);
 
         const { data, error } = await query;
 
@@ -323,7 +343,6 @@ export const diemdanhRepo = {
 
     /**
      * Tạo QR token cho buổi học (giáo viên tạo, SV quét)
-     * Token đơn giản: base64(mabuoihoc + timestamp + secret)
      */
     generateQRToken: (mabuoihoc: number): string => {
         const payload = JSON.stringify({

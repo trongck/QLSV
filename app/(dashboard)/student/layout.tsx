@@ -1,8 +1,36 @@
 "use client";
-import { AuthProvider } from "@/context/AuthContext";
-import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
-import styles from "@/components/dashboard/DashboardShell.module.css";
-import { ChatAIWidget } from "@/components/ChatAIWidget"; // Đảm bảo file này tồn tại trong thư mục components
+
+import React, { useEffect, ReactNode } from "react";
+import { AuthProvider, useAuthContext } from "@/context/AuthContext";
+import { useRouter } from "next/navigation";
+import { VaiTro } from "@/types";
+import { Loader2 } from "lucide-react";
+
+function StudentGuard({ children }: { children: ReactNode }) {
+  const { user, loading } = useAuthContext();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!loading) {
+      if (!user) {
+        router.replace("/login");
+      } else if (user.vaitro !== VaiTro.SinhVien) {
+        router.replace("/login");
+      }
+    }
+  }, [user, loading, router]);
+
+  if (loading || !user || user.vaitro !== VaiTro.SinhVien) {
+    return (
+      <div className="fixed inset-0 flex flex-col items-center justify-center bg-[#FAF7F6] z-[9999]">
+        <Loader2 className="animate-spin text-red-500 mb-4" size={40} />
+        <p className="text-gray-400 font-bold tracking-widest uppercase text-xs">Đang xác thực quyền truy cập...</p>
+      </div>
+    );
+  }
+
+  return <>{children}</>;
+}
 
 export default function StudentLayout({
   children,
@@ -11,16 +39,7 @@ export default function StudentLayout({
 }) {
   return (
     <AuthProvider>
-      <div className={styles.shell}>
-        <DashboardSidebar />
-
-        <main className={styles.main}>
-          <div className={styles.content}>{children}</div>
-
-          {/* PHẢI THÊM DÒNG NÀY ĐỂ NÚT CHAT HIỂN THỊ TRÊN MÀN HÌNH */}
-          <ChatAIWidget />
-        </main>
-      </div>
+      <StudentGuard>{children}</StudentGuard>
     </AuthProvider>
   );
 }

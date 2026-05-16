@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { verifyToken, extractBearer } from '@/lib/utils/jwt';
 import { createClient } from '@/lib/utils/supabase/server';
-import { nhatkyService } from '@/services/sinhvien/nhatky.service';
+import { nhatkyService } from '@/services/service/sinhvien/nhatky.service';
 
 async function getCurrentStudent(request: NextRequest) {
     const token = extractBearer(request.headers.get('authorization'));

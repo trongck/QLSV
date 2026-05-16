@@ -35,9 +35,9 @@ export async function GET(request: NextRequest) {
 
         // Lấy song song
         const [todayResult, subjectResult, hockyResult] = await Promise.all([
-            diemdanhRepo.getTodaySessions(sv.malop),
-            diemdanhRepo.getSubjectList(sv.malop),
-            scheduleRepo.getHocKyList(sv.malop),
+            diemdanhRepo.getTodaySessions(sv.masv),
+            diemdanhRepo.getSubjectList(sv.masv),
+            scheduleRepo.getHocKyList(sv.masv),
         ]);
 
         const TIET_TO_TIME: Record<number, string> = {

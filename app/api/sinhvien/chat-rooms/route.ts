@@ -1,17 +1,25 @@
-import { NextResponse } from 'next/server';
+import { NextResponse, NextRequest } from 'next/server';
 import { cookies } from 'next/headers';
 import { createClient } from '@/lib/utils/supabase/server';
+import { verifyToken, extractBearer } from '@/lib/utils/jwt';
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
     try {
-        // 1. Lấy cookie (Thêm await để tương thích Next.js 15)
-        const cookieStore = await cookies();
+        const token = extractBearer(request.headers.get('authorization'));
+        if (!token) return NextResponse.json({ success: false, message: 'Unauthorized' }, { status: 401 });
 
-        // 2. Khởi tạo Supabase client
+        const payload = await verifyToken(token);
+        const cookieStore = await cookies();
         const supabase = createClient(cookieStore);
 
-        // 3. ID Sinh viên đang đăng nhập (Tạm fix cứng để test)
-        const CURRENT_USER_ID = "SV22A005";
+        const { data: sv, error: svError } = await supabase
+            .from('sinhvien')
+            .select('masv')
+            .eq('mataikhoan', payload.mataikhoan)
+            .single();
+
+        if (svError || !sv) throw new Error('Không tìm thấy thông tin sinh viên');
+        const CURRENT_USER_ID = sv.masv;
 
         // 4. LOGIC TRUY VẤN DATABASE THỰC SỰ CHÍNH LÀ ĐOẠN NÀY ĐÂY:
         // BẠN SỬA LẠI ĐOẠN TRUY VẤN NÀY:
@@ -26,7 +34,8 @@ export async function GET(request: Request) {
           thanhvientrochuyen (
             masv, 
             magv,
-            giangvien
+            giangvien:magv ( hoten ),
+            sinhvien:masv ( hoten )
           ) 
         )
       `)

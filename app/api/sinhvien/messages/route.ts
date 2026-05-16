@@ -1,6 +1,6 @@
 // app/api/sinhvien/messages/route.ts
 import { NextResponse } from 'next/server';
-import { messageService } from '@/services/sinhvien/message.service';
+import { messageService } from '@/services/service/sinhvien/message.service';
 
 // Xử lý request lấy tin nhắn
 export async function GET(request: Request) {

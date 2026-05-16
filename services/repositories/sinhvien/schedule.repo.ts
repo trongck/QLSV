@@ -45,9 +45,10 @@ const LICHHOC_SELECT = `
 
 export const scheduleRepo = {
     /**
-     * Lấy lịch học dạng tuần — tất cả lichhoc của lớp trong một học kỳ
+     * Lấy lịch học dạng tuần — tất cả lichhoc của sinh viên trong một học kỳ
+     * Dựa trên bảng sinhvienmonhoc
      */
-    getWeekSchedule: async (malop: string, mahocky?: number) => {
+    getWeekSchedule: async (masv: string, mahocky?: number) => {
         const supabase = await getSupabase();
 
         // Nếu không truyền mahocky → dùng học kỳ đang hiệu lực
@@ -63,17 +64,20 @@ export const scheduleRepo = {
 
         if (!targetMahocky) return { data: null, error: new Error('Không tìm thấy học kỳ hiệu lực') };
 
-        // Lấy danh sách maphancong của lớp trong kỳ
-        const { data: phanCongs, error: pcErr } = await supabase
-            .from('phancong')
-            .select('maphancong')
-            .eq('malop', malop)
-            .eq('mahocky', targetMahocky);
+        // Lấy danh sách maphancong sinh viên đang học trong kỳ
+        const { data: svMonHocs, error: svmhErr } = await supabase
+            .from('sinhvienmonhoc')
+            .select(`
+                maphancong,
+                phancong!inner ( mahocky )
+            `)
+            .eq('masv', masv)
+            .eq('phancong.mahocky', targetMahocky);
 
-        if (pcErr) return { data: null, error: pcErr };
-        if (!phanCongs || phanCongs.length === 0) return { data: [], error: null };
+        if (svmhErr) return { data: null, error: svmhErr };
+        if (!svMonHocs || svMonHocs.length === 0) return { data: [], error: null };
 
-        const maphancongList = phanCongs.map(p => p.maphancong);
+        const maphancongList = svMonHocs.map(m => m.maphancong);
 
         // Lấy lichhoc join phancong, monhoc, giangvien
         const { data, error } = await supabase
@@ -94,8 +98,23 @@ export const scheduleRepo = {
     /**
      * Lấy lịch học dạng học kỳ — tất cả môn học + lịch cố định theo kỳ
      */
-    getSemesterSchedule: async (malop: string, mahocky: number) => {
+    getSemesterSchedule: async (masv: string, mahocky: number) => {
         const supabase = await getSupabase();
+
+        // Lấy danh sách maphancong sinh viên đang học trong kỳ
+        const { data: svMonHocs, error: svmhErr } = await supabase
+            .from('sinhvienmonhoc')
+            .select(`
+                maphancong,
+                phancong!inner ( mahocky )
+            `)
+            .eq('masv', masv)
+            .eq('phancong.mahocky', mahocky);
+
+        if (svmhErr) return { data: null, error: svmhErr };
+        if (!svMonHocs || svMonHocs.length === 0) return { data: [], error: null };
+
+        const maphancongList = svMonHocs.map(m => m.maphancong);
 
         const { data, error } = await supabase
             .from('phancong')
@@ -103,8 +122,7 @@ export const scheduleRepo = {
                 ${PHANCONG_SELECT},
                 lichhoc ( ${LICHHOC_SELECT} )
             `)
-            .eq('malop', malop)
-            .eq('mahocky', mahocky)
+            .in('maphancong', maphancongList)
             .order('maphancong', { ascending: true });
 
         return { data, error };
@@ -113,18 +131,21 @@ export const scheduleRepo = {
     /**
      * Danh sách học kỳ sinh viên có phân công
      */
-    getHocKyList: async (malop: string) => {
+    getHocKyList: async (masv: string) => {
         const supabase = await getSupabase();
 
-        const { data: phanCongs, error: pcErr } = await supabase
-            .from('phancong')
-            .select('mahocky')
-            .eq('malop', malop);
+        const { data: svMonHocs, error: svmhErr } = await supabase
+            .from('sinhvienmonhoc')
+            .select(`
+                maphancong,
+                phancong!inner ( mahocky )
+            `)
+            .eq('masv', masv);
 
-        if (pcErr) return { data: null, error: pcErr };
-        if (!phanCongs || phanCongs.length === 0) return { data: [], error: null };
+        if (svmhErr) return { data: null, error: svmhErr };
+        if (!svMonHocs || svMonHocs.length === 0) return { data: [], error: null };
 
-        const mahockyIds = [...new Set(phanCongs.map(p => p.mahocky))];
+        const mahockyIds = [...new Set(svMonHocs.map(m => (m as any).phancong?.mahocky))].filter(Boolean);
 
         const { data, error } = await supabase
             .from('hocky')

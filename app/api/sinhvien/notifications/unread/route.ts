@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { verifyToken, extractBearer } from '@/lib/utils/jwt';
 import { createClient } from '@/lib/utils/supabase/server';
-import { notificationSVService } from '@/services/sinhvien/notification.service';
+import { notificationSVService } from '@/services/service/sinhvien/notification.service';
 
 // ─── GET /api/sinhvien/notifications/unread ───────────────────────────────────
 // Trả về { count: number } — dùng cho badge thông báo trên layout

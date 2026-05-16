@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { QrCode, ScanFace, X, CheckCircle, AlertCircle, RefreshCw, ChevronDown } from "lucide-react";
+import { apiFetch } from "@/services/service/auth/auth.service";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 interface Subject {
@@ -22,10 +23,7 @@ function useSubjects() {
   useEffect(() => {
     const run = async () => {
       try {
-        const token = localStorage.getItem("access_token");
-        const res = await fetch("/api/sinhvien/attendance/sessions", {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const res = await apiFetch("/api/sinhvien/attendance/sessions");
         const json = await res.json();
         if (json.success) {
           const list: Subject[] = (json.subjects ?? []).map((s: any) => ({
@@ -325,10 +323,8 @@ function FaceModal({
     setMessage("Nhận diện thành công! 🎉");
 
     try {
-      const token = localStorage.getItem("access_token");
-      await fetch("/api/sinhvien/attendance/checkin", {
+      await apiFetch("/api/sinhvien/attendance/checkin", {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ method: "khuon_mat" }),
       });
     } catch { /* silent */ }

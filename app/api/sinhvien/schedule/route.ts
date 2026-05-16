@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
                 return NextResponse.json({ success: false, message: 'Không tìm thấy học kỳ hiệu lực' }, { status: 404 });
             }
 
-            const { data, error } = await scheduleRepo.getSemesterSchedule(sv.malop, targetMahocky);
+            const { data, error } = await scheduleRepo.getSemesterSchedule(sv.masv, targetMahocky);
             if (error) throw new Error(error.message);
 
             // Enrich với timeRange
@@ -68,7 +68,7 @@ export async function GET(request: NextRequest) {
 
         } else {
             // ── Chế độ Tuần ────────────────────────────────────────────────
-            const { data, error } = await scheduleRepo.getWeekSchedule(sv.malop, mahocky);
+            const { data, error } = await scheduleRepo.getWeekSchedule(sv.masv, mahocky);
             if (error) throw new Error(error.message);
 
             // Enrich với timeRange

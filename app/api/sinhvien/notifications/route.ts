@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { verifyToken, extractBearer } from '@/lib/utils/jwt';
-import { notificationSVService } from '@/services/sinhvien/notification.service';
+import { notificationSVService } from '@/services/service/sinhvien/notification.service';
 import { createClient } from '@/lib/utils/supabase/server';
 
 /**
