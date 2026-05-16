@@ -1,337 +1,179 @@
 "use client";
-
 import { useState, useEffect, useCallback } from "react";
-import { ChevronRight, TrendingUp, UserCheck, UserX, Clock, RefreshCw } from "lucide-react";
-import AttendanceActions, {
-  type CurrentSession,
-  type HocKyItem,
-} from "@/components/student/AttendanceActions";
-import AttendanceModal from "@/components/student/AttendanceModal";
-import { apiFetch } from "@/services/service/auth.service";
+import AttendanceActions from "@/components/AttendanceActions";
+import AttendanceLogCard, { type LogEntry, type TrangThai } from "@/components/AttendanceLogCard";
+import { BookOpen, TrendingUp, XCircle, Clock } from "lucide-react";
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+import { StatCard, EmptyState, SectionHeader } from "@/components/student/StudentUI";
+import type {AttendanceHistoryItem, AttendanceStat} from "@/types";
 
-interface AttendanceRecord {
-  madiemdanh: number;
-  mabuoihoc: number;
-  ngayhoc: string;
-  day: string;
-  month: string;
-  tenmon: string;
-  giangvien: string;
-  phonghoc: string;
-  gioVao: string;
-  gioRa: string;
-  thoigiandiemdanh: string | null;
-  trangthai: "Comat" | "Vangmat" | "Dimuon" | "Cophep";
-  ghichu: string | null;
+// ─── Subject Stats Row ─────────────────────────────────────────────────────────
+function SubjectStatsRow({ stat }: { stat: AttendanceStat }) {
+  const attendRate = stat.total > 0 ? Math.round(((stat.coMat + stat.muon) / stat.total) * 100) : 0;
+  const barColor = attendRate >= 80 ? "bg-green-500" : attendRate >= 60 ? "bg-orange-400" : "bg-red-500";
+  return (
+    <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm hover:shadow-md transition">
+      <div className="flex justify-between items-start mb-3">
+        <div>
+          <h4 className="text-sm font-semibold text-gray-900">{stat.tenmon}</h4>
+          <p className="text-xs text-gray-400">{stat.tenhocky}</p>
+        </div>
+        <span className={`text-sm font-bold ${attendRate >= 80 ? "text-green-600" : attendRate >= 60 ? "text-orange-500" : "text-red-600"}`}>
+          {attendRate}%
+        </span>
+      </div>
+      <div className="w-full bg-gray-100 rounded-full h-1.5 mb-3">
+        <div className={`${barColor} h-1.5 rounded-full transition-all`} style={{ width: `${attendRate}%` }} />
+      </div>
+      <div className="grid grid-cols-4 gap-2 text-center text-xs">
+        <div><div className="font-bold text-green-600">{stat.coMat}</div><div className="text-gray-400">Có mặt</div></div>
+        <div><div className="font-bold text-orange-500">{stat.muon}</div><div className="text-gray-400">Muộn</div></div>
+        <div><div className="font-bold text-blue-500">{stat.vangCoPhep}</div><div className="text-gray-400">V.CP</div></div>
+        <div><div className="font-bold text-red-500">{stat.vangKhongPhep}</div><div className="text-gray-400">V.KP</div></div>
+      </div>
+    </div>
+  );
 }
-
-interface AttendanceStats {
-  total: number;
-  comat: number;
-  vangmat: number;
-  dimuon: number;
-  cophep: number;
-  tilechuyencan: number;
-}
-
-interface ApiResponse {
-  hocKyList: HocKyItem[];
-  mahocky: number;
-  hocKy: HocKyItem | null;
-  stats: AttendanceStats;
-  currentSession: CurrentSession | null;
-  history: AttendanceRecord[];
-}
-
-// ─── Status config ────────────────────────────────────────────────────────────
-
-const STATUS_CONFIG: Record<
-  AttendanceRecord["trangthai"],
-  { label: string; bg: string; text: string; dot: string }
-> = {
-  Comat: { label: "Có mặt", bg: "bg-emerald-50", text: "text-emerald-700", dot: "bg-emerald-500" },
-  Dimuon: { label: "Đi muộn", bg: "bg-amber-50", text: "text-amber-700", dot: "bg-amber-500" },
-  Cophep: { label: "Có phép", bg: "bg-blue-50", text: "text-blue-700", dot: "bg-blue-500" },
-  Vangmat: { label: "Vắng", bg: "bg-red-50", text: "text-red-700", dot: "bg-red-500" },
-};
-
-// ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function AttendancePage() {
-  const [data, setData] = useState<ApiResponse | null>(null);
+  const [logs, setLogs] = useState<AttendanceHistoryItem[]>([]);
+  const [stats, setStats] = useState<AttendanceStat[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [mahocky, setMahocky] = useState<number | null>(null);
-  const [filter, setFilter] = useState<"month" | "semester">("semester");
-  const [modalMode, setModalMode] = useState<"qr" | "face" | null>(null);
-  const [noSessionAlert, setNoSessionAlert] = useState(false);
+  const [activeTab, setActiveTab] = useState<"history" | "stats">("history");
+  const [filter, setFilter] = useState<{ type: "month" | "semester"; mahocky?: number; maphancong?: number }>({ type: "month" });
 
-  // ── Fetch dữ liệu từ API ──────────────────────────────────────────────────
-  const fetchData = useCallback(async (selectedMahocky?: number) => {
+  const fetchHistory = useCallback(async (f: typeof filter) => {
     setLoading(true);
-    setError(null);
     try {
-      const params = new URLSearchParams();
-      if (selectedMahocky) params.set("mahocky", String(selectedMahocky));
-
-      const res = await apiFetch(`/api/student/attendance?${params}`);
-
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error ?? "Lỗi tải dữ liệu.");
+      const token = localStorage.getItem("access_token");
+      const now = new Date();
+      const params = new URLSearchParams({ mode: "history", limit: "100" });
+      if (f.type === "month") {
+        params.set("month", String(now.getMonth() + 1));
+        params.set("year", String(now.getFullYear()));
       }
+      if (f.mahocky) params.set("mahocky", String(f.mahocky));
+      if (f.maphancong) params.set("maphancong", String(f.maphancong));
 
-      const json: ApiResponse = await res.json();
-      setData(json);
-      setMahocky(json.mahocky);
-    } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : "Lỗi không xác định.");
-    } finally {
-      setLoading(false);
-    }
+      const res = await fetch(`/api/sinhvien/attendance?${params}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const json = await res.json();
+      if (json.success) setLogs(json.data ?? []);
+    } catch { setLogs([]); }
+    setLoading(false);
+  }, []);
+
+  const fetchStats = useCallback(async () => {
+    try {
+      const token = localStorage.getItem("access_token");
+      const res = await fetch("/api/sinhvien/attendance?mode=stats", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const json = await res.json();
+      if (json.success) setStats(json.data ?? []);
+    } catch { setStats([]); }
   }, []);
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    fetchHistory(filter);
+    fetchStats();
+  }, [fetchHistory, fetchStats]);
 
-  // ── Lọc lịch sử theo tháng hoặc học kỳ ──────────────────────────────────
-  const filteredHistory = (() => {
-    if (!data?.history) return [];
-    if (filter === "semester") return data.history;
-    const now = new Date();
-    return data.history.filter((r) => {
-      const d = new Date(r.ngayhoc);
-      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-    });
-  })();
+  const handleFilterChange = (f: typeof filter) => {
+    setFilter(f);
+    fetchHistory(f);
+  };
 
-  // ── Handlers ──────────────────────────────────────────────────────────────
-  function handleSemesterChange(id: number) {
-    setMahocky(id);
-    fetchData(id);
-  }
+  const handleCheckedIn = () => {
+    fetchHistory(filter);
+    fetchStats();
+  };
 
-  function handleAttendSuccess() {
-    fetchData(mahocky ?? undefined);
-  }
+  // Tổng hợp số liệu
+  const totalCoMat = stats.reduce((s, i) => s + i.coMat, 0);
+  const totalMuon = stats.reduce((s, i) => s + i.muon, 0);
+  const totalVangKP = stats.reduce((s, i) => s + i.vangKhongPhep, 0);
+  const totalBuoi = stats.reduce((s, i) => s + i.total, 0);
 
-  function handleAttend(mode: "qr" | "face") {
-    setModalMode(mode); // Luôn mở modal
-  }
-
-  // ── Loading skeleton ───────────────────────────────────────────────────────
-  if (loading) {
-    return (
-      <div className="flex flex-col gap-8 w-full p-8 min-h-screen bg-gray-50/50">
-        <div className="h-8 w-48 bg-gray-200 rounded-xl animate-pulse" />
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {[...Array(4)].map((_, i) => (
-            <div key={i} className="h-24 bg-gray-200 rounded-2xl animate-pulse" />
-          ))}
-        </div>
-        <div className="flex flex-col gap-4">
-          {[...Array(3)].map((_, i) => (
-            <div key={i} className="h-20 bg-gray-200 rounded-2xl animate-pulse" />
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  // ── Error state ───────────────────────────────────────────────────────────
-  if (error) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
-        <div className="text-5xl">⚠️</div>
-        <p className="text-gray-600 font-medium">{error}</p>
-        <button
-          onClick={() => fetchData()}
-          className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700 transition"
-        >
-          <RefreshCw size={16} /> Thử lại
-        </button>
-      </div>
-    );
-  }
-
-  const stats = data?.stats;
+  // Chuyển history → LogEntry
+  const logEntries: LogEntry[] = logs.map((l) => ({
+    madiemdanh: l.madiemdanh,
+    day: String(l.day),
+    month: String(l.month),
+    subjectName: l.monhoc?.tenmon ?? "Chưa rõ",
+    time: l.timeStr,
+    room: l.phong ?? "",
+    status: l.trangthai as TrangThai,
+    phuongthuc: l.phuongthuc as any,
+    notes: l.ghichu ?? undefined,
+    giangvien: l.giangvien?.hoten,
+  }));
 
   return (
-    <div className="flex flex-col gap-8 w-full p-8 bg-gray-50/50 min-h-screen">
+    <div className="flex flex-col gap-8 w-full p-6 md:p-8 bg-gray-50/50 min-h-screen">
+      {/* Header + Actions */}
+      <AttendanceActions onFilterChange={handleFilterChange} onCheckedIn={handleCheckedIn} />
 
-      {/* No-session alert */}
-      {noSessionAlert && (
-        <div
-          className="fixed top-6 left-1/2 z-50 -translate-x-1/2 flex items-center gap-2.5 bg-gray-900 text-white text-sm font-medium px-5 py-3 rounded-2xl shadow-xl"
-          style={{ animation: "slideDown 0.25s ease" }}
-        >
-          <span>⚠️</span> Không có buổi học nào đang mở điểm danh
+      {/* Thống kê nhanh */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <StatCard icon={<BookOpen size={20} className="text-blue-500" />} label="Tổng buổi" value={totalBuoi} color="border-blue-100" />
+        <StatCard icon={<TrendingUp size={20} className="text-green-500" />} label="Có mặt" value={totalCoMat} color="border-green-100" />
+        <StatCard icon={<Clock size={20} className="text-orange-400" />} label="Đi muộn" value={totalMuon} color="border-orange-100" />
+        <StatCard icon={<XCircle size={20} className="text-red-500" />} label="Vắng KP" value={totalVangKP} color="border-red-100" />
+      </div>
+
+      {/* Tabs */}
+      <div className="flex gap-1 bg-gray-100 p-1 rounded-2xl w-fit">
+        <button onClick={() => setActiveTab("history")} className={`px-5 py-2 rounded-xl text-sm font-semibold transition ${activeTab === "history" ? "bg-white shadow text-gray-900" : "text-gray-500 hover:text-gray-700"}`}>
+          Lịch sử điểm danh
+        </button>
+        <button onClick={() => setActiveTab("stats")} className={`px-5 py-2 rounded-xl text-sm font-semibold transition ${activeTab === "stats" ? "bg-white shadow text-gray-900" : "text-gray-500 hover:text-gray-700"}`}>
+          Thống kê môn học
+        </button>
+      </div>
+
+      {/* Tab Content */}
+      {activeTab === "history" && (
+        <div className="flex flex-col gap-4">
+          <div className="flex justify-between items-center">
+            <h2 className="text-base font-semibold text-gray-800">
+              {filter.type === "month" ? "Tháng này" : "Học kỳ này"} · {logEntries.length} bản ghi
+            </h2>
+          </div>
+          {loading ? (
+            <div className="flex flex-col gap-3">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="h-20 bg-gray-100 rounded-3xl animate-pulse" />
+              ))}
+            </div>
+          ) : logEntries.length === 0 ? (
+            <EmptyState
+              icon={<BookOpen size={32} />}
+              title="Chưa có dữ liệu điểm danh"
+              description="Dữ liệu sẽ xuất hiện sau khi bạn điểm danh"
+            />
+          ) : (
+            logEntries.map((log, i) => <AttendanceLogCard key={log.madiemdanh ?? i} log={log} />)
+          )}
         </div>
       )}
 
-      {/* ── HEADER + ACTIONS ── */}
-      <AttendanceActions
-        hocKyList={data?.hocKyList ?? []}
-        mahocky={mahocky ?? data?.mahocky ?? 0}
-        hocKy={data?.hocKy ?? null}
-        currentSession={data?.currentSession ?? null}
-        filter={filter}
-        onFilterChange={setFilter}
-        onSemesterChange={handleSemesterChange}
-        onAttend={handleAttend}
-      />
-
-      {/* ── STATS CARDS ── */}
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-
-        {/* Tỉ lệ chuyên cần */}
-        <div
-          className="col-span-2 md:col-span-1 p-5 rounded-2xl text-white flex flex-col justify-between"
-          style={{
-            background: "linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)",
-            boxShadow: "0 4px 20px rgba(99,102,241,0.3)",
-          }}
-        >
-          <div className="flex items-center justify-between mb-3">
-            <TrendingUp size={20} className="text-white/80" />
-            <span className="text-xs font-semibold bg-white/20 px-2.5 py-1 rounded-full">Tỉ lệ</span>
-          </div>
-          <div>
-            <p className="text-3xl font-bold">{stats?.tilechuyencan ?? 0}%</p>
-            <p className="text-white/70 text-xs mt-1">Chuyên cần</p>
-          </div>
+      {activeTab === "stats" && (
+        <div className="flex flex-col gap-4">
+          <h2 className="text-base font-semibold text-gray-800">Thống kê theo môn học</h2>
+          {stats.length === 0 ? (
+            <EmptyState
+              icon={<TrendingUp size={32} />}
+              title="Chưa có dữ liệu thống kê"
+            />
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {stats.map((s) => <SubjectStatsRow key={s.maphancong} stat={s} />)}
+            </div>
+          )}
         </div>
-
-        {/* Có mặt */}
-        <div className="p-5 rounded-2xl bg-white border border-gray-100 shadow-sm flex flex-col justify-between">
-          <div className="flex items-center justify-between mb-3">
-            <UserCheck size={18} className="text-emerald-500" />
-            <span className="text-xs font-semibold text-gray-400">Buổi</span>
-          </div>
-          <div>
-            <p className="text-2xl font-bold text-gray-900">
-              {(stats?.comat ?? 0) + (stats?.dimuon ?? 0) + (stats?.cophep ?? 0)}
-            </p>
-            <p className="text-xs text-gray-500 mt-1">Có mặt</p>
-          </div>
-        </div>
-
-        {/* Vắng mặt */}
-        <div className="p-5 rounded-2xl bg-white border border-gray-100 shadow-sm flex flex-col justify-between">
-          <div className="flex items-center justify-between mb-3">
-            <UserX size={18} className="text-red-400" />
-            <span className="text-xs font-semibold text-gray-400">Buổi</span>
-          </div>
-          <div>
-            <p className="text-2xl font-bold text-gray-900">{stats?.vangmat ?? 0}</p>
-            <p className="text-xs text-gray-500 mt-1">Vắng mặt</p>
-          </div>
-        </div>
-
-        {/* Có phép */}
-        <div className="p-5 rounded-2xl bg-white border border-gray-100 shadow-sm flex flex-col justify-between col-span-2 md:col-span-1">
-          <div className="flex items-center justify-between mb-3">
-            <Clock size={18} className="text-blue-400" />
-            <span className="text-xs font-semibold text-gray-400">Buổi</span>
-          </div>
-          <div>
-            <p className="text-2xl font-bold text-gray-900">{stats?.cophep ?? 0}</p>
-            <p className="text-xs text-gray-500 mt-1">Có phép</p>
-          </div>
-        </div>
-      </div>
-
-      {/* ── LỊCH SỬ ĐIỂM DANH ── */}
-      <div className="flex flex-col gap-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-base font-bold text-gray-800">
-            Lịch sử điểm danh
-            {filteredHistory.length > 0 && (
-              <span className="ml-2 text-sm font-normal text-gray-400">
-                ({filteredHistory.length} buổi)
-              </span>
-            )}
-          </h2>
-          <button
-            onClick={() => fetchData(mahocky ?? undefined)}
-            className="flex items-center gap-1.5 text-xs text-gray-400 hover:text-gray-600 transition"
-          >
-            <RefreshCw size={12} /> Làm mới
-          </button>
-        </div>
-
-        {filteredHistory.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 gap-3">
-            <div className="text-5xl">📋</div>
-            <p className="text-gray-500 font-medium">Chưa có lịch sử điểm danh</p>
-            <p className="text-gray-400 text-sm">
-              {filter === "month" ? "Trong tháng này chưa có buổi nào." : "Trong học kỳ này chưa có buổi nào."}
-            </p>
-          </div>
-        ) : (
-          <div className="flex flex-col gap-3">
-            {filteredHistory.map((record) => {
-              const cfg = STATUS_CONFIG[record.trangthai] ?? STATUS_CONFIG.Comat;
-              return (
-                <div
-                  key={record.madiemdanh}
-                  className="bg-white p-5 rounded-2xl border border-gray-100 flex justify-between items-center hover:shadow-md hover:border-gray-200 transition-all group"
-                >
-                  <div className="flex items-center gap-4">
-                    {/* Date badge */}
-                    <div className="bg-gray-50 px-3 py-2.5 rounded-xl text-center border border-gray-100 flex-shrink-0 min-w-[52px]">
-                      <span className="text-lg font-bold text-gray-800 block">{record.day}</span>
-                      <span className="text-[10px] text-gray-400 uppercase font-semibold">{record.month}</span>
-                    </div>
-
-                    {/* Info */}
-                    <div className="min-w-0">
-                      <h3 className="text-sm font-bold text-gray-900 truncate">{record.tenmon}</h3>
-                      <p className="text-xs text-gray-400 mt-0.5 flex flex-wrap gap-3">
-                        <span>⏰ {record.gioVao}–{record.gioRa}</span>
-                        <span>📍 {record.phonghoc}</span>
-                        {record.giangvien && <span>👤 {record.giangvien}</span>}
-                      </p>
-                      {record.ghichu && (
-                        <p className="text-[11px] text-gray-400 mt-0.5 italic">{record.ghichu}</p>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-3 flex-shrink-0">
-                    {/* Status badge */}
-                    <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold ${cfg.bg} ${cfg.text}`}>
-                      <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
-                      {cfg.label}
-                    </div>
-                    <ChevronRight size={16} className="text-gray-300 group-hover:text-gray-400 transition" />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
-
-      {/* ── MODAL ĐIỂM DANH ── */}
-      {modalMode && (
-        <AttendanceModal
-          mode={modalMode}
-          session={data?.currentSession ?? null}
-          onClose={() => setModalMode(null)}
-          onSuccess={handleAttendSuccess}
-        />
       )}
-
-      <style>{`
-        @keyframes slideDown {
-          from { opacity: 0; transform: translate(-50%, -10px); }
-          to   { opacity: 1; transform: translate(-50%, 0); }
-        }
-      `}</style>
     </div>
   );
 }

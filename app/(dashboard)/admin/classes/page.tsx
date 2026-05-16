@@ -23,7 +23,7 @@ import {
   deleteLop,
   type KhoaRow,
   type LopRow,
-} from "@/services/service/admin.service";
+} from "@/services/admin.service";
 import { VaiTro } from "@/types";
 import styles from "./classes.module.css";
 import {
@@ -155,8 +155,8 @@ function LopForm({
 
   const set =
     (k: string) =>
-      (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
-        setForm((f) => ({ ...f, [k]: e.target.value }));
+    (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
+      setForm((f) => ({ ...f, [k]: e.target.value }));
 
   return (
     <>

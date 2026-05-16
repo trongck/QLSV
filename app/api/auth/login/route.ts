@@ -3,8 +3,7 @@ import { cookies } from "next/headers";
 import { createClient } from "@/lib/utils/supabase/server";
 import { signAccessToken, signRefreshToken, refreshTokenExpiresAt } from "@/lib/utils/jwt";
 import { VaiTro } from "@/types";
-import type { UserProfile } from "@/services/service/auth.service";
-import { logAuditAction } from "@/lib/utils/audit";
+import type { UserProfile } from "@/models";
 
 // ─── POST /api/auth/login ─────────────────────────────────────────────────────
 
@@ -101,19 +100,11 @@ export async function POST(request: Request) {
       thoigianhethan: refreshTokenExpiresAt().toISOString(),
     });
 
+    // 7. Cập nhật dangnhaplancuoi
     await supabase
       .from("taikhoan")
       .update({ dangnhaplancuoi: new Date().toISOString() })
       .eq("mataikhoan", taikhoan.mataikhoan);
-
-    await logAuditAction({
-      supabase,
-      mataikhoan: taikhoan.mataikhoan,
-      hanhdong: "LOGIN",
-      tentable: "taikhoan",
-      makhoachinh: taikhoan.mataikhoan,
-      request,
-    });
 
     return NextResponse.json({ accessToken, refreshToken, user: userProfile });
   } catch (error: unknown) {

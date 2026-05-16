@@ -105,6 +105,7 @@ export function DashboardSidebar() {
                   ? "active"
                   : ""
               }`}
+
             >
               <span className={styles.navIcon} aria-hidden></span>
 

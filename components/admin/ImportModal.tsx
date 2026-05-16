@@ -209,8 +209,9 @@ export default function ImportModal({ onClose, onSuccess }: Props) {
     filterMode === "error"
       ? rows.filter((r) => !r.valid)
       : filterMode === "valid"
-        ? rows.filter((r) => r.valid)
-        : rows;
+      ? rows.filter((r) => r.valid)
+      : rows;
+
 
   // ── Render ──────────────────────────────────────────────────────────────────
 

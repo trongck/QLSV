@@ -3,7 +3,6 @@ import { cookies } from "next/headers";
 import { createClient } from "@/lib/utils/supabase/server";
 import { verifyToken, extractBearer } from "@/lib/utils/jwt";
 import { VaiTro } from "@/types";
-import { logAuditAction } from "@/lib/utils/audit";
 
 async function requireAdmin(request: Request) {
   const token = extractBearer(request.headers.get("authorization"));
@@ -16,8 +15,7 @@ async function requireAdmin(request: Request) {
 
 // ─── PUT /api/admin/lichhoc/[malichhoc] ──────────────────────────────────────
 export async function PUT(request: Request, { params }: { params: Promise<{ malichhoc: string }> }) {
-  const adminPayload = await requireAdmin(request);
-  if (!adminPayload)
+  if (!(await requireAdmin(request)))
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   try {
@@ -133,17 +131,6 @@ export async function PUT(request: Request, { params }: { params: Promise<{ mali
       .single();
 
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
-
-    await logAuditAction({
-      supabase,
-      mataikhoan: adminPayload.mataikhoan,
-      hanhdong: "UPDATE",
-      tentable: "lichhoc",
-      makhoachinh: String(scheduleId),
-      giatrimoi: data,
-      request,
-    });
-
     return NextResponse.json({ success: true, data });
   } catch (err: any) {
     return NextResponse.json({ error: err.message || "Internal Server Error" }, { status: 500 });
@@ -152,8 +139,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ mali
 
 // ─── DELETE /api/admin/lichhoc/[malichhoc] ───────────────────────────────────
 export async function DELETE(request: Request, { params }: { params: Promise<{ malichhoc: string }> }) {
-  const adminPayload = await requireAdmin(request);
-  if (!adminPayload)
+  if (!(await requireAdmin(request)))
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   try {
@@ -178,16 +164,6 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ m
       .eq("malichhoc", parseInt(malichhoc));
 
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
-
-    await logAuditAction({
-      supabase,
-      mataikhoan: adminPayload.mataikhoan,
-      hanhdong: "DELETE",
-      tentable: "lichhoc",
-      makhoachinh: malichhoc,
-      request,
-    });
-
     return NextResponse.json({ success: true });
   } catch (err: any) {
     return NextResponse.json({ error: err.message || "Internal Server Error" }, { status: 500 });

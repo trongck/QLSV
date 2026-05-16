@@ -27,7 +27,7 @@ import {
   type MonhocRow,
   type LopRow,
   type HockyRow,
-} from "@/services/service/admin.service";
+} from "@/services/admin.service";
 import { VaiTro } from "@/types";
 import styles from "./assignment.module.css";
 
@@ -81,7 +81,7 @@ function AssignmentForm({
     if (!form.mamon) return setLocalErr("Vui lòng chọn môn học.");
     if (!form.malop) return setLocalErr("Vui lòng chọn lớp hành chính.");
     if (!form.mahocky) return setLocalErr("Vui lòng chọn học kỳ.");
-
+    
     if (form.sisomax) {
       const size = parseInt(form.sisomax);
       if (isNaN(size) || size <= 0) {
@@ -189,7 +189,7 @@ function AssignmentForm({
               alignItems: "center",
               gap: "8px",
               cursor: "pointer",
-
+              
             }}
           >
             <input
@@ -230,7 +230,7 @@ export default function AdminAssignmentsPage() {
   const [monhocs, setMonhocs] = useState<MonhocRow[]>([]);
   const [lops, setLops] = useState<LopRow[]>([]);
   const [hockys, setHockys] = useState<HockyRow[]>([]);
-
+  
   // Schedules mapping for "No Schedule Assigned" detection
   const [assignedPhanCongIds, setAssignedPhanCongIds] = useState<Set<number>>(new Set());
 
@@ -258,29 +258,29 @@ export default function AdminAssignmentsPage() {
     if (!authLoading && (!user || user.vaitro !== VaiTro.Admin)) {
       router.replace("/login");
     }
-
+    
     if (user && user.vaitro === VaiTro.Admin) {
       // Load form lookups
       getGiangVien({ limit: 100 })
         .then((res) => setGiangviens(res.data))
-        .catch(() => { });
+        .catch(() => {});
       getMonhoc({ limit: 100 })
         .then((res) => setMonhocs(res.data))
-        .catch(() => { });
+        .catch(() => {});
       getLop({ limit: 100 })
         .then((res) => setLops(res.data))
-        .catch(() => { });
+        .catch(() => {});
       getHocky()
         .then((res) => setHockys(res.data))
-        .catch(() => { });
-
+        .catch(() => {});
+      
       // Load all schedules to identify which phancong have schedules configured
       getLichHoc({ limit: 100 })
         .then((res) => {
           const ids = new Set(res.data.map((item) => item.maphancong));
           setAssignedPhanCongIds(ids);
         })
-        .catch(() => { });
+        .catch(() => {});
     }
   }, [user, authLoading, router]);
 
@@ -297,13 +297,13 @@ export default function AdminAssignmentsPage() {
         page,
         limit: 10,
       });
-
+      
       // Apply offline filter for "No Schedule" if selected
       let filteredData = res.data;
       if (filterNoSchedule === "no_schedule") {
         filteredData = res.data.filter((pc) => !assignedPhanCongIds.has(pc.maphancong));
       }
-
+      
       setList(filteredData);
       setTotal(res.pagination.total);
     } catch {
@@ -589,7 +589,7 @@ export default function AdminAssignmentsPage() {
                                   <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
                                 </svg>
                               </button>
-
+                              
                               {/* Direct shortcut to schedules page with filter for this maphancong */}
                               <button
                                 className={styles.iconBtn}
@@ -641,7 +641,7 @@ export default function AdminAssignmentsPage() {
                           <span className={`${styles.badge} ${styles.inactiveBadge}`}>Chưa xếp lịch</span>
                         )}
                       </div>
-
+                      
                       <div className={styles.mobileCardInfo}>
                         <div><strong>Giảng viên:</strong> {pc.giangvien?.hoten} ({pc.magv})</div>
                         <div><strong>Môn học:</strong> {pc.monhoc?.tenmon}</div>
@@ -665,7 +665,7 @@ export default function AdminAssignmentsPage() {
                               <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
                             </svg>
                           </button>
-
+                          
                           <button
                             className={styles.iconBtn}
                             onClick={() => router.push(`/admin/schedules?maphancong=${pc.maphancong}`)}

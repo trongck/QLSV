@@ -2,7 +2,7 @@
 import { AuthProvider } from "@/context/AuthContext";
 import { DashboardSidebar } from "@/components/dashboard/DashboardSidebar";
 import styles from "@/components/dashboard/DashboardShell.module.css";
-import { ChatAIWidget } from "@/components/student/ChatAIWidget"; // Đảm bảo file này tồn tại trong thư mục components
+import { ChatAIWidget } from "@/components/ChatAIWidget"; // Đảm bảo file này tồn tại trong thư mục components
 
 export default function StudentLayout({
   children,

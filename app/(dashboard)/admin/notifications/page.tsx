@@ -22,7 +22,7 @@ import {
   type ThongbaoRow,
   type LopRow,
   type PhanCongRow,
-} from "@/services/service/admin.service";
+} from "@/services/admin.service";
 import { VaiTro } from "@/types";
 import styles from "./notification.module.css";
 
@@ -126,7 +126,7 @@ function NotificationForm({
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
+    
     if (!file.type.startsWith("image/")) {
       alert("Vui lòng chọn tệp hình ảnh hợp lệ (PNG, JPG, WEBP, GIF,...)");
       return;
@@ -235,7 +235,7 @@ function NotificationForm({
             ))}
           </select>
         </div>
-
+        
         {/* Hình ảnh đính kèm */}
         <div className="field full" style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
           <label style={{ fontWeight: 600, color: "#2D1B14" }}>Hình ảnh đính kèm (Tuỳ chọn)</label>
@@ -259,7 +259,7 @@ function NotificationForm({
           </div>
 
           {imageMode === "upload" ? (
-            <div
+            <div 
               style={{
                 border: "2px dashed #FFDBB6",
                 borderRadius: "12px",
@@ -302,10 +302,10 @@ function NotificationForm({
             <div style={{ marginTop: "8px", background: "#FFFBF2", padding: "12px", borderRadius: "10px", border: "1px solid #FFDBB6", display: "flex", gap: "16px", alignItems: "center" }}>
               <div style={{ flex: 1 }}>
                 <span style={{ fontSize: "11px", color: "#8B6F5F", fontWeight: 600, display: "block", marginBottom: "4px" }}>Xem trước ảnh đính kèm:</span>
-                <img
-                  src={form.imageUrl.trim()}
-                  alt="Xem trước ảnh đính kèm"
-                  style={{ display: "block", maxHeight: "120px", borderRadius: "8px", border: "1px solid #FFDBB6", objectFit: "cover" }}
+                <img 
+                  src={form.imageUrl.trim()} 
+                  alt="Xem trước ảnh đính kèm" 
+                  style={{ display: "block", maxHeight: "120px", borderRadius: "8px", border: "1px solid #FFDBB6", objectFit: "cover" }} 
                   onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
                 />
               </div>
@@ -432,10 +432,10 @@ export default function AdminNotificationsPage() {
       loadData();
       getLop({ limit: 100 })
         .then((res) => setLops(res.data))
-        .catch(() => { });
+        .catch(() => {});
       getPhanCong(100)
         .then((data) => setPhancongs(data))
-        .catch(() => { });
+        .catch(() => {});
     }
   }, [user, authLoading, router, loadData]);
 
@@ -794,7 +794,7 @@ export default function AdminNotificationsPage() {
                   </span>
                 </div>
               </div>
-
+              
               <h2 style={{ fontSize: "18px", fontWeight: 700, color: "#2D1B14", margin: 0, lineHeight: 1.4 }}>
                 {modal.item.tieude}
               </h2>
@@ -804,21 +804,21 @@ export default function AdminNotificationsPage() {
                   <img src={parsed.imageUrl} alt={modal.item.tieude} className={styles.attachedImage} />
                 </div>
               )}
-
-              <div style={{
-                background: "#FFF0CD",
-                padding: "8px 12px",
-                borderRadius: "8px",
-                fontSize: "13px",
+              
+              <div style={{ 
+                background: "#FFF0CD", 
+                padding: "8px 12px", 
+                borderRadius: "8px", 
+                fontSize: "13px", 
                 color: "#5D4037",
                 border: "1px solid #FFDBB6"
               }}>
                 <strong>Đối tượng nhận:</strong> {
                   modal.item.doituong === "Tatca" ? "Tất cả mọi người" :
-                    modal.item.doituong === "GiangVien" ? "Toàn bộ giảng viên" :
-                      modal.item.doituong === "SinhVien" ? "Toàn bộ sinh viên" :
-                        modal.item.doituong === "Lop" ? `Lớp hành chính: ${modal.item.malop}` :
-                          `Lớp học phần: ${modal.item.maphancong}`
+                  modal.item.doituong === "GiangVien" ? "Toàn bộ giảng viên" :
+                  modal.item.doituong === "SinhVien" ? "Toàn bộ sinh viên" :
+                  modal.item.doituong === "Lop" ? `Lớp hành chính: ${modal.item.malop}` :
+                  `Lớp học phần: ${modal.item.maphancong}`
                 }
                 {modal.item.ngayhethan && (
                   <span style={{ marginLeft: "12px" }}>
@@ -830,13 +830,13 @@ export default function AdminNotificationsPage() {
                 )}
               </div>
 
-              <div style={{
-                fontSize: "14px",
-                color: "#2D1B14",
-                lineHeight: "1.6",
-                whiteSpace: "pre-wrap",
-                background: "#FEFAE3",
-                padding: "16px 20px",
+              <div style={{ 
+                fontSize: "14px", 
+                color: "#2D1B14", 
+                lineHeight: "1.6", 
+                whiteSpace: "pre-wrap", 
+                background: "#FEFAE3", 
+                padding: "16px 20px", 
                 borderRadius: "12px",
                 border: "1.5px solid #FFDBB6",
                 maxHeight: "40vh",

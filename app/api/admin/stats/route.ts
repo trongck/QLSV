@@ -3,7 +3,6 @@ import { cookies } from "next/headers";
 import { createClient } from "@/lib/utils/supabase/server";
 import { verifyToken, extractBearer } from "@/lib/utils/jwt";
 import { VaiTro } from "@/types";
-import { logAuditAction } from "@/lib/utils/audit";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -94,13 +93,12 @@ export async function GET(request: Request) {
         }
 
         // Ghi nhật ký hệ thống: xem sinh viên
-        await logAuditAction({
-          supabase,
+        await supabase.from("nhatkyhethong").insert({
           mataikhoan: payload.mataikhoan,
           hanhdong: `Xem chi tiết sinh viên: ${sv.hoten} (${detailId})`,
           tentable: "sinhvien",
           makhoachinh: detailId,
-          request,
+          diachiip: ip
         });
 
         return NextResponse.json({ success: true, data: sv });
@@ -133,13 +131,12 @@ export async function GET(request: Request) {
         }
 
         // Ghi nhật ký hệ thống: xem giảng viên
-        await logAuditAction({
-          supabase,
+        await supabase.from("nhatkyhethong").insert({
           mataikhoan: payload.mataikhoan,
           hanhdong: `Xem chi tiết giảng viên: ${gv.hoten} (${detailId})`,
           tentable: "giangvien",
           makhoachinh: detailId,
-          request,
+          diachiip: ip
         });
 
         return NextResponse.json({ success: true, data: gv });
@@ -179,11 +176,10 @@ export async function GET(request: Request) {
       ]);
 
       // Ghi nhật ký hệ thống: Tìm kiếm toàn cầu
-      await logAuditAction({
-        supabase,
+      await supabase.from("nhatkyhethong").insert({
         mataikhoan: payload.mataikhoan,
         hanhdong: `Tìm kiếm hệ thống: "${search}"`,
-        request,
+        diachiip: ip
       });
 
       return NextResponse.json({

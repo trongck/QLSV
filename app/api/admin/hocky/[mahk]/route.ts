@@ -3,7 +3,6 @@ import { cookies } from "next/headers";
 import { createClient } from "@/lib/utils/supabase/server";
 import { verifyToken, extractBearer } from "@/lib/utils/jwt";
 import { VaiTro } from "@/types";
-import { logAuditAction } from "@/lib/utils/audit";
 
 async function requireAdmin(request: Request) {
   const token = extractBearer(request.headers.get("authorization"));
@@ -17,8 +16,7 @@ async function requireAdmin(request: Request) {
 }
 
 export async function PUT(request: Request, { params }: { params: Promise<{ mahk: string }> }) {
-  const adminPayload = await requireAdmin(request);
-  if (!adminPayload) {
+  if (!(await requireAdmin(request))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -48,23 +46,11 @@ export async function PUT(request: Request, { params }: { params: Promise<{ mahk
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-
-  await logAuditAction({
-    supabase,
-    mataikhoan: adminPayload.mataikhoan,
-    hanhdong: "UPDATE",
-    tentable: "hocky",
-    makhoachinh: String(id),
-    giatrimoi: data,
-    request,
-  });
-
   return NextResponse.json({ data });
 }
 
 export async function DELETE(request: Request, { params }: { params: Promise<{ mahk: string }> }) {
-  const adminPayload = await requireAdmin(request);
-  if (!adminPayload) {
+  if (!(await requireAdmin(request))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -84,22 +70,11 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ m
 
   const { error } = await supabase.from("hocky").delete().eq("mahocky", id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-
-  await logAuditAction({
-    supabase,
-    mataikhoan: adminPayload.mataikhoan,
-    hanhdong: "DELETE",
-    tentable: "hocky",
-    makhoachinh: String(id),
-    request,
-  });
-
   return NextResponse.json({ success: true });
 }
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ mahk: string }> }) {
-  const adminPayload = await requireAdmin(request);
-  if (!adminPayload) {
+  if (!(await requireAdmin(request))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -118,16 +93,5 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ ma
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-
-  await logAuditAction({
-    supabase,
-    mataikhoan: adminPayload.mataikhoan,
-    hanhdong: "PATCH",
-    tentable: "hocky",
-    makhoachinh: String(id),
-    giatrimoi: { danghieuluc: true },
-    request,
-  });
-
   return NextResponse.json({ data });
 }

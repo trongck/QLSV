@@ -3,7 +3,6 @@ import { cookies } from "next/headers";
 import { createClient } from "@/lib/utils/supabase/server";
 import fs from "fs";
 import path from "path";
-import { logAuditAction } from "@/lib/utils/audit";
 
 // ─── Ghi nhật ký (Log) hoạt động ──────────────────────────────────────────────
 function writeResetLog(id: string, type: string, email: string, name: string) {
@@ -200,13 +199,15 @@ export async function POST(request: Request) {
     writeResetLog(id.trim(), type, email.trim().toLowerCase(), hoten);
 
     // Ghi nhật ký vào database nhatkyhethong theo đúng cấu trúc yêu cầu
-    await logAuditAction({
-      supabase,
-      mataikhoan: id.trim(),
+    const ip = request.headers.get("x-forwarded-for")?.split(",")[0] || request.headers.get("x-real-ip") || "127.0.0.1";
+    await supabase.from("nhatkyhethong").insert({
+      mataikhoan: id.trim(), // mã sinh viên, giảng viên
       hanhdong: "Yêu cầu thay đổi mật khẩu",
       tentable: "taikhoan",
-      makhoachinh: id.trim(),
-      request,
+      makhoachinh: id.trim(), // (magv,sv)
+      giatricu: null,
+      giatrimoi: null,
+      diachiip: ip
     });
 
     // 8. Gửi email trực tiếp từ Server-side bằng EmailJS

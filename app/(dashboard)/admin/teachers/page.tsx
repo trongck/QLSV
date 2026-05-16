@@ -31,7 +31,7 @@ import {
   type MonhocRow,
   type LopRow,
   type PhanCongRow,
-} from "@/services/service/admin.service";
+} from "@/services/admin.service";
 import { VaiTro } from "@/types";
 import styles from "./teachers.module.css";
 
@@ -73,8 +73,8 @@ function CreateForm({
 
   const set =
     (k: string) =>
-      (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
-        setForm((f) => ({ ...f, [k]: e.target.value }));
+    (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
+      setForm((f) => ({ ...f, [k]: e.target.value }));
 
   return (
     <>
@@ -212,8 +212,8 @@ function EditForm({
 
   const set =
     (k: string) =>
-      (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
-        setForm((f) => ({ ...f, [k]: e.target.value }));
+    (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
+      setForm((f) => ({ ...f, [k]: e.target.value }));
 
   return (
     <>
@@ -383,7 +383,7 @@ function TeacherDetailModal({
         if (active) setSelectedSem(String(active.mahocky));
         else if (res.data.length > 0) setSelectedSem(String(res.data[0].mahocky));
       })
-      .catch(() => { });
+      .catch(() => {});
   }, []);
 
   // Load assignments when selectedSem or activeTab changes
@@ -414,10 +414,10 @@ function TeacherDetailModal({
     if (showQuickForm) {
       getMonhoc({ limit: 100 })
         .then((res) => setSubjects(res.data))
-        .catch(() => { });
+        .catch(() => {});
       getLop({ limit: 100 })
         .then((res) => setClasses(res.data))
-        .catch(() => { });
+        .catch(() => {});
     }
   }, [showQuickForm]);
 
@@ -528,13 +528,13 @@ function TeacherDetailModal({
           className={`${styles.tabBtn} ${activeTab === "profile" ? styles.tabBtnActive : ""}`}
           onClick={() => setActiveTab("profile")}
         >
-          Thông tin cá nhân & Công tác
+           Thông tin cá nhân & Công tác
         </button>
         <button
           className={`${styles.tabBtn} ${activeTab === "schedule" ? styles.tabBtnActive : ""}`}
           onClick={() => setActiveTab("schedule")}
         >
-          Phân công giảng dạy & Lịch dạy
+           Phân công giảng dạy & Lịch dạy
         </button>
       </div>
 
@@ -727,7 +727,7 @@ function TeacherDetailModal({
             <div className={styles.quickFormCard}>
               <h4 className={styles.quickFormTitle}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <path d="M12 5v14M5 12h14" />
+                  <path d="M12 5v14M5 12h14"/>
                 </svg>
                 Phân công môn dạy & lớp dạy mới
               </h4>
@@ -886,7 +886,7 @@ export default function AdminTeachersPage() {
     if (user)
       getKhoa()
         .then(setKhoas)
-        .catch(() => { });
+        .catch(() => {});
   }, [user]);
 
   const loadGV = useCallback(async () => {
@@ -915,26 +915,26 @@ export default function AdminTeachersPage() {
   if (loading || !user) return null;
 
   async function handleSubmit(form: Record<string, unknown>) {
-    // ── Validate theo mode ──
-    const isEdit = modal?.mode === "edit";
-    const errors = isEdit
-      ? validateGiangVienUpdate(form)
-      : validateGiangVienCreate(form);
-    if (errors.length) { setMutError(firstError(errors)); return; }
+  // ── Validate theo mode ──
+  const isEdit = modal?.mode === "edit";
+  const errors = isEdit
+    ? validateGiangVienUpdate(form)
+    : validateGiangVienCreate(form);
+  if (errors.length) { setMutError(firstError(errors)); return; }
 
-    setMutating(true); setMutError("");
-    try {
-      if (isEdit && modal.item) {
-        await updateGiangVien(modal.item.magv, form);
-      } else {
-        await createGiangVien(form);
-      }
-      setModal(null);
-      await loadGV();
-    } catch (e) {
-      setMutError(e instanceof Error ? e.message : "Lỗi không xác định.");
-    } finally { setMutating(false); }
-  }
+  setMutating(true); setMutError("");
+  try {
+    if (isEdit && modal.item) {
+      await updateGiangVien(modal.item.magv, form);
+    } else {
+      await createGiangVien(form);
+    }
+    setModal(null);
+    await loadGV();
+  } catch (e) {
+    setMutError(e instanceof Error ? e.message : "Lỗi không xác định.");
+  } finally { setMutating(false); }
+}
 
   async function handleDelete() {
     if (!modal?.item) return;

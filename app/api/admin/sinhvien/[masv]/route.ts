@@ -3,7 +3,6 @@ import { cookies } from "next/headers";
 import { createClient } from "@/lib/utils/supabase/server";
 import { verifyToken, extractBearer } from "@/lib/utils/jwt";
 import { VaiTro } from "@/types";
-import { logAuditAction } from "@/lib/utils/audit";
 
 async function requireAdmin(request: Request) {
   const token = extractBearer(request.headers.get("authorization"));
@@ -37,8 +36,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ masv
 // ─── PUT /api/admin/sinhvien/[masv] ────────────────────────────────────────────
 
 export async function PUT(request: Request, { params }: { params: Promise<{ masv: string }> }) {
-  const adminPayload = await requireAdmin(request);
-  if (!adminPayload)
+  if (!(await requireAdmin(request)))
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { masv } = await params;
@@ -70,24 +68,13 @@ export async function PUT(request: Request, { params }: { params: Promise<{ masv
     await supabase.from("chitietsinhvien").upsert({ masv: masv, ...chiTiet });
   }
 
-  await logAuditAction({
-    supabase,
-    mataikhoan: adminPayload.mataikhoan,
-    hanhdong: "UPDATE",
-    tentable: "sinhvien",
-    makhoachinh: masv,
-    giatrimoi: { ...update, chiTiet },
-    request,
-  });
-
   return NextResponse.json({ success: true, data });
 }
 
 // ─── DELETE /api/admin/sinhvien/[masv] ─────────────────────────────────────────
 
 export async function DELETE(request: Request, { params }: { params: Promise<{ masv: string }> }) {
-  const adminPayload = await requireAdmin(request);
-  if (!adminPayload)
+  if (!(await requireAdmin(request)))
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { masv } = await params;
@@ -104,15 +91,6 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ m
   if (sv?.mataikhoan) {
     await supabase.from("taikhoan").delete().eq("mataikhoan", sv.mataikhoan);
   }
-
-  await logAuditAction({
-    supabase,
-    mataikhoan: adminPayload.mataikhoan,
-    hanhdong: "DELETE",
-    tentable: "sinhvien",
-    makhoachinh: masv,
-    request,
-  });
 
   return NextResponse.json({ success: true });
 }

@@ -3,7 +3,6 @@ import { cookies } from "next/headers";
 import { createClient } from "@/lib/utils/supabase/server";
 import { verifyToken, extractBearer } from "@/lib/utils/jwt";
 import { VaiTro } from "@/types";
-import { logAuditAction } from "@/lib/utils/audit";
 
 async function requireAdmin(request: Request) {
   const token = extractBearer(request.headers.get("authorization"));
@@ -43,8 +42,7 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const adminPayload = await requireAdmin(request);
-  if (!adminPayload) {
+  if (!(await requireAdmin(request))) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -71,16 +69,5 @@ export async function POST(request: Request) {
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-
-  await logAuditAction({
-    supabase,
-    mataikhoan: adminPayload.mataikhoan,
-    hanhdong: "INSERT",
-    tentable: "hocky",
-    makhoachinh: String(data.mahocky),
-    giatrimoi: data,
-    request,
-  });
-
   return NextResponse.json({ data }, { status: 201 });
 }

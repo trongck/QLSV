@@ -1,3 +1,4 @@
+
 /**
  * services/service/notification.service.ts
  * UI helpers cho trang Thông báo sinh viên.
@@ -52,3 +53,4 @@ export function formatNotifDate(iso: string): string {
   if (diffD < 7)    return `${diffD} ngày trước`;
   return d.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" });
 }
+

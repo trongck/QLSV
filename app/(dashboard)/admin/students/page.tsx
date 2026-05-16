@@ -22,7 +22,7 @@ import {
   type SinhVienRow,
   type KhoaRow,
   type LopRow,
-} from "@/services/service/admin.service";
+} from "@/services/admin.service";
 import { VaiTro, TrangThaiSinhVien } from "@/types";
 import styles from "./students.module.css";
 import {
@@ -75,8 +75,8 @@ function CreateForm({
 
   const set =
     (k: string) =>
-      (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
-        setForm((f) => ({ ...f, [k]: e.target.value }));
+    (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
+      setForm((f) => ({ ...f, [k]: e.target.value }));
 
   return (
     <>
@@ -194,8 +194,8 @@ function EditForm({
 
   const set =
     (k: string) =>
-      (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
-        setForm((f) => ({ ...f, [k]: e.target.value }));
+    (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) =>
+      setForm((f) => ({ ...f, [k]: e.target.value }));
 
   return (
     <>
@@ -299,10 +299,10 @@ export default function AdminStudentsPage() {
     if (!user) return;
     getKhoa()
       .then(setKhoas)
-      .catch(() => { });
+      .catch(() => {});
     getLop({ limit: 100 })
       .then((r) => setLops(r.data))
-      .catch(() => { });
+      .catch(() => {});
   }, [user]);
 
   const loadSV = useCallback(async () => {

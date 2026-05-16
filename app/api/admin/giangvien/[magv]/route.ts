@@ -3,7 +3,6 @@ import { cookies } from "next/headers";
 import { createClient } from "@/lib/utils/supabase/server";
 import { verifyToken, extractBearer } from "@/lib/utils/jwt";
 import { VaiTro } from "@/types";
-import { logAuditAction } from "@/lib/utils/audit";
 
 async function requireAdmin(request: Request) {
   const token = extractBearer(request.headers.get("authorization"));
@@ -33,8 +32,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ magv
 }
 
 export async function PUT(request: Request, { params }: { params: Promise<{ magv: string }> }) {
-  const adminPayload = await requireAdmin(request);
-  if (!adminPayload)
+  if (!(await requireAdmin(request)))
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { magv } = await params;
@@ -66,22 +64,11 @@ export async function PUT(request: Request, { params }: { params: Promise<{ magv
     await supabase.from("chitietgiangvien").upsert({ magv: magv, ...chiTiet });
   }
 
-  await logAuditAction({
-    supabase,
-    mataikhoan: adminPayload.mataikhoan,
-    hanhdong: "UPDATE",
-    tentable: "giangvien",
-    makhoachinh: magv,
-    giatrimoi: { ...update, chiTiet },
-    request,
-  });
-
   return NextResponse.json({ success: true, data });
 }
 
 export async function DELETE(request: Request, { params }: { params: Promise<{ magv: string }> }) {
-  const adminPayload = await requireAdmin(request);
-  if (!adminPayload)
+  if (!(await requireAdmin(request)))
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { magv } = await params;
@@ -96,15 +83,6 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ m
   if (gv?.mataikhoan) {
     await supabase.from("taikhoan").delete().eq("mataikhoan", gv.mataikhoan);
   }
-
-  await logAuditAction({
-    supabase,
-    mataikhoan: adminPayload.mataikhoan,
-    hanhdong: "DELETE",
-    tentable: "giangvien",
-    makhoachinh: magv,
-    request,
-  });
 
   return NextResponse.json({ success: true });
 }

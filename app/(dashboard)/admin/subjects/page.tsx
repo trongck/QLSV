@@ -20,7 +20,7 @@ import {
   getKhoa,
   type MonhocRow,
   type KhoaRow,
-} from "@/services/service/admin.service";
+} from "@/services/admin.service";
 import { VaiTro } from "@/types";
 import styles from "./subject.module.css";
 
@@ -265,7 +265,7 @@ export default function AdminSubjectsPage() {
       loadData();
       getKhoa()
         .then(setKhoas)
-        .catch(() => { });
+        .catch(() => {});
     }
   }, [user, authLoading, router, loadData]);
 

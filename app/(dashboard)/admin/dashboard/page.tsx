@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/hook/useAuth";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { AdminModal } from "@/components/admin/Adminmodal";
-import { apiFetch } from "@/services/service/auth.service";
+import { apiFetch } from "@/services/auth.service";
 import { VaiTro, TrangThaiSinhVien } from "@/types";
 import type { AdminStats } from "@/app/api/admin/stats/route";
 import styles from "./admin-dashboard.module.css";
@@ -28,16 +28,16 @@ interface AdminData extends AdminStats {
 }
 
 const STATUS_LABEL: Record<string, string> = {
-  [TrangThaiSinhVien.Danghoc]: "Đang học",
-  [TrangThaiSinhVien.Baoluu]: "Bảo lưu",
-  [TrangThaiSinhVien.Thoi]: "Thôi học",
+  [TrangThaiSinhVien.Danghoc]:   "Đang học",
+  [TrangThaiSinhVien.Baoluu]:    "Bảo lưu",
+  [TrangThaiSinhVien.Thoi]:      "Thôi học",
   [TrangThaiSinhVien.Totnghiep]: "Tốt nghiệp",
 };
 
 const SV_STATUS_BADGE: Record<string, string> = {
-  [TrangThaiSinhVien.Danghoc]: "badge-green",
-  [TrangThaiSinhVien.Baoluu]: "badge-yellow",
-  [TrangThaiSinhVien.Thoi]: "badge-red",
+  [TrangThaiSinhVien.Danghoc]:   "badge-green",
+  [TrangThaiSinhVien.Baoluu]:    "badge-yellow",
+  [TrangThaiSinhVien.Thoi]:      "badge-red",
   [TrangThaiSinhVien.Totnghiep]: "badge-blue",
 };
 
@@ -57,7 +57,7 @@ function StatCard({ label, value }: { label: string; value: number | string }) {
 export default function AdminDashboard() {
   const { user, loading } = useAuth();
   const router = useRouter();
-  const [data, setData] = useState<AdminData | null>(null);
+  const [data, setData]         = useState<AdminData | null>(null);
   const [fetching, setFetching] = useState(true);
   const [activeTab, setActiveTab] = useState<"sv" | "gv">("sv");
 
@@ -181,7 +181,7 @@ export default function AdminDashboard() {
   return (
     <DashboardShell pageTitle="Quản trị hệ thống">
       <div className={`animate-fadeInUp ${styles.page}`}>
-
+        
         {/* Header with Integrated Professional Global Search */}
         <div className={styles.header}>
           <div>
@@ -192,7 +192,7 @@ export default function AdminDashboard() {
               })}
             </p>
           </div>
-
+          
           <div className={styles.searchContainer}>
             <div className={styles.searchInputWrapper}>
               <svg className={styles.searchIcon} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -213,7 +213,7 @@ export default function AdminDashboard() {
               )}
             </div>
           </div>
-
+          
           <span className="badge badge-red">Quản trị viên</span>
         </div>
 
@@ -338,10 +338,10 @@ export default function AdminDashboard() {
 
         {/* Stats Grid */}
         <div className={styles.statsGrid}>
-          <StatCard label="Tổng sinh viên" value={fetching ? "…" : data?.totalSV ?? 0} />
-          <StatCard label="Giảng viên" value={fetching ? "…" : data?.totalGV ?? 0} />
-          <StatCard label="Lớp học" value={fetching ? "…" : data?.totalLop ?? 0} />
-          <StatCard label="Khoa" value={fetching ? "…" : data?.totalKhoa ?? 0} />
+          <StatCard label="Tổng sinh viên" value={fetching ? "…" : data?.totalSV   ?? 0} />
+          <StatCard label="Giảng viên"     value={fetching ? "…" : data?.totalGV   ?? 0} />
+          <StatCard label="Lớp học"        value={fetching ? "…" : data?.totalLop  ?? 0} />
+          <StatCard label="Khoa"           value={fetching ? "…" : data?.totalKhoa ?? 0} />
         </div>
 
         {/* Recent Lists (Tabs) */}
@@ -452,7 +452,7 @@ export default function AdminDashboard() {
 
         {/* Schedules & Audit Logs Grid (Lịch học hôm nay & Nhật ký hệ thống) */}
         <div className={styles.dashboardGrid}>
-
+          
           {/* Column 1: Today's Class Schedule (Lịch học hôm nay - Giảng viên dạy gì) */}
           <div className={styles.gridCol}>
             <div className={styles.colHeader}>
@@ -465,7 +465,7 @@ export default function AdminDashboard() {
                 <p className={styles.colSubtitle}>Danh sách giảng dạy và học tập trong ngày</p>
               </div>
             </div>
-
+            
             <div className={`card ${styles.scrollContainer}`}>
               {fetching ? (
                 <p className={styles.emptyText}>Đang tải lịch học…</p>
@@ -555,7 +555,7 @@ export default function AdminDashboard() {
               )}
             </div>
           </div>
-
+          
         </div>
 
       </div>

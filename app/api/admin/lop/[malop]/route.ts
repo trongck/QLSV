@@ -3,7 +3,6 @@ import { cookies } from "next/headers";
 import { createClient } from "@/lib/utils/supabase/server";
 import { verifyToken, extractBearer } from "@/lib/utils/jwt";
 import { VaiTro } from "@/types";
-import { logAuditAction } from "@/lib/utils/audit";
 
 async function requireAdmin(request: Request) {
   const token = extractBearer(request.headers.get("authorization"));
@@ -15,8 +14,7 @@ async function requireAdmin(request: Request) {
 }
 
 export async function PUT(request: Request, { params }: { params: Promise<{ malop: string }> }) {
-  const adminPayload = await requireAdmin(request);
-  if (!adminPayload)
+  if (!(await requireAdmin(request)))
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { malop } = await params;
@@ -37,23 +35,11 @@ export async function PUT(request: Request, { params }: { params: Promise<{ malo
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
-
-  await logAuditAction({
-    supabase,
-    mataikhoan: adminPayload.mataikhoan,
-    hanhdong: "UPDATE",
-    tentable: "lop",
-    makhoachinh: malop,
-    giatrimoi: data,
-    request,
-  });
-
   return NextResponse.json({ success: true, data });
 }
 
 export async function DELETE(request: Request, { params }: { params: Promise<{ malop: string }> }) {
-  const adminPayload = await requireAdmin(request);
-  if (!adminPayload)
+  if (!(await requireAdmin(request)))
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { malop } = await params;
@@ -62,15 +48,5 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ m
 
   const { error } = await supabase.from("lop").delete().eq("malop", malop);
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
-
-  await logAuditAction({
-    supabase,
-    mataikhoan: adminPayload.mataikhoan,
-    hanhdong: "DELETE",
-    tentable: "lop",
-    makhoachinh: malop,
-    request,
-  });
-
   return NextResponse.json({ success: true });
 }

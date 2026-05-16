@@ -1,3 +1,4 @@
+
 /**
  * services/repositories/notification.repo.ts
  * Tầng truy cập dữ liệu cho Thông báo (Sinh viên).
@@ -68,3 +69,4 @@ export async function markNotificationRead(mathongbao: number): Promise<void> {
   const res = await apiFetch(`/api/student/notification/${mathongbao}`, { method: "PATCH" });
   await apiJson<{ success: boolean }>(res);
 }
+
