@@ -46,6 +46,7 @@ export interface GiangVien {
   chuyennganh: string | null;
   anhdaidien: string | null;
   emailtruong: string | null;
+  thanhtuu: string | null;
 }
 
 export interface ChiTietGiangVien {
@@ -380,6 +381,7 @@ export interface CuocTroChuyen {
   tieude: string | null;
   loai: LoaiCuocTroChuyen;
   ngaytao: Date;
+  nguoidaxoa: string[];
 }
 
 export interface ThanhVienTroChuyen {
@@ -401,6 +403,7 @@ export interface TinNhan {
   dachinh: boolean;
   ngaytao: Date;
   ngaycapnhat: Date;
+  nguoidaxoa: string[];
 }
 
 // ─── Nhật Ký ──────────────────────────────────────────────────────────────────
@@ -412,7 +415,6 @@ export interface NhatKy {
   tieude: string | null;
   noidung: string;
   tamtrang: 1 | 2 | 3 | 4 | 5 | null;
-  riengtu: boolean;
   maphancong: number | null;
   ngaytao: Date;
   ngaycapnhat: Date;

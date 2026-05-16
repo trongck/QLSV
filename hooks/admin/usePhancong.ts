@@ -10,6 +10,8 @@ export interface PhanCongRow {
   malophoc?: string | null;
   sisomax?: number | null;
   danghieuluc?: boolean;
+  ngaybatdau?: string;
+  ngayketthuc?: string;
   ngaytao?: string;
   giangvien?: { hoten: string };
   monhoc?: { tenmon: string };
@@ -37,6 +39,7 @@ export function usePhanCong() {
         mamon?: string;
         malop?: string;
         mahocky?: string;
+        status?: string;
         page?: number;
         limit?: number;
       } = {}

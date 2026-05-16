@@ -7,7 +7,7 @@ export async function getGiangVienListRepo(
   let query = supabase
     .from("giangvien")
     .select(
-      `magv, hoten, ngaysinh, gioitinh, hocvi, chuyennganh, emailtruong, makhoa,
+      `magv, hoten, ngaysinh, gioitinh, hocvi, chuyennganh, emailtruong, makhoa, thanhtuu,
        khoa(tenkhoa),
        chitietgiangvien(sodienthoai, emailcanhan, ngayvaotruong, hesoluong)`,
       { count: "exact" }
