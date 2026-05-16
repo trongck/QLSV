@@ -3,7 +3,8 @@
  * Tầng truy cập dữ liệu cho tính năng Tin nhắn (Sinh viên).
  * Gọi trực tiếp các API /api/student/messages/* và trả về JSON.
  */
-import { apiFetch, apiJson } from "./api.utils";
+import { apiFetch } from "@/services/service/auth/auth.service";
+import { apiJson } from "./api.utils";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 

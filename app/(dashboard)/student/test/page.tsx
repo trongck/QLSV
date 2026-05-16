@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { Search, Filter, FileText, Clock, Calendar, Loader2, CheckCircle2 } from "lucide-react";
-import { apiFetch } from "@/services/auth.service";
+import { apiFetch } from "@/services/service/auth/auth.service";
 import { useAuth } from "@/hooks/auth/useAuth";
 import { useRouter } from "next/navigation";
 import { VaiTro } from "@/types";

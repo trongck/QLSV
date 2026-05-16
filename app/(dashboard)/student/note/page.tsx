@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import { apiFetch } from "@/services/auth.service";
+import { apiFetch } from "@/services/service/auth/auth.service";
 import CreateNoteModal, { type CreateNoteResult } from "@/components/student/CreateNoteModal";
 import {
   Search,

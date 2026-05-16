@@ -9,7 +9,7 @@ import AttendanceLogCard, { type LogEntry, type TrangThai } from "@/components/A
 import { BookOpen, TrendingUp, XCircle, Clock } from "lucide-react";
 import { StatCard, EmptyState } from "@/components/student/StudentUI";
 
-import { apiFetch } from "@/services/auth.service";
+import { apiFetch } from "@/services/service/auth/auth.service";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
 
 // ─── Subject Stats Row ─────────────────────────────────────────────────────────

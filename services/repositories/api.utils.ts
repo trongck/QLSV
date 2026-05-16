@@ -2,7 +2,7 @@
  * services/repositories/api.utils.ts
  * Shared helper để parse JSON từ fetch response — dùng chung cho mọi repository.
  */
-import { apiFetch } from "@/services/service/auth.service";
+import { apiFetch } from "@/services/service/auth/auth.service";
 export { apiFetch };
 
 export async function apiJson<T>(res: Response): Promise<T> {

@@ -1,5 +1,6 @@
 import { useCallback } from "react";
-import { apiFetch, apiJson } from "../../services/service/admin/sinhvien.services/core.service";
+import { apiFetch } from "@/services/service/auth/auth.service";
+import { apiJson } from "../../services/service/admin/sinhvien.services/core.service";
 
 export interface GiangVienRow {
   magv: string;

@@ -17,7 +17,7 @@ import {
 import { useAuth } from "@/hooks/auth/useAuth";
 import { useRouter } from "next/navigation";
 import { VaiTro } from "@/types";
-import { apiFetch } from "@/services/auth.service";
+import { apiFetch } from "@/services/service/auth/auth.service";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
 
 interface Assignment {

@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { apiFetch } from "@/services/auth.service";
+import { apiFetch } from "@/services/service/auth/auth.service";
 import { X, Search, BookOpen, User, FolderKanban, Unlink } from "lucide-react";
 
 interface MonHocItem { maphancong: number; tenmon: string; hoten: string; }

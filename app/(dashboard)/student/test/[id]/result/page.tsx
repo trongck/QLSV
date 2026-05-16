@@ -12,7 +12,7 @@ import {
   Clock,
   Award
 } from "lucide-react";
-import { apiFetch } from "@/services/auth.service";
+import { apiFetch } from "@/services/service/auth/auth.service";
 
 export default function ExamResultDetailPage() {
   const { id } = useParams();

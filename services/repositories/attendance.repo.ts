@@ -2,7 +2,8 @@
  * services/repositories/attendance.repo.ts
  * Tầng truy cập dữ liệu cho Điểm danh (Sinh viên).
  */
-import { apiFetch, apiJson } from "./api.utils";
+import { apiFetch } from "@/services/service/auth/auth.service";
+import { apiJson } from "./api.utils";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 

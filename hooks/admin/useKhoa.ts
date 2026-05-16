@@ -1,5 +1,6 @@
 import { useCallback } from "react";
-import { apiFetch, apiJson } from "../../services/service/admin/sinhvien.services/core.service";
+import { apiFetch } from "@/services/service/auth/auth.service";
+import { apiJson } from "../../services/service/admin/sinhvien.services/core.service";
 
 // Tái sử dụng type từ service cũ hoặc khai báo lại
 export interface KhoaRow {

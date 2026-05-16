@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
-import { apiFetch } from "@/services/auth.service";
+import { apiFetch } from "@/services/service/auth/auth.service";
 
 export interface ChatRoom {
   id: number;
