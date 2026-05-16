@@ -1,4 +1,36 @@
+<<<<<<<< HEAD:services/service/auth/auth.service.ts
 import type { LoginRequest, LoginResponse, UserProfile } from "@/types";
+========
+<<<<<<< HEAD
+import { VaiTro } from "@/types";
+
+// ─── Auth Types ────────────────────────────────────────────────────────────────
+
+export interface LoginRequest {
+  email: string;
+  matkhau: string;
+}
+
+export interface UserProfile {
+  mataikhoan: string;
+  email: string;
+  vaitro: VaiTro;
+  hoten: string;
+  anhdaidien: string | null;
+  maSinhVien?: string;
+  maGiangVien?: string;
+  maAdmin?: string;
+}
+
+export interface LoginResponse {
+  accessToken: string;
+  refreshToken: string;
+  user: UserProfile;
+}
+=======
+import type { LoginRequest, LoginResponse, UserProfile } from "@/models";
+>>>>>>> baf99a6 (huy update)
+>>>>>>>> origin/Huy+Thang_BackEND:services/service/auth.service.ts
 
 // ─── Token Storage Keys ────────────────────────────────────────────────────────
 
@@ -162,7 +194,8 @@ export async function apiFetch(url: string, init?: RequestInit): Promise<Respons
   const headers = new Headers(init?.headers);
   const accessToken = tokenStorage.getAccessToken();
   if (accessToken) headers.set("Authorization", `Bearer ${accessToken}`);
-  if (init?.body && !headers.has("Content-Type")) {
+
+  if (init?.body && !headers.has("Content-Type") && !(init.body instanceof FormData)) {
     headers.set("Content-Type", "application/json");
   }
 

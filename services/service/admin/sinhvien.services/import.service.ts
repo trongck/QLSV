@@ -1,6 +1,11 @@
 import * as XLSX from "xlsx";
 import type { ImportRow, ImportRowResult, BulkImportResponse } from "@/app/api/admin/sinhvien/bulk-import/route";
+<<<<<<<< HEAD:services/service/admin/sinhvien.services/import.service.ts
 import { apiFetch } from "../../auth/auth.service";
+========
+import { apiFetch } from "@/services/service/auth.service";
+
+>>>>>>>> origin/Huy+Thang_BackEND:services/service/import.service.ts
 
 export type { ImportRow, ImportRowResult, BulkImportResponse };
 
