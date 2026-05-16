@@ -1,5 +1,6 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import * as repo from "../../repositories/admin/thongbao.repo";
+import { getVietnamTimeISO } from "@/lib/utils/date";
 
 export async function getThongbaoListService(
   supabase: SupabaseClient,
@@ -57,11 +58,8 @@ export async function createThongbaoService(supabase: SupabaseClient, adminMatai
     ghim: Boolean(ghim),
     maadmintao,
     magvtao: null,
+    ngaytao: ngaytao || getVietnamTimeISO(),
   };
-
-  if (ngaytao) {
-    insertPayload.ngaytao = ngaytao;
-  }
 
   const { data, error } = await repo.createThongbaoRepo(supabase, insertPayload);
   if (error) throw new Error(error.message);

@@ -21,6 +21,7 @@ import {
   getNotificationStatus,
   parseNotificationContent,
 } from "@/components/admin/NotificationForms";
+import { formatDisplayDateTime } from "@/lib/utils/date";
 
 const NOTIFICATION_TYPE_LABEL: Record<LoaiThongBao, string> = {
   [LoaiThongBao.Chung]: "Chung",
@@ -361,13 +362,7 @@ export default function AdminNotificationsPage() {
                             <line x1="8" y1="2" x2="8" y2="6" />
                             <line x1="3" y1="10" x2="21" y2="10" />
                           </svg>
-                          {(() => {
-                            const formatted = notif.ngaytao.replace(" ", "T");
-                            const parts = formatted.split("T");
-                            const [year, month, day] = parts[0].split("-");
-                            const timePart = parts[1]?.slice(0, 5) ?? "00:00";
-                            return `${day}/${month}/${year} ${timePart}`;
-                          })()}
+                          {formatDisplayDateTime(notif.ngaytao)}
                         </span>
                       </div>
                       <div className="flex gap-2">
@@ -548,13 +543,7 @@ export default function AdminNotificationsPage() {
                     )}
                     <span style={{ fontSize: "12px", color: "#8B6F5F" }}>
                       Phát sóng:{" "}
-                      {(() => {
-                        const formatted = modal.item.ngaytao.replace(" ", "T");
-                        const parts = formatted.split("T");
-                        const [year, month, day] = parts[0].split("-");
-                        const timePart = parts[1]?.slice(0, 5) ?? "00:00";
-                        return `${day}/${month}/${year} ${timePart}`;
-                      })()}{" "}
+                      {formatDisplayDateTime(modal.item.ngaytao)}{" "}
                       bởi{" "}
                       <strong>{modal.item.admin?.hoten || "Hệ thống"}</strong>
                     </span>

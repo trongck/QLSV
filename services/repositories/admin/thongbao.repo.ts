@@ -1,4 +1,5 @@
 import { SupabaseClient } from "@supabase/supabase-js";
+import { getVietnamTimeISO } from "@/lib/utils/date";
 
 export async function getThongbaoListRepo(
   supabase: SupabaseClient,
@@ -22,7 +23,7 @@ export async function getThongbaoListRepo(
   if (params.loai) query = query.eq("loai", params.loai);
   if (params.doituong) query = query.eq("doituong", params.doituong);
 
-  const nowStr = new Date().toISOString().replace("Z", "");
+  const nowStr = getVietnamTimeISO();
   if (params.trangthai === "Active") {
     query = query.lte("ngaytao", nowStr).or(`ngayhethan.is.null,ngayhethan.gte.${nowStr}`);
   } else if (params.trangthai === "Scheduled") {

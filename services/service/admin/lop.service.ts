@@ -16,8 +16,14 @@ export async function getLopListService(
   });
 
   if (error) throw new Error(error.message);
+  
+  // Ánh xạ lại dữ liệu để lấy siso từ số lượng sinh viên thực tế
+  const mappedData = data?.map((item: any) => ({
+    ...item,
+    siso: item.sinhvien?.[0]?.count ?? 0
+  }));
 
-  return { data, count: count ?? 0 };
+  return { data: mappedData, count: count ?? 0 };
 }
 
 export async function createLopService(supabase: SupabaseClient, body: any) {

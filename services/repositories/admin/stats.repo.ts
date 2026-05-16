@@ -79,7 +79,7 @@ export async function globalSearchRepo(supabase: SupabaseClient, search: string)
       .limit(10),
     supabase
       .from("lop")
-      .select("malop, tenlop, siso, khoa(tenkhoa)")
+      .select("malop, tenlop, khoa(tenkhoa), sinhvien(count)")
       .or(`tenlop.ilike.%${search}%,malop.ilike.%${search}%`)
       .limit(10),
     supabase

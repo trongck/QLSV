@@ -6,7 +6,7 @@ export async function getLopListRepo(
 ) {
   let query = supabase
     .from("lop")
-    .select("malop, tenlop, nganh, khoahoc, siso, makhoa, magv, khoa(tenkhoa), giangvien(hoten)", { count: "exact" })
+    .select("malop, tenlop, nganh, khoahoc, makhoa, magv, khoa(tenkhoa), giangvien(hoten), sinhvien(count)", { count: "exact" })
     .order("malop", { ascending: true })
     .range(params.from, params.to);
 

@@ -6,6 +6,7 @@ import { useAuth } from "@/hooks/auth/useAuth";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { createClient } from "@/lib/utils/supabase/client";
 import { VaiTro } from "@/types";
+import { getVietnamTimeISO } from "@/lib/utils/date";
 import styles from "./teacher-dashboard.module.css";
 
 interface ClassSummary {
@@ -81,7 +82,7 @@ export default function TeacherDashboard() {
               .from("thongbao")
               .select("tieude, ngaytao")
               .eq("magvtao", magv)
-              .lte("ngaytao", new Date().toISOString().replace("Z", ""))
+              .lte("ngaytao", getVietnamTimeISO())
               .order("ngaytao", { ascending: false })
               .limit(5),
             supabase

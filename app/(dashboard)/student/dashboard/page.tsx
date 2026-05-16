@@ -6,6 +6,7 @@ import { useAuth } from "@/hooks/auth/useAuth";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { createClient } from "@/lib/utils/supabase/client";
 import { VaiTro } from "@/types";
+import { getVietnamTimeISO } from "@/lib/utils/date";
 import styles from "./student-dashboard.module.css";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -108,7 +109,7 @@ export default function StudentDashboard() {
           .from("thongbao")
           .select("tieude, ngaytao, loai")
           .or(conditions.join(","))
-          .lte("ngaytao", new Date().toISOString().replace("Z", ""))
+          .lte("ngaytao", getVietnamTimeISO())
           .order("ngaytao", { ascending: false })
           .limit(5);
 
@@ -130,7 +131,7 @@ export default function StudentDashboard() {
             .eq("masv", masv)
             .eq(
               "thutrongtuan",
-              new Date().getDay() === 0 ? 8 : new Date().getDay() + 1,
+              new Date(new Date().getTime() + 7 * 3600 * 1000).getDay() === 0 ? 8 : new Date(new Date().getTime() + 7 * 3600 * 1000).getDay() + 1,
             )
             .limit(4),
           supabase
