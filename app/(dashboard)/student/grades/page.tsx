@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { ChevronDown, RefreshCw, TrendingUp, BookOpen, Award, BarChart3, Loader2, AlertCircle } from "lucide-react";
-import { apiFetch } from "@/services/auth.service";
+import { apiFetch } from "@/services/service/auth.service";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -60,11 +60,11 @@ interface ApiResponse {
 
 const LOAI_DIEM_LABEL: Record<string, string> = {
   ChuyenCan: "Chuyên cần",
-  GiuaKy:   "Giữa kỳ",
-  CuoiKy:   "Cuối kỳ",
+  GiuaKy: "Giữa kỳ",
+  CuoiKy: "Cuối kỳ",
   Thuchanh: "Thực hành",
   Tieuluan: "Tiểu luận",
-  Khac:     "Khác",
+  Khac: "Khác",
 };
 
 function gradeColor(diem: number | null): string {
@@ -144,8 +144,8 @@ export default function StudentGradesPage() {
   }
 
   const summary = data?.summary;
-  const grades  = data?.grades ?? [];
-  const hk      = data?.hocKy;
+  const grades = data?.grades ?? [];
+  const hk = data?.hocKy;
   const displayGpa = summary?.gpaThongKe ?? summary?.gpa;
   const displayTinchi = summary?.tinchiThongKe ?? summary?.totalTinchiDat;
 
@@ -178,9 +178,8 @@ export default function StudentGradesPage() {
                   <button
                     key={h.mahocky}
                     onClick={() => { setMahocky(h.mahocky); fetchData(h.mahocky); setSemesterOpen(false); }}
-                    className={`w-full text-left px-4 py-2.5 text-sm flex items-center justify-between hover:bg-gray-50 transition ${
-                      h.mahocky === mahocky ? "font-semibold text-indigo-600 bg-indigo-50" : "text-gray-700"
-                    }`}
+                    className={`w-full text-left px-4 py-2.5 text-sm flex items-center justify-between hover:bg-gray-50 transition ${h.mahocky === mahocky ? "font-semibold text-indigo-600 bg-indigo-50" : "text-gray-700"
+                      }`}
                   >
                     <span>HK{h.ky} – {h.namhoc}–{h.namhoc + 1}</span>
                     {h.danghieuluc && (
@@ -327,9 +326,8 @@ export default function StudentGradesPage() {
                       </td>
                       <td className="py-3.5 px-4 text-center">
                         {row.diemchu ? (
-                          <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-bold ${
-                            row.dat ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700"
-                          }`}>
+                          <span className={`inline-block px-2.5 py-0.5 rounded-full text-xs font-bold ${row.dat ? "bg-emerald-100 text-emerald-700" : "bg-red-100 text-red-700"
+                            }`}>
                             {row.diemchu}
                           </span>
                         ) : (

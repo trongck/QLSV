@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { createClient } from "@/lib/utils/supabase/server";
 import { verifyToken, extractBearer } from "@/lib/utils/jwt";
 import { VaiTro } from "@/types";
+import { logAuditAction } from "@/lib/utils/audit";
 
 async function requireAuth(req: Request) {
   const token = extractBearer(req.headers.get("authorization"));
@@ -40,10 +41,17 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
   const { masv, magv } = await resolveIds(supabase, payload.mataikhoan, payload.vaitro);
 
   // Lấy tin nhắn — không join FK phức tạp để tránh lỗi RLS
-  const { data: msgs, error, count } = await supabase
+  const userId = masv ?? magv;
+  let query = supabase
     .from("tinnhan")
     .select("matinnhan, macuoctrochuyen, masvgui, magvgui, noidung, filedinh, dachinh, ngaytao", { count: "exact" })
-    .eq("macuoctrochuyen", convId)
+    .eq("macuoctrochuyen", convId);
+
+  if (userId) {
+    query = query.not("nguoidaxoa", "cs", `{${userId}}`);
+  }
+
+  const { data: msgs, error, count } = await query
     .order("ngaytao", { ascending: true })
     .range(offset, offset + limit - 1);
 
@@ -85,10 +93,54 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
+  // Khôi phục hiển thị cuộc trò chuyện cho cả 2 người khi có tin nhắn mới
+  await supabase.from("cuoctrochuyen").update({ nguoidaxoa: [] }).eq("macuoctrochuyen", convId);
+
   // Cập nhật thoigianxemcuoi
   const now = new Date().toISOString();
   if (masv) await supabase.from("thanhvientrochuyen").update({ thoigianxemcuoi: now }).eq("macuoctrochuyen", convId).eq("masv", masv);
   else if (magv) await supabase.from("thanhvientrochuyen").update({ thoigianxemcuoi: now }).eq("macuoctrochuyen", convId).eq("magv", magv);
+
+  // Lấy thông tin người gửi và người nhận để ghi log rõ ràng
+  let senderName = payload.mataikhoan;
+  let recipientName = "cuộc hội thoại #" + convId;
+
+  try {
+    // Lấy tên người gửi
+    if (masv) {
+      const { data: svSender } = await supabase.from("sinhvien").select("hoten").eq("masv", masv).single();
+      if (svSender) senderName = `${svSender.hoten} (${masv})`;
+    } else if (magv) {
+      const { data: gvSender } = await supabase.from("giangvien").select("hoten").eq("magv", magv).single();
+      if (gvSender) senderName = `${gvSender.hoten} (${magv})`;
+    }
+
+    // Lấy thành viên còn lại (người nhận)
+    const { data: members } = await supabase
+      .from("thanhvientrochuyen")
+      .select("masv, magv")
+      .eq("macuoctrochuyen", convId);
+
+    if (members) {
+      const other = members.find((m) => m.masv !== masv || m.magv !== magv);
+      if (other?.masv) {
+        const { data: svRecv } = await supabase.from("sinhvien").select("hoten").eq("masv", other.masv).single();
+        if (svRecv) recipientName = `${svRecv.hoten} (${other.masv})`;
+      } else if (other?.magv) {
+        const { data: gvRecv } = await supabase.from("giangvien").select("hoten").eq("magv", other.magv).single();
+        if (gvRecv) recipientName = `${gvRecv.hoten} (${other.magv})`;
+      }
+    }
+  } catch (_) { /* fallback to defaults */ }
+
+  await logAuditAction({
+    supabase,
+    mataikhoan: payload.mataikhoan,
+    hanhdong: `Gửi tin nhắn: ${senderName} ⇒ ${recipientName}`,
+    tentable: "tinnhan",
+    makhoachinh: String(data.matinnhan),
+    request: req,
+  });
 
   return NextResponse.json({ data }, { status: 201 });
 }
@@ -103,12 +155,43 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
   if (isNaN(convId)) return NextResponse.json({ error: "ID không hợp lệ" }, { status: 400 });
 
   const supabase = createClient(await cookies());
+  const { masv, magv } = await resolveIds(supabase, payload.mataikhoan, payload.vaitro);
 
-  // Xóa tin nhắn → thành viên → hội thoại
-  await supabase.from("tinnhan").delete().eq("macuoctrochuyen", convId);
-  await supabase.from("thanhvientrochuyen").delete().eq("macuoctrochuyen", convId);
-  const { error } = await supabase.from("cuoctrochuyen").delete().eq("macuoctrochuyen", convId);
+  const userId = masv ?? magv;
+  if (!userId) return NextResponse.json({ error: "Không tìm thấy hồ sơ" }, { status: 404 });
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  // Lấy danh sách tin nhắn hiện tại
+  const { data: msgs } = await supabase.from("tinnhan").select("matinnhan, nguoidaxoa").eq("macuoctrochuyen", convId);
+  
+  if (msgs && msgs.length > 0) {
+    // Cập nhật từng tin nhắn
+    const updates = msgs.map(m => {
+      const arr = m.nguoidaxoa || [];
+      if (!arr.includes(userId)) {
+        return supabase.from("tinnhan").update({ nguoidaxoa: [...arr, userId] }).eq("matinnhan", m.matinnhan);
+      }
+      return Promise.resolve();
+    });
+    await Promise.all(updates);
+  }
+
+  // Cập nhật cuộc trò chuyện để ẩn nó khỏi danh sách của user
+  const { data: conv } = await supabase.from("cuoctrochuyen").select("nguoidaxoa").eq("macuoctrochuyen", convId).single();
+  if (conv) {
+    const arr = conv.nguoidaxoa || [];
+    if (!arr.includes(userId)) {
+      await supabase.from("cuoctrochuyen").update({ nguoidaxoa: [...arr, userId] }).eq("macuoctrochuyen", convId);
+    }
+  }
+
+  await logAuditAction({
+    supabase,
+    mataikhoan: payload.mataikhoan,
+    hanhdong: "Xóa hội thoại (ẩn với user)",
+    tentable: "tinnhan",
+    makhoachinh: String(convId),
+    request: req,
+  });
+
   return NextResponse.json({ success: true });
 }

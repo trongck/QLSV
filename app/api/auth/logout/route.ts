@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/utils/supabase/server";
+import { logAuditAction } from "@/lib/utils/audit";
 
 // DELETE /api/auth/logout
 // Body: { refreshToken: string }
@@ -38,6 +39,14 @@ export async function POST(request: Request) {
     const supabase = createClient(cookieStore);
 
     await supabase.from("phiendangnhap").delete().eq("mataikhoan", mataikhoan);
+
+    await logAuditAction({
+      supabase,
+      mataikhoan,
+      hanhdong: "LOGOUT_ALL",
+      tentable: "phiendangnhap",
+      request,
+    });
 
     return NextResponse.json({ success: true });
   } catch (error: unknown) {

@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { createClient } from "@/lib/utils/supabase/server";
 import { verifyToken, extractBearer } from "@/lib/utils/jwt";
 import { VaiTro } from "@/types";
+import { logAuditAction } from "@/lib/utils/audit";
 
 // ─── Auth Helper ──────────────────────────────────────────────────────────────
 
@@ -85,6 +86,7 @@ export async function GET(request: Request) {
       tieude,
       loai,
       ngaytao,
+      nguoidaxoa,
       thanhvientrochuyen (
         masv,
         magv,
@@ -98,7 +100,8 @@ export async function GET(request: Request) {
         noidung,
         masvgui,
         magvgui,
-        ngaytao
+        ngaytao,
+        nguoidaxoa
       )
     `)
     .in("macuoctrochuyen", conversationIds)
@@ -109,8 +112,18 @@ export async function GET(request: Request) {
   }
 
   // Xử lý: lấy tin nhắn cuối + tính số chưa đọc
-  const result = (conversations ?? []).map((conv) => {
-    const messages: any[] = conv.tinnhan ?? [];
+  const result = (conversations ?? [])
+    .filter((conv) => {
+      const arr = conv.nguoidaxoa || [];
+      if (masv && arr.includes(masv)) return false;
+      if (magv && arr.includes(magv)) return false;
+      return true;
+    })
+    .map((conv) => {
+    let messages: any[] = conv.tinnhan ?? [];
+    if (masv) messages = messages.filter((m: any) => !m.nguoidaxoa?.includes(masv));
+    else if (magv) messages = messages.filter((m: any) => !m.nguoidaxoa?.includes(magv));
+
     // Sắp xếp tin nhắn theo thời gian mới nhất
     const sorted = [...messages].sort(
       (a, b) => new Date(b.ngaytao).getTime() - new Date(a.ngaytao).getTime()
@@ -194,12 +207,19 @@ export async function POST(request: Request) {
       // Ưu tiên cuộc trò chuyện loại Rieng
       const { data: existingConv } = await supabase
         .from("cuoctrochuyen")
-        .select("macuoctrochuyen, tieude, loai, ngaytao")
+        .select("macuoctrochuyen, tieude, loai, ngaytao, nguoidaxoa")
         .in("macuoctrochuyen", sharedConvs.map((r) => r.macuoctrochuyen))
         .eq("loai", "Rieng")
         .single();
 
       if (existingConv) {
+        // Khôi phục hội thoại nếu người dùng đã xóa nó trước đó
+        const currentArr = existingConv.nguoidaxoa || [];
+        const userId = masv ?? magv;
+        if (userId && currentArr.includes(userId)) {
+          const newArr = currentArr.filter((id: string) => id !== userId);
+          await supabase.from("cuoctrochuyen").update({ nguoidaxoa: newArr }).eq("macuoctrochuyen", existingConv.macuoctrochuyen);
+        }
         return NextResponse.json({ data: existingConv, existed: true }, { status: 200 });
       }
     }
@@ -236,6 +256,16 @@ export async function POST(request: Request) {
   if (memberErr) {
     return NextResponse.json({ error: memberErr.message }, { status: 500 });
   }
+
+  await logAuditAction({
+    supabase,
+    mataikhoan: payload.mataikhoan,
+    hanhdong: "INSERT",
+    tentable: "cuoctrochuyen",
+    makhoachinh: String(newConv.macuoctrochuyen),
+    giatrimoi: newConv,
+    request,
+  });
 
   return NextResponse.json({ data: newConv, existed: false }, { status: 201 });
 }

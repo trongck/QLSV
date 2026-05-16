@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { createClient } from "@/lib/utils/supabase/server";
 import { verifyToken, extractBearer } from "@/lib/utils/jwt";
 import { VaiTro } from "@/types";
+import { logAuditAction } from "@/lib/utils/audit";
 
 async function requireAdmin(request: Request) {
   const token = extractBearer(request.headers.get("authorization"));
@@ -16,7 +17,8 @@ async function requireAdmin(request: Request) {
 // ─── PUT /api/admin/taikhoan/[mataikhoan] — đổi trạng thái hoặc reset mật khẩu ───────
 
 export async function PUT(request: Request, { params }: { params: Promise<{ mataikhoan: string }> }) {
-  if (!(await requireAdmin(request)))
+  const adminPayload = await requireAdmin(request);
+  if (!adminPayload)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { mataikhoan } = await params;
@@ -50,13 +52,25 @@ export async function PUT(request: Request, { params }: { params: Promise<{ mata
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+
+  await logAuditAction({
+    supabase,
+    mataikhoan: adminPayload.mataikhoan,
+    hanhdong: "UPDATE",
+    tentable: "taikhoan",
+    makhoachinh: mataikhoan,
+    giatrimoi: data,
+    request,
+  });
+
   return NextResponse.json({ success: true, data });
 }
 
 // ─── DELETE /api/admin/taikhoan/[mataikhoan] ─────────────────────────────────────────
 
 export async function DELETE(request: Request, { params }: { params: Promise<{ mataikhoan: string }> }) {
-  if (!(await requireAdmin(request)))
+  const adminPayload = await requireAdmin(request);
+  if (!adminPayload)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { mataikhoan } = await params;
@@ -65,5 +79,15 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ m
 
   const { error } = await supabase.from("taikhoan").delete().eq("mataikhoan", mataikhoan);
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+
+  await logAuditAction({
+    supabase,
+    mataikhoan: adminPayload.mataikhoan,
+    hanhdong: "DELETE",
+    tentable: "taikhoan",
+    makhoachinh: mataikhoan,
+    request,
+  });
+
   return NextResponse.json({ success: true });
 }

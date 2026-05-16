@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { createClient } from "@/lib/utils/supabase/server";
 import { verifyToken, extractBearer } from "@/lib/utils/jwt";
 import { VaiTro } from "@/types";
+import { logAuditAction } from "@/lib/utils/audit";
 
 async function requireAdmin(request: Request) {
   const token = extractBearer(request.headers.get("authorization"));
@@ -17,7 +18,8 @@ async function requireAdmin(request: Request) {
 // Body: { ids: string[]; action: "lock" | "unlock" | "reset"; matkhau?: string }
 
 export async function POST(request: Request) {
-  if (!(await requireAdmin(request)))
+  const adminPayload = await requireAdmin(request);
+  if (!adminPayload)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await request.json();
@@ -64,6 +66,16 @@ export async function POST(request: Request) {
     .select("mataikhoan, email, vaitro, trangthai");
 
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+
+  await logAuditAction({
+    supabase,
+    mataikhoan: adminPayload.mataikhoan,
+    hanhdong: "BULK_UPDATE_ACCOUNT",
+    tentable: "taikhoan",
+    makhoachinh: ids.join(","),
+    giatrimoi: update,
+    request,
+  });
 
   return NextResponse.json({ success: true, affected: data?.length ?? 0, data });
 }

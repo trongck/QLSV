@@ -5,7 +5,7 @@ import {
   QrCode, ScanFace, X, CheckCircle2, AlertCircle, Loader2,
   Camera, CameraOff, ZapOff,
 } from "lucide-react";
-import { apiFetch } from "@/services/auth.service";
+import { apiFetch } from "@/services/service/auth.service";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -115,7 +115,7 @@ export default function AttendanceModal({
       });
     }, 60);
     return () => clearInterval(interval);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [scanning]);
 
   // ── Submit điểm danh ──────────────────────────────────────────────────────

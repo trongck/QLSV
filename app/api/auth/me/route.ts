@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import { createClient } from "@/lib/utils/supabase/server";
 import { verifyToken, extractBearer } from "@/lib/utils/jwt";
 import { VaiTro } from "@/types";
-import type { UserProfile } from "@/models";
+import type { UserProfile } from "@/services/service/auth.service";
 
 // GET /api/auth/me  — xác thực access token từ Authorization header
 export async function GET(request: Request) {

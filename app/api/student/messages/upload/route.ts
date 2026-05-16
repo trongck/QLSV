@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/utils/supabase/server";
 import { verifyToken, extractBearer } from "@/lib/utils/jwt";
+import { logAuditAction } from "@/lib/utils/audit";
 
 async function requireAuth(req: Request) {
   const token = extractBearer(req.headers.get("authorization"));
@@ -47,14 +48,13 @@ export async function POST(req: Request) {
   const supabase = createClient(await cookies());
 
   // Tạo path: messages/<mataikhoan>/<timestamp>_<filename>
-  const ext = file.name.split(".").pop() ?? "bin";
   const safeName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, "_");
-  const path = `messages/${payload.mataikhoan}/${Date.now()}_${safeName}`;
+  const filePath = `messages/${payload.mataikhoan}/${Date.now()}_${safeName}`;
 
   const arrayBuffer = await file.arrayBuffer();
   const { error: uploadError } = await supabase.storage
     .from("tinnhan-files")
-    .upload(path, arrayBuffer, {
+    .upload(filePath, arrayBuffer, {
       contentType: file.type,
       upsert: false,
     });
@@ -64,7 +64,16 @@ export async function POST(req: Request) {
 
   const { data: urlData } = supabase.storage
     .from("tinnhan-files")
-    .getPublicUrl(path);
+    .getPublicUrl(filePath);
+
+  await logAuditAction({
+    supabase,
+    mataikhoan: payload.mataikhoan,
+    hanhdong: "tháng k",
+    tentable: "tinnhan-files",
+    makhoachinh: filePath,
+    request: req,
+  });
 
   return NextResponse.json({ url: urlData.publicUrl, name: file.name, type: file.type, size: file.size });
 }

@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { createClient } from "@/lib/utils/supabase/server";
 import { verifyToken, extractBearer } from "@/lib/utils/jwt";
 import { VaiTro } from "@/types";
+import { logAuditAction } from "@/lib/utils/audit";
 
 // ─── Auth helper ──────────────────────────────────────────────────────────────
 
@@ -46,7 +47,8 @@ export async function GET(request: Request) {
 // ─── POST /api/admin/khoa ─────────────────────────────────────────────────────
 
 export async function POST(request: Request) {
-  if (!(await requireAdmin(request)))
+  const adminPayload = await requireAdmin(request);
+  if (!adminPayload)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await request.json();
@@ -65,5 +67,16 @@ export async function POST(request: Request) {
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+
+  await logAuditAction({
+    supabase,
+    mataikhoan: adminPayload.mataikhoan,
+    hanhdong: "INSERT",
+    tentable: "khoa",
+    makhoachinh: makhoa.trim(),
+    giatrimoi: data,
+    request,
+  });
+
   return NextResponse.json({ success: true, data }, { status: 201 });
 }

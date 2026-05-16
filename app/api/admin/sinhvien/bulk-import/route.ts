@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { createClient } from "@/lib/utils/supabase/server";
 import { verifyToken, extractBearer } from "@/lib/utils/jwt";
 import { VaiTro } from "@/types";
+import { logAuditAction } from "@/lib/utils/audit";
 
 async function requireAdmin(request: Request) {
   const token = extractBearer(request.headers.get("authorization"));
@@ -48,7 +49,8 @@ export interface BulkImportResponse {
 }
 
 export async function POST(request: Request) {
-  if (!(await requireAdmin(request)))
+  const adminPayload = await requireAdmin(request);
+  if (!adminPayload)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await request.json();
@@ -247,6 +249,18 @@ export async function POST(request: Request) {
         error: e instanceof Error ? e.message : "Lỗi không xác định.",
       });
     }
+  }
+
+  if (successCount > 0) {
+    await logAuditAction({
+      supabase,
+      mataikhoan: adminPayload.mataikhoan,
+      hanhdong: "BULK_IMPORT_STUDENT",
+      tentable: "sinhvien",
+      makhoachinh: `successCount:${successCount}`,
+      giatrimoi: { successCount, failed: failedRows.length },
+      request,
+    });
   }
 
   return NextResponse.json({

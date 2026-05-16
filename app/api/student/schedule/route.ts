@@ -123,6 +123,8 @@ export async function GET(request: Request) {
         mamon,
         malop,
         danghieuluc,
+        ngaybatdau,
+        ngayketthuc,
         monhoc:mamon ( tenmon, sotinchi ),
         giangvien:magv ( hoten ),
         lichhoc ( malichhoc, thutrongtuan, tietbatdau, tietketthuc, maphong, ghichu )
@@ -135,10 +137,28 @@ export async function GET(request: Request) {
   }
 
   // Lọc theo học kỳ đang chọn (cast về any[] vì Supabase không infer kiểu nested join)
+  const now = new Date();
+  // Get local YYYY-MM-DD string handling timezone offset
+  const todayStr = new Date(now.getTime() - (now.getTimezoneOffset() * 60000)).toISOString().split('T')[0];
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const inSemester = (rawData as any[]).filter((row) => {
-    const pc = row.phancong;
-    return pc && pc.mahocky === mahocky && pc.danghieuluc !== false;
+    const pc = Array.isArray(row.phancong) ? row.phancong[0] : row.phancong;
+    row.phancong = pc; // chuẩn hóa lại thành object nếu nó bị bọc trong array
+    
+    if (!pc || Number(pc.mahocky) !== mahocky || pc.danghieuluc === false) {
+      return false;
+    }
+
+    if (pc.ngayketthuc) {
+      // String comparison format YYYY-MM-DD
+      const endDateStr = String(pc.ngayketthuc).split('T')[0];
+      if (endDateStr < todayStr) {
+        return false;
+      }
+    }
+
+    return true;
   });
 
   // Gán màu ổn định theo mamon

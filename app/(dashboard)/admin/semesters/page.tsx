@@ -18,7 +18,7 @@ import {
   deleteHocky,
   activateHocky,
   type HockyRow,
-} from "@/services/admin.service";
+} from "@/services/service/admin.service";
 import { VaiTro } from "@/types";
 import styles from "./semester.module.css";
 
@@ -234,7 +234,7 @@ export default function AdminSemestersPage() {
               onChange={(e) => setFilterNam(e.target.value ? Number(e.target.value) : undefined)}
             />
 
-             {(search || filterNam) && (
+            {(search || filterNam) && (
               <button
                 className={styles.clearFilter}
                 onClick={() => {
@@ -246,7 +246,7 @@ export default function AdminSemestersPage() {
               </button>
             )}
           </div>
-           
+
           {tkLoading ? (
             <TableSkeleton cols={5} rows={5} />
           ) : (

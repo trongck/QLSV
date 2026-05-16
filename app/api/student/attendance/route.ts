@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { createClient } from "@/lib/utils/supabase/server";
 import { verifyToken, extractBearer } from "@/lib/utils/jwt";
 import { VaiTro, TrangThaiDiemDanh, TrangThaiBuoiHoc } from "@/types";
+import { logAuditAction } from "@/lib/utils/audit";
 
 // ─── Tiết → giờ ──────────────────────────────────────────────────────────────
 
@@ -393,6 +394,16 @@ export async function POST(request: Request) {
   if (insertError) {
     return NextResponse.json({ error: insertError.message }, { status: 500 });
   }
+
+  await logAuditAction({
+    supabase,
+    mataikhoan: payload.mataikhoan,
+    hanhdong: "INSERT",
+    tentable: "diemdanh",
+    makhoachinh: String(newDiemDanh.madiemdanh),
+    giatrimoi: newDiemDanh,
+    request,
+  });
 
   return NextResponse.json({
     success: true,

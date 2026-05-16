@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { createClient } from "@/lib/utils/supabase/server";
 import { verifyToken, extractBearer } from "@/lib/utils/jwt";
 import { VaiTro } from "@/types";
+import { logAuditAction } from "@/lib/utils/audit";
 
 // ─── Auth helper ─────────────────────────────────────────────────────────────
 
@@ -86,9 +87,10 @@ export async function PATCH(
 
   const supabase = createClient(await cookies());
 
+  // ĐÃ KHỚP CỘT: Lấy thêm cột 'hoten' từ bảng sinhvien dựa vào ảnh db của bạn
   const { data: svData } = await supabase
     .from("sinhvien")
-    .select("masv")
+    .select("masv, hoten")
     .eq("mataikhoan", payload.mataikhoan)
     .single();
 
@@ -110,8 +112,8 @@ export async function PATCH(
 
   // Chỉ cho phép cập nhật các trường này
   const updates: Record<string, unknown> = { ngaycapnhat: new Date().toISOString() };
-  if ("tieude" in body)   updates.tieude   = body.tieude?.trim() || null;
-  if ("noidung" in body)  updates.noidung  = body.noidung?.trim();
+  if ("tieude" in body) updates.tieude = body.tieude?.trim() || null;
+  if ("noidung" in body) updates.noidung = body.noidung?.trim();
   if ("tamtrang" in body) updates.tamtrang = body.tamtrang;
 
   if (updates.noidung !== undefined && !updates.noidung) {
@@ -129,6 +131,20 @@ export async function PATCH(
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
+
+  // ĐÃ KHỚP CỘT: Lấy tên trực tiếp từ dữ liệu DB vừa truy vấn (svData.hoten)
+  const tenSinhVien = svData.hoten || "Sinh viên";
+
+  // Lưu nhật ký hệ thống kèm tên sinh viên đã đăng nhập chỉnh sửa
+  await logAuditAction({
+    supabase,
+    mataikhoan: payload.mataikhoan,
+    hanhdong: `Sinh viên [${tenSinhVien}] đã cập nhật nhật ký`,
+    tentable: "nhatky",
+    makhoachinh: String(manhatky),
+    giatrimoi: data,
+    request,
+  });
 
   return NextResponse.json({ data });
 }
@@ -153,9 +169,10 @@ export async function DELETE(
 
   const supabase = createClient(await cookies());
 
+  // ĐÃ SỬA: Lấy thêm cột 'hoten' để phục vụ việc ghi nhận log khi xóa
   const { data: svData } = await supabase
     .from("sinhvien")
-    .select("masv")
+    .select("masv, hoten")
     .eq("mataikhoan", payload.mataikhoan)
     .single();
 
@@ -172,6 +189,19 @@ export async function DELETE(
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
+
+  // ĐÃ SỬA: Lấy tên sinh viên vừa thực hiện hành động xóa
+  const tenSinhVien = svData.hoten || "Sinh viên";
+
+  // ĐÃ SỬA: Thay thế chuỗi hành động "DELETE" mặc định bằng chuỗi chứa thông tin sinh viên rõ ràng
+  await logAuditAction({
+    supabase,
+    mataikhoan: payload.mataikhoan,
+    hanhdong: `Sinh viên [${tenSinhVien}] đã xóa nhật ký`,
+    tentable: "nhatky",
+    makhoachinh: String(manhatky),
+    request,
+  });
 
   return NextResponse.json({ success: true });
 }

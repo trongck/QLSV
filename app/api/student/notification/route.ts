@@ -49,10 +49,25 @@ export async function GET(request: Request) {
   const { masv, malop } = svData;
   const now = new Date().toISOString().replace("Z", "");
 
+  // ─── Lấy danh sách phân công môn học ──────────────────────────────────────
+  const { data: svMonHoc } = await supabase
+    .from("sinhvienmonhoc")
+    .select("maphancong")
+    .eq("masv", masv)
+    .eq("trangthai", "Danghoc");
+
+  const myAssignments = (svMonHoc ?? []).map((m: any) => m.maphancong);
+
   // ─── Query thông báo ──────────────────────────────────────────────────────
-  // Điều kiện đối tượng:
-  //   doituong = Tatca
-  //   OR (doituong = SinhVien AND (malop IS NULL OR malop = malop_sv))
+  let conditions = [
+    `doituong.eq.${DoiTuongThongBao.Tatca}`,
+    `and(doituong.eq.${DoiTuongThongBao.SinhVien},or(malop.is.null,malop.eq.${malop || "NONE"}))`
+  ];
+
+  if (myAssignments.length > 0) {
+    conditions.push(`and(doituong.neq.${DoiTuongThongBao.GiangVien},maphancong.in.(${myAssignments.join(",")}))`);
+  }
+
   let query = supabase
     .from("thongbao")
     .select(
@@ -62,12 +77,7 @@ export async function GET(request: Request) {
        lop:malop(tenlop)`,
       { count: "exact" }
     )
-    .or(
-      [
-        `doituong.eq.${DoiTuongThongBao.Tatca}`,
-        `and(doituong.eq.${DoiTuongThongBao.SinhVien},or(malop.is.null,malop.eq.${malop}))`,
-      ].join(",")
-    )
+    .or(conditions.join(","))
     .lte("ngaytao", now)
     .or("ngayhethan.is.null,ngayhethan.gte." + now)
     .order("ghim", { ascending: false })

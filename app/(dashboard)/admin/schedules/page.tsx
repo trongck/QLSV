@@ -24,7 +24,7 @@ import {
   type PhanCongRow,
   type HockyRow,
   type LopRow,
-} from "@/services/admin.service";
+} from "@/services/service/admin.service";
 import { VaiTro } from "@/types";
 import styles from "./schedule.module.css";
 
@@ -73,7 +73,7 @@ function ScheduleForm({
   const handleValidateAndSubmit = () => {
     setLocalErr("");
     if (!form.maphancong) return setLocalErr("Vui lòng chọn phân công giảng dạy.");
-    
+
     const thu = parseInt(form.thutrongtuan);
     if (isNaN(thu) || thu < 2 || thu > 8) return setLocalErr("Thứ trong tuần không hợp lệ.");
 
@@ -257,13 +257,13 @@ function AdminSchedulesContent() {
     if (user && user.vaitro === VaiTro.Admin) {
       getPhanCong(100)
         .then((res) => setPhancongs(res))
-        .catch(() => {});
+        .catch(() => { });
       getLop({ limit: 100 })
         .then((res) => setLops(res.data))
-        .catch(() => {});
+        .catch(() => { });
       getHocky()
         .then((res) => setHockys(res.data))
-        .catch(() => {});
+        .catch(() => { });
     }
   }, [user, authLoading, router]);
 

@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { createClient } from "@/lib/utils/supabase/server";
 import { verifyToken, extractBearer } from "@/lib/utils/jwt";
 import { VaiTro, DoiTuongThongBao } from "@/types";
+import { logAuditAction } from "@/lib/utils/audit";
 
 // ─── Auth helper ─────────────────────────────────────────────────────────────
 
@@ -108,7 +109,6 @@ export async function GET(
       thoigiandoc = now2;
     }
   } else {
-    // Đã đọc rồi — lấy thoigiandoc từ DB
     const { data: readRow } = await supabase
       .from("thongbaodadocsv")
       .select("thoigiandoc")
@@ -116,6 +116,19 @@ export async function GET(
       .eq("masv", masv)
       .single();
     thoigiandoc = readRow?.thoigiandoc ?? null;
+  }
+
+  // Nếu trạng thái thay đổi từ chưa đọc sang đã đọc (insert/update thành công) thì log
+  if (!existingRead?.dadoc && dadoc) {
+    await logAuditAction({
+      supabase,
+      mataikhoan: payload.mataikhoan,
+      hanhdong: "UPDATE",
+      tentable: "thongbaodadocsv",
+      makhoachinh: `${id}_${masv}`,
+      giatrimoi: { mathongbao: id, masv, dadoc: true, thoigiandoc },
+      request,
+    });
   }
 
   return NextResponse.json({ data: { ...tb, dadoc, thoigiandoc } });
@@ -160,6 +173,16 @@ export async function PATCH(
   );
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  await logAuditAction({
+    supabase,
+    mataikhoan: payload.mataikhoan,
+    hanhdong: "UPDATE",
+    tentable: "thongbaodadocsv",
+    makhoachinh: `${id}_${masv}`,
+    giatrimoi: { mathongbao: id, masv, dadoc: true, thoigiandoc: now },
+    request,
+  });
 
   return NextResponse.json({ success: true, thoigiandoc: now });
 }

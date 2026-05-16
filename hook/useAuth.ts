@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from "react";
 import { useAuthContext } from "@/context/AuthContext";
-import type { LoginRequest } from "@/models";
+import type { LoginRequest } from "@/services/service/auth.service";
 
 // ─── useAuth ──────────────────────────────────────────────────────────────────
 // Hook công khai duy nhất cho component — wraps AuthContext + local UI state.

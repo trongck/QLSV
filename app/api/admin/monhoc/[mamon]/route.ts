@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { createClient } from "@/lib/utils/supabase/server";
 import { verifyToken, extractBearer } from "@/lib/utils/jwt";
 import { VaiTro } from "@/types";
+import { logAuditAction } from "@/lib/utils/audit";
 
 async function requireAdmin(request: Request) {
   const token = extractBearer(request.headers.get("authorization"));
@@ -16,7 +17,8 @@ async function requireAdmin(request: Request) {
 }
 
 export async function PUT(request: Request, { params }: { params: Promise<{ mamon: string }> }) {
-  if (!(await requireAdmin(request))) {
+  const adminPayload = await requireAdmin(request);
+  if (!adminPayload) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -45,11 +47,23 @@ export async function PUT(request: Request, { params }: { params: Promise<{ mamo
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  await logAuditAction({
+    supabase,
+    mataikhoan: adminPayload.mataikhoan,
+    hanhdong: "UPDATE",
+    tentable: "monhoc",
+    makhoachinh: mamon,
+    giatrimoi: data,
+    request,
+  });
+
   return NextResponse.json({ data });
 }
 
 export async function DELETE(request: Request, { params }: { params: Promise<{ mamon: string }> }) {
-  if (!(await requireAdmin(request))) {
+  const adminPayload = await requireAdmin(request);
+  if (!adminPayload) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
@@ -68,5 +82,15 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ m
 
   const { error } = await supabase.from("monhoc").delete().eq("mamon", mamon);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+
+  await logAuditAction({
+    supabase,
+    mataikhoan: adminPayload.mataikhoan,
+    hanhdong: "DELETE",
+    tentable: "monhoc",
+    makhoachinh: mamon,
+    request,
+  });
+
   return NextResponse.json({ success: true });
 }

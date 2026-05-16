@@ -17,13 +17,13 @@ import {
   updateTaiKhoan,
   deleteTaiKhoan,
   type TaiKhoanRow,
-} from "@/services/admin.service";
+} from "@/services/service/admin.service";
 import {
   getAccountStats,
   bulkAccountAction,
   exportAccountsCSV,
   type AccountStats,
-} from "@/services/admin.service";
+} from "@/services/service/admin.service";
 import { VaiTro } from "@/types";
 import styles from "./accounts.module.css";
 import {

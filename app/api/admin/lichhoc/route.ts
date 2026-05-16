@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { createClient } from "@/lib/utils/supabase/server";
 import { verifyToken, extractBearer } from "@/lib/utils/jwt";
 import { VaiTro } from "@/types";
+import { logAuditAction } from "@/lib/utils/audit";
 
 async function requireAdmin(request: Request) {
   const token = extractBearer(request.headers.get("authorization"));
@@ -83,7 +84,8 @@ export async function GET(request: Request) {
 
 // ─── POST /api/admin/lichhoc ──────────────────────────────────────────────────
 export async function POST(request: Request) {
-  if (!(await requireAdmin(request)))
+  const adminPayload = await requireAdmin(request);
+  if (!adminPayload)
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   try {
@@ -202,6 +204,17 @@ export async function POST(request: Request) {
       .single();
 
     if (error) return NextResponse.json({ error: error.message }, { status: 400 });
+
+    await logAuditAction({
+      supabase,
+      mataikhoan: adminPayload.mataikhoan,
+      hanhdong: "INSERT",
+      tentable: "lichhoc",
+      makhoachinh: String(data.malichhoc),
+      giatrimoi: data,
+      request,
+    });
+
     return NextResponse.json({ success: true, data }, { status: 201 });
   } catch (err: any) {
     return NextResponse.json({ error: err.message || "Internal Server Error" }, { status: 500 });

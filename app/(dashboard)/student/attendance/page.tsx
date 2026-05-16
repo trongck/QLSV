@@ -7,7 +7,7 @@ import AttendanceActions, {
   type HocKyItem,
 } from "@/components/student/AttendanceActions";
 import AttendanceModal from "@/components/student/AttendanceModal";
-import { apiFetch } from "@/services/auth.service";
+import { apiFetch } from "@/services/service/auth.service";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -51,10 +51,10 @@ const STATUS_CONFIG: Record<
   AttendanceRecord["trangthai"],
   { label: string; bg: string; text: string; dot: string }
 > = {
-  Comat:   { label: "Có mặt",  bg: "bg-emerald-50", text: "text-emerald-700", dot: "bg-emerald-500" },
-  Dimuon:  { label: "Đi muộn", bg: "bg-amber-50",   text: "text-amber-700",   dot: "bg-amber-500"  },
-  Cophep:  { label: "Có phép", bg: "bg-blue-50",    text: "text-blue-700",    dot: "bg-blue-500"   },
-  Vangmat: { label: "Vắng",    bg: "bg-red-50",     text: "text-red-700",     dot: "bg-red-500"    },
+  Comat: { label: "Có mặt", bg: "bg-emerald-50", text: "text-emerald-700", dot: "bg-emerald-500" },
+  Dimuon: { label: "Đi muộn", bg: "bg-amber-50", text: "text-amber-700", dot: "bg-amber-500" },
+  Cophep: { label: "Có phép", bg: "bg-blue-50", text: "text-blue-700", dot: "bg-blue-500" },
+  Vangmat: { label: "Vắng", bg: "bg-red-50", text: "text-red-700", dot: "bg-red-500" },
 };
 
 // ─── Page ─────────────────────────────────────────────────────────────────────

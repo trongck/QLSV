@@ -26,7 +26,7 @@ import {
   formatDiaryDateShort,
   formatDiaryTime,
   type NhatKyItem,
-} from "@/services/diary.service";
+} from "@/services/service/diary.service";
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -43,26 +43,26 @@ function useDebounce<T>(value: T, delay = 400): T {
 
 export default function StudentNotePage() {
   // Danh sách
-  const [notes, setNotes]             = useState<NhatKyItem[]>([]);
-  const [loading, setLoading]         = useState(true);
-  const [error, setError]             = useState<string | null>(null);
-  const [total, setTotal]             = useState(0);
+  const [notes, setNotes] = useState<NhatKyItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [total, setTotal] = useState(0);
 
   // Tìm kiếm
   const [searchQuery, setSearchQuery] = useState("");
-  const debouncedSearch               = useDebounce(searchQuery, 400);
+  const debouncedSearch = useDebounce(searchQuery, 400);
 
   // Bản ghi đang chọn
-  const [selectedId, setSelectedId]   = useState<number | null>(null);
+  const [selectedId, setSelectedId] = useState<number | null>(null);
 
   // Trạng thái chỉnh sửa local (chưa lưu)
-  const [editTitle,   setEditTitle]   = useState("");
+  const [editTitle, setEditTitle] = useState("");
   const [editContent, setEditContent] = useState("");
   const [editTamTrang, setEditTamTrang] = useState<number | null>(null);
-  const [isDirty,     setIsDirty]     = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
 
   // Saving / deleting
-  const [saving,   setSaving]   = useState(false);
+  const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
   // Timer tự lưu
@@ -88,7 +88,7 @@ export default function StudentNotePage() {
     } finally {
       setLoading(false);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => { fetchList(debouncedSearch); }, [debouncedSearch, fetchList]);
@@ -116,7 +116,7 @@ export default function StudentNotePage() {
     if (autoSaveRef.current) clearTimeout(autoSaveRef.current);
     autoSaveRef.current = setTimeout(() => { handleSave(); }, 2000);
     return () => { if (autoSaveRef.current) clearTimeout(autoSaveRef.current); };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editTitle, editContent, editTamTrang, isDirty]);
 
   // ─── Lưu nhật ký ─────────────────────────────────────────────────────────
@@ -127,9 +127,9 @@ export default function StudentNotePage() {
     setSaving(true);
     try {
       const updated = await updateDiary(selectedId, {
-        tieude:   editTitle.trim() || null,
-        noidung:  editContent.trim(),
-        tamtrang: editTamTrang as 1|2|3|4|5|null,
+        tieude: editTitle.trim() || null,
+        noidung: editContent.trim(),
+        tamtrang: editTamTrang as 1 | 2 | 3 | 4 | 5 | null,
       });
       setNotes((prev) =>
         prev.map((n) => (n.manhatky === selectedId ? updated : n))
@@ -150,8 +150,8 @@ export default function StudentNotePage() {
     setSaving(true);
     try {
       const newNote = await createDiary({
-        tieude:   "Nhật ký mới",
-        noidung:  "",
+        tieude: "Nhật ký mới",
+        noidung: "",
         tamtrang: null,
       });
       setNotes((prev) => [newNote, ...prev]);
@@ -271,11 +271,10 @@ export default function StudentNotePage() {
                 <div
                   key={note.manhatky}
                   onClick={() => handleSelectNote(note)}
-                  className={`p-5 cursor-pointer border-b border-gray-50 transition-all ${
-                    isActive
-                      ? "bg-red-50 border-r-4 border-red-500"
-                      : "hover:bg-gray-50"
-                  }`}
+                  className={`p-5 cursor-pointer border-b border-gray-50 transition-all ${isActive
+                    ? "bg-red-50 border-r-4 border-red-500"
+                    : "hover:bg-gray-50"
+                    }`}
                 >
                   <div className="flex justify-between items-start mb-2">
                     <span className="text-[11px] text-gray-400 flex items-center gap-1">
@@ -291,9 +290,8 @@ export default function StudentNotePage() {
                     </div>
                   </div>
                   <h3
-                    className={`font-bold text-sm mb-1 truncate ${
-                      isActive ? "text-red-700" : "text-gray-800"
-                    }`}
+                    className={`font-bold text-sm mb-1 truncate ${isActive ? "text-red-700" : "text-gray-800"
+                      }`}
                   >
                     {note.tieude || "Không có tiêu đề"}
                   </h3>
@@ -314,11 +312,10 @@ export default function StudentNotePage() {
             <button
               onClick={handleSave}
               disabled={!isDirty || saving || !selectedId}
-              className={`transition flex items-center gap-1 text-sm ${
-                isDirty
-                  ? "text-red-500 hover:text-red-700"
-                  : "text-gray-300 cursor-default"
-              }`}
+              className={`transition flex items-center gap-1 text-sm ${isDirty
+                ? "text-red-500 hover:text-red-700"
+                : "text-gray-300 cursor-default"
+                }`}
               title="Lưu (Ctrl+S)"
             >
               {saving ? (

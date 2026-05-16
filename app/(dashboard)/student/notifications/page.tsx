@@ -11,29 +11,30 @@ import {
   markNotificationRead,
   LOAI_LABEL,
   formatNotifDate,
+  parseNotificationContent,
   type ThongBaoItem,
-} from "@/services/notification.service";
+} from "@/services/service/notification.service";
 
 // ─── Tab types ────────────────────────────────────────────────────────────────
 
 type Tab = "tatca" | "chuadoc" | "dadoc";
 
 const TABS: { key: Tab; label: string }[] = [
-  { key: "tatca",   label: "Tất cả" },
+  { key: "tatca", label: "Tất cả" },
   { key: "chuadoc", label: "Chưa đọc" },
-  { key: "dadoc",   label: "Đã đọc" },
+  { key: "dadoc", label: "Đã đọc" },
 ];
 
 // ─── Màu badge theo loại ──────────────────────────────────────────────────────
 
 const LOAI_COLOR: Record<string, { bg: string; text: string }> = {
-  Khancap:      { bg: "#FEE2E2", text: "#B91C1C" },
-  Hoctap:       { bg: "#DBEAFE", text: "#1D4ED8" },
+  Khancap: { bg: "#FEE2E2", text: "#B91C1C" },
+  Hoctap: { bg: "#DBEAFE", text: "#1D4ED8" },
   Thoikhoabieu: { bg: "#EDE9FE", text: "#6D28D9" },
-  Diem:         { bg: "#D1FAE5", text: "#065F46" },
-  Tailieu:      { bg: "#FFEDD5", text: "#C2410C" },
-  Baitap:       { bg: "#FEF3C7", text: "#92400E" },
-  Chung:        { bg: "#F3F4F6", text: "#374151" },
+  Diem: { bg: "#D1FAE5", text: "#065F46" },
+  Tailieu: { bg: "#FFEDD5", text: "#C2410C" },
+  Baitap: { bg: "#FEF3C7", text: "#92400E" },
+  Chung: { bg: "#F3F4F6", text: "#374151" },
 };
 
 function getLoaiColor(loai: string) {
@@ -54,12 +55,12 @@ function NotifIcon({ loai, size = 48 }: { loai: string; size?: number }) {
   };
   const iconStyle = { color: color.text };
   switch (loai) {
-    case "Tailieu":      return <div style={style}><FileText size={iconSize} style={iconStyle} /></div>;
-    case "Hoctap":       return <div style={style}><BookOpen size={iconSize} style={iconStyle} /></div>;
+    case "Tailieu": return <div style={style}><FileText size={iconSize} style={iconStyle} /></div>;
+    case "Hoctap": return <div style={style}><BookOpen size={iconSize} style={iconStyle} /></div>;
     case "Thoikhoabieu": return <div style={style}><Clock size={iconSize} style={iconStyle} /></div>;
-    case "Diem":         return <div style={style}><Star size={iconSize} style={iconStyle} /></div>;
-    case "Khancap":      return <div style={style}><AlertTriangle size={iconSize} style={iconStyle} /></div>;
-    default:             return <div style={style}><Bell size={iconSize} style={iconStyle} /></div>;
+    case "Diem": return <div style={style}><Star size={iconSize} style={iconStyle} /></div>;
+    case "Khancap": return <div style={style}><AlertTriangle size={iconSize} style={iconStyle} /></div>;
+    default: return <div style={style}><Bell size={iconSize} style={iconStyle} /></div>;
   }
 }
 
@@ -87,6 +88,7 @@ function NotifModal({ item, onClose }: { item: ThongBaoItem; onClose: () => void
 
   const nguoiTao = item.admin?.hoten ?? item.giangvien?.hoten ?? "Nhà trường";
   const loaiColor = getLoaiColor(item.loai);
+  const parsed = parseNotificationContent(item.noidung);
   const ngayPhat = new Date(item.ngaytao).toLocaleString("vi-VN", {
     day: "2-digit", month: "2-digit", year: "numeric",
     hour: "2-digit", minute: "2-digit",
@@ -207,8 +209,8 @@ function NotifModal({ item, onClose }: { item: ThongBaoItem; onClose: () => void
               {item.doituong === "Tatca"
                 ? "Tất cả mọi người"
                 : item.doituong === "SinhVien"
-                ? "Sinh viên"
-                : item.doituong}
+                  ? "Sinh viên"
+                  : item.doituong}
               {item.lop?.tenlop ? ` · ${item.lop.tenlop}` : ""}
             </span>
             {item.ngayhethan && (
@@ -220,13 +222,18 @@ function NotifModal({ item, onClose }: { item: ThongBaoItem; onClose: () => void
           </div>
 
           {/* Nội dung trong box */}
+          {parsed.imageUrl && (
+            <div style={{ marginBottom: 16 }}>
+              <img src={parsed.imageUrl} alt={item.tieude} style={{ maxWidth: "100%", borderRadius: 12, display: "block" }} />
+            </div>
+          )}
           <div style={{
             background: "#FFF8F5", border: "1px solid #F0E8E0",
             borderRadius: 12, padding: "16px 20px",
             fontSize: 14, color: "#3d2b1f", lineHeight: 1.8,
             whiteSpace: "pre-wrap", wordBreak: "break-word",
           }}>
-            {item.noidung}
+            {parsed.text}
           </div>
 
           {/* Đã đọc lúc */}
@@ -276,19 +283,19 @@ function NotifCard({
 }) {
   const nguoiTao = item.admin?.hoten ?? item.giangvien?.hoten ?? "Nhà trường";
   const loaiColor = getLoaiColor(item.loai);
+  const parsed = parseNotificationContent(item.noidung);
 
   async function handleMarkRead(e: React.MouseEvent) {
     e.stopPropagation();
     if (item.dadoc) return;
-    await markNotificationRead(item.mathongbao).catch(() => {});
+    await markNotificationRead(item.mathongbao).catch(() => { });
     onRead(item.mathongbao);
   }
 
   return (
     <div
-      className={`card p-6 rounded-2xl hover:translate-y-[-2px] transition-all cursor-pointer relative ${
-        !item.dadoc ? "border-l-4 border-[var(--color-primary)]" : ""
-      }`}
+      className={`card p-6 rounded-2xl hover:translate-y-[-2px] transition-all cursor-pointer relative ${!item.dadoc ? "border-l-4 border-[var(--color-primary)]" : ""
+        }`}
       onClick={() => onClick(item)}
     >
       {item.ghim && (
@@ -323,7 +330,7 @@ function NotifCard({
           </h3>
 
           <p className="text-[var(--color-fg-subtle)] text-sm leading-6 line-clamp-2">
-            {item.noidung}
+            {parsed.text}
           </p>
 
           <div className="flex items-center gap-3 mt-3 text-xs text-[var(--color-fg-subtle)]">
@@ -359,11 +366,11 @@ function NotifCard({
 // ─── Page chính ───────────────────────────────────────────────────────────────
 
 export default function StudentNotificationsPage() {
-  const [tab, setTab]           = useState<Tab>("tatca");
-  const [search, setSearch]     = useState("");
+  const [tab, setTab] = useState<Tab>("tatca");
+  const [search, setSearch] = useState("");
   const [notifications, setNotifications] = useState<ThongBaoItem[]>([]);
-  const [loading, setLoading]   = useState(true);
-  const [error, setError]       = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [selectedItem, setSelectedItem] = useState<ThongBaoItem | null>(null);
 
   // Debounce search
@@ -408,7 +415,7 @@ export default function StudentNotificationsPage() {
       thoigiandoc: item.thoigiandoc ?? new Date().toISOString(),
     });
     if (!item.dadoc) {
-      markNotificationRead(item.mathongbao).catch(() => {});
+      markNotificationRead(item.mathongbao).catch(() => { });
       handleRead(item.mathongbao);
     }
   }
@@ -457,11 +464,10 @@ export default function StudentNotificationsPage() {
               <button
                 key={t.key}
                 onClick={() => setTab(t.key)}
-                className={`px-5 h-[42px] rounded-xl text-sm font-medium transition-all ${
-                  tab === t.key
-                    ? "bg-[var(--color-primary)] text-white shadow-sm"
-                    : "bg-[var(--color-light-peach)] hover:opacity-80"
-                }`}
+                className={`px-5 h-[42px] rounded-xl text-sm font-medium transition-all ${tab === t.key
+                  ? "bg-[var(--color-primary)] text-white shadow-sm"
+                  : "bg-[var(--color-light-peach)] hover:opacity-80"
+                  }`}
               >
                 {t.label}
                 {t.key === "chuadoc" && unreadCount > 0 && (
@@ -508,8 +514,8 @@ export default function StudentNotificationsPage() {
                 {tab === "chuadoc"
                   ? "Bạn đã đọc hết tất cả thông báo! 🎉"
                   : tab === "dadoc"
-                  ? "Chưa có thông báo nào đã đọc."
-                  : "Không có thông báo nào."}
+                    ? "Chưa có thông báo nào đã đọc."
+                    : "Không có thông báo nào."}
               </p>
             </div>
           )}

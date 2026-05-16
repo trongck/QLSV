@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { notificationRepository } from "@/repositories/notification.repo";
+import { notificationRepository } from "@/services/repositories/notification.repo";
 import { Notification } from "@/types/notification";
 
 export const useNotification = () => {

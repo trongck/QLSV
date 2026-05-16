@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { createClient } from "@/lib/utils/supabase/server";
 import { verifyToken, extractBearer } from "@/lib/utils/jwt";
 import { VaiTro } from "@/types";
+import { logAuditAction } from "@/lib/utils/audit";
 
 // ─── Auth helper ─────────────────────────────────────────────────────────────
 
@@ -32,8 +33,8 @@ export async function GET(request: Request) {
 
   const { searchParams } = new URL(request.url);
   const search = searchParams.get("search") ?? "";
-  const page   = Math.max(1, Number(searchParams.get("page")  ?? 1));
-  const limit  = Math.min(50, Math.max(1, Number(searchParams.get("limit") ?? 20)));
+  const page = Math.max(1, Number(searchParams.get("page") ?? 1));
+  const limit = Math.min(50, Math.max(1, Number(searchParams.get("limit") ?? 20)));
   const offset = (page - 1) * limit;
 
   const supabase = createClient(await cookies());
@@ -104,10 +105,10 @@ export async function POST(request: Request) {
 
   const supabase = createClient(await cookies());
 
-  // Lấy masv
+  // ĐÃ CHỈNH SỬA: Lấy thêm cột 'hoten' từ bảng sinhvien để gắn vào log
   const { data: svData, error: svError } = await supabase
     .from("sinhvien")
-    .select("masv")
+    .select("masv, hoten")
     .eq("mataikhoan", payload.mataikhoan)
     .single();
 
@@ -135,6 +136,20 @@ export async function POST(request: Request) {
   if (error) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
+
+  // ĐÃ CHỈNH SỬA: Lấy tên sinh viên từ kết quả truy vấn db
+  const tenSinhVien = svData.hoten || "Sinh viên";
+
+  // ĐÃ CHỈNH SỬA: Cập nhật nội dung hanhdong hiển thị rõ tên sinh viên thêm nhật ký
+  await logAuditAction({
+    supabase,
+    mataikhoan: payload.mataikhoan,
+    hanhdong: `Sinh viên [${tenSinhVien}] đã thêm nhật ký mới`,
+    tentable: "nhatky",
+    makhoachinh: String(data.manhatky),
+    giatrimoi: data,
+    request,
+  });
 
   return NextResponse.json({ data }, { status: 201 });
 }
