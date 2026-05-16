@@ -403,6 +403,8 @@ export interface PhanCongPayload {
     malophoc?: string;
     sisomax?: number | string;
     danghieuluc?: boolean;
+    ngaybatdau?: string;
+    ngayketthuc?: string;
 }
 
 export function validatePhanCong(data: PhanCongPayload): ValidationError[] {
@@ -420,6 +422,18 @@ export function validatePhanCong(data: PhanCongPayload): ValidationError[] {
         const maxSize = Number(data.sisomax);
         if (isNaN(maxSize) || maxSize <= 0) {
             errs.push({ field: "sisomax", message: "Sĩ số tối đa phải là số nguyên dương." });
+        }
+    }
+
+    // Date validation
+    if (data.ngaybatdau) errs.push(date(data.ngaybatdau, "ngaybatdau", "Ngày bắt đầu", true));
+    if (data.ngayketthuc) errs.push(date(data.ngayketthuc, "ngayketthuc", "Ngày kết thúc", true));
+
+    if (data.ngaybatdau && data.ngayketthuc) {
+        const start = new Date(data.ngaybatdau);
+        const end = new Date(data.ngayketthuc);
+        if (!isNaN(start.getTime()) && !isNaN(end.getTime()) && start > end) {
+            errs.push({ field: "ngaybatdau", message: "Ngày bắt đầu không thể lớn hơn ngày kết thúc." });
         }
     }
 

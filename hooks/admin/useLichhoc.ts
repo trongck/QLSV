@@ -44,6 +44,7 @@ export function useLichHoc() {
       malop?: string;
       mahocky?: string;
       maphong?: string;
+      status?: string;
       page?: number;
       limit?: number;
     } = {}): Promise<LichHocListResponse> => {

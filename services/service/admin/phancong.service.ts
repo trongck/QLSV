@@ -1,5 +1,6 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import * as repo from "../../repositories/admin/phancong.repo";
+import * as hockyRepo from "../../repositories/admin/hocky.repo";
 
 export async function getPhanCongListService(
   supabase: SupabaseClient,
@@ -9,6 +10,7 @@ export async function getPhanCongListService(
     mamon?: string;
     malop?: string;
     mahocky?: string;
+    status?: "ongoing" | "ended" | "all";
     page?: number;
     limit?: number;
   }
@@ -30,6 +32,7 @@ export async function getPhanCongListService(
     mamon: params.mamon,
     malop: params.malop,
     mahocky: params.mahocky,
+    status: params.status,
     from,
     to,
     limit,
@@ -44,9 +47,20 @@ export async function getPhanCongListService(
 }
 
 export async function createPhanCongService(supabase: SupabaseClient, body: any) {
-  const { magv, mamon, malop, mahocky, malophoc, sisomax, danghieuluc } = body;
+  const { magv, mamon, malop, mahocky, malophoc, sisomax, danghieuluc, ngaybatdau, ngayketthuc } = body;
 
-  // 1. Check duplicate
+  // 1. Fetch semester dates for validation
+  const { data: hocky, error: hockyError } = await hockyRepo.getHockyByIdRepo(supabase, parseInt(mahocky));
+  if (hockyError) throw new Error("Không tìm thấy thông tin học kỳ.");
+
+  if (ngaybatdau && hocky.ngaybatdau && new Date(ngaybatdau) < new Date(hocky.ngaybatdau)) {
+    throw new Error(`Ngày bắt đầu (${ngaybatdau}) không được nhỏ hơn ngày bắt đầu học kỳ (${hocky.ngaybatdau})`);
+  }
+  if (ngayketthuc && hocky.ngayketthuc && new Date(ngayketthuc) > new Date(hocky.ngayketthuc)) {
+    throw new Error(`Ngày kết thúc (${ngayketthuc}) không được lớn hơn ngày kết thúc học kỳ (${hocky.ngayketthuc})`);
+  }
+
+  // 2. Check duplicate
   const { data: duplicateData, error: duplicateError } = await repo.checkDuplicatePhanCongRepo(supabase, {
     magv,
     mamon,
@@ -60,11 +74,11 @@ export async function createPhanCongService(supabase: SupabaseClient, body: any)
     throw new Error("Phân công này đã tồn tại trong hệ thống.");
   }
 
-  // 2. Max ID sequences
+  // 3. Max ID sequences
   const { data: maxPc } = await repo.getMaxPhanCongIdRepo(supabase);
   const nextId = maxPc && maxPc.length > 0 ? maxPc[0].maphancong + 1 : 1;
 
-  // 3. Create phancong
+  // 4. Create phancong
   const { data, error } = await repo.createPhanCongRepo(supabase, {
     maphancong: nextId,
     magv: magv.trim(),
@@ -74,16 +88,35 @@ export async function createPhanCongService(supabase: SupabaseClient, body: any)
     malophoc: malophoc?.trim() || null,
     sisomax: sisomax ? parseInt(sisomax) : null,
     danghieuluc: danghieuluc ?? true,
+    ngaybatdau: ngaybatdau || null,
+    ngayketthuc: ngayketthuc || null,
   });
 
   if (error) throw new Error(error.message);
+
+  // 5. Automatically enroll students from the administrative class into this assignment
+  if (data) {
+    await repo.enrollStudentsFromClassRepo(supabase, data.maphancong, malop.trim());
+  }
+
   return data;
 }
 
 export async function updatePhanCongService(supabase: SupabaseClient, maphancong: number, body: any) {
-  const { magv, mamon, malop, mahocky, malophoc, sisomax, danghieuluc } = body;
+  const { magv, mamon, malop, mahocky, malophoc, sisomax, danghieuluc, ngaybatdau, ngayketthuc } = body;
 
-  // 1. Check duplicate
+  // 1. Fetch semester dates for validation
+  const { data: hocky, error: hockyError } = await hockyRepo.getHockyByIdRepo(supabase, parseInt(mahocky));
+  if (hockyError) throw new Error("Không tìm thấy thông tin học kỳ.");
+
+  if (ngaybatdau && hocky.ngaybatdau && new Date(ngaybatdau) < new Date(hocky.ngaybatdau)) {
+    throw new Error(`Ngày bắt đầu (${ngaybatdau}) không được nhỏ hơn ngày bắt đầu học kỳ (${hocky.ngaybatdau})`);
+  }
+  if (ngayketthuc && hocky.ngayketthuc && new Date(ngayketthuc) > new Date(hocky.ngayketthuc)) {
+    throw new Error(`Ngày kết thúc (${ngayketthuc}) không được lớn hơn ngày kết thúc học kỳ (${hocky.ngayketthuc})`);
+  }
+
+  // 2. Check duplicate
   const { data: duplicateData, error: duplicateError } = await repo.checkDuplicatePhanCongRepo(supabase, {
     magv,
     mamon,
@@ -98,7 +131,7 @@ export async function updatePhanCongService(supabase: SupabaseClient, maphancong
     throw new Error("Phân công trùng lặp với một phân công khác đang tồn tại.");
   }
 
-  // 2. Update phancong
+  // 3. Update phancong
   const { data, error } = await repo.updatePhanCongRepo(supabase, maphancong, {
     magv: magv.trim(),
     mamon: mamon.trim(),
@@ -107,9 +140,17 @@ export async function updatePhanCongService(supabase: SupabaseClient, maphancong
     malophoc: malophoc?.trim() || null,
     sisomax: sisomax ? parseInt(sisomax) : null,
     danghieuluc: danghieuluc ?? true,
+    ngaybatdau: ngaybatdau || null,
+    ngayketthuc: ngayketthuc || null,
   });
 
   if (error) throw new Error(error.message);
+
+  // 4. Update student enrollment (in case class was changed or new students added)
+  if (data) {
+    await repo.enrollStudentsFromClassRepo(supabase, maphancong, malop.trim());
+  }
+
   return data;
 }
 

@@ -13,6 +13,7 @@ export async function getLichHocListService(
     page: number;
     limit: number;
     hasPage: boolean;
+    status?: "ongoing" | "ended" | "all";
   }
 ) {
   const from = (params.page - 1) * params.limit;
@@ -29,6 +30,7 @@ export async function getLichHocListService(
     to,
     limit: params.limit,
     hasPage: params.hasPage,
+    status: params.status,
   });
 
   if (error) throw new Error(error.message);

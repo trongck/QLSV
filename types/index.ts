@@ -142,6 +142,8 @@ export interface PhanCong {
   malophoc: string | null;
   sisomax: number | null;
   danghieuluc: boolean;
+  ngaybatdau: Date | null;
+  ngayketthuc: Date | null;
   ngaytao: Date;
 }
 

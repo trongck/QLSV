@@ -59,6 +59,7 @@ function AdminSchedulesContent() {
   const [filterLop, setFilterLop] = useState("");
   const [filterHk, setFilterHk] = useState("");
   const [filterRoom, setFilterRoom] = useState("");
+  const [filterStatus, setFilterStatus] = useState<"ongoing" | "ended" | "all">("ongoing");
   const [isLoading, setIsLoading] = useState(true);
 
   // Modals & Mutating states
@@ -110,6 +111,7 @@ function AdminSchedulesContent() {
         malop: filterLop,
         mahocky: filterHk,
         maphong: filterRoom,
+        status: filterStatus,
         page: viewMode === "list" ? page : undefined,
         limit: viewMode === "list" ? 12 : 200,
       });
@@ -122,7 +124,7 @@ function AdminSchedulesContent() {
     } finally {
       setIsLoading(false);
     }
-  }, [filterPc, filterThu, filterLop, filterHk, filterRoom, page, viewMode]);
+  }, [filterPc, filterThu, filterLop, filterHk, filterRoom, filterStatus, page, viewMode]);
 
   useEffect(() => {
     if (user && user.vaitro === VaiTro.Admin) {
@@ -457,7 +459,17 @@ function AdminSchedulesContent() {
               ))}
             </select>
 
-            {(filterRoom || filterPc || filterThu || filterLop || filterHk) && (
+            <select
+              className="p-[10px_14px] border-[1.5px] border-border rounded-xl text-[13px] text-fg bg-white cursor-pointer outline-none transition-colors duration-200 focus:border-primary max-sm:w-full"
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value as any)}
+            >
+              <option value="all">-- Tất cả hiệu lực --</option>
+              <option value="ongoing">Đang diễn ra</option>
+              <option value="ended">Đã kết thúc</option>
+            </select>
+
+            {(filterRoom || filterPc || filterThu || filterLop || filterHk || filterStatus !== "ongoing") && (
               <button
                 className="p-[9px_14px] border-[1.5px] border-primary rounded-xl text-[13px] text-primary bg-[#FFF5F5] cursor-pointer whitespace-nowrap transition-all hover:bg-primary hover:text-white max-sm:w-full"
                 onClick={() => {
@@ -466,6 +478,7 @@ function AdminSchedulesContent() {
                   setFilterThu("");
                   setFilterLop("");
                   setFilterHk("");
+                  setFilterStatus("ongoing");
                   setPage(1);
                 }}
               >

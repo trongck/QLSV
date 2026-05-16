@@ -126,14 +126,22 @@ export default function StudentDashboard() {
             .order("ngaytao", { ascending: false })
             .limit(6),
           supabase
-            .from("lichhocsinhvien")
-            .select("tenmon, phonghoc, tietbatdau, tietketthuc")
-            .eq("masv", masv)
+            .from("lichhoc")
+            .select(`
+              tietbatdau,
+              tietketthuc,
+              maphong,
+              phancong!inner (
+                monhoc (tenmon)
+              )
+            `)
+            .or(`malop.eq.${myLop || "NONE"},maphancong.in.(${myAssignments.length > 0 ? myAssignments.join(",") : "0"})`, { foreignTable: "phancong" })
+            .or(`ngayketthuc.is.null,ngayketthuc.gte.${new Date().toISOString().split("T")[0]}`, { foreignTable: "phancong" })
             .eq(
               "thutrongtuan",
               new Date(new Date().getTime() + 7 * 3600 * 1000).getDay() === 0 ? 8 : new Date(new Date().getTime() + 7 * 3600 * 1000).getDay() + 1,
             )
-            .limit(4),
+            .limit(10),
           supabase
             .from("diemdanh")
             .select("trangthai")
@@ -164,7 +172,12 @@ export default function StudentDashboard() {
           diemTBHK,
           soBuoiVang: diemDanh?.length ?? 0,
           soBaiTapConHan: baiTap?.length ?? 0,
-          lichHocHomNay: lichHoc ?? [],
+          lichHocHomNay: (lichHoc ?? []).map((lh: any) => ({
+            tenmon: lh.phancong?.monhoc?.tenmon ?? "—",
+            phonghoc: lh.maphong ?? "—",
+            tietbatdau: lh.tietbatdau,
+            tietketthuc: lh.tietketthuc,
+          })),
           thongBaoGanDay: (thongBao ?? []).map((t) => ({
             ...t,
             ngaytao: new Date(t.ngaytao).toLocaleDateString("vi-VN"),

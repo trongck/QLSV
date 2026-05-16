@@ -20,6 +20,7 @@ export async function GET(request: Request) {
   const malop = searchParams.get("malop") ?? undefined;
   const mahocky = searchParams.get("mahocky") ?? undefined;
   const maphong = searchParams.get("maphong") ?? undefined;
+  const status = (searchParams.get("status") as any) ?? undefined;
 
   const hasPage = searchParams.has("page");
 
@@ -32,6 +33,7 @@ export async function GET(request: Request) {
       malop,
       mahocky,
       maphong,
+      status,
       page,
       limit,
       hasPage,

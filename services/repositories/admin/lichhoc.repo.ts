@@ -13,6 +13,7 @@ export async function getLichHocListRepo(
     to: number;
     limit: number;
     hasPage: boolean;
+    status?: "ongoing" | "ended" | "all";
   }
 ) {
   const useInnerJoin = !!(params.magv || params.malop || params.mahocky);
@@ -29,6 +30,13 @@ export async function getLichHocListRepo(
   if (params.magv) query = query.eq("phancong.magv", params.magv);
   if (params.malop) query = query.eq("phancong.malop", params.malop);
   if (params.mahocky) query = query.eq("phancong.mahocky", parseInt(params.mahocky));
+  
+  const now = new Date().toISOString().split("T")[0];
+  if (params.status === "ongoing") {
+    query = query.or(`ngayketthuc.is.null,ngayketthuc.gte.${now}`, { foreignTable: "phancong" });
+  } else if (params.status === "ended") {
+    query = query.lt("phancong.ngayketthuc", now);
+  }
 
   if (params.hasPage) {
     query = query

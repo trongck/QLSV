@@ -8,6 +8,7 @@ export async function getPhanCongListRepo(
     mamon?: string;
     malop?: string;
     mahocky?: string;
+    status?: "ongoing" | "ended" | "all";
     from?: number;
     to?: number;
     limit?: number;
@@ -15,7 +16,7 @@ export async function getPhanCongListRepo(
 ) {
   let query = supabase
     .from("phancong")
-    .select("*, giangvien:magv(hoten), monhoc:mamon(tenmon), lop:malop(tenlop), hocky:mahocky(tenhocky)", { count: "exact" });
+    .select("*, giangvien:magv(hoten), monhoc:mamon(tenmon), lop:malop(tenlop), hocky:mahocky(tenhocky, ngaybatdau, ngayketthuc)", { count: "exact" });
 
   if (params.search) {
     query = query.or(`malophoc.ilike.%${params.search}%`);
@@ -24,6 +25,13 @@ export async function getPhanCongListRepo(
   if (params.mamon) query = query.eq("mamon", params.mamon);
   if (params.malop) query = query.eq("malop", params.malop);
   if (params.mahocky) query = query.eq("mahocky", parseInt(params.mahocky));
+  
+  const now = new Date().toISOString().split("T")[0];
+  if (params.status === "ongoing") {
+    query = query.or(`ngayketthuc.is.null,ngayketthuc.gte.${now}`);
+  } else if (params.status === "ended") {
+    query = query.lt("ngayketthuc", now);
+  }
 
   if (params.from !== undefined && params.to !== undefined) {
     query = query.order("maphancong", { ascending: false }).range(params.from, params.to);
@@ -71,7 +79,7 @@ export async function createPhanCongRepo(supabase: SupabaseClient, payload: Reco
   return supabase
     .from("phancong")
     .insert(payload)
-    .select("*, giangvien:magv(hoten), monhoc:mamon(tenmon), lop:malop(tenlop), hocky:mahocky(tenhocky)")
+    .select("*, giangvien:magv(hoten), monhoc:mamon(tenmon), lop:malop(tenlop), hocky:mahocky(tenhocky, ngaybatdau, ngayketthuc)")
     .single();
 }
 
@@ -80,7 +88,7 @@ export async function updatePhanCongRepo(supabase: SupabaseClient, maphancong: n
     .from("phancong")
     .update(payload)
     .eq("maphancong", maphancong)
-    .select("*, giangvien:magv(hoten), monhoc:mamon(tenmon), lop:malop(tenlop), hocky:mahocky(tenhocky)")
+    .select("*, giangvien:magv(hoten), monhoc:mamon(tenmon), lop:malop(tenlop), hocky:mahocky(tenhocky, ngaybatdau, ngayketthuc)")
     .single();
 }
 
@@ -98,3 +106,33 @@ export async function deletePhanCongRepo(supabase: SupabaseClient, maphancong: n
     .delete()
     .eq("maphancong", maphancong);
 }
+
+export async function enrollStudentsFromClassRepo(supabase: SupabaseClient, maphancong: number, malop: string) {
+  // 1. Get all students of the class
+  const { data: students, error: studentsError } = await supabase
+    .from("sinhvien")
+    .select("masv")
+    .eq("malop", malop);
+
+  if (studentsError) throw studentsError;
+  if (!students || students.length === 0) return { data: [], error: null };
+
+  // 2. Insert into sinhvienmonhoc
+  const enrollmentPayload = students.map((s) => ({
+    masv: s.masv,
+    maphancong: maphancong,
+    trangthai: "Danghoc"
+  }));
+
+  return supabase
+    .from("sinhvienmonhoc")
+    .upsert(enrollmentPayload, { onConflict: "masv,maphancong" });
+}
+
+export async function clearSinhVienMonHocRepo(supabase: SupabaseClient, maphancong: number) {
+  return supabase
+    .from("sinhvienmonhoc")
+    .delete()
+    .eq("maphancong", maphancong);
+}
+

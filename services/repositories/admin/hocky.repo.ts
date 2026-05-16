@@ -16,6 +16,10 @@ export async function getHockyListRepo(
   return query;
 }
 
+export async function getHockyByIdRepo(supabase: SupabaseClient, mahk: number) {
+  return supabase.from("hocky").select("*").eq("mahocky", mahk).single();
+}
+
 export async function createHockyRepo(supabase: SupabaseClient, payload: Record<string, unknown>) {
   return supabase.from("hocky").insert(payload).select().single();
 }

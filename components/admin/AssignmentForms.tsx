@@ -38,6 +38,8 @@ export function AssignmentForm({
     malophoc: initial?.malophoc ?? "",
     sisomax: initial?.sisomax ? String(initial.sisomax) : "",
     danghieuluc: initial?.danghieuluc ?? true,
+    ngaybatdau: initial?.ngaybatdau ? new Date(initial.ngaybatdau).toISOString().split("T")[0] : "",
+    ngayketthuc: initial?.ngayketthuc ? new Date(initial.ngayketthuc).toISOString().split("T")[0] : "",
   });
 
   const [localErr, setLocalErr] = useState("");
@@ -66,10 +68,29 @@ export function AssignmentForm({
       }
     }
 
+    if (form.ngaybatdau && form.ngayketthuc) {
+      if (new Date(form.ngaybatdau) > new Date(form.ngayketthuc)) {
+        return setLocalErr("Ngày bắt đầu không được lớn hơn ngày kết thúc.");
+      }
+    }
+
+    // Additional cross-check with semester dates (optional but good for UX)
+    const selectedHk = hockys.find(h => String(h.mahocky) === form.mahocky);
+    if (selectedHk) {
+      if (form.ngaybatdau && selectedHk.ngaybatdau && new Date(form.ngaybatdau) < new Date(selectedHk.ngaybatdau)) {
+        return setLocalErr(`Ngày bắt đầu không được nhỏ hơn ngày bắt đầu học kỳ (${new Date(selectedHk.ngaybatdau).toLocaleDateString()})`);
+      }
+      if (form.ngayketthuc && selectedHk.ngayketthuc && new Date(form.ngayketthuc) > new Date(selectedHk.ngayketthuc)) {
+        return setLocalErr(`Ngày kết thúc không được lớn hơn ngày kết thúc học kỳ (${new Date(selectedHk.ngayketthuc).toLocaleDateString()})`);
+      }
+    }
+
     onSubmit({
       ...form,
       mahocky: parseInt(form.mahocky),
       sisomax: form.sisomax ? parseInt(form.sisomax) : null,
+      ngaybatdau: form.ngaybatdau || null,
+      ngayketthuc: form.ngayketthuc || null,
     });
   };
 
@@ -186,6 +207,24 @@ export function AssignmentForm({
             />
             Đang hoạt động / Hiệu lực giảng dạy
           </label>
+        </div>
+
+        <div className="field">
+          <label>Ngày bắt đầu giảng dạy (Tuỳ chọn)</label>
+          <input
+            type="date"
+            value={form.ngaybatdau}
+            onChange={(e) => setForm({ ...form, ngaybatdau: e.target.value })}
+          />
+        </div>
+
+        <div className="field">
+          <label>Ngày kết thúc giảng dạy (Tuỳ chọn)</label>
+          <input
+            type="date"
+            value={form.ngayketthuc}
+            onChange={(e) => setForm({ ...form, ngayketthuc: e.target.value })}
+          />
         </div>
       </div>
 

@@ -61,6 +61,7 @@ export default function AdminAssignmentsPage() {
   const [filterLop, setFilterLop] = useState("");
   const [filterHk, setFilterHk] = useState("");
   const [filterNoSchedule, setFilterNoSchedule] = useState("all"); // 'all' | 'no_schedule'
+  const [filterStatus, setFilterStatus] = useState<"ongoing" | "ended" | "all">("ongoing");
   const [isLoading, setIsLoading] = useState(true);
 
   // Modals & Mutating states
@@ -112,6 +113,7 @@ export default function AdminAssignmentsPage() {
         mamon: filterMh,
         malop: filterLop,
         mahocky: filterHk,
+        status: filterStatus,
         page,
         limit: 10,
       });
@@ -138,6 +140,7 @@ export default function AdminAssignmentsPage() {
     filterLop,
     filterHk,
     filterNoSchedule,
+    filterStatus,
     page,
     assignedPhanCongIds,
   ]);
@@ -373,11 +376,22 @@ export default function AdminAssignmentsPage() {
               <option value="no_schedule">Chưa xếp lịch học</option>
             </select>
 
+            <select
+              className="p-[10px_14px] border-[1.5px] border-[#FFDBB6] rounded-lg text-[13px] bg-white cursor-pointer outline-none text-fg transition-colors duration-200 focus:border-primary max-sm:w-full"
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value as any)}
+            >
+              <option value="all">-- Tất cả hiệu lực --</option>
+              <option value="ongoing">Đang diễn ra</option>
+              <option value="ended">Đã kết thúc</option>
+            </select>
+
             {(search ||
               filterGv ||
               filterLop ||
               filterHk ||
-              filterNoSchedule !== "all") && (
+              filterNoSchedule !== "all" ||
+              filterStatus !== "ongoing") && (
               <button
                 className="p-[9px_14px] border-[1.5px] border-primary rounded-lg text-[13px] text-primary bg-[#FFF5F5] cursor-pointer whitespace-nowrap transition-all hover:bg-primary hover:text-white max-sm:w-full"
                 onClick={() => {
@@ -386,6 +400,7 @@ export default function AdminAssignmentsPage() {
                   setFilterLop("");
                   setFilterHk("");
                   setFilterNoSchedule("all");
+                  setFilterStatus("ongoing");
                   setPage(1);
                 }}
               >
@@ -411,6 +426,7 @@ export default function AdminAssignmentsPage() {
                       <th>Môn học</th>
                       <th>Lớp hành chính / Học phần</th>
                       <th>Học kỳ</th>
+                      <th>Thời gian</th>
                       <th>Trạng thái lịch</th>
                       <th>Hành động</th>
                     </tr>
@@ -448,6 +464,17 @@ export default function AdminAssignmentsPage() {
                           <td>
                             {pc.hocky?.tenhocky || `Học kỳ ${pc.mahocky}`}
                           </td>
+                          <td>
+                             <div className="text-[11px] whitespace-nowrap">
+                               BD: {pc.ngaybatdau ? new Date(pc.ngaybatdau).toLocaleDateString("vi-VN") : "Học kỳ"}
+                             </div>
+                             <div className="text-[11px] whitespace-nowrap">
+                               KT: {pc.ngayketthuc ? new Date(pc.ngayketthuc).toLocaleDateString("vi-VN") : "Học kỳ"}
+                             </div>
+                             {pc.ngayketthuc && new Date(pc.ngayketthuc) < new Date() && (
+                               <span className="badge badge-red mt-1" style={{ fontSize: '9px', padding: '1px 4px' }}>Hết hạn</span>
+                             )}
+                           </td>
                           <td>
                             {hasSched ? (
                               <span className="badge badge-green">
@@ -582,6 +609,14 @@ export default function AdminAssignmentsPage() {
                         <div>
                           <strong>Học kỳ:</strong> {pc.hocky?.tenhocky}
                         </div>
+                        <div>
+                          <strong>Thời gian:</strong> {pc.ngaybatdau ? new Date(pc.ngaybatdau).toLocaleDateString("vi-VN") : "Học kỳ"} - {pc.ngayketthuc ? new Date(pc.ngayketthuc).toLocaleDateString("vi-VN") : "Học kỳ"}
+                        </div>
+                        {pc.ngayketthuc && new Date(pc.ngayketthuc) < new Date() && (
+                          <div className="mt-1">
+                            <span className="badge badge-red" style={{ fontSize: '10px' }}>Đã kết thúc</span>
+                          </div>
+                        )}
                       </div>
 
                       <div className="flex justify-between items-center border-t border-dashed border-[#FFF0CD] pt-2.5 mt-1">
