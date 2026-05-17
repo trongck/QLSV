@@ -7,7 +7,7 @@ import {
   getSinhVienByIdService,
   updateSinhVienService,
   deleteSinhVienService,
-} from "@/services/service/admin/sinhvien.service";
+} from "@/services/service/admin/sinhvien.services/sinhvien.service";
 
 // ─── GET /api/admin/sinhvien/[masv] ────────────────────────────────────────────
 

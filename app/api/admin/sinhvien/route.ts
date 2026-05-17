@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import { createClient } from "@/lib/utils/supabase/server";
 import { requireAdmin } from "@/lib/utils/jwt";
 import { validateSinhVienCreate } from "@/lib/validation/admin.validation";
-import { getSinhVienListService, createSinhVienService } from "@/services/service/admin/sinhvien.service";
+import { getSinhVienListService, createSinhVienService } from "@/services/service/admin/sinhvien.services/sinhvien.service";
 
 // ─── GET /api/admin/sinhvien ──────────────────────────────────────────────────
 

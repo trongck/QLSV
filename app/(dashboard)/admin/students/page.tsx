@@ -12,7 +12,10 @@ import {
   EmptyState,
   ConfirmDelete,
 } from "@/components/admin/AdminTable";
-import { useSinhVien, type SinhVienRow } from "@/hooks/admin/useSinhvien";
+import {
+  useSinhVien,
+  type SinhVienRow,
+} from "@/hooks/admin/useSinhVien/useSinhvien";
 import { useKhoa, type KhoaRow } from "@/hooks/admin/useKhoa";
 import { useLop, type LopRow } from "@/hooks/admin/useLop";
 import { VaiTro, TrangThaiSinhVien } from "@/types";
@@ -324,7 +327,9 @@ export default function AdminStudentsPage() {
                             <span
                               className={`badge ${STATUS_BADGE[sv.trangthai as TrangThaiSinhVien] ?? "badge-peach"}`}
                             >
-                              {STATUS_LABEL[sv.trangthai as TrangThaiSinhVien] ?? sv.trangthai}
+                              {STATUS_LABEL[
+                                sv.trangthai as TrangThaiSinhVien
+                              ] ?? sv.trangthai}
                             </span>
                           </td>
                           <td>

@@ -2,9 +2,9 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/utils/supabase/server";
 import { requireAdmin } from "@/lib/utils/jwt";
-import { bulkImportSinhVienService } from "@/services/service/admin/sinhvien.service";
+import { bulkImportSinhVienService } from "@/services/service/admin/sinhvien.services/sinhvien.service";
 
-export type { ImportRow, ImportRowResult, BulkImportResponse } from "@/services/service/admin/sinhvien.service";
+export type { ImportRow, ImportRowResult, BulkImportResponse } from "@/services/service/admin/sinhvien.services/sinhvien.service";
 
 // ─── POST /api/admin/sinhvien/bulk-import ─────────────────────────────────────
 

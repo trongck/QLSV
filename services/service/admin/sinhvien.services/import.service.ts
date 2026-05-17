@@ -1,6 +1,5 @@
 import * as XLSX from "xlsx";
 import type { ImportRow, ImportRowResult, BulkImportResponse } from "@/app/api/admin/sinhvien/bulk-import/route";
-import { apiFetch } from "@/services/service/auth/auth.service";
 
 export type { ImportRow, ImportRowResult, BulkImportResponse };
 
@@ -104,43 +103,7 @@ export function parseExcelFile(file: File): Promise<{
   });
 }
 
-// ─── Validate-only call ───────────────────────────────────────────────────────
 
-export async function validateImportRows(rows: ImportRow[]): Promise<BulkImportResponse> {
-  const res = await apiFetch("/api/admin/sinhvien/bulk-import", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ rows, validateOnly: true }),
-  });
-
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.error ?? "Lỗi xác thực dữ liệu.");
-  }
-
-  return res.json();
-}
-
-// ─── Confirm import call ──────────────────────────────────────────────────────
-
-export async function confirmImport(rows: ImportRow[]): Promise<{
-  success: boolean;
-  summary: { total: number; success: number; failed: number };
-  failedRows: { rowIndex: number; masv: string; error: string }[];
-}> {
-  const res = await apiFetch("/api/admin/sinhvien/bulk-import", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ rows, validateOnly: false }),
-  });
-
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.error ?? "Lỗi nhập dữ liệu.");
-  }
-
-  return res.json();
-}
 
 // ─── Download template ────────────────────────────────────────────────────────
 

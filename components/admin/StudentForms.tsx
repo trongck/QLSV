@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { TrangThaiSinhVien, GioiTinh } from "@/types";
-import type { SinhVienRow } from "@/hooks/admin/useSinhvien";
+import type { SinhVienRow } from "@/hooks/admin/useSinhVien/useSinhvien";
 import type { LopRow } from "@/hooks/admin/useLop";
 
 const STATUS_LABEL: Record<TrangThaiSinhVien, string> = {
