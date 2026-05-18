@@ -1,6 +1,19 @@
 // services/sinhvien/notification.service.ts
 import { notificationRepo } from '@/services/repositories/sinhvien/notification.repo';
 
+const parseToVNTimeMs = (dateInput: string | Date) => {
+    if (dateInput instanceof Date) {
+        return dateInput.getTime();
+    }
+    let str = dateInput.trim().replace(' ', 'T');
+    // Nếu chuỗi thời gian chưa định nghĩa múi giờ (không chứa Z, +, -xx:xx)
+    // chúng ta sẽ ép buộc nó thuộc múi giờ Đông Dương (+07:00)
+    if (!str.includes('Z') && !str.includes('+') && !/-\d{2}:\d{2}$/.test(str)) {
+        str = str + '+07:00';
+    }
+    return new Date(str).getTime();
+};
+
 export const notificationSVService = {
     /**
      * Lấy toàn bộ thông báo dành cho sinh viên.
@@ -12,8 +25,28 @@ export const notificationSVService = {
         const { data, error } = await notificationRepo.getNotificationsForStudent(mataikhoan, malop);
         if (error) throw new Error(error.message);
 
+        const now = new Date();
+
+        // Lọc thông báo:
+        // - Ngày tạo phải bé hơn hoặc bằng thời gian hiện tại (không hiển thị các thông báo hẹn lịch trong tương lai)
+        // - Ngày hết hạn nếu có thì phải lớn hơn hoặc bằng thời gian hiện tại (không hiển thị các thông báo đã hết hạn)
+        const filteredData = (data ?? []).filter((tb: any) => {
+            const ngaytaoTime = tb.ngaytao ? parseToVNTimeMs(tb.ngaytao) : 0;
+            const ngayhethanTime = tb.ngayhethan ? parseToVNTimeMs(tb.ngayhethan) : null;
+
+            if (ngaytaoTime > now.getTime()) {
+                return false;
+            }
+
+            if (ngayhethanTime !== null && ngayhethanTime < now.getTime()) {
+                return false;
+            }
+
+            return true;
+        });
+
         // Đánh dấu "đã cập nhật" và "đã đọc" cho mỗi thông báo
-        const result = (data ?? []).map((tb: any) => {
+        const result = filteredData.map((tb: any) => {
             const readRecord = Array.isArray(tb.thongbaodadoc)
                 ? tb.thongbaodadoc.find((r: any) => r.mataikhoan === mataikhoan)
                 : null;
@@ -36,9 +69,12 @@ export const notificationSVService = {
      */
     getUnreadCount: async (mataikhoan: string, malop: string) => {
         if (!mataikhoan || !malop) return 0;
-        const { count, error } = await notificationRepo.getUnreadCount(mataikhoan, malop);
-        if (error) throw new Error(error.message);
-        return count ?? 0;
+        try {
+            const list = await notificationSVService.getAll(mataikhoan, malop);
+            return list.filter((tb: any) => !tb.dadoc).length;
+        } catch (e) {
+            return 0;
+        }
     },
 
     /**
