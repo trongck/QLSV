@@ -1,0 +1,223 @@
+/* ─── Student Dashboard ───────────────────────────────────────────────────────── */
+
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* Header */
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.greeting {
+  font-size: 22px;
+  font-weight: 700;
+  color: #2D1B14;
+  margin: 0 0 4px;
+}
+
+.date {
+  font-size: 13px;
+  color: #8B6F5F;
+  margin: 0;
+  text-transform: capitalize;
+}
+
+/* Stats grid */
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+}
+
+.statCard {
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.statAccent {
+  background: linear-gradient(135deg, #C25450 0%, #A8443F 100%) !important;
+  border-color: transparent !important;
+}
+
+.statAccent .statLabel,
+.statAccent .statSub {
+  color: rgba(255,255,255,0.8) !important;
+}
+
+.statAccent .statValue {
+  color: #fff !important;
+}
+
+.statLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: #8B6F5F;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.statValue {
+  font-size: 28px;
+  font-weight: 700;
+  color: #2D1B14;
+  line-height: 1;
+}
+
+.statSub {
+  font-size: 12px;
+  color: #8B6F5F;
+}
+
+/* Two column */
+.twoCol {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+/* Card internals */
+.cardHeader {
+  padding: 16px 20px 12px;
+  border-bottom: 1px solid #EAD9CB;
+}
+
+.sectionTitle {
+  font-size: 14px;
+  font-weight: 700;
+  color: #2D1B14;
+  margin: 0;
+}
+
+.emptyText {
+  padding: 20px;
+  font-size: 13px;
+  color: #8B6F5F;
+  text-align: center;
+  margin: 0;
+}
+
+/* Schedule */
+.scheduleList {
+  list-style: none;
+  padding: 12px 16px;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.scheduleItem {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #FFF8F5;
+  border: 1px solid #EAD9CB;
+}
+
+.scheduleTime {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #C25450;
+  flex-shrink: 0;
+  min-width: 64px;
+}
+
+.scheduleTimeSep {
+  color: #EAD9CB;
+}
+
+.scheduleInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.scheduleName {
+  font-size: 13px;
+  font-weight: 600;
+  color: #2D1B14;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.scheduleRoom {
+  font-size: 11px;
+  color: #8B6F5F;
+}
+
+/* Notifications */
+.notifList {
+  list-style: none;
+  padding: 12px 16px;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.notifItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 4px;
+  border-bottom: 1px solid #EAD9CB;
+}
+
+.notifItem:last-child { border-bottom: none; }
+
+.notifDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #C25450;
+  flex-shrink: 0;
+  margin-top: 4px;
+}
+
+.notifContent {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.notifTitle {
+  font-size: 13px;
+  font-weight: 600;
+  color: #2D1B14;
+}
+
+.notifMeta {
+  font-size: 11px;
+  color: #8B6F5F;
+}
+
+/* ─── Responsive ─────────────────────────────────────────────────────────────── */
+
+@media (max-width: 1023px) {
+  .statsGrid { grid-template-columns: repeat(2, 1fr); }
+  .twoCol    { grid-template-columns: 1fr; }
+  .statValue { font-size: 24px; }
+}
+
+@media (max-width: 639px) {
+  .statsGrid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  .greeting  { font-size: 18px; }
+  .statValue { font-size: 20px; }
+  .statCard  { padding: 14px 16px; }
+}

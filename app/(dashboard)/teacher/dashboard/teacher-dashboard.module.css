@@ -1,0 +1,453 @@
+.layout {
+  display: flex;
+  min-height: 100vh;
+  background: #FDF7F5;
+}
+
+/* SIDEBAR */
+
+.sidebar {
+  width: 250px;
+  background: #fff;
+  border-right: 1px solid #EAD9CB;
+  padding: 24px 18px;
+}
+
+.logo {
+  font-size: 20px;
+  font-weight: 700;
+  color: #E38B8B;
+  margin-bottom: 30px;
+}
+
+.menu {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.menuItem {
+  border: none;
+  background: transparent;
+  text-align: left;
+  padding: 12px 14px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: .2s;
+  color: #6B4F43;
+  font-size: 14px;
+}
+
+.menuItem:hover {
+  background: #FBE8E4;
+}
+
+.activeMenu {
+  background: #F6B7B7;
+  color: white;
+}
+
+/* MAIN */
+
+.main {
+  flex: 1;
+  padding: 24px;
+}
+
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* HEADER */
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.greeting {
+  font-size: 22px;
+  font-weight: 700;
+  color: #2D1B14;
+  margin: 0 0 4px;
+}
+
+.date {
+  font-size: 13px;
+  color: #8B6F5F;
+  margin: 0;
+}
+
+.profile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.avatar {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: #F4B6B6;
+}
+
+.profileName {
+  font-weight: 700;
+  color: #2D1B14;
+}
+
+.profileRole {
+  font-size: 12px;
+  color: #8B6F5F;
+}
+
+/* STATS */
+
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-top: 20px;
+}
+
+.statCard {
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.statLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: #8B6F5F;
+  text-transform: uppercase;
+}
+
+.statValue {
+  font-size: 28px;
+  font-weight: 700;
+  color: #2D1B14;
+}
+
+.statSub {
+  font-size: 12px;
+  color: #8B6F5F;
+}
+
+/* GRID */
+
+.dashboardGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  margin-top: 20px;
+}
+
+/* CARD */
+
+.card {
+  background: white;
+  border-radius: 18px;
+  border: 1px solid #F0E1D9;
+}
+
+.cardHeader {
+  padding: 16px 20px 12px;
+  border-bottom: 1px solid #EAD9CB;
+}
+
+.sectionTitle {
+  font-size: 14px;
+  font-weight: 700;
+  color: #2D1B14;
+  margin: 0;
+}
+
+.cardBody {
+  padding: 20px;
+}
+
+/* SCHEDULE */
+
+.scheduleItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.scheduleItem p {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: #8B6F5F;
+}
+
+.scheduleCard {
+  background: #FFF5F3;
+  border-radius: 14px;
+  padding: 16px;
+  margin-bottom: 14px;
+}
+
+/* BADGES */
+
+.badgePink,
+.badgeOrange,
+.badgeGreen,
+.badgeYellow {
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.badgePink {
+  background: #FFE3E3;
+  color: #D65D5D;
+}
+
+.badgeOrange {
+  background: #FFF1D8;
+  color: #D99000;
+}
+
+.badgeGreen {
+  background: #DCF7E7;
+  color: #178A57;
+}
+
+.badgeYellow {
+  background: #FFF4CF;
+  color: #B88A00;
+}
+
+/* NOTIFICATION */
+
+.notifList {
+  list-style: none;
+  padding: 12px 16px;
+  margin: 0;
+}
+
+.notifItem {
+  display: flex;
+  gap: 12px;
+  padding: 14px 0;
+  border-bottom: 1px solid #F0E1D9;
+}
+
+.notifDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #D87575;
+  margin-top: 6px;
+}
+
+.notifTitle {
+  font-size: 13px;
+  font-weight: 600;
+  color: #2D1B14;
+  margin: 0;
+}
+
+.notifMeta {
+  font-size: 11px;
+  color: #8B6F5F;
+}
+
+/* ALERT */
+
+.alertBox {
+  background: #FFF2F2;
+  border-radius: 14px;
+  padding: 14px;
+  margin-bottom: 12px;
+  color: #B94D4D;
+}
+
+/* CHART */
+
+.chartCircle {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  border: 10px solid #A8DDD3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 30px auto 10px;
+  font-size: 26px;
+  font-weight: 700;
+}
+
+.chartText {
+  text-align: center;
+  color: #8B6F5F;
+  margin-bottom: 24px;
+}
+
+/* TABLE */
+
+.tableWrap {
+  overflow-x: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.table th {
+  background: #FFF5F3;
+  padding: 14px;
+  text-align: left;
+  font-size: 13px;
+}
+
+.table td {
+  padding: 14px;
+  border-bottom: 1px solid #F0E1D9;
+  font-size: 13px;
+}
+
+/* MATERIAL */
+
+.materialGrid,
+.studentGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  padding: 20px;
+}
+
+.materialCard,
+.studentCard {
+  background: #FFF5F3;
+  padding: 20px;
+  border-radius: 14px;
+}
+
+/* EXAM */
+
+.examBox {
+  padding: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.primaryBtn {
+  border: none;
+  background: #F2A8A8;
+  color: white;
+  padding: 12px 18px;
+  border-radius: 12px;
+  cursor: pointer;
+}
+
+/* CHAT */
+
+.chatLayout {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 18px;
+}
+
+.chatSidebar,
+.chatMain {
+  background: white;
+  border-radius: 18px;
+  padding: 20px;
+}
+
+.chatUser {
+  padding: 14px;
+  border-radius: 12px;
+  background: #FFF5F3;
+  margin-bottom: 12px;
+}
+
+.messageLeft,
+.messageRight {
+  max-width: 300px;
+  padding: 12px;
+  border-radius: 14px;
+  margin-bottom: 12px;
+}
+
+.messageLeft {
+  background: #F5F5F5;
+}
+
+.messageRight {
+  background: #FFE4E4;
+  margin-left: auto;
+}
+
+/* REPORT */
+
+.reportGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 18px;
+}
+
+.bigNumber {
+  font-size: 54px;
+  font-weight: 700;
+  text-align: center;
+  padding: 40px 0;
+}
+
+/* AI */
+
+.aiCard {
+  background: #FFF2F2;
+  padding: 18px;
+  border-radius: 14px;
+  margin: 18px;
+}
+
+/* SETTINGS */
+
+.settingItem {
+  padding: 18px 20px;
+  border-bottom: 1px solid #F0E1D9;
+}
+
+/* RESPONSIVE */
+
+@media (max-width: 1023px) {
+  .statsGrid,
+  .dashboardGrid,
+  .reportGrid,
+  .materialGrid,
+  .studentGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .chatLayout {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 639px) {
+  .layout {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    width: 100%;
+  }
+
+  .greeting {
+    font-size: 18px;
+  }
+}

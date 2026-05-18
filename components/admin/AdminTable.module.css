@@ -1,0 +1,164 @@
+/* ─── AdminTable shared styles ────────────────────────────────────────────────── */
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  border-top: 1px solid #EAD9CB;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.paginInfo {
+  font-size: 12px;
+  color: #8B6F5F;
+}
+
+.paginBtns {
+  display: flex;
+  gap: 4px;
+}
+
+.paginBtn {
+  min-width: 32px;
+  height: 32px;
+  border: 1.5px solid #EAD9CB;
+  background: #FFF;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #6B4F3F;
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.paginBtn:hover:not(:disabled):not(.paginActive) {
+  background: #FFF2EB;
+  border-color: #C25450;
+}
+
+.paginBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.paginActive {
+  background: #C25450;
+  border-color: #C25450;
+  color: #FFF;
+  font-weight: 700;
+}
+
+/* Empty */
+.empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 40px 20px;
+  color: #8B6F5F;
+  font-size: 13px;
+}
+
+/* Skeleton */
+.skeletonWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 8px 0;
+}
+
+.skeletonRow {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 20px;
+  border-bottom: 1px solid #F5EDE5;
+}
+
+.skeletonCell {
+  height: 14px;
+  background: linear-gradient(90deg, #F5EDE5 25%, #FFF2EB 50%, #F5EDE5 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.2s infinite;
+  border-radius: 6px;
+  flex-shrink: 0;
+}
+
+@keyframes shimmer {
+  0%   { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Search */
+.searchWrap {
+  position: relative;
+  flex: 1;
+  min-width: 180px;
+  max-width: 320px;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 11px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+}
+
+.searchInput {
+  width: 100%;
+  padding: 9px 12px 9px 34px;
+  border: 1.5px solid #EAD9CB;
+  border-radius: 10px;
+  font-size: 13px;
+  color: #2D1B14;
+  background: #FFF;
+  outline: none;
+  font-family: inherit;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  box-sizing: border-box;
+}
+
+.searchInput:focus {
+  border-color: #C25450;
+  box-shadow: 0 0 0 3px rgba(194, 84, 80, 0.1);
+}
+
+/* Confirm delete */
+.confirmBox {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 12px;
+  padding: 8px 0 4px;
+}
+
+.confirmIcon {
+  width: 52px;
+  height: 52px;
+  background: #FEE2E2;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.confirmText {
+  font-size: 14px;
+  color: #4B2C20;
+  line-height: 1.5;
+  max-width: 340px;
+  margin: 0;
+}
+
+.confirmActions {
+  display: flex;
+  gap: 10px;
+  margin-top: 4px;
+}
