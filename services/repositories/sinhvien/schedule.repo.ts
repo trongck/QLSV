@@ -32,7 +32,7 @@ export function tietToTimeRange(tietBatDau: number, tietKetThuc: number): string
 }
 
 const PHANCONG_SELECT = `
-    maphancong, magv, mamon, malop, mahocky,
+    maphancong, magv, mamon, malop, mahocky, danghieuluc, ngaybatdau, ngayketthuc,
     monhoc:mamon ( mamon, tenmon, sotinchi ),
     giangvien:magv ( magv, hoten ),
     hocky:mahocky ( mahocky, tenhocky, namhoc, ky, ngaybatdau, ngayketthuc, danghieuluc )
@@ -69,11 +69,13 @@ export const scheduleRepo = {
             .from('sinhvienmonhoc')
             .select(`
                 maphancong,
-                phancong!inner ( mahocky, danghieuluc, ngaybatdau, ngayketthuc )
+                phancong!inner ( mahocky, danghieuluc )
             `)
             .eq('masv', masv)
             .eq('trangthai', 'Danghoc')
-            .eq('phancong.mahocky', targetMahocky);
+            .eq('phancong.mahocky', targetMahocky)
+            .eq('phancong.danghieuluc', true);
+
 
         if (svmhErr) return { data: null, error: svmhErr };
         if (!svMonHocs || svMonHocs.length === 0) return { data: [], error: null };
@@ -120,11 +122,12 @@ export const scheduleRepo = {
             .from('sinhvienmonhoc')
             .select(`
                 maphancong,
-                phancong!inner ( mahocky, danghieuluc, ngaybatdau, ngayketthuc )
+                phancong!inner ( mahocky, danghieuluc )
             `)
             .eq('masv', masv)
             .eq('trangthai', 'Danghoc')
-            .eq('phancong.mahocky', mahocky);
+            .eq('phancong.mahocky', mahocky)
+            .eq('phancong.danghieuluc', true);
 
         if (svmhErr) return { data: null, error: svmhErr };
         if (!svMonHocs || svMonHocs.length === 0) return { data: [], error: null };
@@ -156,29 +159,12 @@ export const scheduleRepo = {
         return { data, error };
     },
 
-    /**
-     * Danh sách học kỳ sinh viên có phân công
-     */
     getHocKyList: async (masv: string) => {
         const supabase = await getSupabase();
-
-        const { data: svMonHocs, error: svmhErr } = await supabase
-            .from('sinhvienmonhoc')
-            .select(`
-                maphancong,
-                phancong!inner ( mahocky )
-            `)
-            .eq('masv', masv);
-
-        if (svmhErr) return { data: null, error: svmhErr };
-        if (!svMonHocs || svMonHocs.length === 0) return { data: [], error: null };
-
-        const mahockyIds = [...new Set(svMonHocs.map(m => (m as any).phancong?.mahocky))].filter(Boolean);
 
         const { data, error } = await supabase
             .from('hocky')
             .select('mahocky, tenhocky, namhoc, ky, ngaybatdau, ngayketthuc, danghieuluc')
-            .in('mahocky', mahockyIds)
             .order('namhoc', { ascending: false })
             .order('ky', { ascending: false });
 

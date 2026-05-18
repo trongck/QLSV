@@ -9,15 +9,15 @@ import { VaiTro } from "@/types";
 
 const SV_NAV = [
   { href: "/student/dashboard", label: "Tổng quan" },
+  { href: "/student/attendance", label: "Điểm danh" },
   { href: "/student/schedule", label: "Lịch học" },
   { href: "/student/grades", label: "Kết quả" },
   { href: "/student/assignments", label: "Bài tập" },
   { href: "/student/test", label: "Bài thi" },
-  { href: "/student/attendance", label: "Điểm danh" },
   { href: "/student/messages", label: "Tin nhắn" },
   { href: "/student/notifications", label: "Thông báo" },
   { href: "/student/note", label: "Sổ tay" }
-];
+]
 
 const GV_NAV = [
   { href: "/teacher/dashboard", label: "Tổng quan" },

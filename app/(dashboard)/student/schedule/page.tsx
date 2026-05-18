@@ -53,6 +53,9 @@ interface LichHoc{
     monhoc: { mamon: string; tenmon: string } | null;
     giangvien: { magv: string; hoten: string } | null;
     hocky: HocKy | null;
+    danghieuluc?: boolean;
+    ngaybatdau?: string | null;
+    ngayketthuc?: string | null;
   };
 }
 
@@ -62,6 +65,9 @@ interface SemesterSubject {
   giangvien: { magv: string; hoten: string } | null;
   hocky: HocKy | null;
   lichhoc: (LichHoc & { timeRange: string; thuLabel: string })[];
+  danghieuluc?: boolean;
+  ngaybatdau?: string | null;
+  ngayketthuc?: string | null;
 }
 
 type ViewMode = "week" | "semester";
@@ -422,12 +428,29 @@ export default function SchedulePage() {
                             <p className="text-[10px] text-gray-400 mt-0.5">{slot.time}</p>
                         </td>
                         {weekDates.map((d) => {
-                            const matches = weekData.filter(
-                            (lh) =>
+                            const matches = weekData.filter((lh) => {
+                              const isDayMatch =
                                 lh.thutrongtuan === d.thu &&
                                 lh.tietbatdau >= slot.tietStart &&
-                                lh.tietbatdau <= slot.tietEnd
-                            );
+                                lh.tietbatdau <= slot.tietEnd;
+                              if (!isDayMatch) return false;
+
+                              const pc = lh.phancong;
+                              if (!pc) return true;
+
+                              const yyyy = d.date.getFullYear();
+                              const mm = String(d.date.getMonth() + 1).padStart(2, "0");
+                              const dd = String(d.date.getDate()).padStart(2, "0");
+                              const dateStr = `${yyyy}-${mm}-${dd}`;
+
+                              if (pc.ngaybatdau && dateStr < pc.ngaybatdau) {
+                                return false;
+                              }
+                              if (pc.ngayketthuc && dateStr > pc.ngayketthuc) {
+                                return false;
+                              }
+                              return true;
+                            });
                             return (
                             <td
                                 key={d.thu}
@@ -474,60 +497,81 @@ export default function SchedulePage() {
                 </div>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                {semesterData.map((subject) => (
-                    <div
-                    key={subject.maphancong}
-                    className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 hover:shadow-md transition"
-                    >
-                    {/* Tên môn */}
-                    <div className="flex items-start gap-3 mb-4">
-                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${getColor(subject.maphancong)}`}>
-                        <BookOpen size={18} />
-                        </div>
-                        <div className="min-w-0">
-                        <h3 className="font-bold text-gray-800 text-sm leading-tight">
-                            {subject.monhoc?.tenmon ?? "Chưa có tên"}
-                        </h3>
-                        <p className="text-xs text-gray-400 mt-0.5">{subject.monhoc?.mamon}</p>
-                        {subject.monhoc?.sotinchi && (
-                            <span className="inline-block mt-1 px-2 py-0.5 bg-blue-50 text-blue-600 text-[10px] font-bold rounded-full">
-                            {subject.monhoc.sotinchi} tín chỉ
-                            </span>
-                        )}
-                        </div>
-                    </div>
-
-                    {/* Giảng viên */}
-                    <div className="flex items-center gap-2 mb-3 text-sm text-gray-600">
-                        <User size={13} className="text-gray-400 shrink-0" />
-                        <span className="font-medium">{subject.giangvien?.hoten ?? "Đang cập nhật"}</span>
-                    </div>
-
-                    {/* Lịch học cố định */}
-                    <div className="space-y-1.5">
-                        {subject.lichhoc.length === 0 ? (
-                        <p className="text-xs text-gray-400 italic">Chưa có lịch học</p>
-                        ) : (
-                        subject.lichhoc.map((lh) => (
-                            <div
-                            key={lh.malichhoc}
-                            className="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-1.5"
-                            >
-                            <span className="text-xs font-bold text-gray-700 min-w-[52px]">{lh.thuLabel}</span>
-                            <Clock size={11} className="text-gray-400" />
-                            <span className="text-xs text-gray-600">{lh.timeRange}</span>
-                            {lh.maphong && (
-                                <>
-                                <MapPin size={11} className="text-gray-400 ml-auto shrink-0" />
-                                <span className="text-xs font-bold text-gray-700">{lh.maphong}</span>
-                                </>
+                {semesterData.map((subject) => {
+                    const now = new Date();
+                    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+                    const isExpired = subject.ngayketthuc && subject.ngayketthuc < todayStr;
+                    return (
+                        <div
+                        key={subject.maphancong}
+                        className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 hover:shadow-md transition"
+                        >
+                        {/* Tên môn */}
+                        <div className="flex items-start gap-3 mb-4">
+                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${getColor(subject.maphancong)}`}>
+                            <BookOpen size={18} />
+                            </div>
+                            <div className="min-w-0">
+                            <h3 className="font-bold text-gray-800 text-sm leading-tight">
+                                {subject.monhoc?.tenmon ?? "Chưa có tên"}
+                            </h3>
+                            <p className="text-xs text-gray-400 mt-0.5">{subject.monhoc?.mamon}</p>
+                            <div className="flex flex-wrap gap-1.5 mt-1.5">
+                                {subject.monhoc?.sotinchi && (
+                                    <span className="inline-block px-2 py-0.5 bg-blue-50 text-blue-600 text-[10px] font-bold rounded-full">
+                                    {subject.monhoc.sotinchi} tín chỉ
+                                    </span>
+                                )}
+                                {isExpired ? (
+                                    <span className="inline-block px-2 py-0.5 bg-gray-100 text-gray-500 text-[10px] font-bold rounded-full">
+                                    Đã kết thúc
+                                    </span>
+                                ) : (
+                                    <span className="inline-block px-2 py-0.5 bg-green-50 text-green-600 text-[10px] font-bold rounded-full">
+                                    Đang học
+                                    </span>
+                                )}
+                            </div>
+                            {subject.ngaybatdau && subject.ngayketthuc && (
+                                <p className="text-[10px] text-gray-400 mt-1.5 font-bold">
+                                    Thời gian: {new Date(subject.ngaybatdau).toLocaleDateString("vi-VN")} - {new Date(subject.ngayketthuc).toLocaleDateString("vi-VN")}
+                                </p>
                             )}
                             </div>
-                        ))
-                        )}
-                    </div>
-                    </div>
-                ))}
+                        </div>
+
+                        {/* Giảng viên */}
+                        <div className="flex items-center gap-2 mb-3 text-sm text-gray-600">
+                            <User size={13} className="text-gray-400 shrink-0" />
+                            <span className="font-medium">{subject.giangvien?.hoten ?? "Đang cập nhật"}</span>
+                        </div>
+
+                        {/* Lịch học cố định */}
+                        <div className="space-y-1.5">
+                            {subject.lichhoc.length === 0 ? (
+                            <p className="text-xs text-gray-400 italic">Chưa có lịch học</p>
+                            ) : (
+                            subject.lichhoc.map((lh) => (
+                                <div
+                                key={lh.malichhoc}
+                                className="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-1.5"
+                                >
+                                <span className="text-xs font-bold text-gray-700 min-w-[52px]">{lh.thuLabel}</span>
+                                <Clock size={11} className="text-gray-400" />
+                                <span className="text-xs text-gray-600">{lh.timeRange}</span>
+                                {lh.maphong && (
+                                    <>
+                                    <MapPin size={11} className="text-gray-400 ml-auto shrink-0" />
+                                    <span className="text-xs font-bold text-gray-700">{lh.maphong}</span>
+                                    </>
+                                )}
+                                </div>
+                            ))
+                            )}
+                        </div>
+                        </div>
+                    );
+                })}
                 </div>
             )}
             </div>
