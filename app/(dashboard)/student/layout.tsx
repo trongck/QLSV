@@ -5,6 +5,7 @@ import { AuthProvider, useAuthContext } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 import { VaiTro } from "@/types";
 import { Loader2 } from "lucide-react";
+import { ChatAIWidget } from "@/components/ChatAIWidget";
 
 function StudentGuard({ children }: { children: ReactNode }) {
   const { user, loading } = useAuthContext();
@@ -29,7 +30,12 @@ function StudentGuard({ children }: { children: ReactNode }) {
     );
   }
 
-  return <>{children}</>;
+  return (
+    <>
+      {children}
+      <ChatAIWidget />
+    </>
+  );
 }
 
 export default function StudentLayout({

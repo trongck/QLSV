@@ -45,7 +45,6 @@ export async function POST(req: NextRequest) {
     // Khởi tạo bên trong handler để luôn đọc env mới nhất
     const genAI = new GoogleGenerativeAI(apiKey);
 
-    // Dùng gemini-1.5-flash - ổn định, miễn phí, tương thích SDK v0.24
     const model = genAI.getGenerativeModel({
       model: "gemini-3.1-flash-lite",
       systemInstruction: SYSTEM_INSTRUCTION,
