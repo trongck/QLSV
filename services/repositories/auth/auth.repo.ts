@@ -50,9 +50,10 @@ export async function insertSessionRepo(supabase: SupabaseClient, payload: {
 }
 
 export async function updateLastLoginRepo(supabase: SupabaseClient, mataikhoan: string) {
+  const vnNow = new Date(new Date().getTime() + 7 * 60 * 60 * 1000).toISOString().replace("Z", "");
   return supabase
     .from("taikhoan")
-    .update({ dangnhaplancuoi: new Date().toISOString() })
+    .update({ dangnhaplancuoi: vnNow })
     .eq("mataikhoan", mataikhoan);
 }
 

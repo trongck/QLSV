@@ -149,14 +149,15 @@ export const examRepo = {
         }).filter(d => d !== null);
 
         // 3. Lưu kết quả thi
+        const vnNow = new Date(new Date().getTime() + 7 * 60 * 60 * 1000).toISOString().replace("Z", "");
         const { data: result, error: resErr } = await supabase
             .from('ketquathi')
             .insert({
                 madethi,
                 masv,
                 lanthi: 1,
-                thoigianvaothi: new Date().toISOString(),
-                thoigiannopbai: new Date().toISOString(),
+                thoigianvaothi: vnNow,
+                thoigiannopbai: vnNow,
                 diemtong: totalScore,
                 socandung: correctCount,
                 trangthai: 'DaNop'

@@ -135,11 +135,12 @@ export default function StudentDashboard() {
                 monhoc (tenmon)
               )
             `)
+            .eq("phancong.danghieuluc", true)
             .or(`malop.eq.${myLop || "NONE"},maphancong.in.(${myAssignments.length > 0 ? myAssignments.join(",") : "0"})`, { foreignTable: "phancong" })
-            .or(`ngayketthuc.is.null,ngayketthuc.gte.${new Date().toISOString().split("T")[0]}`, { foreignTable: "phancong" })
+            .or(`ngayketthuc.is.null,ngayketthuc.gte.${new Date(new Date().getTime() + 7 * 3600 * 1000).toISOString().split("T")[0]}`, { foreignTable: "phancong" })
             .eq(
               "thutrongtuan",
-              new Date(new Date().getTime() + 7 * 3600 * 1000).getDay() === 0 ? 8 : new Date(new Date().getTime() + 7 * 3600 * 1000).getDay() + 1,
+              new Date(new Date().getTime() + 7 * 3600 * 1000).getUTCDay() === 0 ? 8 : new Date(new Date().getTime() + 7 * 3600 * 1000).getUTCDay() + 1
             )
             .limit(10),
           supabase

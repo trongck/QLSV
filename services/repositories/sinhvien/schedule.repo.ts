@@ -69,15 +69,29 @@ export const scheduleRepo = {
             .from('sinhvienmonhoc')
             .select(`
                 maphancong,
-                phancong!inner ( mahocky )
+                phancong!inner ( mahocky, danghieuluc, ngaybatdau, ngayketthuc )
             `)
             .eq('masv', masv)
+            .eq('trangthai', 'Danghoc')
             .eq('phancong.mahocky', targetMahocky);
 
         if (svmhErr) return { data: null, error: svmhErr };
         if (!svMonHocs || svMonHocs.length === 0) return { data: [], error: null };
 
-        const maphancongList = svMonHocs.map(m => m.maphancong);
+        const todayStr = new Date(new Date().getTime() + 7 * 60 * 60 * 1000).toISOString().split('T')[0];
+        const validSvMonHocs = svMonHocs.filter((m: any) => {
+            const pc = m.phancong;
+            if (!pc) return false;
+            if (pc.danghieuluc === false) return false;
+            if (pc.ngayketthuc) {
+                const endDateStr = String(pc.ngayketthuc).split('T')[0];
+                if (endDateStr < todayStr) return false;
+            }
+            return true;
+        });
+
+        if (validSvMonHocs.length === 0) return { data: [], error: null };
+        const maphancongList = validSvMonHocs.map(m => m.maphancong);
 
         // Lấy lichhoc join phancong, monhoc, giangvien
         const { data, error } = await supabase
@@ -106,15 +120,29 @@ export const scheduleRepo = {
             .from('sinhvienmonhoc')
             .select(`
                 maphancong,
-                phancong!inner ( mahocky )
+                phancong!inner ( mahocky, danghieuluc, ngaybatdau, ngayketthuc )
             `)
             .eq('masv', masv)
+            .eq('trangthai', 'Danghoc')
             .eq('phancong.mahocky', mahocky);
 
         if (svmhErr) return { data: null, error: svmhErr };
         if (!svMonHocs || svMonHocs.length === 0) return { data: [], error: null };
 
-        const maphancongList = svMonHocs.map(m => m.maphancong);
+        const todayStr = new Date(new Date().getTime() + 7 * 60 * 60 * 1000).toISOString().split('T')[0];
+        const validSvMonHocs = svMonHocs.filter((m: any) => {
+            const pc = m.phancong;
+            if (!pc) return false;
+            if (pc.danghieuluc === false) return false;
+            if (pc.ngayketthuc) {
+                const endDateStr = String(pc.ngayketthuc).split('T')[0];
+                if (endDateStr < todayStr) return false;
+            }
+            return true;
+        });
+
+        if (validSvMonHocs.length === 0) return { data: [], error: null };
+        const maphancongList = validSvMonHocs.map(m => m.maphancong);
 
         const { data, error } = await supabase
             .from('phancong')

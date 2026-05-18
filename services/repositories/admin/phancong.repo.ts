@@ -26,7 +26,7 @@ export async function getPhanCongListRepo(
   if (params.malop) query = query.eq("malop", params.malop);
   if (params.mahocky) query = query.eq("mahocky", parseInt(params.mahocky));
   
-  const now = new Date().toISOString().split("T")[0];
+  const now = new Date(new Date().getTime() + 7 * 60 * 60 * 1000).toISOString().split("T")[0];
   if (params.status === "ongoing") {
     query = query.or(`ngayketthuc.is.null,ngayketthuc.gte.${now}`);
   } else if (params.status === "ended") {

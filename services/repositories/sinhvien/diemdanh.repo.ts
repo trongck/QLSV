@@ -195,9 +195,10 @@ export const diemdanhRepo = {
         const supabase = await getSupabase();
 
         // Ghi điểm danh — không cần tính muộn nếu không có buội học
+        const vnNow = new Date(new Date().getTime() + 7 * 60 * 60 * 1000).toISOString().replace("Z", "");
         const insertData: any = {
             masv,
-            thoigiandiemdanh: new Date().toISOString(),
+            thoigiandiemdanh: vnNow,
             trangthai: 'co_mat' as TrangThaiDiemDanh,
             phuongthuc,
             ghichu: ghichu ?? null,

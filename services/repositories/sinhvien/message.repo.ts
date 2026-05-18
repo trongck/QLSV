@@ -16,6 +16,7 @@ export const messageRepo = {
 
     // Thêm tin nhắn mới
     createMessage: async (roomId: number, mataikhoan: string, content: string) => {
+        const vnNow = new Date(new Date().getTime() + 7 * 60 * 60 * 1000).toISOString().replace("Z", "");
         return await supabase
             .from('tinnhan')
             .insert([{
@@ -23,7 +24,7 @@ export const messageRepo = {
                 mataikhoangui: mataikhoan,
                 noidung: content,
                 dachinh: false,
-                ngaytao: new Date().toISOString()
+                ngaytao: vnNow
             }])
             .select();
     }

@@ -84,7 +84,7 @@ export async function getDashboardStatsService(supabase: SupabaseClient) {
   // Calculate current day in Vietnam Time (GMT+7)
   const now = new Date();
   const vnNow = new Date(now.getTime() + 7 * 60 * 60 * 1000);
-  const jsDay = vnNow.getDay();
+  const jsDay = vnNow.getUTCDay();
   const thuTrongTuan = jsDay === 0 ? 8 : jsDay + 1; // 2 -> 8 (Chủ nhật là 8)
 
   const [

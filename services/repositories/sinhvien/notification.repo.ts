@@ -65,15 +65,16 @@ export const notificationRepo = {
     /**
      * Đánh dấu một thông báo là đã đọc (upsert vào thongbaodadocsv)
      */
-    markAsRead: async (mathongbao: number, mataikhoan: string) => {
+     markAsRead: async (mathongbao: number, mataikhoan: string) => {
         const supabase = await getSupabase();
+        const vnNow = new Date(new Date().getTime() + 7 * 60 * 60 * 1000).toISOString().replace("Z", "");
         return await supabase
             .from('thongbaodadoc')
             .upsert({
                 mathongbao,
                 mataikhoan,
                 dadoc: true,
-                thoigiandoc: new Date().toISOString(),
+                thoigiandoc: vnNow,
             }, {
                 onConflict: 'mathongbao,mataikhoan',
             });
@@ -91,11 +92,12 @@ export const notificationRepo = {
 
         if (!all || all.length === 0) return { error: null };
 
+        const vnNow = new Date(new Date().getTime() + 7 * 60 * 60 * 1000).toISOString().replace("Z", "");
         const upsertRows = all.map((tb) => ({
             mathongbao: tb.mathongbao,
             mataikhoan,
             dadoc: true,
-            thoigiandoc: new Date().toISOString(),
+            thoigiandoc: vnNow,
         }));
 
         return await supabase

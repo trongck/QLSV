@@ -60,7 +60,7 @@ export const nhatkyRepo = {
 
     create: async (masv: string, dto: CreateNoteDto) => {
         const supabase = await getSupabase();
-        const now = new Date().toISOString();
+        const now = new Date(new Date().getTime() + 7 * 60 * 60 * 1000).toISOString().replace("Z", "");
         return await supabase
             .from('nhatky')
             .insert([{
@@ -79,8 +79,9 @@ export const nhatkyRepo = {
 
     update: async (manhatky: number, masv: string, dto: UpdateNoteDto) => {
         const supabase = await getSupabase();
+        const vnNow = new Date(new Date().getTime() + 7 * 60 * 60 * 1000).toISOString().replace("Z", "");
         const updateData: Record<string, unknown> = {
-            ngaycapnhat: new Date().toISOString(),
+            ngaycapnhat: vnNow,
         };
         if (dto.tieude !== undefined) updateData.tieude = dto.tieude;
         if (dto.noidung !== undefined) updateData.noidung = dto.noidung;

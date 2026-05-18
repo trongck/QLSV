@@ -112,6 +112,8 @@ export async function getRecentGVRepo(supabase: SupabaseClient, limit: number) {
 }
 
 export async function getTodaySchedulesRepo(supabase: SupabaseClient, thuTrongTuan: number) {
+  const now = new Date(new Date().getTime() + 7 * 60 * 60 * 1000).toISOString().split("T")[0];
+
   return supabase
     .from("lichhoc")
     .select(`
@@ -131,7 +133,7 @@ export async function getTodaySchedulesRepo(supabase: SupabaseClient, thuTrongTu
         giangvien:magv(hoten),
         monhoc:mamon(tenmon),
         lop:malop(tenlop),
-        hocky:mahocky(
+        hocky:mahocky!inner(
           mahocky,
           tenhocky,
           danghieuluc,
@@ -143,6 +145,7 @@ export async function getTodaySchedulesRepo(supabase: SupabaseClient, thuTrongTu
     .eq("thutrongtuan", thuTrongTuan)
     .eq("phancong.danghieuluc", true)
     .eq("phancong.hocky.danghieuluc", true)
+    .or(`ngayketthuc.is.null,ngayketthuc.gte.${now}`, { foreignTable: "phancong" })
     .order("tietbatdau", { ascending: true });
 }
 

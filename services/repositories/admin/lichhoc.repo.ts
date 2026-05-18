@@ -16,10 +16,8 @@ export async function getLichHocListRepo(
     status?: "ongoing" | "ended" | "all";
   }
 ) {
-  const useInnerJoin = !!(params.magv || params.malop || params.mahocky);
-  const relationString = useInnerJoin
-    ? "*, phonghoc(maphong, loaiphong, suchua), phancong!inner(*, giangvien:magv(hoten), monhoc:mamon(tenmon), lop:malop(tenlop), hocky:mahocky(tenhocky))"
-    : "*, phonghoc(maphong, loaiphong, suchua), phancong(*, giangvien:magv(hoten), monhoc:mamon(tenmon), lop:malop(tenlop), hocky:mahocky(tenhocky))";
+  // Luôn sử dụng inner join đối với phancong để tránh các dòng lịch học mồ côi hoặc không khớp bộ lọc xuất hiện trong danh sách
+  const relationString = "*, phonghoc(maphong, loaiphong, suchua), phancong!inner(*, giangvien:magv(hoten), monhoc:mamon(tenmon), lop:malop(tenlop), hocky:mahocky(tenhocky))";
 
   let query = supabase.from("lichhoc").select(relationString, { count: "exact" });
 
@@ -31,11 +29,14 @@ export async function getLichHocListRepo(
   if (params.malop) query = query.eq("phancong.malop", params.malop);
   if (params.mahocky) query = query.eq("phancong.mahocky", parseInt(params.mahocky));
   
-  const now = new Date().toISOString().split("T")[0];
+  const now = new Date(new Date().getTime() + 7 * 60 * 60 * 1000).toISOString().split("T")[0];
   if (params.status === "ongoing") {
+    // Chỉ hiển thị lịch học của các phân công đang có hiệu lực (danghieuluc = true và chưa kết thúc)
+    query = query.eq("phancong.danghieuluc", true);
     query = query.or(`ngayketthuc.is.null,ngayketthuc.gte.${now}`, { foreignTable: "phancong" });
   } else if (params.status === "ended") {
-    query = query.lt("phancong.ngayketthuc", now);
+    // Lịch học đã kết thúc hoặc phân công đã bị vô hiệu hóa
+    query = query.or(`ngayketthuc.lt.${now},danghieuluc.eq.false`, { foreignTable: "phancong" });
   }
 
   if (params.hasPage) {
