@@ -40,8 +40,16 @@ export async function getPhanCongListService(
 
   if (error) throw new Error(error.message);
 
+  const mappedData = data?.map((item: any) => ({
+    ...item,
+    giangvien: item.giangvien ? {
+      ...item.giangvien,
+      hoten: [item.giangvien.hodem, item.giangvien.ten].filter(Boolean).join(" ") || "N/A"
+    } : null
+  }));
+
   return {
-    data,
+    data: mappedData,
     total: count ?? 0,
   };
 }
@@ -97,6 +105,9 @@ export async function createPhanCongService(supabase: SupabaseClient, body: any)
   // 5. Automatically enroll students from the administrative class into this assignment
   if (data) {
     await repo.enrollStudentsFromClassRepo(supabase, data.maphancong, malop.trim());
+    if (data.giangvien) {
+      data.giangvien.hoten = [data.giangvien.hodem, data.giangvien.ten].filter(Boolean).join(" ") || "N/A";
+    }
   }
 
   return data;
@@ -149,6 +160,9 @@ export async function updatePhanCongService(supabase: SupabaseClient, maphancong
   // 4. Update student enrollment (in case class was changed or new students added)
   if (data) {
     await repo.enrollStudentsFromClassRepo(supabase, maphancong, malop.trim());
+    if (data.giangvien) {
+      data.giangvien.hoten = [data.giangvien.hodem, data.giangvien.ten].filter(Boolean).join(" ") || "N/A";
+    }
   }
 
   return data;

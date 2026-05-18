@@ -35,15 +35,15 @@ export async function GET(request: Request) {
   // Tìm kiếm sinh viên theo tên HOẶC mã sinh viên
   const { data: svRows, error: svErr } = await supabase
     .from("sinhvien")
-    .select("masv, hoten, anhdaidien, emailtruong, lop:malop ( tenlop )")
-    .or(`hoten.ilike.%${search}%,masv.ilike.%${search}%`)
+    .select("masv, hodem, ten, anhdaidien, emailtruong, lop:malop ( tenlop )")
+    .or(`hodem.ilike.%${search}%,ten.ilike.%${search}%,masv.ilike.%${search}%`)
     .limit(limit);
 
   // Tìm kiếm giảng viên theo tên HOẶC mã giảng viên
   const { data: gvRows, error: gvErr } = await supabase
     .from("giangvien")
-    .select("magv, hoten, anhdaidien, emailtruong, khoa:makhoa ( tenkhoa )")
-    .or(`hoten.ilike.%${search}%,magv.ilike.%${search}%`)
+    .select("magv, hodem, ten, anhdaidien, emailtruong, khoa:makhoa ( tenkhoa )")
+    .or(`hodem.ilike.%${search}%,ten.ilike.%${search}%,magv.ilike.%${search}%`)
     .limit(limit);
 
   if (svErr || gvErr) {
@@ -54,7 +54,7 @@ export async function GET(request: Request) {
     id:     s.masv,
     masv:   s.masv,
     magv:   null,
-    hoten:  s.hoten,
+    hoten:  [s.hodem, s.ten].filter(Boolean).join(" ") || "Sinh Viên",
     avatar: s.anhdaidien ?? null,
     email:  s.emailtruong ?? null,
     role:   "SinhVien",
@@ -65,7 +65,7 @@ export async function GET(request: Request) {
     id:    g.magv,
     masv:  null,
     magv:  g.magv,
-    hoten: g.hoten,
+    hoten: [g.hodem, g.ten].filter(Boolean).join(" ") || "Giảng Viên",
     avatar: g.anhdaidien ?? null,
     email:  g.emailtruong ?? null,
     role:   "GiangVien",

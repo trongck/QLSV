@@ -34,7 +34,7 @@ export function tietToTimeRange(tietBatDau: number, tietKetThuc: number): string
 const PHANCONG_SELECT = `
     maphancong, magv, mamon, malop, mahocky, danghieuluc, ngaybatdau, ngayketthuc,
     monhoc:mamon ( mamon, tenmon, sotinchi ),
-    giangvien:magv ( magv, hoten ),
+    giangvien:magv ( magv, hodem, ten ),
     hocky:mahocky ( mahocky, tenhocky, namhoc, ky, ngaybatdau, ngayketthuc, danghieuluc )
 `;
 

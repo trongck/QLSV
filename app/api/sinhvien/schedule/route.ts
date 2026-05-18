@@ -13,11 +13,14 @@ async function getCurrentStudent(request: NextRequest) {
     const supabase = createClient(cookieStore);
     const { data: sv, error } = await supabase
         .from('sinhvien')
-        .select('masv, malop, hoten')
+        .select('masv, malop, hodem, ten')
         .eq('mataikhoan', payload.mataikhoan)
         .single();
     if (error || !sv) throw new Error('Không tìm thấy thông tin sinh viên');
-    return sv;
+    return {
+        ...sv,
+        hoten: [sv.hodem, sv.ten].filter(Boolean).join(" ") || "Sinh viên"
+    };
 }
 
 /**
@@ -49,15 +52,23 @@ export async function GET(request: NextRequest) {
             const { data, error } = await scheduleRepo.getSemesterSchedule(sv.masv, targetMahocky);
             if (error) throw new Error(error.message);
 
-            // Enrich với timeRange
-            const enriched = (data ?? []).map((pc: any) => ({
-                ...pc,
-                lichhoc: (pc.lichhoc ?? []).map((lh: any) => ({
-                    ...lh,
-                    timeRange: tietToTimeRange(lh.tietbatdau, lh.tietketthuc),
-                    thuLabel: thuLabel(lh.thutrongtuan),
-                })).sort((a: any, b: any) => a.thutrongtuan - b.thutrongtuan || a.tietbatdau - b.tietbatdau),
-            }));
+            // Enrich với timeRange và giangvien.hoten
+            const enriched = (data ?? []).map((pc: any) => {
+                if (pc.giangvien) {
+                    pc.giangvien = {
+                        ...pc.giangvien,
+                        hoten: [pc.giangvien.hodem, pc.giangvien.ten].filter(Boolean).join(" ") || "Giảng viên"
+                    };
+                }
+                return {
+                    ...pc,
+                    lichhoc: (pc.lichhoc ?? []).map((lh: any) => ({
+                        ...lh,
+                        timeRange: tietToTimeRange(lh.tietbatdau, lh.tietketthuc),
+                        thuLabel: thuLabel(lh.thutrongtuan),
+                    })).sort((a: any, b: any) => a.thutrongtuan - b.thutrongtuan || a.tietbatdau - b.tietbatdau),
+                };
+            });
 
             return NextResponse.json({
                 success: true,
@@ -71,12 +82,22 @@ export async function GET(request: NextRequest) {
             const { data, error } = await scheduleRepo.getWeekSchedule(sv.masv, mahocky);
             if (error) throw new Error(error.message);
 
-            // Enrich với timeRange
-            const enriched = (data ?? []).map((lh: any) => ({
-                ...lh,
-                timeRange: tietToTimeRange(lh.tietbatdau, lh.tietketthuc),
-                thuLabel: thuLabel(lh.thutrongtuan),
-            }));
+            // Enrich với timeRange và giangvien.hoten
+            const enriched = (data ?? []).map((lh: any) => {
+                const pc = lh.phancong;
+                if (pc && pc.giangvien) {
+                    pc.giangvien = {
+                        ...pc.giangvien,
+                        hoten: [pc.giangvien.hodem, pc.giangvien.ten].filter(Boolean).join(" ") || "Giảng viên"
+                    };
+                }
+                return {
+                    ...lh,
+                    phancong: pc,
+                    timeRange: tietToTimeRange(lh.tietbatdau, lh.tietketthuc),
+                    thuLabel: thuLabel(lh.thutrongtuan),
+                };
+            });
 
             return NextResponse.json({
                 success: true,

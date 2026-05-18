@@ -95,15 +95,22 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     // Lấy thông tin người gửi qua taikhoan -> sinhvien/giangvien/admin
     const { data: senderTk } = await supabase
       .from("taikhoan")
-      .select("email, sinhvien(hoten, masv), giangvien(hoten, magv), admin(hoten, maadmin)")
+      .select("email, sinhvien(hodem, ten, masv), giangvien(hodem, ten, magv), admin(hoten, maadmin)")
       .eq("mataikhoan", payload.mataikhoan)
       .single();
       
     if (senderTk) {
-      if (senderTk.sinhvien?.[0]) senderName = `${senderTk.sinhvien[0].hoten} (${senderTk.sinhvien[0].masv})`;
-      else if (senderTk.giangvien?.[0]) senderName = `${senderTk.giangvien[0].hoten} (${senderTk.giangvien[0].magv})`;
-      else if (senderTk.admin?.[0]) senderName = `${senderTk.admin[0].hoten} (Admin)`;
-      else senderName = senderTk.email;
+      if (senderTk.sinhvien?.[0]) {
+        const sv = senderTk.sinhvien[0];
+        senderName = `${[sv.hodem, sv.ten].filter(Boolean).join(" ") || "Sinh viên"} (${sv.masv})`;
+      } else if (senderTk.giangvien?.[0]) {
+        const gv = senderTk.giangvien[0];
+        senderName = `${[gv.hodem, gv.ten].filter(Boolean).join(" ") || "Giảng viên"} (${gv.magv})`;
+      } else if (senderTk.admin?.[0]) {
+        senderName = `${senderTk.admin[0].hoten} (Admin)`;
+      } else {
+        senderName = senderTk.email;
+      }
     }
 
     // Lấy thành viên còn lại (người nhận)
@@ -117,14 +124,21 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       if (other?.mataikhoan) {
         const { data: recvTk } = await supabase
           .from("taikhoan")
-          .select("email, sinhvien(hoten, masv), giangvien(hoten, magv), admin(hoten, maadmin)")
+          .select("email, sinhvien(hodem, ten, masv), giangvien(hodem, ten, magv), admin(hoten, maadmin)")
           .eq("mataikhoan", other.mataikhoan)
           .single();
         if (recvTk) {
-          if (recvTk.sinhvien?.[0]) recipientName = `${recvTk.sinhvien[0].hoten} (${recvTk.sinhvien[0].masv})`;
-          else if (recvTk.giangvien?.[0]) recipientName = `${recvTk.giangvien[0].hoten} (${recvTk.giangvien[0].magv})`;
-          else if (recvTk.admin?.[0]) recipientName = `${recvTk.admin[0].hoten} (Admin)`;
-          else recipientName = recvTk.email;
+          if (recvTk.sinhvien?.[0]) {
+            const sv = recvTk.sinhvien[0];
+            recipientName = `${[sv.hodem, sv.ten].filter(Boolean).join(" ") || "Sinh viên"} (${sv.masv})`;
+          } else if (recvTk.giangvien?.[0]) {
+            const gv = recvTk.giangvien[0];
+            recipientName = `${[gv.hodem, gv.ten].filter(Boolean).join(" ") || "Giảng viên"} (${gv.magv})`;
+          } else if (recvTk.admin?.[0]) {
+            recipientName = `${recvTk.admin[0].hoten} (Admin)`;
+          } else {
+            recipientName = recvTk.email;
+          }
         }
       }
     }

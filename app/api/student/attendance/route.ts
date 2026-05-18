@@ -105,7 +105,7 @@ export async function GET(request: Request) {
             mahocky,
             mamon,
             monhoc:mamon ( tenmon ),
-            giangvien:magv ( hoten )
+            giangvien:magv ( hodem, ten )
           )
         )
       )
@@ -139,7 +139,7 @@ export async function GET(request: Request) {
       day: String(ngayhoc.getDate()).padStart(2, "0"),
       month: `T${String(ngayhoc.getMonth() + 1).padStart(2, "0")}`,
       tenmon: pc?.monhoc?.tenmon ?? "Chưa có tên môn",
-      giangvien: pc?.giangvien?.hoten ?? "Đang cập nhật",
+      giangvien: pc?.giangvien ? ([pc.giangvien.hodem, pc.giangvien.ten].filter(Boolean).join(" ") || "Đang cập nhật") : "Đang cập nhật",
       phonghoc: lich?.maphong ?? "---",
       gioVao: tietToTime(lich?.tietbatdau ?? 1),
       gioRa: tietToTime(lich?.tietketthuc ?? 1),
@@ -191,7 +191,7 @@ export async function GET(request: Request) {
           phancong:maphancong (
             maphancong, mamon,
             monhoc:mamon ( tenmon ),
-            giangvien:magv ( hoten )
+            giangvien:magv ( hodem, ten )
           )
         )
       `)
@@ -221,7 +221,7 @@ export async function GET(request: Request) {
           day: String(ngayhoc.getDate()).padStart(2, "0"),
           month: `T${String(ngayhoc.getMonth() + 1).padStart(2, "0")}`,
           tenmon: pc?.monhoc?.tenmon ?? "---",
-          giangvien: pc?.giangvien?.hoten ?? "---",
+          giangvien: pc?.giangvien ? ([pc.giangvien.hodem, pc.giangvien.ten].filter(Boolean).join(" ") || "---") : "---",
           phonghoc: lich?.maphong ?? "---",
           gioVao: tietToTime(lich?.tietbatdau ?? 1),
           gioRa: tietToTime(lich?.tietketthuc ?? 1),

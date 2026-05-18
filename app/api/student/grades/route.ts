@@ -108,7 +108,7 @@ export async function GET(request: Request) {
         malophoc,
         mamon,
         monhoc:mamon ( tenmon, sotinchi ),
-        giangvien:magv ( hoten )
+        giangvien:magv ( hodem, ten )
       )
     `)
     .eq("masv", masv)
@@ -195,7 +195,7 @@ export async function GET(request: Request) {
       malophoc:      pc?.malophoc ?? "---",
       tenmon:        mon?.tenmon ?? "Chưa có tên môn",
       sotinchi:      mon?.sotinchi ?? 0,
-      giangvien:     pc?.giangvien?.hoten ?? "---",
+      giangvien:     pc?.giangvien ? ([pc.giangvien.hodem, pc.giangvien.ten].filter(Boolean).join(" ") || "---") : "---",
       diem10:        diem,
       diem4:         diem4,
       diemchu:       diemChu,

@@ -108,7 +108,7 @@ export async function POST(request: Request) {
   // ĐÃ CHỈNH SỬA: Lấy thêm cột 'hoten' từ bảng sinhvien để gắn vào log
   const { data: svData, error: svError } = await supabase
     .from("sinhvien")
-    .select("masv, hoten")
+    .select("masv, hodem, ten")
     .eq("mataikhoan", payload.mataikhoan)
     .single();
 
@@ -138,7 +138,7 @@ export async function POST(request: Request) {
   }
 
   // ĐÃ CHỈNH SỬA: Lấy tên sinh viên từ kết quả truy vấn db
-  const tenSinhVien = svData.hoten || "Sinh viên";
+  const tenSinhVien = [svData.hodem, svData.ten].filter(Boolean).join(" ") || "Sinh viên";
 
   // ĐÃ CHỈNH SỬA: Cập nhật nội dung hanhdong hiển thị rõ tên sinh viên thêm nhật ký
   await logAuditAction({

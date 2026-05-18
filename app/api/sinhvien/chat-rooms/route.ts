@@ -26,26 +26,51 @@ export async function GET(request: NextRequest) {
         const { data, error } = await supabase
             .from('thanhvientrochuyen')
             .select(`
-        macuoctrochuyen, 
-        cuoctrochuyen (
-          tieude, 
-          loai, 
-          ngaytao,
-          thanhvientrochuyen (
-            masv, 
-            magv,
-            giangvien:magv ( hoten ),
-            sinhvien:masv ( hoten )
-          ) 
-        )
-      `)
+                macuoctrochuyen, 
+                cuoctrochuyen (
+                    tieude, 
+                    loai, 
+                    ngaytao,
+                    thanhvientrochuyen (
+                        masv, 
+                        magv,
+                        giangvien:magv ( hodem, ten ),
+                        sinhvien:masv ( hodem, ten )
+                    ) 
+                )
+            `)
             .eq('masv', CURRENT_USER_ID);
 
         // Nếu Supabase báo lỗi thì ném lỗi ra
         if (error) throw new Error(error.message);
 
+        const mappedData = (data ?? []).map((item: any) => {
+            const cc = item.cuoctrochuyen;
+            if (cc && Array.isArray(cc.thanhvientrochuyen)) {
+                cc.thanhvientrochuyen = cc.thanhvientrochuyen.map((tv: any) => {
+                    if (tv.giangvien) {
+                        tv.giangvien = {
+                            ...tv.giangvien,
+                            hoten: [tv.giangvien.hodem, tv.giangvien.ten].filter(Boolean).join(" ") || "Giảng viên"
+                        };
+                    }
+                    if (tv.sinhvien) {
+                        tv.sinhvien = {
+                            ...tv.sinhvien,
+                            hoten: [tv.sinhvien.hodem, tv.sinhvien.ten].filter(Boolean).join(" ") || "Sinh viên"
+                        };
+                    }
+                    return tv;
+                });
+            }
+            return {
+                ...item,
+                cuoctrochuyen: cc
+            };
+        });
+
         // 5. Trả về data thật lấy từ cơ sở dữ liệu
-        return NextResponse.json({ success: true, data: data }, { status: 200 });
+        return NextResponse.json({ success: true, data: mappedData }, { status: 200 });
 
     } catch (error: any) {
         console.error("Lỗi API chat-rooms:", error);

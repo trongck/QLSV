@@ -14,11 +14,14 @@ async function getCurrentStudent(request: NextRequest) {
     const supabase = createClient(cookieStore);
     const { data: sv, error } = await supabase
         .from('sinhvien')
-        .select('masv, malop, hoten')
+        .select('masv, malop, hodem, ten')
         .eq('mataikhoan', payload.mataikhoan)
         .single();
     if (error || !sv) throw new Error('Không tìm thấy thông tin sinh viên');
-    return sv;
+    return {
+        ...sv,
+        hoten: [sv.hodem, sv.ten].filter(Boolean).join(" ") || "Sinh Viên"
+    };
 }
 
 /**
@@ -92,7 +95,10 @@ export async function GET(request: NextRequest) {
                 timeStr: ngay.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
                 monhoc: pc?.monhoc ?? null,
                 phong: lh?.maphong ?? null,
-                giangvien: pc?.giangvien ?? null,
+                giangvien: pc?.giangvien ? {
+                    ...pc.giangvien,
+                    hoten: [pc.giangvien.hodem, pc.giangvien.ten].filter(Boolean).join(" ") || "Chưa rõ"
+                } : null,
                 hocky: pc?.hocky ?? null,
                 maphancong: lh?.maphancong ?? null,
             };

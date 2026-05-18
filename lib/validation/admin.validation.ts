@@ -130,6 +130,8 @@ export interface SinhVienCreatePayload {
     masv?: string;
     malop?: string;
     hoten?: string;
+    hodem?: string;
+    ten?: string;
     ngaysinh?: string;
     gioitinh?: string;
     emailtruong?: string;
@@ -139,6 +141,8 @@ export interface SinhVienCreatePayload {
 
 export interface SinhVienUpdatePayload {
     hoten?: string;
+    hodem?: string;
+    ten?: string;
     malop?: string;
     ngaysinh?: string;
     gioitinh?: string;
@@ -162,12 +166,10 @@ export function validateSinhVienCreate(data: SinhVienCreatePayload): ValidationE
     const errs: (ValidationError | null)[] = [
         required(data.masv, "masv", "MSSV"),
         required(data.malop, "malop", "Lớp"),
-        required(data.hoten, "hoten", "Họ và tên"),
         required(data.email, "email", "Email đăng nhập"),
         required(data.matkhau, "matkhau", "Mật khẩu"),
 
         maxLen(data.masv, "masv", "MSSV", 20),
-        maxLen(data.hoten, "hoten", "Họ và tên", 100),
         email(data.emailtruong, "emailtruong", "Email trường"),
         email(data.email, "email", "Email đăng nhập"),
         minLen(data.matkhau, "matkhau", "Mật khẩu", 6),
@@ -175,17 +177,42 @@ export function validateSinhVienCreate(data: SinhVienCreatePayload): ValidationE
         date(data.ngaysinh, "ngaysinh", "Ngày sinh"),
         gioitinh(data.gioitinh),
     ];
+
+    if (!data.hoten && !data.ten) {
+        errs.push({ field: "ten", message: "Tên không được để trống." });
+    }
+    if (data.hoten) {
+        errs.push(maxLen(data.hoten, "hoten", "Họ và tên", 100));
+    }
+    if (data.ten) {
+        errs.push(maxLen(data.ten, "ten", "Tên", 50));
+    }
+    if (data.hodem) {
+        errs.push(maxLen(data.hodem, "hodem", "Họ đệm", 50));
+    }
+
     return collect(...errs);
 }
 
 export function validateSinhVienUpdate(data: SinhVienUpdatePayload): ValidationError[] {
     const errs: (ValidationError | null)[] = [
-        required(data.hoten, "hoten", "Họ và tên"),
-        maxLen(data.hoten, "hoten", "Họ và tên", 100),
         email(data.emailtruong, "emailtruong", "Email trường"),
         date(data.ngaysinh, "ngaysinh", "Ngày sinh"),
         gioitinh(data.gioitinh),
     ];
+
+    if (!data.hoten && !data.ten) {
+        errs.push({ field: "ten", message: "Tên không được để trống." });
+    }
+    if (data.hoten) {
+        errs.push(maxLen(data.hoten, "hoten", "Họ và tên", 100));
+    }
+    if (data.ten) {
+        errs.push(maxLen(data.ten, "ten", "Tên", 50));
+    }
+    if (data.hodem) {
+        errs.push(maxLen(data.hodem, "hodem", "Họ đệm", 50));
+    }
 
     if (data.trangthai !== undefined && !VALID_TRANGTHAI_SV.includes(String(data.trangthai)))
         errs.push({ field: "trangthai", message: "Trạng thái sinh viên không hợp lệ." });
@@ -201,6 +228,8 @@ export interface GiangVienCreatePayload {
     magv?: string;
     makhoa?: string;
     hoten?: string;
+    hodem?: string;
+    ten?: string;
     ngaysinh?: string;
     gioitinh?: string;
     hocvi?: string;
@@ -212,6 +241,8 @@ export interface GiangVienCreatePayload {
 
 export interface GiangVienUpdatePayload {
     hoten?: string;
+    hodem?: string;
+    ten?: string;
     makhoa?: string;
     ngaysinh?: string;
     gioitinh?: string;
@@ -232,12 +263,10 @@ function hocvi(value: unknown, field = "hocvi"): ValidationError | null {
 export function validateGiangVienCreate(data: GiangVienCreatePayload): ValidationError[] {
     const errs: (ValidationError | null)[] = [
         required(data.magv, "magv", "Mã giảng viên"),
-        required(data.hoten, "hoten", "Họ và tên"),
         required(data.email, "email", "Email đăng nhập"),
         required(data.matkhau, "matkhau", "Mật khẩu"),
 
         maxLen(data.magv, "magv", "Mã giảng viên", 20),
-        maxLen(data.hoten, "hoten", "Họ và tên", 100),
         maxLen(data.chuyennganh, "chuyennganh", "Chuyên ngành", 100),
         email(data.emailtruong, "emailtruong", "Email trường"),
         email(data.email, "email", "Email đăng nhập"),
@@ -247,19 +276,45 @@ export function validateGiangVienCreate(data: GiangVienCreatePayload): Validatio
         gioitinh(data.gioitinh),
         hocvi(data.hocvi),
     ];
+
+    if (!data.hoten && !data.ten) {
+        errs.push({ field: "ten", message: "Tên không được để trống." });
+    }
+    if (data.hoten) {
+        errs.push(maxLen(data.hoten, "hoten", "Họ và tên", 100));
+    }
+    if (data.ten) {
+        errs.push(maxLen(data.ten, "ten", "Tên", 50));
+    }
+    if (data.hodem) {
+        errs.push(maxLen(data.hodem, "hodem", "Họ đệm", 50));
+    }
+
     return collect(...errs);
 }
 
 export function validateGiangVienUpdate(data: GiangVienUpdatePayload): ValidationError[] {
     const errs: (ValidationError | null)[] = [
-        required(data.hoten, "hoten", "Họ và tên"),
-        maxLen(data.hoten, "hoten", "Họ và tên", 100),
         maxLen(data.chuyennganh, "chuyennganh", "Chuyên ngành", 100),
         email(data.emailtruong, "emailtruong", "Email trường"),
         date(data.ngaysinh, "ngaysinh", "Ngày sinh"),
         gioitinh(data.gioitinh),
         hocvi(data.hocvi),
     ];
+
+    if (!data.hoten && !data.ten) {
+        errs.push({ field: "ten", message: "Tên không được để trống." });
+    }
+    if (data.hoten) {
+        errs.push(maxLen(data.hoten, "hoten", "Họ và tên", 100));
+    }
+    if (data.ten) {
+        errs.push(maxLen(data.ten, "ten", "Tên", 50));
+    }
+    if (data.hodem) {
+        errs.push(maxLen(data.hodem, "hodem", "Họ đệm", 50));
+    }
+
     return collect(...errs);
 }
 

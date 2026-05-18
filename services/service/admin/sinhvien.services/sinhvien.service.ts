@@ -1,6 +1,14 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import * as repo from "@/services/repositories/admin/sinhvien.repo/sinhvien.repo";
 
+export function mapSinhVien(sv: any) {
+  if (!sv) return sv;
+  return {
+    ...sv,
+    hoten: [sv.hodem, sv.ten].filter(Boolean).join(" ") || "Chưa thiết lập",
+  };
+}
+
 export async function getSinhVienListService(
   supabase: SupabaseClient,
   params: { search?: string; malop?: string; makhoa?: string; trangthai?: string; page: number; limit: number }
@@ -24,13 +32,13 @@ export async function getSinhVienListService(
     : (data ?? []);
 
   return {
-    data: filtered,
+    data: filtered.map(mapSinhVien),
     total: count ?? 0,
   };
 }
 
 export async function createSinhVienService(supabase: SupabaseClient, body: any) {
-  const { masv, malop, hoten, ngaysinh, gioitinh, emailtruong, email, matkhau, chiTiet } = body;
+  const { masv, malop, hoten, hodem, ten, ngaysinh, gioitinh, emailtruong, email, matkhau, chiTiet } = body;
 
   // 1. Hash password
   const { data: hashed, error: hashErr } = await repo.hashPasswordRepo(supabase, matkhau);
@@ -46,11 +54,26 @@ export async function createSinhVienService(supabase: SupabaseClient, body: any)
   });
   if (tkErr) throw new Error("Không thể tạo tài khoản: " + tkErr.message);
 
+  // Legacy fallback
+  let parsedHodem = hodem ? hodem.trim() : "";
+  let parsedTen = ten ? ten.trim() : "";
+  if (!parsedHodem && !parsedTen && hoten) {
+    const parts = hoten.trim().split(" ");
+    if (parts.length > 1) {
+      parsedTen = parts.pop() || "";
+      parsedHodem = parts.join(" ");
+    } else {
+      parsedTen = parts[0] || "";
+      parsedHodem = "";
+    }
+  }
+
   // 3. Create sinhvien with merged chiTiet fields
   const { data: sv, error: svErr } = await repo.createSinhVienRepo(supabase, {
     masv: masv.trim(),
     malop: malop.trim(),
-    hoten: hoten.trim(),
+    hodem: parsedHodem || null,
+    ten: parsedTen || null,
     ngaysinh: ngaysinh || null,
     gioitinh: gioitinh || null,
     emailtruong: emailtruong || null,
@@ -65,20 +88,35 @@ export async function createSinhVienService(supabase: SupabaseClient, body: any)
     throw new Error(svErr.message);
   }
 
-  return sv;
+  return mapSinhVien(sv);
 }
 
 export async function getSinhVienByIdService(supabase: SupabaseClient, masv: string) {
   const { data, error } = await repo.getSinhVienByIdRepo(supabase, masv);
   if (error) throw new Error(error.message);
-  return data;
+  return mapSinhVien(data);
 }
 
 export async function updateSinhVienService(supabase: SupabaseClient, masv: string, body: any) {
-  const { hoten, ngaysinh, gioitinh, malop, trangthai, emailtruong, chiTiet } = body;
+  const { hoten, hodem, ten, ngaysinh, gioitinh, malop, trangthai, emailtruong, chiTiet } = body;
 
   const update: Record<string, unknown> = {};
-  if (hoten) update.hoten = hoten.trim();
+
+  if (hodem !== undefined) update.hodem = hodem ? hodem.trim() : null;
+  if (ten !== undefined) update.ten = ten ? ten.trim() : null;
+
+  // Legacy fallback
+  if (hoten && update.hodem === undefined && update.ten === undefined) {
+    const parts = hoten.trim().split(" ");
+    if (parts.length > 1) {
+      update.ten = parts.pop() || "";
+      update.hodem = parts.join(" ");
+    } else {
+      update.ten = parts[0] || "";
+      update.hodem = "";
+    }
+  }
+
   if (ngaysinh !== undefined) update.ngaysinh = ngaysinh || null;
   if (gioitinh !== undefined) update.gioitinh = gioitinh || null;
   if (malop) update.malop = malop;
@@ -92,7 +130,7 @@ export async function updateSinhVienService(supabase: SupabaseClient, masv: stri
   const { data, error } = await repo.updateSinhVienRepo(supabase, masv, update);
   if (error) throw new Error(error.message);
 
-  return data;
+  return mapSinhVien(data);
 }
 
 export async function deleteSinhVienService(supabase: SupabaseClient, masv: string) {
@@ -300,11 +338,26 @@ export async function bulkImportSinhVienService(
 
       if (tkErr) throw new Error(tkErr.message);
 
+      // Legacy fallback: split row.hoten if hodem/ten not defined on row
+      let parsedHodem = (row as any).hodem ? (row as any).hodem.trim() : "";
+      let parsedTen = (row as any).ten ? (row as any).ten.trim() : "";
+      if (!parsedHodem && !parsedTen && row.hoten) {
+        const parts = row.hoten.trim().split(" ");
+        if (parts.length > 1) {
+          parsedTen = parts.pop() || "";
+          parsedHodem = parts.join(" ");
+        } else {
+          parsedTen = parts[0] || "";
+          parsedHodem = "";
+        }
+      }
+
       // Tạo sinh viên
       const { error: svErr } = await repo.createSinhVienRepo(supabase, {
         masv: row.masv,
         malop: row.malop,
-        hoten: row.hoten,
+        hodem: parsedHodem || null,
+        ten: parsedTen || null,
         ngaysinh: row.ngaysinh || null,
         gioitinh: ["Nam", "Nu", "Khac"].includes(row.gioitinh ?? "") ? row.gioitinh : null,
         emailtruong: row.emailtruong?.trim() || null,

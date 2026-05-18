@@ -1,6 +1,14 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import * as repo from "../../repositories/admin/stats.repo";
 
+function combineName(row: any) {
+  if (!row) return row;
+  return {
+    ...row,
+    hoten: [row.hodem, row.ten].filter(Boolean).join(" ") || "Chưa thiết lập",
+  };
+}
+
 export async function getSinhVienDetailForStatsService(
   supabase: SupabaseClient,
   masv: string,
@@ -10,16 +18,18 @@ export async function getSinhVienDetailForStatsService(
   const { data, error } = await repo.getSinhVienDetailForStatsRepo(supabase, masv);
   if (error) throw new Error(error.message);
 
+  const mapped = combineName(data);
+
   // Ghi nhật ký hệ thống: xem sinh viên
   await repo.logSystemActionRepo(supabase, {
     mataikhoan: userAccount.mataikhoan,
-    hanhdong: `Xem chi tiết sinh viên: ${data.hoten} (${masv})`,
+    hanhdong: `Xem chi tiết sinh viên: ${mapped.hoten} (${masv})`,
     tentable: "sinhvien",
     makhoachinh: masv,
     diachiip: ip
   });
 
-  return data;
+  return mapped;
 }
 
 export async function getGiangVienDetailForStatsService(
@@ -31,16 +41,18 @@ export async function getGiangVienDetailForStatsService(
   const { data, error } = await repo.getGiangVienDetailForStatsRepo(supabase, magv);
   if (error) throw new Error(error.message);
 
+  const mapped = combineName(data);
+
   // Ghi nhật ký hệ thống: xem giảng viên
   await repo.logSystemActionRepo(supabase, {
     mataikhoan: userAccount.mataikhoan,
-    hanhdong: `Xem chi tiết giảng viên: ${data.hoten} (${magv})`,
+    hanhdong: `Xem chi tiết giảng viên: ${mapped.hoten} (${magv})`,
     tentable: "giangvien",
     makhoachinh: magv,
     diachiip: ip
   });
 
-  return data;
+  return mapped;
 }
 
 export async function globalSearchService(
@@ -70,8 +82,8 @@ export async function globalSearchService(
   });
 
   return {
-    sinhvien: sinhvien ?? [],
-    giangvien: giangvien ?? [],
+    sinhvien: (sinhvien ?? []).map(combineName),
+    giangvien: (giangvien ?? []).map(combineName),
     lop: (lop ?? []).map((l: any) => ({
       ...l,
       siso: l.sinhvien?.[0]?.count ?? 0,
@@ -123,14 +135,14 @@ export async function getDashboardStatsService(supabase: SupabaseClient) {
     totalLop: totalLop ?? 0,
     totalKhoa: totalKhoa ?? 0,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    recentSV: (svList ?? []).map((sv: any) => ({
+    recentSV: (svList ?? []).map(combineName).map((sv: any) => ({
       masv: sv.masv,
       hoten: sv.hoten,
       tenlop: sv.lop?.tenlop ?? "—",
       trangthai: sv.trangthai,
     })),
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    recentGV: (gvList ?? []).map((gv: any) => ({
+    recentGV: (gvList ?? []).map(combineName).map((gv: any) => ({
       magv: gv.magv,
       hoten: gv.hoten,
       tenkhoa: gv.khoa?.tenkhoa ?? "—",
@@ -152,7 +164,9 @@ export async function getDashboardStatsService(supabase: SupabaseClient) {
         suchua: lh.phonghoc?.suchua ?? null,
         ghichu: lh.ghichu,
         monhoc: lh.phancong?.monhoc?.tenmon ?? "—",
-        giangvien: lh.phancong?.giangvien?.hoten ?? "—",
+        giangvien: lh.phancong?.giangvien
+          ? [lh.phancong.giangvien.hodem, lh.phancong.giangvien.ten].filter(Boolean).join(" ")
+          : "—",
         lop: lh.phancong?.lop?.tenlop ?? "—",
         hocky: lh.phancong?.hocky?.tenhocky ?? "—",
       })),

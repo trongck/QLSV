@@ -66,7 +66,7 @@ export async function getPhongHocSchedulesRepo(supabase: SupabaseClient, maphong
       ghichu,
       phancong!inner(
         danghieuluc,
-        giangvien:magv(hoten),
+        giangvien:magv(hodem, ten),
         monhoc:mamon(tenmon),
         lop:malop(tenlop),
         hocky:mahocky(tenhocky, danghieuluc)

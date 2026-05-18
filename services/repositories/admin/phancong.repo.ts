@@ -16,7 +16,7 @@ export async function getPhanCongListRepo(
 ) {
   let query = supabase
     .from("phancong")
-    .select("*, giangvien:magv(hoten), monhoc:mamon(tenmon), lop:malop(tenlop), hocky:mahocky(tenhocky, ngaybatdau, ngayketthuc)", { count: "exact" });
+    .select("*, giangvien:magv(hodem, ten), monhoc:mamon(tenmon), lop:malop(tenlop), hocky:mahocky(tenhocky, ngaybatdau, ngayketthuc)", { count: "exact" });
 
   if (params.search) {
     query = query.or(`malophoc.ilike.%${params.search}%`);
@@ -79,7 +79,7 @@ export async function createPhanCongRepo(supabase: SupabaseClient, payload: Reco
   return supabase
     .from("phancong")
     .insert(payload)
-    .select("*, giangvien:magv(hoten), monhoc:mamon(tenmon), lop:malop(tenlop), hocky:mahocky(tenhocky, ngaybatdau, ngayketthuc)")
+    .select("*, giangvien:magv(hodem, ten), monhoc:mamon(tenmon), lop:malop(tenlop), hocky:mahocky(tenhocky, ngaybatdau, ngayketthuc)")
     .single();
 }
 
@@ -88,7 +88,7 @@ export async function updatePhanCongRepo(supabase: SupabaseClient, maphancong: n
     .from("phancong")
     .update(payload)
     .eq("maphancong", maphancong)
-    .select("*, giangvien:magv(hoten), monhoc:mamon(tenmon), lop:malop(tenlop), hocky:mahocky(tenhocky, ngaybatdau, ngayketthuc)")
+    .select("*, giangvien:magv(hodem, ten), monhoc:mamon(tenmon), lop:malop(tenlop), hocky:mahocky(tenhocky, ngaybatdau, ngayketthuc)")
     .single();
 }
 

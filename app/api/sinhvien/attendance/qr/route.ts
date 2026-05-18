@@ -15,11 +15,14 @@ async function getCurrentStudent(request: NextRequest) {
     const supabase = createClient(cookieStore);
     const { data: sv, error } = await supabase
         .from('sinhvien')
-        .select('masv, malop, hoten')
+        .select('masv, malop, hodem, ten')
         .eq('mataikhoan', payload.mataikhoan)
         .single();
     if (error || !sv) throw new Error('Không tìm thấy thông tin sinh viên');
-    return sv;
+    return {
+        ...sv,
+        hoten: [sv.hodem, sv.ten].filter(Boolean).join(" ") || "Sinh viên"
+    };
 }
 
 /**

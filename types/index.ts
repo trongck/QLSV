@@ -39,6 +39,8 @@ export interface GiangVien {
   magv: string;
   mataikhoan: string | null;
   makhoa: string | null;
+  hodem?: string | null;
+  ten?: string | null;
   hoten: string;
   ngaysinh: Date | null;
   gioitinh: GioiTinh | null;
@@ -61,6 +63,8 @@ export interface SinhVien {
   masv: string;
   mataikhoan: string | null;
   malop: string;
+  hodem?: string | null;
+  ten?: string | null;
   hoten: string;
   ngaysinh: Date | null;
   gioitinh: GioiTinh | null;

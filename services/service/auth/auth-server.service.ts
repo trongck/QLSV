@@ -63,12 +63,12 @@ export async function fetchProfileHelper(supabase: SupabaseClient, mataikhoan: s
 
   if (vaitro === VaiTro.SinhVien) {
     const { data: sv } = await repo.fetchProfileSinhVienRepo(supabase, mataikhoan);
-    hoten = sv?.hoten ?? "Sinh Viên";
+    hoten = sv ? ([sv.hodem, sv.ten].filter(Boolean).join(" ") || "Sinh Viên") : "Sinh Viên";
     anhdaidien = sv?.anhdaidien ?? null;
     maSinhVien = sv?.masv;
   } else if (vaitro === VaiTro.GiangVien) {
     const { data: gv } = await repo.fetchProfileGiangVienRepo(supabase, mataikhoan);
-    hoten = gv?.hoten ?? "Giảng Viên";
+    hoten = gv ? ([gv.hodem, gv.ten].filter(Boolean).join(" ") || "Giảng Viên") : "Giảng Viên";
     anhdaidien = gv?.anhdaidien ?? null;
     maGiangVien = gv?.magv;
   } else if (vaitro === VaiTro.Admin) {
@@ -245,7 +245,7 @@ export async function resetPasswordRequestService(supabase: SupabaseClient, body
     }
     mataikhoan = sv.mataikhoan;
     ngaysinhRaw = sv.ngaysinh;
-    hoten = sv.hoten;
+    hoten = [sv.hodem, sv.ten].filter(Boolean).join(" ") || "Sinh Viên";
 
     const { data: ct, error: ctError } = await repo.getSinhVienDetailContactRepo(supabase, id.trim());
     if (ctError || !ct) {
@@ -266,7 +266,7 @@ export async function resetPasswordRequestService(supabase: SupabaseClient, body
     }
     mataikhoan = gv.mataikhoan;
     ngaysinhRaw = gv.ngaysinh;
-    hoten = gv.hoten;
+    hoten = [gv.hodem, gv.ten].filter(Boolean).join(" ") || "Giảng Viên";
 
     const { data: ct, error: ctError } = await repo.getGiangVienDetailContactRepo(supabase, id.trim());
     if (ctError || !ct) {

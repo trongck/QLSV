@@ -4,6 +4,8 @@ import { apiJson } from "../../../services/service/admin/sinhvien.services/core.
 
 export interface SinhVienRow {
   masv: string;
+  hodem?: string | null;
+  ten?: string | null;
   hoten: string;
   ngaysinh: string | null;
   gioitinh: string | null;

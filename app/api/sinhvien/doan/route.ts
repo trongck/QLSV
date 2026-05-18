@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
                 maphancong,
                 phancong:maphancong (
                     monhoc:mamon ( mamon, tenmon ),
-                    giangvien:magv ( magv, hoten )
+                    giangvien:magv ( magv, hodem, ten )
                 )
             `)
             .eq('loai', 'Doan')
@@ -58,7 +58,21 @@ export async function GET(request: NextRequest) {
 
         if (dErr) throw new Error(dErr.message);
 
-        return NextResponse.json({ success: true, data: doan ?? [] });
+        const mappedDoan = (doan ?? []).map((item: any) => {
+            const pc = item.phancong;
+            if (pc && pc.giangvien) {
+                pc.giangvien = {
+                    ...pc.giangvien,
+                    hoten: [pc.giangvien.hodem, pc.giangvien.ten].filter(Boolean).join(" ") || "Giảng viên"
+                };
+            }
+            return {
+                ...item,
+                phancong: pc
+            };
+        });
+
+        return NextResponse.json({ success: true, data: mappedDoan });
     } catch (error: any) {
         const isAuth = error.message.includes('đăng nhập') || error.message.includes('sinh viên');
         return NextResponse.json(

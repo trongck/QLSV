@@ -5,7 +5,8 @@ export async function getSinhVienDetailForStatsRepo(supabase: SupabaseClient, ma
     .from("sinhvien")
     .select(`
       masv,
-      hoten,
+      hodem,
+      ten,
       ngaysinh,
       gioitinh,
       emailtruong,
@@ -33,7 +34,8 @@ export async function getGiangVienDetailForStatsRepo(supabase: SupabaseClient, m
     .from("giangvien")
     .select(`
       magv,
-      hoten,
+      hodem,
+      ten,
       ngaysinh,
       gioitinh,
       hocvi,
@@ -65,13 +67,13 @@ export async function globalSearchRepo(supabase: SupabaseClient, search: string)
   return Promise.all([
     supabase
       .from("sinhvien")
-      .select("masv, hoten, trangthai, lop(tenlop)")
-      .or(`hoten.ilike.%${search}%,masv.ilike.%${search}%`)
+      .select("masv, hodem, ten, trangthai, lop(tenlop)")
+      .or(`ten.ilike.%${search}%,masv.ilike.%${search}%`)
       .limit(10),
     supabase
       .from("giangvien")
-      .select("magv, hoten, hocvi, khoa(tenkhoa)")
-      .or(`hoten.ilike.%${search}%,magv.ilike.%${search}%`)
+      .select("magv, hodem, ten, hocvi, khoa(tenkhoa)")
+      .or(`ten.ilike.%${search}%,magv.ilike.%${search}%`)
       .limit(10),
     supabase
       .from("lop")
@@ -98,7 +100,7 @@ export async function getCountsRepo(supabase: SupabaseClient) {
 export async function getRecentSVRepo(supabase: SupabaseClient, limit: number) {
   return supabase
     .from("sinhvien")
-    .select("masv, hoten, trangthai, lop(tenlop)")
+    .select("masv, hodem, ten, trangthai, lop(tenlop)")
     .order("masv", { ascending: false })
     .limit(limit);
 }
@@ -106,7 +108,7 @@ export async function getRecentSVRepo(supabase: SupabaseClient, limit: number) {
 export async function getRecentGVRepo(supabase: SupabaseClient, limit: number) {
   return supabase
     .from("giangvien")
-    .select("magv, hoten, hocvi, khoa(tenkhoa)")
+    .select("magv, hodem, ten, hocvi, khoa(tenkhoa)")
     .order("magv", { ascending: false })
     .limit(limit);
 }
@@ -130,7 +132,7 @@ export async function getTodaySchedulesRepo(supabase: SupabaseClient, thuTrongTu
         mamon,
         malop,
         danghieuluc,
-        giangvien:magv(hoten),
+        giangvien:magv(hodem, ten),
         monhoc:mamon(tenmon),
         lop:malop(tenlop),
         hocky:mahocky!inner(

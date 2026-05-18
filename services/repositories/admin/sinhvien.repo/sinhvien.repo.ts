@@ -7,7 +7,7 @@ export async function getSinhVienListRepo(
   let query = supabase
     .from("sinhvien")
     .select(
-      `masv, hoten, ngaysinh, gioitinh, emailtruong, trangthai, malop,
+      `masv, hodem, ten, ngaysinh, gioitinh, emailtruong, trangthai, malop,
        sodienthoai, emailcanhan, cccd,
        lop(tenlop, makhoa, khoa(tenkhoa))`,
       { count: "exact" }
@@ -16,7 +16,7 @@ export async function getSinhVienListRepo(
     .range(params.from, params.to);
 
   if (params.search) {
-    query = query.or(`hoten.ilike.%${params.search}%,masv.ilike.%${params.search}%`);
+    query = query.or(`ten.ilike.%${params.search}%,masv.ilike.%${params.search}%`);
   }
   if (params.malop) query = query.eq("malop", params.malop);
   if (params.trangthai) query = query.eq("trangthai", params.trangthai);

@@ -17,7 +17,7 @@ export async function getLichHocListRepo(
   }
 ) {
   // Luôn sử dụng inner join đối với phancong để tránh các dòng lịch học mồ côi hoặc không khớp bộ lọc xuất hiện trong danh sách
-  const relationString = "*, phonghoc(maphong, loaiphong, suchua), phancong!inner(*, giangvien:magv(hoten), monhoc:mamon(tenmon), lop:malop(tenlop), hocky:mahocky(tenhocky))";
+  const relationString = "*, phonghoc(maphong, loaiphong, suchua), phancong!inner(*, giangvien:magv(hodem, ten), monhoc:mamon(tenmon), lop:malop(tenlop), hocky:mahocky(tenhocky))";
 
   let query = supabase.from("lichhoc").select(relationString, { count: "exact" });
 
@@ -92,7 +92,7 @@ export async function getClassConflictsRepo(
 ) {
   let query = supabase
     .from("lichhoc")
-    .select("*, phancong!inner(malop, mahocky, monhoc:mamon(tenmon), giangvien:magv(hoten))")
+    .select("*, phancong!inner(malop, mahocky, monhoc:mamon(tenmon), giangvien:magv(hodem, ten))")
     .eq("phancong.malop", malop)
     .eq("phancong.mahocky", mahocky)
     .eq("thutrongtuan", thu);
@@ -145,7 +145,7 @@ export async function createLichHocRepo(supabase: SupabaseClient, payload: Recor
   return supabase
     .from("lichhoc")
     .insert(payload)
-    .select("*, phonghoc(maphong, loaiphong, suchua), phancong(*, giangvien:magv(hoten), monhoc:mamon(tenmon), lop:malop(tenlop), hocky:mahocky(tenhocky))")
+    .select("*, phonghoc(maphong, loaiphong, suchua), phancong(*, giangvien:magv(hodem, ten), monhoc:mamon(tenmon), lop:malop(tenlop), hocky:mahocky(tenhocky))")
     .single();
 }
 
@@ -154,7 +154,7 @@ export async function updateLichHocRepo(supabase: SupabaseClient, malichhoc: num
     .from("lichhoc")
     .update(payload)
     .eq("malichhoc", malichhoc)
-    .select("*, phonghoc(maphong, loaiphong, suchua), phancong(*, giangvien:magv(hoten), monhoc:mamon(tenmon), lop:malop(tenlop), hocky:mahocky(tenhocky))")
+    .select("*, phonghoc(maphong, loaiphong, suchua), phancong(*, giangvien:magv(hodem, ten), monhoc:mamon(tenmon), lop:malop(tenlop), hocky:mahocky(tenhocky))")
     .single();
 }
 

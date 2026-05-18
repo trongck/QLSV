@@ -20,7 +20,11 @@ export async function getLopListService(
   // Ánh xạ lại dữ liệu để lấy siso từ số lượng sinh viên thực tế
   const mappedData = data?.map((item: any) => ({
     ...item,
-    siso: item.sinhvien?.[0]?.count ?? 0
+    siso: item.sinhvien?.[0]?.count ?? 0,
+    giangvien: item.giangvien ? {
+      ...item.giangvien,
+      hoten: [item.giangvien.hodem, item.giangvien.ten].filter(Boolean).join(" ") || "N/A"
+    } : null
   }));
 
   return { data: mappedData, count: count ?? 0 };

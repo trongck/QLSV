@@ -33,7 +33,8 @@ export function CreateForm({
   const [form, setForm] = useState({
     magv: "",
     makhoa: "",
-    hoten: "",
+    hodem: "",
+    ten: "",
     ngaysinh: "",
     gioitinh: "",
     hocvi: "",
@@ -71,12 +72,20 @@ export function CreateForm({
             ))}
           </select>
         </div>
-        <div className="field full">
-          <label>Họ và tên *</label>
+        <div className="field">
+          <label>Họ đệm</label>
           <input
-            value={form.hoten}
-            onChange={set("hoten")}
-            placeholder="Nguyễn Văn B"
+            value={form.hodem}
+            onChange={set("hodem")}
+            placeholder="VD: Nguyễn Văn"
+          />
+        </div>
+        <div className="field">
+          <label>Tên *</label>
+          <input
+            value={form.ten}
+            onChange={set("ten")}
+            placeholder="VD: Bình"
           />
         </div>
         <div className="field">
@@ -176,8 +185,23 @@ export function EditForm({
   loading,
   error,
 }: EditFormProps) {
+  // Parsing fallback for hodem and ten
+  let initHodem = initial.hodem ?? "";
+  let initTen = initial.ten ?? "";
+  if (!initHodem && !initTen && initial.hoten) {
+    const parts = initial.hoten.trim().split(" ");
+    if (parts.length > 1) {
+      initTen = parts.pop() || "";
+      initHodem = parts.join(" ");
+    } else {
+      initTen = parts[0] || "";
+      initHodem = "";
+    }
+  }
+
   const [form, setForm] = useState({
-    hoten: initial.hoten,
+    hodem: initHodem,
+    ten: initTen,
     makhoa: initial.makhoa ?? "",
     ngaysinh: initial.ngaysinh?.slice(0, 10) ?? "",
     gioitinh: initial.gioitinh ?? "",
@@ -195,9 +219,13 @@ export function EditForm({
     <>
       {error && <div className="error-msg">{error}</div>}
       <div className="form-grid">
-        <div className="field full">
-          <label>Họ và tên *</label>
-          <input value={form.hoten} onChange={set("hoten")} />
+        <div className="field">
+          <label>Họ đệm</label>
+          <input value={form.hodem} onChange={set("hodem")} placeholder="VD: Nguyễn Văn" />
+        </div>
+        <div className="field">
+          <label>Tên *</label>
+          <input value={form.ten} onChange={set("ten")} placeholder="VD: Bình" />
         </div>
         <div className="field">
           <label>Khoa</label>

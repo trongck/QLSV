@@ -19,7 +19,7 @@ export async function getAccountByIdRepo(supabase: SupabaseClient, mataikhoan: s
 export async function fetchProfileSinhVienRepo(supabase: SupabaseClient, mataikhoan: string) {
   return supabase
     .from("sinhvien")
-    .select("masv, hoten, anhdaidien")
+    .select("masv, hodem, ten, anhdaidien")
     .eq("mataikhoan", mataikhoan)
     .single();
 }
@@ -27,7 +27,7 @@ export async function fetchProfileSinhVienRepo(supabase: SupabaseClient, mataikh
 export async function fetchProfileGiangVienRepo(supabase: SupabaseClient, mataikhoan: string) {
   return supabase
     .from("giangvien")
-    .select("magv, hoten, anhdaidien")
+    .select("magv, hodem, ten, anhdaidien")
     .eq("mataikhoan", mataikhoan)
     .single();
 }
@@ -90,7 +90,7 @@ export async function updateSessionRepo(
 export async function getSinhVienContactRepo(supabase: SupabaseClient, masv: string) {
   return supabase
     .from("sinhvien")
-    .select("masv, mataikhoan, ngaysinh, hoten")
+    .select("masv, mataikhoan, ngaysinh, hodem, ten")
     .eq("masv", masv)
     .single();
 }
@@ -106,7 +106,7 @@ export async function getSinhVienDetailContactRepo(supabase: SupabaseClient, mas
 export async function getGiangVienContactRepo(supabase: SupabaseClient, magv: string) {
   return supabase
     .from("giangvien")
-    .select("magv, mataikhoan, ngaysinh, hoten")
+    .select("magv, mataikhoan, ngaysinh, hodem, ten")
     .eq("magv", magv)
     .single();
 }

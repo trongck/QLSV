@@ -64,7 +64,7 @@ const DIEMDANH_SELECT = `
             phancong:maphancong (
                 maphancong,
                 monhoc:mamon ( mamon, tenmon, sotinchi ),
-                giangvien:magv ( magv, hoten ),
+                giangvien:magv ( magv, hodem, ten ),
                 hocky:mahocky ( mahocky, tenhocky, namhoc, ky, ngaybatdau, ngayketthuc )
             )
         )
@@ -268,7 +268,7 @@ export const diemdanhRepo = {
             .select(`
                 maphancong,
                 monhoc:mamon ( mamon, tenmon ),
-                giangvien:magv ( magv, hoten ),
+                giangvien:magv ( magv, hodem, ten ),
                 hocky:mahocky ( mahocky, tenhocky, ngaybatdau, ngayketthuc, danghieuluc ),
                 lichhoc ( malichhoc, thutrongtuan, tietbatdau, tietketthuc, maphong )
             `)

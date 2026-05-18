@@ -1,6 +1,17 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import * as repo from "../../repositories/admin/lichhoc.repo";
 
+function mapLichHocRow(row: any) {
+  if (!row) return row;
+  if (row.phancong?.giangvien) {
+    row.phancong.giangvien.hoten = [
+      row.phancong.giangvien.hodem,
+      row.phancong.giangvien.ten
+    ].filter(Boolean).join(" ") || "Chưa thiết lập";
+  }
+  return row;
+}
+
 export async function getLichHocListService(
   supabase: SupabaseClient,
   params: {
@@ -36,7 +47,7 @@ export async function getLichHocListService(
   if (error) throw new Error(error.message);
 
   return {
-    data,
+    data: (data ?? []).map(mapLichHocRow),
     total: count ?? 0,
   };
 }
@@ -70,7 +81,10 @@ export async function createLichHocService(supabase: SupabaseClient, body: any) 
 
   for (const item of (classConflicts || [])) {
     if (tbd <= item.tietketthuc && item.tietbatdau <= tkt) {
-      throw new Error(`Trùng lịch lớp học: Lớp đã có lịch học môn "${item.phancong.monhoc.tenmon}" với Giảng viên "${item.phancong.giangvien.hoten}" tại phòng "${item.maphong || 'N/A'}" vào Thứ ${thu}, Tiết ${item.tietbatdau}-${item.tietketthuc}.`);
+      const teacherName = item.phancong?.giangvien
+        ? [item.phancong.giangvien.hodem, item.phancong.giangvien.ten].filter(Boolean).join(" ")
+        : "—";
+      throw new Error(`Trùng lịch lớp học: Lớp đã có lịch học môn "${item.phancong.monhoc.tenmon}" với Giảng viên "${teacherName}" tại phòng "${item.maphong || 'N/A'}" vào Thứ ${thu}, Tiết ${item.tietbatdau}-${item.tietketthuc}.`);
     }
   }
 
@@ -110,7 +124,7 @@ export async function createLichHocService(supabase: SupabaseClient, body: any) 
   const { data, error } = await repo.createLichHocRepo(supabase, insertPayload);
   if (error) throw new Error(error.message);
 
-  return data;
+  return mapLichHocRow(data);
 }
 
 export async function updateLichHocService(supabase: SupabaseClient, id: number, body: any) {
@@ -142,7 +156,10 @@ export async function updateLichHocService(supabase: SupabaseClient, id: number,
 
   for (const item of (classConflicts || [])) {
     if (tbd <= item.tietketthuc && item.tietbatdau <= tkt) {
-      throw new Error(`Trùng lịch lớp học: Lớp đã có lịch học môn "${item.phancong.monhoc.tenmon}" với Giảng viên "${item.phancong.giangvien.hoten}" tại phòng "${item.maphong || 'N/A'}" vào Thứ ${thu}, Tiết ${item.tietbatdau}-${item.tietketthuc}.`);
+      const teacherName = item.phancong?.giangvien
+        ? [item.phancong.giangvien.hodem, item.phancong.giangvien.ten].filter(Boolean).join(" ")
+        : "—";
+      throw new Error(`Trùng lịch lớp học: Lớp đã có lịch học môn "${item.phancong.monhoc.tenmon}" với Giảng viên "${teacherName}" tại phòng "${item.maphong || 'N/A'}" vào Thứ ${thu}, Tiết ${item.tietbatdau}-${item.tietketthuc}.`);
     }
   }
 
@@ -177,7 +194,7 @@ export async function updateLichHocService(supabase: SupabaseClient, id: number,
   const { data, error } = await repo.updateLichHocRepo(supabase, id, updatePayload);
   if (error) throw new Error(error.message);
 
-  return data;
+  return mapLichHocRow(data);
 }
 
 export async function deleteLichHocService(supabase: SupabaseClient, id: number) {

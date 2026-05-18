@@ -126,7 +126,7 @@ export async function GET(request: Request) {
         ngaybatdau,
         ngayketthuc,
         monhoc:mamon ( tenmon, sotinchi ),
-        giangvien:magv ( hoten ),
+        giangvien:magv ( hodem, ten ),
         lichhoc ( malichhoc, thutrongtuan, tietbatdau, tietketthuc, maphong, ghichu )
       )
     `)
@@ -198,7 +198,7 @@ export async function GET(request: Request) {
         mamon: pc?.mamon,
         tenmon: mon?.tenmon ?? "Chưa có tên môn",
         sotinchi: mon?.sotinchi ?? 0,
-        giangvien: gv?.hoten ?? "Đang cập nhật",
+        giangvien: gv ? ([gv.hodem, gv.ten].filter(Boolean).join(" ") || "Đang cập nhật") : "Đang cập nhật",
         color: colorMap[pc?.mamon] ?? COLORS[0],
         scheduleItems,
       };
@@ -242,7 +242,7 @@ export async function GET(request: Request) {
         maphancong: pc?.maphancong,
         mamon:      pc?.mamon,
         tenmon:     mon?.tenmon ?? "Chưa có tên môn",
-        giangvien:  gv?.hoten ?? "Đang cập nhật",
+        giangvien:  gv ? ([gv.hodem, gv.ten].filter(Boolean).join(" ") || "Đang cập nhật") : "Đang cập nhật",
         thu:        lh.thutrongtuan,
         thuLabel:   THU_LABEL[lh.thutrongtuan] ?? `Thứ ${lh.thutrongtuan}`,
         tietBatDau: lh.tietbatdau,

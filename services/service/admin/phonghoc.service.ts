@@ -78,7 +78,9 @@ export async function getPhongHocSchedulesService(supabase: SupabaseClient, maph
     tietketthuc: lh.tietketthuc,
     ghichu: lh.ghichu,
     monhoc: lh.phancong?.monhoc?.tenmon ?? "—",
-    giangvien: lh.phancong?.giangvien?.hoten ?? "—",
+    giangvien: lh.phancong?.giangvien
+      ? [lh.phancong.giangvien.hodem, lh.phancong.giangvien.ten].filter(Boolean).join(" ")
+      : "—",
     lop: lh.phancong?.lop?.tenlop ?? "—",
     hocky: lh.phancong?.hocky?.tenhocky ?? "—",
   }));
