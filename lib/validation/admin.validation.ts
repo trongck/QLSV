@@ -478,6 +478,20 @@ export function validateThongBao(data: ThongBaoPayload, isCreate = true): Valida
         }
     }
 
+    if (data.ngayhethan) {
+        const expErr = date(data.ngayhethan, "ngayhethan", "Ngày hết hạn", true);
+        if (expErr) {
+            errs.push(expErr);
+        } else {
+            const ngaytaoStr = data.ngaytao ? data.ngaytao.split(" ")[0].split("T")[0] : new Date().toISOString().split("T")[0];
+            const start = new Date(ngaytaoStr);
+            const end = new Date(data.ngayhethan);
+            if (!isNaN(start.getTime()) && !isNaN(end.getTime()) && start > end) {
+                errs.push({ field: "ngayhethan", message: "Ngày hết hạn không thể nhỏ hơn ngày tạo." });
+            }
+        }
+    }
+
     return collect(...errs);
 }
 
