@@ -8,8 +8,8 @@ export async function getSinhVienListRepo(
     .from("sinhvien")
     .select(
       `masv, hoten, ngaysinh, gioitinh, emailtruong, trangthai, malop,
-       lop(tenlop, makhoa, khoa(tenkhoa)),
-       chitietsinhvien(sodienthoai, emailcanhan, cccd)`,
+       sodienthoai, emailcanhan, cccd,
+       lop(tenlop, makhoa, khoa(tenkhoa))`,
       { count: "exact" }
     )
     .order("masv", { ascending: true })
@@ -27,7 +27,7 @@ export async function getSinhVienListRepo(
 export async function getSinhVienByIdRepo(supabase: SupabaseClient, masv: string) {
   return supabase
     .from("sinhvien")
-    .select(`*, lop(tenlop, makhoa, khoa(tenkhoa)), chitietsinhvien(*), taikhoan(email, vaitro, trangthai)`)
+    .select(`*, lop(tenlop, makhoa, khoa(tenkhoa)), taikhoan(email, vaitro, trangthai)`)
     .eq("masv", masv)
     .single();
 }
@@ -52,12 +52,6 @@ export async function createSinhVienRepo(supabase: SupabaseClient, payload: Reco
     .single();
 }
 
-export async function createChiTietSinhVienRepo(supabase: SupabaseClient, payload: Record<string, any>) {
-  return supabase
-    .from("chitietsinhvien")
-    .insert(payload);
-}
-
 export async function updateSinhVienRepo(
   supabase: SupabaseClient,
   masv: string,
@@ -71,14 +65,6 @@ export async function updateSinhVienRepo(
     .single();
 }
 
-export async function upsertChiTietSinhVienRepo(
-  supabase: SupabaseClient,
-  payload: Record<string, any>
-) {
-  return supabase
-    .from("chitietsinhvien")
-    .upsert(payload);
-}
 
 export async function getSinhVienMaTaiKhoanRepo(supabase: SupabaseClient, masv: string) {
   return supabase

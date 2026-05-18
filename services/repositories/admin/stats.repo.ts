@@ -11,20 +11,18 @@ export async function getSinhVienDetailForStatsRepo(supabase: SupabaseClient, ma
       emailtruong,
       trangthai,
       malop,
-      lop(tenlop, makhoa, khoa(tenkhoa)),
-      chitietsinhvien(
-        sodienthoai,
-        emailcanhan,
-        quequan,
-        diachi,
-        tenphuhuynh,
-        sodienthoaiphuhuynh,
-        cccd,
-        ngaycapcccd,
-        noicapcccd,
-        dantoc,
-        tongiao
-      )
+      sodienthoai,
+      emailcanhan,
+      quequan,
+      diachi,
+      tenphuhuynh,
+      sodienthoaiphuhuynh,
+      cccd,
+      ngaycapcccd,
+      noicapcccd,
+      dantoc,
+      tongiao,
+      lop(tenlop, makhoa, khoa(tenkhoa))
     `)
     .eq("masv", masv)
     .single();
@@ -42,14 +40,12 @@ export async function getGiangVienDetailForStatsRepo(supabase: SupabaseClient, m
       chuyennganh,
       emailtruong,
       makhoa,
-      khoa(tenkhoa),
-      chitietgiangvien(
-        sodienthoai,
-        emailcanhan,
-        diachi,
-        ngayvaotruong,
-        hesoluong
-      )
+      sodienthoai,
+      emailcanhan,
+      diachi,
+      ngayvaotruong,
+      hesoluong,
+      khoa(tenkhoa)
     `)
     .eq("magv", magv)
     .single();

@@ -35,7 +35,6 @@ export async function createLopService(supabase: SupabaseClient, body: any) {
     nganh: nganh || null,
     khoahoc: khoahoc || null,
     magv: magv || null,
-    siso: 0,
   });
 
   if (error) throw new Error(error.message);

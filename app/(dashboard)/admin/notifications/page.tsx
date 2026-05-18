@@ -339,7 +339,7 @@ export default function AdminNotificationsPage() {
                             <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                             <circle cx="12" cy="7" r="4" />
                           </svg>
-                          {notif.admin?.hoten || "Hệ thống"}
+                          {notif.taikhoan?.email || notif.mataikhoantao || "Hệ thống"}
                         </span>
                         <span className="text-[12px] text-fg-subtle flex items-center gap-1">
                           <svg
@@ -545,7 +545,7 @@ export default function AdminNotificationsPage() {
                       Phát sóng:{" "}
                       {formatDisplayDateTime(modal.item.ngaytao)}{" "}
                       bởi{" "}
-                      <strong>{modal.item.admin?.hoten || "Hệ thống"}</strong>
+                      <strong>{modal.item.taikhoan?.email || modal.item.mataikhoantao || "Hệ thống"}</strong>
                     </span>
                   </div>
                 </div>

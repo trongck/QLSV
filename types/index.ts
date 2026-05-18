@@ -47,10 +47,7 @@ export interface GiangVien {
   anhdaidien: string | null;
   emailtruong: string | null;
   thanhtuu: string | null;
-}
-
-export interface ChiTietGiangVien {
-  magv: string;
+  // Merged from chitietgiangvien
   diachi: string | null;
   sodienthoai: string | null;
   emailcanhan: string | null;
@@ -70,10 +67,7 @@ export interface SinhVien {
   anhdaidien: string | null;
   emailtruong: string | null;
   trangthai: TrangThaiSinhVien;
-}
-
-export interface ChiTietSinhVien {
-  masv: string;
+  // Merged from chitietsinhvien
   quequan: string | null;
   diachi: string | null;
   sodienthoai: string | null;
@@ -85,7 +79,7 @@ export interface ChiTietSinhVien {
   noicapcccd: string | null;
   dantoc: string | null;
   tongiao: string | null;
-  face_embedding: number[] | null; // mảng 128 float từ face-api.js
+  face_embedding: number[] | null;
 }
 
 // ─── Khoa & Lớp ───────────────────────────────────────────────────────────────
@@ -105,7 +99,7 @@ export interface Lop {
   nganh: string | null;
   khoahoc: string | null;
   magv: string | null;
-  siso: number;
+  // siso removed — use vcount_siso VIEW or count sinhvien dynamically
 }
 
 // ─── Môn Học & Học Kỳ ────────────────────────────────────────────────────────
@@ -150,7 +144,7 @@ export interface PhanCong {
 
 export interface PhongHoc {
   maphong: string;
-  loaiphong: "Lythuyet" | "Thuchanh" | "Online";
+  loaiphong: LoaiPhongHoc;
   suchua: number;
 }
 
@@ -160,7 +154,9 @@ export interface LichHoc {
   thutrongtuan: number; // 2–8 (Thứ 2 → Chủ nhật)
   tietbatdau: number;   // 1–15
   tietketthuc: number;  // 1–15
-  maphong: string | null;   // FK → phonghoc.maphong
+  maphong: string | null;
+  tuantu_batdau: number | null;  // [FIX-5] Tuần bắt đầu hiệu lực (null = cả học kỳ)
+  tuantu_ketthuc: number | null; // [FIX-5] Tuần kết thúc hiệu lực
   ghichu: string | null;
 }
 
@@ -212,7 +208,7 @@ export interface DonXinNghi {
 export interface BaiTap {
   mabaitap: number;
   maphancong: number;
-  magv: string;
+  // magv removed — derive via phancong.magv [FIX-14]
   tieude: string;
   mota: string | null;
   filedinh: string | null;
@@ -242,7 +238,7 @@ export interface NopBai {
 export interface DeThi {
   madethi: number;
   maphancong: number;
-  magvtao: string;
+  // magvtao removed — derive via phancong.magv [FIX-14]
   tieude: string;
   mota: string | null;
   thoigianlam: number; // phút
@@ -329,7 +325,7 @@ export interface DiemTongKet {
 export interface TaiLieu {
   matailieu: number;
   maphancong: number;
-  magv: string;
+  // magv removed — derive via phancong.magv [FIX-14]
   tieude: string;
   mota: string | null;
   loai: LoaiTaiLieu;
@@ -345,8 +341,7 @@ export interface TaiLieu {
 
 export interface ThongBao {
   mathongbao: number;
-  magvtao: string | null;
-  maadmintao: string | null;
+  mataikhoantao: string; // [FIX-10] Unified — replaces magvtao + maadmintao
   tieude: string;
   noidung: string;
   loai: LoaiThongBao;
@@ -359,16 +354,10 @@ export interface ThongBao {
   ngaycapnhat: Date;
 }
 
-export interface ThongBaoDaDocSV {
+/** [FIX-13] Unified read-status table — replaces ThongBaoDaDocSV + ThongBaoDaDocGV */
+export interface ThongBaoDaDoc {
   mathongbao: number;
-  masv: string;
-  dadoc: boolean;
-  thoigiandoc: Date | null;
-}
-
-export interface ThongBaoDaDocGV {
-  mathongbao: number;
-  magv: string;
+  mataikhoan: string;
   dadoc: boolean;
   thoigiandoc: Date | null;
 }
@@ -379,25 +368,25 @@ export interface CuocTroChuyen {
   macuoctrochuyen: number;
   maphancong: number | null;
   tieude: string | null;
-  loai: LoaiCuocTroChuyen;
+  loai: LoaiCuocTroChuyen; // CaNhan | Nhom
   ngaytao: Date;
   nguoidaxoa: string[];
 }
 
+/** [FIX-11] Unified — replaces masv/magv with mataikhoan, PK added */
 export interface ThanhVienTroChuyen {
   macuoctrochuyen: number;
-  masv: string | null;
-  magv: string | null;
+  mataikhoan: string;
   vaitro: string | null;
   ngaythamgia: Date;
   thoigianxemcuoi: Date | null;
 }
 
+/** [FIX-12] Unified sender — replaces masvgui/magvgui */
 export interface TinNhan {
   matinnhan: number;
   macuoctrochuyen: number;
-  masvgui: string | null;
-  magvgui: string | null;
+  mataikhoangui: string;
   noidung: string;
   filedinh: string | null;
   dachinh: boolean;
@@ -422,6 +411,7 @@ export interface NhatKy {
 
 // ─── Thống Kê ─────────────────────────────────────────────────────────────────
 
+/** View-backed statistics (from vthongke_sinhvien VIEW) */
 export interface ThongKeSinhVien {
   masv: string;
   mahocky: number;
@@ -431,9 +421,9 @@ export interface ThongKeSinhVien {
   tilechuyencan: number | null;
   somondat: number | null;
   somonkhongdat: number | null;
-  ngaycapnhat: Date;
 }
 
+/** View-backed statistics (from vthongke_phancong VIEW) */
 export interface ThongKePhanCong {
   maphancong: number;
   sisohientai: number | null;
@@ -442,7 +432,6 @@ export interface ThongKePhanCong {
   tilechuyencan: number | null;
   sobaitapcho: number | null;
   sobaitapdanop: number | null;
-  ngaycapnhat: Date;
 }
 
 // ─── Nhật Ký Hệ Thống (Audit Log) ────────────────────────────────────────────

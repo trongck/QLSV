@@ -11,17 +11,7 @@ async function requireAuth(req: Request) {
   try { return await verifyToken(token); } catch { return null; }
 }
 
-async function resolveIds(supabase: any, mataikhoan: string, vaitro: VaiTro) {
-  if (vaitro === VaiTro.SinhVien) {
-    const { data } = await supabase.from("sinhvien").select("masv").eq("mataikhoan", mataikhoan).single();
-    return { masv: data?.masv ?? null, magv: null };
-  }
-  if (vaitro === VaiTro.GiangVien) {
-    const { data } = await supabase.from("giangvien").select("magv").eq("mataikhoan", mataikhoan).single();
-    return { masv: null, magv: data?.magv ?? null };
-  }
-  return { masv: null, magv: null };
-}
+// Replaced resolveIds with direct mataikhoan usage
 
 // GET: lấy tin nhắn
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -38,13 +28,12 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
   const offset = (page - 1) * limit;
 
   const supabase = createClient(await cookies());
-  const { masv, magv } = await resolveIds(supabase, payload.mataikhoan, payload.vaitro);
 
   // Lấy tin nhắn — không join FK phức tạp để tránh lỗi RLS
-  const userId = masv ?? magv;
+  const userId = payload.mataikhoan;
   let query = supabase
     .from("tinnhan")
-    .select("matinnhan, macuoctrochuyen, masvgui, magvgui, noidung, filedinh, dachinh, ngaytao", { count: "exact" })
+    .select("matinnhan, macuoctrochuyen, mataikhoangui, noidung, filedinh, dachinh, ngaytao", { count: "exact" })
     .eq("macuoctrochuyen", convId);
 
   if (userId) {
@@ -59,13 +48,12 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
 
   // Cập nhật thoigianxemcuoi
   const now = new Date().toISOString();
-  if (masv) await supabase.from("thanhvientrochuyen").update({ thoigianxemcuoi: now }).eq("macuoctrochuyen", convId).eq("masv", masv);
-  else if (magv) await supabase.from("thanhvientrochuyen").update({ thoigianxemcuoi: now }).eq("macuoctrochuyen", convId).eq("magv", magv);
+  await supabase.from("thanhvientrochuyen").update({ thoigianxemcuoi: now }).eq("macuoctrochuyen", convId).eq("mataikhoan", payload.mataikhoan);
 
   return NextResponse.json({
     data: msgs ?? [],
     pagination: { page, limit, total: count ?? 0, totalPages: Math.ceil((count ?? 0) / limit) },
-    me: { masv, magv },
+    me: { mataikhoan: payload.mataikhoan },
   });
 }
 
@@ -83,12 +71,11 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   if (!noidung?.trim() && !filedinh) return NextResponse.json({ error: "Nội dung không được trống" }, { status: 400 });
 
   const supabase = createClient(await cookies());
-  const { masv, magv } = await resolveIds(supabase, payload.mataikhoan, payload.vaitro);
 
   const { data, error } = await supabase
     .from("tinnhan")
-    .insert({ macuoctrochuyen: convId, masvgui: masv, magvgui: magv, noidung: noidung?.trim() ?? "", filedinh: filedinh ?? null, dachinh: false })
-    .select("matinnhan, macuoctrochuyen, masvgui, magvgui, noidung, filedinh, dachinh, ngaytao")
+    .insert({ macuoctrochuyen: convId, mataikhoangui: payload.mataikhoan, noidung: noidung?.trim() ?? "", filedinh: filedinh ?? null, dachinh: false })
+    .select("matinnhan, macuoctrochuyen, mataikhoangui, noidung, filedinh, dachinh, ngaytao")
     .single();
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
@@ -98,37 +85,47 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
   // Cập nhật thoigianxemcuoi
   const now = new Date().toISOString();
-  if (masv) await supabase.from("thanhvientrochuyen").update({ thoigianxemcuoi: now }).eq("macuoctrochuyen", convId).eq("masv", masv);
-  else if (magv) await supabase.from("thanhvientrochuyen").update({ thoigianxemcuoi: now }).eq("macuoctrochuyen", convId).eq("magv", magv);
+  await supabase.from("thanhvientrochuyen").update({ thoigianxemcuoi: now }).eq("macuoctrochuyen", convId).eq("mataikhoan", payload.mataikhoan);
 
   // Lấy thông tin người gửi và người nhận để ghi log rõ ràng
   let senderName = payload.mataikhoan;
   let recipientName = "cuộc hội thoại #" + convId;
 
   try {
-    // Lấy tên người gửi
-    if (masv) {
-      const { data: svSender } = await supabase.from("sinhvien").select("hoten").eq("masv", masv).single();
-      if (svSender) senderName = `${svSender.hoten} (${masv})`;
-    } else if (magv) {
-      const { data: gvSender } = await supabase.from("giangvien").select("hoten").eq("magv", magv).single();
-      if (gvSender) senderName = `${gvSender.hoten} (${magv})`;
+    // Lấy thông tin người gửi qua taikhoan -> sinhvien/giangvien/admin
+    const { data: senderTk } = await supabase
+      .from("taikhoan")
+      .select("email, sinhvien(hoten, masv), giangvien(hoten, magv), admin(hoten, maadmin)")
+      .eq("mataikhoan", payload.mataikhoan)
+      .single();
+      
+    if (senderTk) {
+      if (senderTk.sinhvien?.[0]) senderName = `${senderTk.sinhvien[0].hoten} (${senderTk.sinhvien[0].masv})`;
+      else if (senderTk.giangvien?.[0]) senderName = `${senderTk.giangvien[0].hoten} (${senderTk.giangvien[0].magv})`;
+      else if (senderTk.admin?.[0]) senderName = `${senderTk.admin[0].hoten} (Admin)`;
+      else senderName = senderTk.email;
     }
 
     // Lấy thành viên còn lại (người nhận)
     const { data: members } = await supabase
       .from("thanhvientrochuyen")
-      .select("masv, magv")
+      .select("mataikhoan")
       .eq("macuoctrochuyen", convId);
 
     if (members) {
-      const other = members.find((m) => m.masv !== masv || m.magv !== magv);
-      if (other?.masv) {
-        const { data: svRecv } = await supabase.from("sinhvien").select("hoten").eq("masv", other.masv).single();
-        if (svRecv) recipientName = `${svRecv.hoten} (${other.masv})`;
-      } else if (other?.magv) {
-        const { data: gvRecv } = await supabase.from("giangvien").select("hoten").eq("magv", other.magv).single();
-        if (gvRecv) recipientName = `${gvRecv.hoten} (${other.magv})`;
+      const other = members.find((m: any) => m.mataikhoan !== payload.mataikhoan);
+      if (other?.mataikhoan) {
+        const { data: recvTk } = await supabase
+          .from("taikhoan")
+          .select("email, sinhvien(hoten, masv), giangvien(hoten, magv), admin(hoten, maadmin)")
+          .eq("mataikhoan", other.mataikhoan)
+          .single();
+        if (recvTk) {
+          if (recvTk.sinhvien?.[0]) recipientName = `${recvTk.sinhvien[0].hoten} (${recvTk.sinhvien[0].masv})`;
+          else if (recvTk.giangvien?.[0]) recipientName = `${recvTk.giangvien[0].hoten} (${recvTk.giangvien[0].magv})`;
+          else if (recvTk.admin?.[0]) recipientName = `${recvTk.admin[0].hoten} (Admin)`;
+          else recipientName = recvTk.email;
+        }
       }
     }
   } catch (_) { /* fallback to defaults */ }
@@ -155,9 +152,8 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
   if (isNaN(convId)) return NextResponse.json({ error: "ID không hợp lệ" }, { status: 400 });
 
   const supabase = createClient(await cookies());
-  const { masv, magv } = await resolveIds(supabase, payload.mataikhoan, payload.vaitro);
 
-  const userId = masv ?? magv;
+  const userId = payload.mataikhoan;
   if (!userId) return NextResponse.json({ error: "Không tìm thấy hồ sơ" }, { status: 404 });
 
   // Lấy danh sách tin nhắn hiện tại

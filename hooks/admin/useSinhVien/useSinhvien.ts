@@ -13,7 +13,18 @@ export interface SinhVienRow {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   lop?: any;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  chitietsinhvien?: any;
+  // Detail fields now merged directly (no separate chitietsinhvien table)
+  sodienthoai?: string | null;
+  emailcanhan?: string | null;
+  cccd?: string | null;
+  quequan?: string | null;
+  diachi?: string | null;
+  tenphuhuynh?: string | null;
+  sodienthoaiphuhuynh?: string | null;
+  ngaycapcccd?: string | null;
+  noicapcccd?: string | null;
+  dantoc?: string | null;
+  tongiao?: string | null;
 }
 
 export interface SinhVienListResponse {

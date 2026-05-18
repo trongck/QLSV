@@ -15,12 +15,12 @@ export const messageRepo = {
     },
 
     // Thêm tin nhắn mới
-    createMessage: async (roomId: number, studentId: string, content: string) => {
+    createMessage: async (roomId: number, mataikhoan: string, content: string) => {
         return await supabase
             .from('tinnhan')
             .insert([{
                 macuoctrochuyen: roomId,
-                masvgui: studentId,
+                mataikhoangui: mataikhoan,
                 noidung: content,
                 dachinh: false,
                 ngaytao: new Date().toISOString()

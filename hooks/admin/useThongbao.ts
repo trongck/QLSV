@@ -13,10 +13,8 @@ export interface ThongbaoRow {
   ngayhethan: string | null;
   ghim: boolean;
   ngaytao: string;
-  maadmintao: string | null;
-  magvtao: string | null;
-  admin?: { hoten: string };
-  giangvien?: { hoten: string };
+  mataikhoantao: string; // [FIX-10] Unified creator
+  taikhoan?: { email: string; vaitro: string };
   lop?: { tenlop: string };
 }
 

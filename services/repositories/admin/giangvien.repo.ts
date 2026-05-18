@@ -8,8 +8,8 @@ export async function getGiangVienListRepo(
     .from("giangvien")
     .select(
       `magv, hoten, ngaysinh, gioitinh, hocvi, chuyennganh, emailtruong, makhoa, thanhtuu,
-       khoa(tenkhoa),
-       chitietgiangvien(sodienthoai, emailcanhan, ngayvaotruong, hesoluong)`,
+       sodienthoai, emailcanhan, ngayvaotruong, hesoluong,
+       khoa(tenkhoa)`,
       { count: "exact" }
     )
     .order("magv", { ascending: true })
@@ -45,14 +45,11 @@ export async function createGiangVienRepo(supabase: SupabaseClient, payload: Rec
     .single();
 }
 
-export async function insertChiTietGiangVienRepo(supabase: SupabaseClient, payload: Record<string, any>) {
-  return supabase.from("chitietgiangvien").insert(payload);
-}
 
 export async function getGiangVienByIdRepo(supabase: SupabaseClient, magv: string) {
   return supabase
     .from("giangvien")
-    .select(`*, khoa(tenkhoa), chitietgiangvien(*), taikhoan(email, vaitro, trangthai)`)
+    .select(`*, khoa(tenkhoa), taikhoan(email, vaitro, trangthai)`)
     .eq("magv", magv)
     .single();
 }
@@ -66,9 +63,7 @@ export async function updateGiangVienRepo(supabase: SupabaseClient, magv: string
     .single();
 }
 
-export async function upsertChiTietGiangVienRepo(supabase: SupabaseClient, payload: Record<string, any>) {
-  return supabase.from("chitietgiangvien").upsert(payload);
-}
+
 
 export async function deleteGiangVienRepo(supabase: SupabaseClient, magv: string) {
   return supabase.from("giangvien").delete().eq("magv", magv);

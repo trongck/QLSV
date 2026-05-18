@@ -14,7 +14,7 @@ export async function getThongbaoListRepo(
 ) {
   let query = supabase
     .from("thongbao")
-    .select("*, admin:maadmintao(hoten), giangvien:magvtao(hoten), lop:malop(tenlop)", { count: "exact" })
+    .select("*, taikhoan:mataikhoantao(email, vaitro), lop:malop(tenlop)", { count: "exact" })
     .order("ghim", { ascending: false })
     .order("ngaytao", { ascending: false })
     .range(params.from, params.to);
@@ -35,23 +35,12 @@ export async function getThongbaoListRepo(
   return query;
 }
 
-export async function getAdminProfileRepo(supabase: SupabaseClient, mataikhoan: string) {
-  return supabase
-    .from("admin")
-    .select("maadmin")
-    .eq("mataikhoan", mataikhoan)
-    .single();
-}
-
-export async function getAnyAdminProfileRepo(supabase: SupabaseClient) {
-  return supabase.from("admin").select("maadmin").limit(1).single();
-}
 
 export async function createThongbaoRepo(supabase: SupabaseClient, payload: Record<string, any>) {
   return supabase
     .from("thongbao")
     .insert(payload)
-    .select("*, admin:maadmintao(hoten), lop:malop(tenlop)")
+    .select("*, taikhoan:mataikhoantao(email, vaitro), lop:malop(tenlop)")
     .single();
 }
 
@@ -60,7 +49,7 @@ export async function updateThongbaoRepo(supabase: SupabaseClient, mathongbao: n
     .from("thongbao")
     .update(payload)
     .eq("mathongbao", mathongbao)
-    .select("*, admin:maadmintao(hoten), lop:malop(tenlop)")
+    .select("*, taikhoan:mataikhoantao(email, vaitro), lop:malop(tenlop)")
     .single();
 }
 

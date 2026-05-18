@@ -9,36 +9,34 @@ import { apiJson } from "./api.utils";
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface MemberProfile {
-  masv: string | null;
-  magv: string | null;
-  hoten: string;
-  anhdaidien: string | null;
-  emailtruong?: string | null;
+  mataikhoan: string;
+  email: string | null;
+  vaitro: string | null;
+  // Optional resolved profile
+  hoten?: string;
+  anhdaidien?: string | null;
 }
 
 export interface ConversationMember {
-  masv: string | null;
-  magv: string | null;
+  mataikhoan: string;
   vaitro: string | null;
   ngaythamgia: string;
   thoigianxemcuoi: string | null;
-  sinhvien: MemberProfile | null;
-  giangvien: MemberProfile | null;
+  taikhoan: MemberProfile | null;
   isSelf?: boolean;
 }
 
 export interface LastMessage {
   matinnhan: number;
   noidung: string;
-  masvgui: string | null;
-  magvgui: string | null;
+  mataikhoangui: string;
   ngaytao: string;
 }
 
 export interface ConversationRow {
   macuoctrochuyen: number;
   tieude: string | null;
-  loai: "Rieng" | "NhomMon";
+  loai: "CaNhan" | "Nhom";
   ngaytao: string;
   members: ConversationMember[];
   otherMembers: ConversationMember[];
@@ -49,8 +47,7 @@ export interface ConversationRow {
 export interface MessageRow {
   matinnhan: number;
   macuoctrochuyen: number;
-  masvgui: string | null;
-  magvgui: string | null;
+  mataikhoangui: string;
   noidung: string;
   filedinh: string | null;
   dachinh: boolean;
@@ -65,7 +62,7 @@ export interface MessagesResponse {
     total: number;
     totalPages: number;
   };
-  me: { masv: string | null; magv: string | null };
+  me: { mataikhoan: string };
 }
 
 export interface UserSearchResult {

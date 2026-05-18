@@ -14,7 +14,12 @@ export interface GiangVienRow {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   khoa?: any;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  chitietgiangvien?: any;
+  // Detail fields now merged directly (no separate chitietgiangvien table)
+  sodienthoai?: string | null;
+  emailcanhan?: string | null;
+  diachi?: string | null;
+  ngayvaotruong?: string | null;
+  hesoluong?: number | null;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   taikhoan?: any;
 }

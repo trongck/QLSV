@@ -21,7 +21,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
     try {
         const body = await request.json();
-        const data = await messageService.sendMessage(body.macuoctrochuyen, body.masvgui, body.noidung);
+        const data = await messageService.sendMessage(body.macuoctrochuyen, body.mataikhoangui, body.noidung);
         return NextResponse.json({ success: true, data }, { status: 201 });
     } catch (error: any) {
         return NextResponse.json({ success: false, message: error.message }, { status: 500 });

@@ -23,7 +23,7 @@ export interface Message {
   fileSize?: string;
 }
 
-export function useMessages(currentMasv: string) {
+export function useMessages(currentMataikhoan: string) {
   const [chatList, setChatList] = useState<ChatRoom[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -38,18 +38,18 @@ export function useMessages(currentMasv: string) {
       if (json.success && Array.isArray(json.data)) {
         const mapped = json.data.map((item: any) => {
           const room = item.cuoctrochuyen;
-          // Lấy tên người kia trong phòng (nếu là chat 1-1)
-          const otherMember = room.thanhvientrochuyen?.find((m: any) => (m.masv && m.masv !== currentMasv) || m.magv);
-          const name = otherMember?.giangvien?.hoten || otherMember?.sinhvien?.hoten || room.tieude || "Phòng chat";
-          
+          // Lấy tên người kia trong phòng (nếu là chat 1-1) — now uses mataikhoan
+          const otherMember = room.thanhvientrochuyen?.find((m: any) => m.mataikhoan && m.mataikhoan !== currentMataikhoan);
+          const name = otherMember?.taikhoan?.hoten ?? otherMember?.taikhoan?.email ?? room.tieude ?? "Phòng chat";
+          const role = otherMember?.taikhoan?.vaitro === "GiangVien" ? "Giảng viên" : "Sinh viên";
           return {
             id: item.macuoctrochuyen,
-            name: name,
+            name,
             avatar: name.charAt(0).toUpperCase(),
             time: new Date(room.ngaytao).toLocaleTimeString("vi-VN", { hour: '2-digit', minute: '2-digit' }),
             lastMsg: "Bắt đầu cuộc trò chuyện...",
             unread: 0,
-            role: otherMember?.magv ? "Giảng viên" : "Sinh viên",
+            role,
           };
         });
         setChatList(mapped);
@@ -59,7 +59,7 @@ export function useMessages(currentMasv: string) {
     } finally {
       setIsLoading(false);
     }
-  }, [currentMasv]);
+  }, [currentMataikhoan]);
 
   const fetchMessages = useCallback(async (roomId: number) => {
     setIsLoading(true);
@@ -71,7 +71,7 @@ export function useMessages(currentMasv: string) {
           id: msg.matinnhan,
           content: msg.noidung,
           time: new Date(msg.ngaytao).toLocaleTimeString("vi-VN", { hour: '2-digit', minute: '2-digit' }),
-          isMine: msg.masvgui === currentMasv,
+          isMine: msg.mataikhoangui === currentMataikhoan,
           type: "text", // Mặc định là text
         }));
         setMessages(mapped);
@@ -81,7 +81,7 @@ export function useMessages(currentMasv: string) {
     } finally {
       setIsLoading(false);
     }
-  }, [currentMasv]);
+  }, [currentMataikhoan]);
 
   const sendMessage = useCallback(async (roomId: number, userId: string, content: string) => {
     try {
@@ -89,7 +89,7 @@ export function useMessages(currentMasv: string) {
         method: "POST",
         body: JSON.stringify({
           macuoctrochuyen: roomId,
-          masvgui: userId,
+          mataikhoangui: userId,
           noidung: content,
         }),
       });

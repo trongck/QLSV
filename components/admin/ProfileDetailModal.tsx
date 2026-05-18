@@ -100,7 +100,7 @@ export function ProfileDetailModal({
                 Số điện thoại
               </span>
               <span className="text-[13px] font-semibold text-[#2D1B14]">
-                {detail.chitietsinhvien?.sodienthoai || "—"}
+                {detail.sodienthoai || "—"}
               </span>
             </div>
             <div className="flex flex-col gap-1 bg-[#FEFAE3] p-[8px_12px] rounded-lg border border-[#FFDBB6]">
@@ -108,7 +108,7 @@ export function ProfileDetailModal({
                 Email cá nhân
               </span>
               <span className="text-[13px] font-semibold text-[#2D1B14]">
-                {detail.chitietsinhvien?.emailcanhan || "—"}
+                {detail.emailcanhan || "—"}
               </span>
             </div>
             <div
@@ -119,7 +119,7 @@ export function ProfileDetailModal({
                 Quê quán (Hộ khẩu thường trú)
               </span>
               <span className="text-[13px] font-semibold text-[#2D1B14]">
-                {detail.chitietsinhvien?.quequan || "—"}
+                {detail.quequan || "—"}
               </span>
             </div>
           </div>
@@ -169,7 +169,7 @@ export function ProfileDetailModal({
                 Địa chỉ tạm trú hiện tại
               </span>
               <span className="text-[13px] font-semibold text-[#2D1B14]">
-                {detail.chitietsinhvien?.diachi || "—"}
+                {detail.diachi || "—"}
               </span>
             </div>
           </div>
@@ -184,7 +184,7 @@ export function ProfileDetailModal({
                 Số CCCD/CMND
               </span>
               <span className="text-[13px] font-semibold text-[#2D1B14]">
-                {detail.chitietsinhvien?.cccd || "—"}
+                {detail.cccd || "—"}
               </span>
             </div>
             <div className="flex flex-col gap-1 bg-[#FEFAE3] p-[8px_12px] rounded-lg border border-[#FFDBB6]">
@@ -192,11 +192,11 @@ export function ProfileDetailModal({
                 Cấp ngày & Nơi cấp
               </span>
               <span className="text-[13px] font-semibold text-[#2D1B14]">
-                {detail.chitietsinhvien?.ngaycapcccd
-                  ? `${new Date(detail.chitietsinhvien.ngaycapcccd).toLocaleDateString("vi-VN")} `
+                {detail.ngaycapcccd
+                  ? `${new Date(detail.ngaycapcccd).toLocaleDateString("vi-VN")} `
                   : ""}
-                {detail.chitietsinhvien?.noicapcccd
-                  ? `(${detail.chitietsinhvien.noicapcccd})`
+                {detail.noicapcccd
+                  ? `(${detail.noicapcccd})`
                   : "—"}
               </span>
             </div>
@@ -205,7 +205,7 @@ export function ProfileDetailModal({
                 Họ tên người bảo hộ (Phụ huynh)
               </span>
               <span className="text-[13px] font-semibold text-[#2D1B14]">
-                {detail.chitietsinhvien?.tenphuhuynh || "—"}
+                {detail.tenphuhuynh || "—"}
               </span>
             </div>
             <div className="flex flex-col gap-1 bg-[#FEFAE3] p-[8px_12px] rounded-lg border border-[#FFDBB6]">
@@ -213,7 +213,7 @@ export function ProfileDetailModal({
                 SĐT liên hệ phụ huynh
               </span>
               <span className="text-[13px] font-semibold text-[#2D1B14]">
-                {detail.chitietsinhvien?.sodienthoaiphuhuynh || "—"}
+                {detail.sodienthoaiphuhuynh || "—"}
               </span>
             </div>
             <div className="flex flex-col gap-1 bg-[#FEFAE3] p-[8px_12px] rounded-lg border border-[#FFDBB6]">
@@ -221,7 +221,7 @@ export function ProfileDetailModal({
                 Dân tộc
               </span>
               <span className="text-[13px] font-semibold text-[#2D1B14]">
-                {detail.chitietsinhvien?.dantoc || "—"}
+                {detail.dantoc || "—"}
               </span>
             </div>
             <div className="flex flex-col gap-1 bg-[#FEFAE3] p-[8px_12px] rounded-lg border border-[#FFDBB6]">
@@ -229,7 +229,7 @@ export function ProfileDetailModal({
                 Tôn giáo
               </span>
               <span className="text-[13px] font-semibold text-[#2D1B14]">
-                {detail.chitietsinhvien?.tongiao || "—"}
+                {detail.tongiao || "—"}
               </span>
             </div>
           </div>
@@ -282,7 +282,7 @@ export function ProfileDetailModal({
                 Số điện thoại di động
               </span>
               <span className="text-[13px] font-semibold text-[#2D1B14]">
-                {detail.chitietgiangvien?.sodienthoai || "—"}
+                {detail.sodienthoai || "—"}
               </span>
             </div>
             <div className="flex flex-col gap-1 bg-[#FEFAE3] p-[8px_12px] rounded-lg border border-[#FFDBB6]">
@@ -290,7 +290,7 @@ export function ProfileDetailModal({
                 Email cá nhân
               </span>
               <span className="text-[13px] font-semibold text-[#2D1B14]">
-                {detail.chitietgiangvien?.emailcanhan || "—"}
+                {detail.emailcanhan || "—"}
               </span>
             </div>
             <div
@@ -301,7 +301,7 @@ export function ProfileDetailModal({
                 Địa chỉ cư trú
               </span>
               <span className="text-[13px] font-semibold text-[#2D1B14]">
-                {detail.chitietgiangvien?.diachi || "—"}
+                {detail.diachi || "—"}
               </span>
             </div>
           </div>
@@ -356,9 +356,9 @@ export function ProfileDetailModal({
                 Ngày tiếp nhận công tác
               </span>
               <span className="text-[13px] font-semibold text-[#2D1B14]">
-                {detail.chitietgiangvien?.ngayvaotruong
+                {detail.ngayvaotruong
                   ? new Date(
-                      detail.chitietgiangvien.ngayvaotruong,
+                      detail.ngayvaotruong,
                     ).toLocaleDateString("vi-VN")
                   : "—"}
               </span>
@@ -368,9 +368,9 @@ export function ProfileDetailModal({
                 Hệ số lương
               </span>
               <span className="text-[13px] font-semibold text-[#2D1B14]">
-                {detail.chitietgiangvien?.hesoluong !== undefined &&
-                detail.chitietgiangvien?.hesoluong !== null
-                  ? Number(detail.chitietgiangvien.hesoluong).toFixed(2)
+                {detail.hesoluong !== undefined &&
+                detail.hesoluong !== null
+                  ? Number(detail.hesoluong).toFixed(2)
                   : "—"}
               </span>
             </div>

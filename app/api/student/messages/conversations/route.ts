@@ -17,33 +17,7 @@ async function requireAuth(request: Request) {
   }
 }
 
-/**
- * Lấy masv hoặc magv của user hiện tại từ JWT payload.
- * Trả về { masv, magv } — một trong hai sẽ null.
- */
-async function resolveUserIds(
-  supabase: Awaited<ReturnType<typeof createClient>>,
-  mataikhoan: string,
-  vaitro: VaiTro
-): Promise<{ masv: string | null; magv: string | null }> {
-  if (vaitro === VaiTro.SinhVien) {
-    const { data } = await supabase
-      .from("sinhvien")
-      .select("masv")
-      .eq("mataikhoan", mataikhoan)
-      .single();
-    return { masv: data?.masv ?? null, magv: null };
-  }
-  if (vaitro === VaiTro.GiangVien) {
-    const { data } = await supabase
-      .from("giangvien")
-      .select("magv")
-      .eq("mataikhoan", mataikhoan)
-      .single();
-    return { masv: null, magv: data?.magv ?? null };
-  }
-  return { masv: null, magv: null };
-}
+// User identification is now based exclusively on mataikhoan from the JWT payload
 
 // ─── GET /api/messages/conversations ─────────────────────────────────────────
 // Lấy danh sách cuộc trò chuyện của user hiện tại kèm tin nhắn cuối + số chưa đọc
@@ -55,18 +29,12 @@ export async function GET(request: Request) {
   }
 
   const supabase = createClient(await cookies());
-  const { masv, magv } = await resolveUserIds(supabase, payload.mataikhoan, payload.vaitro);
-
-  if (!masv && !magv) {
-    return NextResponse.json({ error: "Không tìm thấy hồ sơ người dùng." }, { status: 404 });
-  }
 
   // Lấy tất cả cuộc trò chuyện mà user là thành viên
-  const memberFilter = masv
-    ? supabase.from("thanhvientrochuyen").select("macuoctrochuyen, thoigianxemcuoi").eq("masv", masv)
-    : supabase.from("thanhvientrochuyen").select("macuoctrochuyen, thoigianxemcuoi").eq("magv", magv!);
-
-  const { data: memberRows, error: memberErr } = await memberFilter;
+  const { data: memberRows, error: memberErr } = await supabase
+    .from("thanhvientrochuyen")
+    .select("macuoctrochuyen, thoigianxemcuoi")
+    .eq("mataikhoan", payload.mataikhoan);
   if (memberErr) {
     return NextResponse.json({ error: memberErr.message }, { status: 500 });
   }
@@ -88,18 +56,15 @@ export async function GET(request: Request) {
       ngaytao,
       nguoidaxoa,
       thanhvientrochuyen (
-        masv,
-        magv,
+        mataikhoan,
         vaitro,
         thoigianxemcuoi,
-        sinhvien:masv ( masv, hoten, anhdaidien ),
-        giangvien:magv ( magv, hoten, anhdaidien )
+        taikhoan:mataikhoan ( mataikhoan, email, vaitro )
       ),
       tinnhan (
         matinnhan,
         noidung,
-        masvgui,
-        magvgui,
+        mataikhoangui,
         ngaytao,
         nguoidaxoa
       )
@@ -113,16 +78,10 @@ export async function GET(request: Request) {
 
   // Xử lý: lấy tin nhắn cuối + tính số chưa đọc
   const result = (conversations ?? [])
-    .filter((conv) => {
-      const arr = conv.nguoidaxoa || [];
-      if (masv && arr.includes(masv)) return false;
-      if (magv && arr.includes(magv)) return false;
-      return true;
-    })
-    .map((conv) => {
+    .filter((conv: any) => !(conv.nguoidaxoa || []).includes(payload.mataikhoan))
+    .map((conv: any) => {
     let messages: any[] = conv.tinnhan ?? [];
-    if (masv) messages = messages.filter((m: any) => !m.nguoidaxoa?.includes(masv));
-    else if (magv) messages = messages.filter((m: any) => !m.nguoidaxoa?.includes(magv));
+    messages = messages.filter((m: any) => !m.nguoidaxoa?.includes(payload.mataikhoan));
 
     // Sắp xếp tin nhắn theo thời gian mới nhất
     const sorted = [...messages].sort(
@@ -135,13 +94,8 @@ export async function GET(request: Request) {
       ? messages.filter((m) => new Date(m.ngaytao) > new Date(viewTime)).length
       : messages.length;
 
-    // Lấy thành viên khác (không phải chính mình) để hiển thị tên/avatar cuộc trò chuyện 1-1
     const members: any[] = conv.thanhvientrochuyen ?? [];
-    const otherMembers = members.filter((m) => {
-      if (masv) return m.masv !== masv;
-      if (magv) return m.magv !== magv;
-      return true;
-    });
+    const otherMembers = members.filter((m) => m.mataikhoan !== payload.mataikhoan);
 
     return {
       macuoctrochuyen: conv.macuoctrochuyen,
@@ -175,52 +129,48 @@ export async function POST(request: Request) {
   }
 
   const body = await request.json();
-  const { otherMasv, otherMagv } = body;
+  const { otherMataikhoan } = body;
 
-  if (!otherMasv && !otherMagv) {
-    return NextResponse.json({ error: "Cần cung cấp masv hoặc magv của người nhận." }, { status: 400 });
+  if (!otherMataikhoan) {
+    return NextResponse.json({ error: "Cần cung cấp otherMataikhoan của người nhận." }, { status: 400 });
   }
 
   const supabase = createClient(await cookies());
-  const { masv, magv } = await resolveUserIds(supabase, payload.mataikhoan, payload.vaitro);
-
-  if (!masv && !magv) {
-    return NextResponse.json({ error: "Không tìm thấy hồ sơ người dùng." }, { status: 404 });
-  }
 
   // Kiểm tra cuộc trò chuyện 1-1 đã tồn tại chưa
-  // Lấy tất cả conversation mà mình tham gia
-  const myFilter = masv
-    ? supabase.from("thanhvientrochuyen").select("macuoctrochuyen").eq("masv", masv)
-    : supabase.from("thanhvientrochuyen").select("macuoctrochuyen").eq("magv", magv!);
-  const { data: myConvs } = await myFilter;
+  const { data: myConvs } = await supabase
+    .from("thanhvientrochuyen")
+    .select("macuoctrochuyen")
+    .eq("mataikhoan", payload.mataikhoan);
   const myConvIds = (myConvs ?? []).map((r) => r.macuoctrochuyen);
 
   if (myConvIds.length > 0) {
-    // Tìm conversation mà người kia cũng tham gia
-    const otherFilter = otherMasv
-      ? supabase.from("thanhvientrochuyen").select("macuoctrochuyen").eq("masv", otherMasv).in("macuoctrochuyen", myConvIds)
-      : supabase.from("thanhvientrochuyen").select("macuoctrochuyen").eq("magv", otherMagv).in("macuoctrochuyen", myConvIds);
-    const { data: sharedConvs } = await otherFilter;
+    // Resolve mataikhoan của người kia để tìm conversation chung
+    const otherMataikhoanCheck = otherMataikhoan;
 
-    if (sharedConvs && sharedConvs.length > 0) {
-      // Ưu tiên cuộc trò chuyện loại Rieng
-      const { data: existingConv } = await supabase
-        .from("cuoctrochuyen")
-        .select("macuoctrochuyen, tieude, loai, ngaytao, nguoidaxoa")
-        .in("macuoctrochuyen", sharedConvs.map((r) => r.macuoctrochuyen))
-        .eq("loai", "Rieng")
-        .single();
+    if (otherMataikhoanCheck) {
+      const { data: sharedConvs } = await supabase
+        .from("thanhvientrochuyen")
+        .select("macuoctrochuyen")
+        .eq("mataikhoan", otherMataikhoanCheck)
+        .in("macuoctrochuyen", myConvIds);
 
-      if (existingConv) {
-        // Khôi phục hội thoại nếu người dùng đã xóa nó trước đó
-        const currentArr = existingConv.nguoidaxoa || [];
-        const userId = masv ?? magv;
-        if (userId && currentArr.includes(userId)) {
-          const newArr = currentArr.filter((id: string) => id !== userId);
-          await supabase.from("cuoctrochuyen").update({ nguoidaxoa: newArr }).eq("macuoctrochuyen", existingConv.macuoctrochuyen);
+      if (sharedConvs && sharedConvs.length > 0) {
+        const { data: existingConv } = await supabase
+          .from("cuoctrochuyen")
+          .select("macuoctrochuyen, tieude, loai, ngaytao, nguoidaxoa")
+          .in("macuoctrochuyen", sharedConvs.map((r) => r.macuoctrochuyen))
+          .eq("loai", "CaNhan")
+          .single();
+
+        if (existingConv) {
+          const currentArr = existingConv.nguoidaxoa || [];
+          if (currentArr.includes(payload.mataikhoan)) {
+            const newArr = currentArr.filter((id: string) => id !== payload.mataikhoan);
+            await supabase.from("cuoctrochuyen").update({ nguoidaxoa: newArr }).eq("macuoctrochuyen", existingConv.macuoctrochuyen);
+          }
+          return NextResponse.json({ data: existingConv, existed: true }, { status: 200 });
         }
-        return NextResponse.json({ data: existingConv, existed: true }, { status: 200 });
       }
     }
   }
@@ -228,7 +178,7 @@ export async function POST(request: Request) {
   // Tạo cuộc trò chuyện mới
   const { data: newConv, error: convErr } = await supabase
     .from("cuoctrochuyen")
-    .insert({ loai: "Rieng", tieude: null })
+    .insert({ loai: "CaNhan", tieude: null })
     .select("macuoctrochuyen, tieude, loai, ngaytao")
     .single();
 
@@ -236,20 +186,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: convErr?.message ?? "Không thể tạo cuộc trò chuyện." }, { status: 500 });
   }
 
-  // Thêm 2 thành viên
   const membersToInsert: any[] = [
-    {
-      macuoctrochuyen: newConv.macuoctrochuyen,
-      masv: masv ?? null,
-      magv: magv ?? null,
-      vaitro: "member",
-    },
-    {
-      macuoctrochuyen: newConv.macuoctrochuyen,
-      masv: otherMasv ?? null,
-      magv: otherMagv ?? null,
-      vaitro: "member",
-    },
+    { macuoctrochuyen: newConv.macuoctrochuyen, mataikhoan: payload.mataikhoan, vaitro: "member" },
+    { macuoctrochuyen: newConv.macuoctrochuyen, mataikhoan: otherMataikhoan, vaitro: "member" },
   ];
 
   const { error: memberErr } = await supabase.from("thanhvientrochuyen").insert(membersToInsert);

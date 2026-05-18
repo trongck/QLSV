@@ -115,15 +115,15 @@ function TeacherDetailModal({
           emailtruong: data.emailtruong || "",
           ngaysinh: data.ngaysinh ? data.ngaysinh.slice(0, 10) : "",
           gioitinh: data.gioitinh || "",
-          sodienthoai: data.chitietgiangvien?.sodienthoai || "",
-          emailcanhan: data.chitietgiangvien?.emailcanhan || "",
-          ngayvaotruong: data.chitietgiangvien?.ngayvaotruong
-            ? data.chitietgiangvien.ngayvaotruong.slice(0, 10)
+          sodienthoai: data.sodienthoai || "",
+          emailcanhan: data.emailcanhan || "",
+          ngayvaotruong: data.ngayvaotruong
+            ? data.ngayvaotruong.slice(0, 10)
             : "",
           hesoluong:
-            data.chitietgiangvien?.hesoluong !== undefined &&
-            data.chitietgiangvien?.hesoluong !== null
-              ? String(data.chitietgiangvien.hesoluong)
+            data.hesoluong !== undefined &&
+            data.hesoluong !== null
+              ? String(data.hesoluong)
               : "",
         });
       } catch (err) {
@@ -489,7 +489,7 @@ function TeacherDetailModal({
                     />
                   ) : (
                     <span className="text-[13.5px] font-semibold text-fg">
-                      {detail?.chitietgiangvien?.sodienthoai || "—"}
+                      {detail?.sodienthoai || "—"}
                     </span>
                   )}
                 </div>
@@ -506,7 +506,7 @@ function TeacherDetailModal({
                     />
                   ) : (
                     <span className="text-[13.5px] font-semibold text-fg">
-                      {detail?.chitietgiangvien?.emailcanhan || "—"}
+                      {detail?.emailcanhan || "—"}
                     </span>
                   )}
                 </div>
@@ -522,9 +522,9 @@ function TeacherDetailModal({
                     />
                   ) : (
                     <span className="text-[13.5px] font-semibold text-fg">
-                      {detail?.chitietgiangvien?.ngayvaotruong
+                      {detail?.ngayvaotruong
                         ? new Date(
-                            detail.chitietgiangvien.ngayvaotruong,
+                            detail.ngayvaotruong,
                           ).toLocaleDateString("vi-VN")
                         : "—"}
                     </span>
@@ -544,9 +544,9 @@ function TeacherDetailModal({
                     />
                   ) : (
                     <span className="text-[13.5px] font-semibold text-fg">
-                      {detail?.chitietgiangvien?.hesoluong !== undefined &&
-                      detail?.chitietgiangvien?.hesoluong !== null
-                        ? Number(detail.chitietgiangvien.hesoluong).toFixed(2)
+                      {detail?.hesoluong !== undefined &&
+                      detail?.hesoluong !== null
+                        ? Number(detail.hesoluong).toFixed(2)
                         : "—"}
                     </span>
                   )}

@@ -96,7 +96,7 @@ export async function getSinhVienContactRepo(supabase: SupabaseClient, masv: str
 
 export async function getSinhVienDetailContactRepo(supabase: SupabaseClient, masv: string) {
   return supabase
-    .from("chitietsinhvien")
+    .from("sinhvien")
     .select("sodienthoai, emailcanhan")
     .eq("masv", masv)
     .single();
@@ -112,7 +112,7 @@ export async function getGiangVienContactRepo(supabase: SupabaseClient, magv: st
 
 export async function getGiangVienDetailContactRepo(supabase: SupabaseClient, magv: string) {
   return supabase
-    .from("chitietgiangvien")
+    .from("giangvien")
     .select("sodienthoai, emailcanhan")
     .eq("magv", magv)
     .single();

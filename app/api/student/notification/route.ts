@@ -72,8 +72,7 @@ export async function GET(request: Request) {
     .from("thongbao")
     .select(
       `mathongbao, tieude, noidung, loai, doituong, malop, ghim, ngaytao, ngayhethan,
-       admin:maadmintao(hoten),
-       giangvien:magvtao(hoten),
+       taikhoan:mataikhoantao(email, vaitro),
        lop:malop(tenlop)`,
       { count: "exact" }
     )
@@ -101,9 +100,9 @@ export async function GET(request: Request) {
   // ─── Lấy trạng thái đã đọc riêng ────────────────────────────────────────
   const ids = rawData.map((tb: any) => tb.mathongbao);
   const { data: readRows } = await supabase
-    .from("thongbaodadocsv")
+    .from("thongbaodadoc")
     .select("mathongbao, dadoc, thoigiandoc")
-    .eq("masv", masv)
+    .eq("mataikhoan", payload.mataikhoan)
     .in("mathongbao", ids);
 
   const readMap: Record<number, { dadoc: boolean; thoigiandoc: string | null }> = {};

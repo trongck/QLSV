@@ -16,14 +16,13 @@ import type { ConversationRow, ConversationMember } from "@/services/repositorie
  */
 export function getConversationDisplayName(
   conv: ConversationRow,
-  selfMasv: string | null,
-  selfMagv: string | null
+  selfMataikhoan: string | null
 ): string {
-  void selfMasv; void selfMagv;
+  void selfMataikhoan;
   if (conv.tieude) return conv.tieude;
-  if (conv.loai === "Rieng" && conv.otherMembers.length > 0) {
+  if (conv.loai === "CaNhan" && conv.otherMembers.length > 0) {
     const other = conv.otherMembers[0];
-    return other.sinhvien?.hoten ?? other.giangvien?.hoten ?? "Người dùng";
+    return other.taikhoan?.hoten ?? other.taikhoan?.email ?? "Người dùng";
   }
   return `Cuộc trò chuyện #${conv.macuoctrochuyen}`;
 }

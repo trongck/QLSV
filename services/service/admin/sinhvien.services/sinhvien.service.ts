@@ -46,7 +46,7 @@ export async function createSinhVienService(supabase: SupabaseClient, body: any)
   });
   if (tkErr) throw new Error("Không thể tạo tài khoản: " + tkErr.message);
 
-  // 3. Create sinhvien
+  // 3. Create sinhvien with merged chiTiet fields
   const { data: sv, error: svErr } = await repo.createSinhVienRepo(supabase, {
     masv: masv.trim(),
     malop: malop.trim(),
@@ -56,20 +56,13 @@ export async function createSinhVienService(supabase: SupabaseClient, body: any)
     emailtruong: emailtruong || null,
     trangthai: "Danghoc",
     mataikhoan: tk.mataikhoan,
+    // Merge chitietsinhvien fields directly
+    ...(chiTiet ?? {}),
   });
 
   if (svErr) {
-    // Cleanup transaction: Delete created account if student creation failed
     await repo.deleteTaiKhoanRepo(supabase, tk.mataikhoan);
     throw new Error(svErr.message);
-  }
-
-  // 4. Detail sinhvien
-  if (chiTiet && Object.keys(chiTiet).length > 0) {
-    const { error: ctErr } = await repo.createChiTietSinhVienRepo(supabase, { masv: masv.trim(), ...chiTiet });
-    if (ctErr) {
-      // Non-blocking but we'll try to log or ignore based on system policy
-    }
   }
 
   return sv;
@@ -92,12 +85,12 @@ export async function updateSinhVienService(supabase: SupabaseClient, masv: stri
   if (trangthai !== undefined) update.trangthai = trangthai;
   if (emailtruong !== undefined) update.emailtruong = emailtruong || null;
 
+  if (chiTiet && Object.keys(chiTiet).length > 0) {
+    Object.assign(update, chiTiet);
+  }
+
   const { data, error } = await repo.updateSinhVienRepo(supabase, masv, update);
   if (error) throw new Error(error.message);
-
-  if (chiTiet && Object.keys(chiTiet).length > 0) {
-    await repo.upsertChiTietSinhVienRepo(supabase, { masv, ...chiTiet });
-  }
 
   return data;
 }

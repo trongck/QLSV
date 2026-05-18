@@ -57,8 +57,7 @@ export async function GET(
     .from("thongbao")
     .select(
       `mathongbao, tieude, noidung, loai, doituong, malop, ghim, ngaytao, ngayhethan, ngaycapnhat,
-       admin:maadmintao(hoten),
-       giangvien:magvtao(hoten),
+       taikhoan:mataikhoantao(email, vaitro),
        lop:malop(tenlop)`
     )
     .eq("mathongbao", id)
@@ -74,21 +73,20 @@ export async function GET(
 
   // ─── Đánh dấu đã đọc (upsert) ────────────────────────────────────────────
   const { data: existingRead } = await supabase
-    .from("thongbaodadocsv")
+    .from("thongbaodadoc")
     .select("dadoc")
     .eq("mathongbao", id)
-    .eq("masv", masv)
+    .eq("mataikhoan", payload.mataikhoan)
     .single();
 
   let dadoc = existingRead?.dadoc ?? false;
   let thoigiandoc: string | null = null;
 
   if (!existingRead) {
-    // Chưa có record → insert mới
     const now2 = new Date().toISOString();
-    const { error: insertErr } = await supabase.from("thongbaodadocsv").insert({
+    const { error: insertErr } = await supabase.from("thongbaodadoc").insert({
       mathongbao: id,
-      masv,
+      mataikhoan: payload.mataikhoan,
       dadoc: true,
       thoigiandoc: now2,
     });
@@ -97,23 +95,22 @@ export async function GET(
       thoigiandoc = now2;
     }
   } else if (!existingRead.dadoc) {
-    // Có record nhưng chưa đánh dấu đã đọc → update
     const now2 = new Date().toISOString();
     const { error: updateErr } = await supabase
-      .from("thongbaodadocsv")
+      .from("thongbaodadoc")
       .update({ dadoc: true, thoigiandoc: now2 })
       .eq("mathongbao", id)
-      .eq("masv", masv);
+      .eq("mataikhoan", payload.mataikhoan);
     if (!updateErr) {
       dadoc = true;
       thoigiandoc = now2;
     }
   } else {
     const { data: readRow } = await supabase
-      .from("thongbaodadocsv")
+      .from("thongbaodadoc")
       .select("thoigiandoc")
       .eq("mathongbao", id)
-      .eq("masv", masv)
+      .eq("mataikhoan", payload.mataikhoan)
       .single();
     thoigiandoc = readRow?.thoigiandoc ?? null;
   }
@@ -124,9 +121,9 @@ export async function GET(
       supabase,
       mataikhoan: payload.mataikhoan,
       hanhdong: "UPDATE",
-      tentable: "thongbaodadocsv",
-      makhoachinh: `${id}_${masv}`,
-      giatrimoi: { mathongbao: id, masv, dadoc: true, thoigiandoc },
+      tentable: "thongbaodadoc",
+      makhoachinh: `${id}_${payload.mataikhoan}`,
+      giatrimoi: { mathongbao: id, mataikhoan: payload.mataikhoan, dadoc: true, thoigiandoc },
       request,
     });
   }
@@ -167,9 +164,9 @@ export async function PATCH(
   const { masv } = svData;
   const now = new Date().toISOString();
 
-  const { error } = await supabase.from("thongbaodadocsv").upsert(
-    { mathongbao: id, masv, dadoc: true, thoigiandoc: now },
-    { onConflict: "mathongbao,masv" }
+  const { error } = await supabase.from("thongbaodadoc").upsert(
+    { mathongbao: id, mataikhoan: payload.mataikhoan, dadoc: true, thoigiandoc: now },
+    { onConflict: "mathongbao,mataikhoan" }
   );
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
@@ -178,9 +175,9 @@ export async function PATCH(
     supabase,
     mataikhoan: payload.mataikhoan,
     hanhdong: "UPDATE",
-    tentable: "thongbaodadocsv",
-    makhoachinh: `${id}_${masv}`,
-    giatrimoi: { mathongbao: id, masv, dadoc: true, thoigiandoc: now },
+    tentable: "thongbaodadoc",
+    makhoachinh: `${id}_${payload.mataikhoan}`,
+    giatrimoi: { mathongbao: id, mataikhoan: payload.mataikhoan, dadoc: true, thoigiandoc: now },
     request,
   });
 

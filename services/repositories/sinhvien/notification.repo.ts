@@ -13,14 +13,13 @@ export const notificationRepo = {
      * - loại "Tatca" hoặc "SinhVien" theo doituong
      * - Lọc thêm theo malop nếu thông báo gắn lớp cụ thể
      */
-    getNotificationsForStudent: async (masv: string, malop: string) => {
+    getNotificationsForStudent: async (mataikhoan: string, malop: string) => {
         const supabase = await getSupabase();
         return await supabase
             .from('thongbao')
             .select(`
                 mathongbao,
-                magvtao,
-                maadmintao,
+                mataikhoantao,
                 tieude,
                 noidung,
                 loai,
@@ -31,7 +30,7 @@ export const notificationRepo = {
                 ghim,
                 ngaytao,
                 ngaycapnhat,
-                thongbaodadocsv!left(dadoc, thoigiandoc, masv)
+                thongbaodadoc!left(dadoc, thoigiandoc, mataikhoan)
             `)
             .or(`doituong.eq.Tatca,and(doituong.eq.SinhVien,or(malop.is.null,malop.eq.${malop}))`)
             .order('ghim', { ascending: false })
@@ -41,13 +40,12 @@ export const notificationRepo = {
     /**
      * Đếm số thông báo chưa đọc của sinh viên
      */
-    getUnreadCount: async (masv: string, malop: string) => {
+    getUnreadCount: async (mataikhoan: string, malop: string) => {
         const supabase = await getSupabase();
-        // Lấy id các thông báo đã đọc
         const { data: read } = await supabase
-            .from('thongbaodadocsv')
+            .from('thongbaodadoc')
             .select('mathongbao')
-            .eq('masv', masv)
+            .eq('mataikhoan', mataikhoan)
             .eq('dadoc', true);
 
         const readIds = (read ?? []).map((r) => r.mathongbao);
@@ -67,26 +65,25 @@ export const notificationRepo = {
     /**
      * Đánh dấu một thông báo là đã đọc (upsert vào thongbaodadocsv)
      */
-    markAsRead: async (mathongbao: number, masv: string) => {
+    markAsRead: async (mathongbao: number, mataikhoan: string) => {
         const supabase = await getSupabase();
         return await supabase
-            .from('thongbaodadocsv')
+            .from('thongbaodadoc')
             .upsert({
                 mathongbao,
-                masv,
+                mataikhoan,
                 dadoc: true,
                 thoigiandoc: new Date().toISOString(),
             }, {
-                onConflict: 'mathongbao,masv',
+                onConflict: 'mathongbao,mataikhoan',
             });
     },
 
     /**
      * Đánh dấu TẤT CẢ thông báo là đã đọc
      */
-    markAllAsRead: async (masv: string, malop: string) => {
+    markAllAsRead: async (mataikhoan: string, malop: string) => {
         const supabase = await getSupabase();
-        // Lấy tất cả id thông báo liên quan
         const { data: all } = await supabase
             .from('thongbao')
             .select('mathongbao')
@@ -96,13 +93,13 @@ export const notificationRepo = {
 
         const upsertRows = all.map((tb) => ({
             mathongbao: tb.mathongbao,
-            masv,
+            mataikhoan,
             dadoc: true,
             thoigiandoc: new Date().toISOString(),
         }));
 
         return await supabase
-            .from('thongbaodadocsv')
-            .upsert(upsertRows, { onConflict: 'mathongbao,masv' });
+            .from('thongbaodadoc')
+            .upsert(upsertRows, { onConflict: 'mathongbao,mataikhoan' });
     },
 };

@@ -36,17 +36,6 @@ export async function getThongbaoListService(
 export async function createThongbaoService(supabase: SupabaseClient, adminMataikhoan: string, body: any) {
   const { tieude, noidung, loai, doituong, malop, maphancong, ngayhethan, ghim, ngaytao } = body;
 
-  // Resolve admin profile
-  let maadmintao: string | null = null;
-  const { data: adminData } = await repo.getAdminProfileRepo(supabase, adminMataikhoan);
-
-  if (adminData) {
-    maadmintao = adminData.maadmin;
-  } else {
-    const { data: anyAdmin } = await repo.getAnyAdminProfileRepo(supabase);
-    maadmintao = anyAdmin?.maadmin ?? null;
-  }
-
   const insertPayload: Record<string, any> = {
     tieude: tieude.trim(),
     noidung: noidung.trim(),
@@ -56,8 +45,7 @@ export async function createThongbaoService(supabase: SupabaseClient, adminMatai
     maphancong: maphancong ? Number(maphancong) : null,
     ngayhethan: ngayhethan || null,
     ghim: Boolean(ghim),
-    maadmintao,
-    magvtao: null,
+    mataikhoantao: adminMataikhoan, // [FIX-10] Unified creator via mataikhoan
     ngaytao: ngaytao || getVietnamTimeISO(),
   };
 

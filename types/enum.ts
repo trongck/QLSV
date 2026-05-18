@@ -112,8 +112,8 @@ export enum DoiTuongThongBao {
 }
 
 export enum LoaiCuocTroChuyen {
-  Rieng = "Rieng",
-  NhomMon = "NhomMon",
+  CaNhan = "CaNhan",
+  Nhom = "Nhom",
 }
 
 export enum LoaiPhongHoc {
