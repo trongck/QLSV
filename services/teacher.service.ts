@@ -327,7 +327,7 @@ export const giangVienService = {
         .select("mabuoihoc, malichhoc, ngayhoc, trangthai, qr_secret")
         .in("malichhoc", malichhocIds)
         .order("ngayhoc", { ascending: false });
-      
+
       const lichMap = new Map(lichhocList.map((l: any) => [l.malichhoc, l.maphancong]));
       buoiHocList = (bhAll ?? []).map((bh: any) => ({
         ...bh,
@@ -494,7 +494,7 @@ export const giangVienService = {
         .select("masv")
         .eq("mabuoihoc", buoihoc.mabuoihoc)
         .eq("trangthai", "DaDuyet");
-        
+
       const leaveSet = new Set(approvedLeaves?.map((d: any) => d.masv?.trim()) || []);
       const vnNow = new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString().replace("Z", "");
 
@@ -541,7 +541,7 @@ export const giangVienService = {
       .maybeSingle();
 
     const vnNow = new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString().replace("Z", "");
-    const isPresent = trangthai === "Comat" || trangthai === "Dimuon";
+    const isPresent = trangthai === "NULL" || trangthai === "NULL";
 
     if (existing) {
       // 2. Thực hiện cập nhật
