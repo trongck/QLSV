@@ -76,8 +76,7 @@ export const sinhVienService = {
     const [
       { data: svMonHoc },
       { data: diemRows },
-      { data: diemDanh },
-      { data: baiTap }
+      { data: diemDanh }
     ] = await Promise.all([
       supabase
         .from("sinhvienmonhoc")
@@ -94,12 +93,7 @@ export const sinhVienService = {
         .from("diemdanh")
         .select("trangthai")
         .eq("masv", masv)
-        .eq("trangthai", "Vangmat"),
-      supabase
-        .from("baitap")
-        .select("mabaitap")
-        .gt("hannop", new Date().toISOString())
-        .limit(50)
+        .eq("trangthai", "Vangmat")
     ]);
 
     // Tính GPA từ điểm cuối kỳ
@@ -113,17 +107,31 @@ export const sinhVienService = {
       }
     }
 
-    // Lọc bài tập thuộc các môn SV đang học
+    // Lọc bài tập chưa nộp thuộc các môn SV đang học
     const myAssignments = (svMonHoc ?? []).map(m => m.maphancong);
     let soBaiTapConHan = 0;
-    if (myAssignments.length > 0 && baiTap) {
-      // Lấy bài tập có maphancong thuộc danh sách
-      const { data: filteredBT } = await supabase
+    if (myAssignments.length > 0) {
+      // 1. Lấy tất cả bài tập thuộc các môn học này
+      const { data: allBT } = await supabase
         .from("baitap")
         .select("mabaitap")
-        .in("maphancong", myAssignments)
-        .gt("hannop", new Date().toISOString());
-      soBaiTapConHan = filteredBT?.length ?? 0;
+        .in("maphancong", myAssignments);
+
+      if (allBT && allBT.length > 0) {
+        const maBTs = allBT.map(b => b.mabaitap);
+        
+        // 2. Lấy danh sách các bài tập mà sinh viên đã nộp
+        const { data: submittedBT } = await supabase
+          .from("nopbai")
+          .select("mabaitap")
+          .eq("masv", masv)
+          .in("mabaitap", maBTs);
+
+        const submittedIDs = new Set((submittedBT ?? []).map(s => s.mabaitap));
+
+        // 3. Đếm số bài tập chưa nộp
+        soBaiTapConHan = allBT.filter(b => !submittedIDs.has(b.mabaitap)).length;
+      }
     }
 
     return {

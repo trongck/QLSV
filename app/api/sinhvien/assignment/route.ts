@@ -56,6 +56,23 @@ export async function GET(request: NextRequest) {
 
         if (dErr) throw new Error(dErr.message);
 
+        const maBTs = (baitap ?? []).map(b => b.mabaitap);
+        let nopBaiMap: Record<number, any> = {};
+
+        if (maBTs.length > 0) {
+            const { data: nopBaiRows } = await supabase
+                .from('nopbai')
+                .select('mabaitap, manopbai, thoigiannop, trenop, diem, nhanxet')
+                .eq('masv', sv.masv)
+                .in('mabaitap', maBTs);
+
+            if (nopBaiRows) {
+                for (const nb of nopBaiRows) {
+                    nopBaiMap[nb.mabaitap] = nb;
+                }
+            }
+        }
+
         const mappedBaitap = (baitap ?? []).map((item: any) => {
             const pc = item.phancong;
             if (pc && pc.giangvien) {
@@ -66,7 +83,8 @@ export async function GET(request: NextRequest) {
             }
             return {
                 ...item,
-                phancong: pc
+                phancong: pc,
+                nopbai: nopBaiMap[item.mabaitap] ?? null
             };
         });
 

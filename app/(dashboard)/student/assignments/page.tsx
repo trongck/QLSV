@@ -32,6 +32,13 @@ interface Assignment {
     monhoc: { mamon: string; tenmon: string } | null;
     giangvien: { magv: string; hoten: string } | null;
   };
+  nopbai?: {
+    manopbai: number;
+    thoigiannop: string;
+    trenop: boolean;
+    diem: number | null;
+    nhanxet: string | null;
+  } | null;
 }
 
 const LOAI_CONFIG: Record<string, { icon: any; color: string }> = {
@@ -78,8 +85,15 @@ export default function AssignmentPage() {
   const filtered = assignments.filter((item) => {
     const matchSearch = item.tieude.toLowerCase().includes(searchQuery.toLowerCase()) || 
                        (item.phancong?.monhoc?.tenmon ?? "").toLowerCase().includes(searchQuery.toLowerCase());
-    // Thêm logic filter theo tab nếu cần (hiện tại schema chưa có trạng thái nộp bài trong bảng baitap trực tiếp)
-    return matchSearch;
+    if (!matchSearch) return false;
+
+    if (activeTab === "Chưa làm") {
+      return !item.nopbai;
+    }
+    if (activeTab === "Đã nộp") {
+      return !!item.nopbai;
+    }
+    return true;
   });
 
   if (authLoading || !user) return null;
@@ -196,10 +210,17 @@ export default function AssignmentPage() {
 
                         {/* Buttons Section */}
                         <div className="flex flex-col gap-2 w-full md:w-48">
-                            <button className="flex items-center justify-center gap-2 bg-gray-900 text-white py-3.5 rounded-2xl text-sm font-bold hover:bg-black transition-all shadow-lg shadow-gray-100">
-                                <Play size={16} className="rotate-90" />
-                                Làm bài ngay
-                            </button>
+                            {item.nopbai ? (
+                                <div className="flex items-center justify-center gap-2 bg-green-50 text-green-700 py-3.5 rounded-2xl text-sm font-bold border border-green-200">
+                                    <CheckCircle size={16} />
+                                    Đã nộp bài {item.nopbai.diem !== null ? `(${item.nopbai.diem}đ)` : ""}
+                                </div>
+                            ) : (
+                                <button className="flex items-center justify-center gap-2 bg-gray-900 text-white py-3.5 rounded-2xl text-sm font-bold hover:bg-black transition-all shadow-lg shadow-gray-100">
+                                    <Play size={16} className="rotate-90" />
+                                    Làm bài ngay
+                                </button>
+                            )}
                         </div>
                     </div>
                 );
