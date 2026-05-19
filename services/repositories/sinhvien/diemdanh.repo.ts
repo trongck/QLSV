@@ -164,11 +164,15 @@ export const diemdanhRepo = {
 
             bySubject[key].total++;
             bySubject[key].records.push(dd);
-            switch ((dd as any).trangthai as TrangThaiDiemDanh) {
-                case 'co_mat': bySubject[key].coMat++; break;
-                case 'muon': bySubject[key].muon++; break;
-                case 'vang_co_phep': bySubject[key].vangCoPhep++; break;
-                case 'vang_khong_phep': bySubject[key].vangKhongPhep++; break;
+            const tt = (dd as any).trangthai;
+            if (tt === 'co_mat' || tt === 'Comat') {
+                bySubject[key].coMat++;
+            } else if (tt === 'muon' || tt === 'Dimuon') {
+                bySubject[key].muon++;
+            } else if (tt === 'vang_co_phep' || tt === 'Cophep') {
+                bySubject[key].vangCoPhep++;
+            } else if (tt === 'vang_khong_phep' || tt === 'Vangmat') {
+                bySubject[key].vangKhongPhep++;
             }
         }
 
