@@ -496,6 +496,7 @@ export const giangVienService = {
         .eq("trangthai", "DaDuyet");
         
       const leaveSet = new Set(approvedLeaves?.map((d: any) => d.masv?.trim()) || []);
+      const vnNow = new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString().replace("Z", "");
 
       const inserts = svMonHoc.map((s: any) => {
         const masv = s.masv?.trim();
@@ -506,6 +507,7 @@ export const giangVienService = {
           trangthai: isLeave ? "Cophep" : "Vangmat",
           phuongthuc: "Manual",
           ghichu: isLeave ? "Vắng có phép (Đơn xin nghỉ)" : null,
+          ngaytao: vnNow,
         };
       });
 
@@ -538,6 +540,9 @@ export const giangVienService = {
       .eq("masv", masvTrimmed)
       .maybeSingle();
 
+    const vnNow = new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString().replace("Z", "");
+    const isPresent = trangthai === "Comat" || trangthai === "Dimuon";
+
     if (existing) {
       // 2. Thực hiện cập nhật
       const { error: updateError } = await supabase
@@ -545,7 +550,7 @@ export const giangVienService = {
         .update({
           trangthai,
           ghichu: ghichu === "-" ? null : ghichu,
-          thoigiandiemdanh: trangthai === "Comat" || trangthai === "Dimuon" ? new Date().toISOString() : null,
+          thoigiandiemdanh: isPresent ? vnNow : null,
           phuongthuc: "Manual"
         })
         .eq("madiemdanh", existing.madiemdanh);
@@ -559,8 +564,9 @@ export const giangVienService = {
           masv: masvTrimmed,
           trangthai,
           ghichu: ghichu === "-" ? null : ghichu,
-          thoigiandiemdanh: trangthai === "Comat" || trangthai === "Dimuon" ? new Date().toISOString() : null,
-          phuongthuc: "Manual"
+          thoigiandiemdanh: isPresent ? vnNow : null,
+          phuongthuc: "Manual",
+          ngaytao: vnNow
         });
       if (insertError) throw insertError;
     }
@@ -734,13 +740,39 @@ export const giangVienService = {
       .eq("masv", masvTrimmed)
       .maybeSingle();
 
-    const thoigiandiemdanh = new Date().toISOString();
+    const vnNow = new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString().replace("Z", "");
+    const thoigiandiemdanh = vnNow;
+
+    // Tính trạng thái đi muộn (quá 15 phút)
+    let trangthai = "Comat";
+    const TIET_TO_TIME: Record<number, string> = {
+      1: '07:00', 2: '07:50', 3: '08:40', 4: '09:30',
+      5: '10:20', 6: '11:10', 7: '12:30', 8: '13:20',
+      9: '14:10', 10: '15:00', 11: '15:50', 12: '16:40',
+      13: '18:00', 14: '18:50', 15: '19:40',
+    };
+
+    // Tìm lịch học của buổi học để lấy tiết bắt đầu
+    const { data: bhData } = await supabase
+      .from("buoihoc")
+      .select("mabuoihoc, ngayhoc, lichhoc:malichhoc ( tietbatdau )")
+      .eq("mabuoihoc", mabuoihoc)
+      .maybeSingle();
+
+    if (bhData && (bhData as any).lichhoc?.tietbatdau) {
+      const startStr = TIET_TO_TIME[(bhData as any).lichhoc.tietbatdau] ?? '07:00';
+      const [sh, sm] = startStr.split(':').map(Number);
+      const startDate = new Date(bhData.ngayhoc);
+      startDate.setUTCHours(sh - 7, sm, 0, 0);
+      const diffMin = (Date.now() - startDate.getTime()) / 60000;
+      if (diffMin > 15) trangthai = "Dimuon";
+    }
 
     if (existing) {
       const { error: updateError } = await supabase
         .from("diemdanh")
         .update({
-          trangthai: "Comat",
+          trangthai,
           thoigiandiemdanh,
           phuongthuc: "QR",
           ghichu: `Điểm danh QR thành công (vị trí cách phòng học ${maphong} ${Math.round(distance)}m)`
@@ -753,10 +785,11 @@ export const giangVienService = {
         .insert({
           mabuoihoc,
           masv: masvTrimmed,
-          trangthai: "Comat",
+          trangthai,
           thoigiandiemdanh,
           phuongthuc: "QR",
-          ghichu: `Điểm danh QR thành công (vị trí cách phòng học ${maphong} ${Math.round(distance)}m)`
+          ghichu: `Điểm danh QR thành công (vị trí cách phòng học ${maphong} ${Math.round(distance)}m)`,
+          ngaytao: vnNow
         });
       if (insertError) throw insertError;
     }

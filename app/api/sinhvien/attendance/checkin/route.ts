@@ -331,6 +331,7 @@ export async function POST(request: NextRequest) {
                         trangthai,
                         phuongthuc: dbMethod,
                         ghichu,
+                        ngaytao: vnNow,
                     })
                     .select()
                     .single();
