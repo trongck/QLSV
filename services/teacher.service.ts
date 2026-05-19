@@ -541,7 +541,7 @@ export const giangVienService = {
       .maybeSingle();
 
     const vnNow = new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString().replace("Z", "");
-    const isPresent = trangthai === "NULL" || trangthai === "NULL";
+    const isPresent = trangthai === "Comat" || trangthai === "Dimuon";
 
     if (existing) {
       // 2. Thực hiện cập nhật
@@ -742,31 +742,7 @@ export const giangVienService = {
 
     const vnNow = new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString().replace("Z", "");
     const thoigiandiemdanh = vnNow;
-
-    // Tính trạng thái đi muộn (quá 15 phút)
-    let trangthai = "Comat";
-    const TIET_TO_TIME: Record<number, string> = {
-      1: '07:00', 2: '07:50', 3: '08:40', 4: '09:30',
-      5: '10:20', 6: '11:10', 7: '12:30', 8: '13:20',
-      9: '14:10', 10: '15:00', 11: '15:50', 12: '16:40',
-      13: '18:00', 14: '18:50', 15: '19:40',
-    };
-
-    // Tìm lịch học của buổi học để lấy tiết bắt đầu
-    const { data: bhData } = await supabase
-      .from("buoihoc")
-      .select("mabuoihoc, ngayhoc, lichhoc:malichhoc ( tietbatdau )")
-      .eq("mabuoihoc", mabuoihoc)
-      .maybeSingle();
-
-    if (bhData && (bhData as any).lichhoc?.tietbatdau) {
-      const startStr = TIET_TO_TIME[(bhData as any).lichhoc.tietbatdau] ?? '07:00';
-      const [sh, sm] = startStr.split(':').map(Number);
-      const startDate = new Date(bhData.ngayhoc);
-      startDate.setUTCHours(sh - 7, sm, 0, 0);
-      const diffMin = (Date.now() - startDate.getTime()) / 60000;
-      if (diffMin > 15) trangthai = "Dimuon";
-    }
+    const trangthai = "Comat";
 
     if (existing) {
       const { error: updateError } = await supabase
