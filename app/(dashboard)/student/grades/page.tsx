@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import ResultTable from "@/components/ResultTable";
+import ResultTable from "@/components/student/ResultTable";
 import { useAuth } from "@/hooks/auth/useAuth";
 import { useRouter } from "next/navigation";
 import { VaiTro } from "@/types";

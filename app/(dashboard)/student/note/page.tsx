@@ -8,13 +8,10 @@ import {
   Plus,
   Trash2,
   FileText,
-  Tag,
   Calendar,
   Clock,
-  Link2,
   Loader2,
   CheckCircle2,
-  BookOpen,
   AlertCircle,
 } from "lucide-react";
 
@@ -24,11 +21,6 @@ import { VaiTro } from "@/types";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
-interface PhanCongInfo {
-  maphancong: number;
-  monhoc: { mamon: string; tenmon: string } | null;
-  lop: { malop: string; tenlop: string } | null;
-}
 
 interface Note {
   manhatky: number;
@@ -88,9 +80,7 @@ export default function StudentNotePage() {
   }, [user, authLoading, router]);
   const [selectedId, setSelectedId] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [filterMaphancong, setFilterMaphancong] = useState<number | "">("");
   const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
-  const [allPhanCong, setAllPhanCong] = useState<PhanCongInfo[]>([]);
   const [modalOpen, setModalOpen] = useState(false);
 
   // Draft state cho editor (chứa dữ liệu đang chỉnh)
@@ -98,37 +88,11 @@ export default function StudentNotePage() {
   const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isFirstLoad = useRef(true);
 
-  // ── Lấy danh sách môn học / phân công của sinh viên ────────────────────────
-  const fetchPhanCong = useCallback(async () => {
-    try {
-      const res = await apiFetch("/api/sinhvien/schedule");
-      const json = await res.json();
-      if (json.success && Array.isArray(json.data)) {
-        const seen = new Set<number>();
-        const unique: PhanCongInfo[] = [];
-        for (const item of json.data) {
-          if (item.maphancong && !seen.has(item.maphancong)) {
-            seen.add(item.maphancong);
-            unique.push({
-              maphancong: item.maphancong,
-              monhoc: item.monhoc ?? null,
-              lop: item.lop ?? null,
-            });
-          }
-        }
-        setAllPhanCong(unique);
-      }
-    } catch {
-      // Không bắt buộc — nếu API schedule chưa có thì bỏ qua
-    }
-  }, []);
-
   // ── Fetch danh sách nhật ký ─────────────────────────────────────────────────
   const fetchNotes = useCallback(async () => {
     setLoading(true);
     try {
-      const params = filterMaphancong ? `?maphancong=${filterMaphancong}` : "";
-      const res = await apiFetch(`/api/sinhvien/notes${params}`);
+      const res = await apiFetch("/api/sinhvien/notes");
       const json = await res.json();
       if (json.success) {
         setNotes(json.data);
@@ -143,12 +107,11 @@ export default function StudentNotePage() {
     } finally {
       setLoading(false);
     }
-  }, [filterMaphancong]);
+  }, []);
 
   useEffect(() => {
     fetchNotes();
-    fetchPhanCong();
-  }, [fetchNotes, fetchPhanCong]);
+  }, [fetchNotes]);
 
   // ── Khi chọn note khác ──────────────────────────────────────────────────────
   const selectNote = (note: Note) => {
@@ -197,8 +160,8 @@ export default function StudentNotePage() {
         body: JSON.stringify({
           tieude: result.tieude,
           noidung: "",
-          maphancong: result.maphancong ?? null,
-          magv: result.magv ?? null,
+          maphancong: null,
+          magv: null,
         }),
       });
       const json = await res.json();
@@ -272,24 +235,6 @@ export default function StudentNotePage() {
                 className="w-full pl-9 pr-4 py-2 bg-gray-50 rounded-xl border-none text-sm focus:ring-2 focus:ring-red-100 outline-none"
                 />
             </div>
-
-            {/* Filter môn học */}
-            <select
-                value={filterMaphancong}
-                onChange={(e) =>
-                setFilterMaphancong(
-                    e.target.value ? parseInt(e.target.value, 10) : ""
-                )
-                }
-                className="w-full py-2 px-3 bg-gray-50 rounded-xl border-none text-sm outline-none focus:ring-2 focus:ring-red-100 text-gray-600"
-            >
-                <option value="">Tất cả môn học</option>
-                {allPhanCong.map((pc) => (
-                <option key={pc.maphancong} value={pc.maphancong}>
-                    {pc.monhoc?.tenmon ?? `Phân công #${pc.maphancong}`}
-                </option>
-                ))}
-            </select>
             </div>
 
             {/* List */}
@@ -317,13 +262,6 @@ export default function StudentNotePage() {
                     {/* Top row */}
                     <div className="flex justify-between items-start mb-1.5">
                     <div className="flex items-center gap-1.5">
-                        {note.maphancong && (
-                        <Link2
-                            size={11}
-                            className="text-blue-400 shrink-0"
-                            aria-label="Đã gắn môn học"
-                        />
-                        )}
                         {note.tamtrang && (
                         <span className="text-xs">{MOOD_LABELS[note.tamtrang]}</span>
                         )}
@@ -349,14 +287,6 @@ export default function StudentNotePage() {
                     <p className="text-xs text-gray-500 line-clamp-2 leading-relaxed">
                     {note.noidung || "Chưa có nội dung..."}
                     </p>
-
-                    {/* Linked subject badge */}
-                    {note.phancong?.monhoc && (
-                    <span className="mt-2 inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 text-[10px] font-medium">
-                        <BookOpen size={9} />
-                        {note.phancong.monhoc.tenmon}
-                    </span>
-                    )}
                 </div>
                 ))
             )}
@@ -447,28 +377,6 @@ export default function StudentNotePage() {
                     <span>Cập nhật: {formatDate(draft.ngaycapnhat ?? null)}</span>
                     </div>
                 )}
-
-                {/* Gắn môn học */}
-                <div className="flex items-center gap-2 text-xs text-gray-400 font-medium">
-                    <Tag size={13} className="text-blue-400" />
-                    <select
-                    className="bg-transparent border-none p-0 text-xs focus:ring-0 font-bold text-gray-600 cursor-pointer outline-none"
-                    value={draft.maphancong ?? ""}
-                    onChange={(e) =>
-                        handleDraftChange(
-                        "maphancong",
-                        e.target.value ? parseInt(e.target.value, 10) : null
-                        )
-                    }
-                    >
-                    <option value="">Không gắn kết</option>
-                    {allPhanCong.map((pc) => (
-                        <option key={pc.maphancong} value={pc.maphancong}>
-                        {pc.monhoc?.tenmon ?? `Phân công #${pc.maphancong}`}
-                        </option>
-                    ))}
-                    </select>
-                </div>
                 </div>
 
                 {/* Content */}
@@ -505,18 +413,6 @@ export default function StudentNotePage() {
                 <span className="text-gray-500">Tổng nhật ký:</span>
                 <span className="font-bold text-gray-800">{notes.length}</span>
                 </div>
-                <div className="flex justify-between text-xs">
-                <span className="text-gray-500">Đã gắn môn học:</span>
-                <span className="font-bold text-gray-800">
-                    {notes.filter((n) => n.maphancong).length}
-                </span>
-                </div>
-                <div className="flex justify-between text-xs">
-                <span className="text-gray-500">Đã gắn GV:</span>
-                <span className="font-bold text-gray-800">
-                    {notes.filter((n) => n.magv).length}
-                </span>
-                </div>
             </div>
             </div>
 
@@ -527,25 +423,6 @@ export default function StudentNotePage() {
                 <div className="text-4xl text-center py-2">
                 {MOOD_LABELS[draft.tamtrang]}
                 </div>
-            </div>
-            )}
-
-            {/* Môn học đang gắn */}
-            {draft.maphancong && (
-            <div className="bg-white p-4 rounded-2xl shadow-sm border border-blue-50">
-                <h4 className="text-sm font-bold text-gray-800 mb-2 flex items-center gap-1.5">
-                <Link2 size={13} className="text-blue-400" /> Gắn kết với
-                </h4>
-                <p className="text-xs text-blue-600 font-semibold">
-                {allPhanCong.find((pc) => pc.maphancong === draft.maphancong)
-                    ?.monhoc?.tenmon ?? `Phân công #${draft.maphancong}`}
-                </p>
-                <button
-                onClick={() => handleDraftChange("maphancong", null)}
-                className="mt-2 text-[10px] text-gray-400 hover:text-red-500 transition"
-                >
-                Gỡ liên kết
-                </button>
             </div>
             )}
         </div>

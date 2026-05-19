@@ -1,11 +1,11 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
-import AttendanceActions from "@/components/AttendanceActions";
+import AttendanceActions from "@/components/student/AttendanceActions";
 import { useAuth } from "@/hooks/auth/useAuth";
 import { useRouter } from "next/navigation";
 import { VaiTro } from "@/types";
 import { type DiemDanhRecord, type AttendanceSubjectStat } from "@/services/repositories/sinhvien/diemdanh.repo";
-import AttendanceLogCard, { type LogEntry, type TrangThai } from "@/components/AttendanceLogCard";
+import AttendanceLogCard, { type LogEntry, type TrangThai } from "@/components/student/AttendanceLogCard";
 import { BookOpen, TrendingUp, XCircle, Clock } from "lucide-react";
 import { StatCard, EmptyState } from "@/components/student/StudentUI";
 
