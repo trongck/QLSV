@@ -123,7 +123,7 @@ export default function StudentDashboard() {
             .select("loaidiem, giatri, maphancong")
             .eq("masv", masv)
             .order("ngaytao", { ascending: false })
-            .limit(6),
+            .limit(6),//
           supabase
             .from("lichhoc")
             .select(`
