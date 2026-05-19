@@ -12,10 +12,10 @@ export function ReportView() {
         </div>
         <div style={{ display: "flex", gap: "10px" }}>
           <button style={{ padding: "10px 18px", borderRadius: "8px", border: "1px solid #F2A8A8", background: "#FFF", color: "#F2A8A8", fontWeight: "600", cursor: "pointer", fontSize: "13px" }}>
-            👁️ Xem báo cáo cũ
+            Xem báo cáo cũ
           </button>
           <button className={styles.primaryBtn} style={{ background: "linear-gradient(90deg, #F2A8A8 0%, #FFB4B4 100%)", padding: "10px 20px", fontWeight: "600" }}>
-            ✨ Tạo báo cáo mới
+            Tạo báo cáo mới
           </button>
         </div>
       </div>
@@ -89,7 +89,7 @@ export function ReportView() {
 
         {/* Notes block */}
         <section className="card" style={{ padding: "20px", border: "1px solid #F0E1D9", display: "flex", flexDirection: "column" }}>
-          <h3 style={{ fontSize: "15px", color: "#6B4F43", fontWeight: "bold", margin: "0 0 10px 0" }}>📝 Nhận xét giảng viên</h3>
+          <h3 style={{ fontSize: "15px", color: "#6B4F43", fontWeight: "bold", margin: "0 0 10px 0" }}>Nhận xét giảng viên</h3>
           <textarea 
             placeholder="Ghi chú nhận xét chung về lớp học phần..."
             style={{ flex: 1, padding: "12px", borderRadius: "8px", border: "1px solid #F0E1D9", background: "#FDF8F5", fontSize: "13px", resize: "none", outline: "none", color: "#6B4F43" }}
@@ -104,7 +104,7 @@ export function ReportView() {
       {/* Export action */}
       <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "10px" }}>
         <button style={{ display: "flex", alignItems: "center", gap: "8px", background: "#178A57", color: "white", border: "none", padding: "12px 25px", borderRadius: "10px", fontWeight: "600", cursor: "pointer", fontSize: "14px" }}>
-          📥 Tải xuống báo cáo học phần (.xlsx)
+          Tải xuống báo cáo học phần (.xlsx)
         </button>
       </div>
     </div>

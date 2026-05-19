@@ -1,11 +1,10 @@
 import { NextResponse } from "next/server";
 import { verifyToken, extractBearer } from "@/lib/utils/jwt";
 import { VaiTro } from "@/types";
-import { giangVienService } from "@/services/teacher.service";
+import { sinhVienService } from "@/services/student.service";
 
-// GET /api/giangvien/dashboard
-// Trả về tất cả số liệu tổng quan cho màn hình dashboard giảng viên.
-// Yêu cầu: Bearer token hợp lệ với vaitro = GiangVien.
+// GET /api/sinhvien/grades
+// Query params: ?summary=true → trả về điểm tổng kết. Mặc định: điểm chi tiết.
 
 export async function GET(request: Request) {
   const token = extractBearer(request.headers.get("authorization"));
@@ -15,40 +14,45 @@ export async function GET(request: Request) {
 
   try {
     const payload = await verifyToken(token) as any;
-
-    if (payload.vaitro !== VaiTro.GiangVien) {
+    if (payload.vaitro !== VaiTro.SinhVien) {
       return NextResponse.json({ error: "Không có quyền truy cập" }, { status: 403 });
     }
 
-    // Lấy magv từ bảng giangvien theo mataikhoan trong token
-    // getDashboardStats nhận magv — cần resolve trước
     const { createClient } = await import("@/lib/utils/supabase/server");
     const { cookies } = await import("next/headers");
     const cookieStore = await cookies();
     const supabase = createClient(cookieStore);
 
-    const { data: gv } = await supabase
-      .from("giangvien")
-      .select("magv, hodem, ten")
+    const { data: sv } = await supabase
+      .from("sinhvien")
+      .select("masv")
       .eq("mataikhoan", payload.mataikhoan)
       .single();
 
-    if (!gv) {
-      return NextResponse.json({ error: "Không tìm thấy giảng viên" }, { status: 404 });
+    if (!sv) {
+      return NextResponse.json({ error: "Không tìm thấy sinh viên" }, { status: 404 });
     }
 
-    const hoten = `${gv.hodem || ""} ${gv.ten || ""}`.trim();
-    const stats = await giangVienService.getDashboardStats(gv.magv);
+    const { searchParams } = new URL(request.url);
+    const summary = searchParams.get("summary");
+
+    if (summary === "true") {
+      const data = await sinhVienService.getGradeSummary(sv.masv);
+      return NextResponse.json({ success: true, data });
+    }
+
+    // Chi tiết điểm + tổng kết đi kèm
+    const [grades, gradeSummary] = await Promise.all([
+      sinhVienService.getGrades(sv.masv),
+      sinhVienService.getGradeSummary(sv.masv)
+    ]);
 
     return NextResponse.json({
       success: true,
-      data: {
-        hoten,
-        ...stats,
-      },
+      data: { chiTiet: grades, tongKet: gradeSummary }
     });
   } catch (err: any) {
-    console.error("Lỗi GET /api/giangvien/dashboard:", err.message);
+    console.error("Lỗi GET /api/sinhvien/grades:", err.message);
     return NextResponse.json(
       { error: "Phiên đăng nhập hết hạn hoặc không hợp lệ" },
       { status: 401 }

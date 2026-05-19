@@ -17,7 +17,8 @@ export const giangVienService = {
         magv,
         mataikhoan,
         makhoa,
-        hoten,
+        hodem,
+        ten,
         ngaysinh,
         gioitinh,
         hocvi,
@@ -37,6 +38,10 @@ export const giangVienService = {
     if (error) {
       console.error("Lỗi khi truy vấn Supabase:", error.message);
       return null;
+    }
+
+    if (data) {
+      (data as any).hoten = `${data.hodem || ""} ${data.ten || ""}`.trim();
     }
 
     return data;
@@ -338,7 +343,7 @@ export const giangVienService = {
         .from("donxinnghi")
         .select(`
           madon, masv, mabuoihoc, lydo, minhchung, trangthai, ngaytao, ngaycapnhat,
-          sinhvien ( hoten )
+          sinhvien ( hodem, ten )
         `)
         .in("mabuoihoc", mabuoihocIds)
         .order("ngaytao", { ascending: false });
@@ -352,10 +357,12 @@ export const giangVienService = {
         const bh = buoiHocMap.get(don.mabuoihoc);
         const lh = bh ? lichhocMap.get(bh.malichhoc) : null;
         const pc = lh ? phancongMap.get(lh.maphancong) : null;
+        const sv = don.sinhvien;
+        const hoten = sv ? `${sv.hodem || ""} ${sv.ten || ""}`.trim() : "Sinh viên";
         return {
           id: don.madon,
           mssv: don.masv,
-          name: don.sinhvien?.hoten ?? "Sinh viên",
+          name: hoten || "Sinh viên",
           class: pc ? `${pc.monhoc?.tenmon} - ${pc.lop?.tenlop}` : "Lớp học phần",
           dateRequested: bh ? bh.ngayhoc : "—",
           reason: don.lydo,
@@ -391,7 +398,7 @@ export const giangVienService = {
       .from("sinhvienmonhoc")
       .select(`
         masv,
-        sinhvien ( hoten )
+        sinhvien ( hodem, ten )
       `)
       .eq("maphancong", maphancong)
       .eq("trangthai", "Danghoc");
@@ -427,9 +434,12 @@ export const giangVienService = {
         type = "orange";
       }
 
+      const sv = s.sinhvien;
+      const hoten = sv ? `${sv.hodem || ""} ${sv.ten || ""}`.trim() : "—";
+
       return {
         mssv: s.masv,
-        name: s.sinhvien?.hoten ?? "—",
+        name: hoten || "—",
         status,
         type,
         time: dd?.thoigiandiemdanh ? new Date(dd.thoigiandiemdanh).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" }) : "--",
@@ -742,5 +752,354 @@ export const giangVienService = {
       maphong,
       thoigiandiemdanh
     };
+  },
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  //  NHẬP ĐIỂM
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  /**
+   * Lấy danh sách lớp phân công kèm thông tin môn học, học kỳ để chọn trong GradeSheet
+   */
+  async getGradeClasses(magv: string) {
+    const cookieStore = await cookies();
+    const supabase = createClient(cookieStore);
+
+    const { data, error } = await supabase
+      .from("phancong")
+      .select(`
+        maphancong,
+        malophoc,
+        malop,
+        danghieuluc,
+        monhoc:mamon ( tenmon, sotinchi ),
+        hocky:mahocky ( tenhocky, namhoc, ky ),
+        lop:malop ( tenlop )
+      `)
+      .eq("magv", magv)
+      .eq("danghieuluc", true)
+      .order("maphancong", { ascending: false });
+
+    if (error) throw error;
+    return data ?? [];
+  },
+
+  /**
+   * Lấy bảng điểm chi tiết của 1 lớp phân công
+   * Trả về danh sách SV kèm các cột điểm thành phần + tổng kết
+   */
+  async getGradeSheet(maphancong: number) {
+    const cookieStore = await cookies();
+    const supabase = createClient(cookieStore);
+
+    // 1. Lấy danh sách SV đang học lớp này
+    const { data: svList, error: svErr } = await supabase
+      .from("sinhvienmonhoc")
+      .select(`
+        masv,
+        sinhvien:masv ( hodem, ten, malop )
+      `)
+      .eq("maphancong", maphancong)
+      .eq("trangthai", "Danghoc")
+      .order("masv", { ascending: true });
+
+    if (svErr) throw svErr;
+    if (!svList || svList.length === 0) return [];
+
+    const masvList = svList.map(s => s.masv);
+
+    // 2. Lấy tất cả điểm thành phần của các SV này trong phân công này
+    const { data: diemRows } = await supabase
+      .from("diem")
+      .select("masv, loaidiem, giatri, heso, madiem, ghichu")
+      .eq("maphancong", maphancong)
+      .in("masv", masvList);
+
+    // 3. Lấy điểm tổng kết
+    const { data: tongKetRows } = await supabase
+      .from("diemtongket")
+      .select("masv, diemtongket, diemchu, ketqua")
+      .eq("maphancong", maphancong)
+      .in("masv", masvList);
+
+    // 4. Gom dữ liệu theo từng SV
+    const diemMap: Record<string, Record<string, any>> = {};
+    for (const d of (diemRows ?? [])) {
+      if (!diemMap[d.masv]) diemMap[d.masv] = {};
+      diemMap[d.masv][d.loaidiem] = { giatri: d.giatri, heso: d.heso, madiem: d.madiem, ghichu: d.ghichu };
+    }
+
+    const tongKetMap: Record<string, any> = {};
+    for (const tk of (tongKetRows ?? [])) {
+      tongKetMap[tk.masv] = tk;
+    }
+
+    return svList.map((sv, idx) => {
+      const student = sv.sinhvien as any;
+      const hoten = student ? `${student.hodem || ""} ${student.ten || ""}`.trim() : "—";
+      return {
+        stt: idx + 1,
+        masv: sv.masv,
+        hoten: hoten || "—",
+        malop: student?.malop ?? "—",
+        diemChuyenCan: diemMap[sv.masv]?.["ChuyenCan"] ?? null,
+        diemBaiTap: diemMap[sv.masv]?.["BaiTap"] ?? null,
+        diemGiuaKy: diemMap[sv.masv]?.["GiuaKy"] ?? null,
+        diemCuoiKy: diemMap[sv.masv]?.["CuoiKy"] ?? null,
+        tongKet: tongKetMap[sv.masv] ?? null
+      };
+    });
+  },
+
+  /**
+   * Lưu / cập nhật 1 cột điểm cho 1 SV (check-then-insert/update)
+   */
+  async saveGrade(magv: string, maphancong: number, masv: string, loaidiem: string, giatri: number, heso: number, ghichu?: string) {
+    const cookieStore = await cookies();
+    const supabase = createClient(cookieStore);
+
+    // Validate giá trị điểm
+    if (giatri < 0 || giatri > 10) {
+      throw new Error("Điểm phải nằm trong khoảng 0 đến 10.");
+    }
+
+    const masvTrimmed = masv.trim();
+
+    // Kiểm tra đã có điểm loại này chưa
+    const { data: existing } = await supabase
+      .from("diem")
+      .select("madiem")
+      .eq("maphancong", maphancong)
+      .eq("masv", masvTrimmed)
+      .eq("loaidiem", loaidiem)
+      .maybeSingle();
+
+    if (existing) {
+      const { error } = await supabase
+        .from("diem")
+        .update({
+          giatri,
+          heso,
+          ghichu: ghichu ?? null,
+          magvnhap: magv,
+          ngaycapnhat: new Date().toISOString()
+        })
+        .eq("madiem", existing.madiem);
+      if (error) throw error;
+    } else {
+      const { error } = await supabase
+        .from("diem")
+        .insert({
+          masv: masvTrimmed,
+          maphancong,
+          loaidiem,
+          giatri,
+          heso,
+          ghichu: ghichu ?? null,
+          magvnhap: magv
+        });
+      if (error) throw error;
+    }
+
+    return true;
+  },
+
+  /**
+   * Lưu hàng loạt điểm cho 1 SV (4 cột điểm cùng lúc) + tự tính tổng kết
+   */
+  async saveGradeRow(magv: string, maphancong: number, masv: string, grades: { loaidiem: string; giatri: number; heso: number }[]) {
+    // Lưu từng cột điểm
+    for (const g of grades) {
+      if (g.giatri !== null && g.giatri !== undefined && !isNaN(g.giatri)) {
+        await this.saveGrade(magv, maphancong, masv, g.loaidiem, g.giatri, g.heso);
+      }
+    }
+
+    // Tính và lưu điểm tổng kết
+    await this.calculateAndSaveFinalGrade(maphancong, masv);
+    return true;
+  },
+
+  /**
+   * Tính và lưu điểm tổng kết cho 1 SV dựa trên các điểm thành phần
+   * Công thức: ChuyenCan*10% + BaiTap*20% + GiuaKy*30% + CuoiKy*40%
+   */
+  async calculateAndSaveFinalGrade(maphancong: number, masv: string) {
+    const cookieStore = await cookies();
+    const supabase = createClient(cookieStore);
+
+    const masvTrimmed = masv.trim();
+
+    // Lấy tất cả điểm thành phần
+    const { data: diemRows } = await supabase
+      .from("diem")
+      .select("loaidiem, giatri, heso")
+      .eq("maphancong", maphancong)
+      .eq("masv", masvTrimmed);
+
+    if (!diemRows || diemRows.length === 0) return;
+
+    // Hệ số mặc định: ChuyenCan=0.1, BaiTap=0.2, GiuaKy=0.3, CuoiKy=0.4
+    const hesoMap: Record<string, number> = {
+      "ChuyenCan": 0.1,
+      "BaiTap": 0.2,
+      "GiuaKy": 0.3,
+      "CuoiKy": 0.4
+    };
+
+    let tongDiem = 0;
+    let tongHeSo = 0;
+
+    for (const d of diemRows) {
+      const hs = hesoMap[d.loaidiem] ?? d.heso ?? 0;
+      tongDiem += d.giatri * hs;
+      tongHeSo += hs;
+    }
+
+    if (tongHeSo === 0) return;
+
+    const diemTK = parseFloat((tongDiem / tongHeSo * (tongHeSo < 1 ? tongHeSo : 1) + (tongHeSo < 1 ? 0 : 0)).toFixed(2));
+    // Tính đúng: điểm tổng kết = tổng(điểm * hệ số)
+    const diemFinal = parseFloat(tongDiem.toFixed(2));
+
+    // Quy đổi điểm chữ
+    let diemChu = "F";
+    if (diemFinal >= 9.0) diemChu = "A+";
+    else if (diemFinal >= 8.5) diemChu = "A";
+    else if (diemFinal >= 8.0) diemChu = "B+";
+    else if (diemFinal >= 7.0) diemChu = "B";
+    else if (diemFinal >= 6.5) diemChu = "C+";
+    else if (diemFinal >= 5.5) diemChu = "C";
+    else if (diemFinal >= 5.0) diemChu = "D+";
+    else if (diemFinal >= 4.0) diemChu = "D";
+    else diemChu = "F";
+
+    const ketqua = diemFinal >= 4.0 ? "Dat" : "KhongDat";
+
+    // Check-then-insert/update bảng diemtongket
+    const { data: existing } = await supabase
+      .from("diemtongket")
+      .select("masv")
+      .eq("maphancong", maphancong)
+      .eq("masv", masvTrimmed)
+      .maybeSingle();
+
+    if (existing) {
+      const { error } = await supabase
+        .from("diemtongket")
+        .update({
+          diemtongket: diemFinal,
+          diemchu: diemChu,
+          ketqua,
+          ngaycapnhat: new Date().toISOString()
+        })
+        .eq("maphancong", maphancong)
+        .eq("masv", masvTrimmed);
+      if (error) throw error;
+    } else {
+      const { error } = await supabase
+        .from("diemtongket")
+        .insert({
+          masv: masvTrimmed,
+          maphancong,
+          diemtongket: diemFinal,
+          diemchu: diemChu,
+          ketqua
+        });
+      if (error) throw error;
+    }
+  },
+
+  /**
+   * Lấy danh sách học sinh theo lớp phân công từ Supabase
+   */
+  async getRosterStudents(maphancong: number) {
+    const cookieStore = await cookies();
+    const supabase = createClient(cookieStore);
+
+    const { data, error } = await supabase
+      .from("sinhvienmonhoc")
+      .select(`
+        masv,
+        sinhvien:masv (
+          hodem,
+          ten,
+          malop,
+          emailtruong,
+          sodienthoai,
+          emailcanhan,
+          tenphuhuynh,
+          sodienthoaiphuhuynh,
+          diachi,
+          quequan
+        )
+      `)
+      .eq("maphancong", maphancong)
+      .eq("trangthai", "Danghoc");
+
+    if (error) throw error;
+
+    return (data ?? []).map((item: any) => {
+      const sv = item.sinhvien;
+      const hoten = sv ? `${sv.hodem || ""} ${sv.ten || ""}`.trim() : "—";
+      return {
+        mssv: item.masv,
+        name: hoten || "—",
+        class: sv?.malop ?? "—",
+        phone: sv?.sodienthoai ?? "—",
+        email: sv?.emailcanhan ?? sv?.emailtruong ?? "—",
+        parent: sv ? `${sv.tenphuhuynh ?? "Chưa rõ"} - ${sv.sodienthoaiphuhuynh ?? "Chưa rõ"}` : "—",
+        parentName: sv?.tenphuhuynh ?? "",
+        parentPhone: sv?.sodienthoaiphuhuynh ?? "",
+        address: sv?.diachi ?? sv?.quequan ?? "—",
+        rawAddress: sv?.diachi ?? ""
+      };
+    });
+  },
+
+  /**
+   * Cập nhật thông tin hồ sơ chi tiết sinh viên trực tiếp trên bảng sinhvien
+   */
+  async updateRosterStudent(
+    masv: string,
+    updateData: {
+      name: string;
+      email: string;
+      phone: string;
+      parentName: string;
+      parentPhone: string;
+      address: string;
+    }
+  ) {
+    const cookieStore = await cookies();
+    const supabase = createClient(cookieStore);
+
+    // Tách họ tên thành hodem và ten
+    const nameParts = updateData.name.trim().split(/\s+/);
+    let hodem = "";
+    let ten = "";
+    if (nameParts.length > 1) {
+      ten = nameParts[nameParts.length - 1];
+      hodem = nameParts.slice(0, -1).join(" ");
+    } else {
+      ten = nameParts[0] || "";
+    }
+
+    // Cập nhật họ tên và các trường liên hệ trực tiếp trong bảng sinhvien
+    const { error } = await supabase
+      .from("sinhvien")
+      .update({
+        hodem,
+        ten,
+        emailcanhan: updateData.email,
+        sodienthoai: updateData.phone,
+        tenphuhuynh: updateData.parentName,
+        sodienthoaiphuhuynh: updateData.parentPhone,
+        diachi: updateData.address
+      })
+      .eq("masv", masv);
+
+    if (error) throw error;
+    return true;
   }
 };

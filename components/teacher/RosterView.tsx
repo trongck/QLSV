@@ -1,38 +1,129 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { apiFetch } from "@/services/auth.service";
 import styles from "@/app/(dashboard)/teacher/dashboard/teacher-dashboard.module.css";
 
+interface RosterStudent {
+  mssv: string;
+  name: string;
+  class: string;
+  phone: string;
+  email: string;
+  parent: string;
+  parentName: string;
+  parentPhone: string;
+  address: string;
+  rawAddress: string;
+}
+
 export function RosterView() {
-  const [selectedStudent, setSelectedStudent] = useState<string | null>("22010001");
+  const [classes, setClasses] = useState<any[]>([]);
+  const [selectedPC, setSelectedPC] = useState<number | null>(null);
+  const [studentList, setStudentList] = useState<RosterStudent[]>([]);
+  const [selectedStudent, setSelectedStudent] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  
-  const [studentList, setStudentList] = useState([
-    { mssv: "22010001", name: "Nguyễn Văn A", class: "Lập trình Web - K22", phone: "0901234567", email: "nva@gmail.com", parent: "Nguyễn Văn B (Cha) - 0909876543", address: "TP. Hồ Chí Minh" },
-    { mssv: "22010002", name: "Trần Thị B", class: "Lập trình Web - K22", phone: "0902345678", email: "ttb@gmail.com", parent: "Lê Thị C (Mẹ) - 0908765432", address: "Hà Nội" },
-    { mssv: "22010003", name: "Lê Văn C", class: "Lập trình Web - K22", phone: "0903456789", email: "lvc@gmail.com", parent: "Lê Văn D (Cha) - 0907654321", address: "Đà Nẵng" },
-  ]);
+  const [loading, setLoading] = useState(true);
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [editingStudent, setEditingStudent] = useState<typeof studentList[0] | null>(null);
+  const [editingStudent, setEditingStudent] = useState<RosterStudent | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
-  const handleOpenEdit = (student: typeof studentList[0]) => {
+  // Tải danh sách lớp phân công
+  useEffect(() => {
+    async function loadClasses() {
+      try {
+        const res = await apiFetch("/api/giangvien/students");
+        const json = await res.json();
+        if (json.success && json.data) {
+          setClasses(json.data);
+          if (json.data.length > 0) {
+            setSelectedPC(json.data[0].maphancong);
+          }
+        }
+      } catch (err) {
+        console.error("Lỗi tải lớp học phần:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadClasses();
+  }, []);
+
+  // Tải danh sách học sinh của lớp được chọn
+  useEffect(() => {
+    if (!selectedPC) return;
+    async function loadStudents() {
+      setLoading(true);
+      try {
+        const res = await apiFetch(`/api/giangvien/students?maphancong=${selectedPC}`);
+        const json = await res.json();
+        if (json.success && json.data) {
+          setStudentList(json.data);
+          if (json.data.length > 0) {
+            setSelectedStudent(json.data[0].mssv);
+          } else {
+            setSelectedStudent(null);
+          }
+        }
+      } catch (err) {
+        console.error("Lỗi tải danh sách học sinh:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+    loadStudents();
+  }, [selectedPC]);
+
+  const handleOpenEdit = (student: RosterStudent) => {
     setEditingStudent({ ...student });
     setIsEditModalOpen(true);
   };
 
-  const handleSaveEdit = (e: React.FormEvent) => {
+  const handleSaveEdit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (editingStudent) {
-      setStudentList(prev => prev.map(s => s.mssv === editingStudent.mssv ? editingStudent : s));
-      alert("Đã cập nhật thông tin sinh viên thành công! 🎉");
-      setIsEditModalOpen(false);
+    if (!editingStudent) return;
+
+    setIsSaving(true);
+    try {
+      const res = await apiFetch("/api/giangvien/students", {
+        method: "PUT",
+        body: JSON.stringify({
+          masv: editingStudent.mssv,
+          name: editingStudent.name,
+          email: editingStudent.email,
+          phone: editingStudent.phone,
+          parentName: editingStudent.parentName,
+          parentPhone: editingStudent.parentPhone,
+          address: editingStudent.rawAddress || editingStudent.address
+        })
+      });
+
+      const json = await res.json();
+      if (json.success) {
+        // Tải lại danh sách học sinh để cập nhật hiển thị chính xác
+        if (selectedPC) {
+          const resReload = await apiFetch(`/api/giangvien/students?maphancong=${selectedPC}`);
+          const jsonReload = await resReload.json();
+          if (jsonReload.success && jsonReload.data) {
+            setStudentList(jsonReload.data);
+          }
+        }
+        alert("Đã cập nhật thông tin sinh viên thành công!");
+        setIsEditModalOpen(false);
+      } else {
+        alert(json.error || "Không thể cập nhật thông tin sinh viên");
+      }
+    } catch (err: any) {
+      alert("Đã xảy ra lỗi: " + err.message);
+    } finally {
+      setIsSaving(false);
     }
   };
 
   const filteredStudents = studentList.filter(s => 
-    s.mssv.includes(searchQuery) || 
-    s.name.toLowerCase().includes(searchQuery.toLowerCase())
+    s.mssv.includes(searchQuery.trim()) || 
+    s.name.toLowerCase().includes(searchQuery.toLowerCase().trim())
   );
 
   const currentStudent = studentList.find(s => s.mssv === selectedStudent) ?? studentList[0];
@@ -53,13 +144,21 @@ export function RosterView() {
           <div style={{ padding: "15px 20px", borderBottom: "1px solid #F0E1D9", display: "flex", gap: "10px" }}>
             <input 
               type="text" 
-              placeholder="🔍 Tìm kiếm mã số hoặc tên..." 
+              placeholder="Tìm kiếm mã số hoặc tên..." 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               style={{ flex: 1, padding: "8px 12px", borderRadius: "8px", border: "1px solid #F0E1D9", outline: "none", fontSize: "13px" }}
             />
-            <select style={{ padding: "8px", borderRadius: "8px", border: "1px solid #F0E1D9", outline: "none", color: "#6B4F43" }}>
-              <option>Lập trình Web - K22</option>
+            <select 
+              value={selectedPC ?? ""} 
+              onChange={(e) => setSelectedPC(Number(e.target.value))}
+              style={{ padding: "8px", borderRadius: "8px", border: "1px solid #F0E1D9", outline: "none", color: "#6B4F43", background: "white" }}
+            >
+              {classes.map(cls => (
+                <option key={cls.maphancong} value={cls.maphancong}>
+                  {cls.lop?.tenlop ?? cls.malop} - {cls.monhoc?.tenmon}
+                </option>
+              ))}
             </select>
           </div>
 
@@ -74,24 +173,38 @@ export function RosterView() {
                 </tr>
               </thead>
               <tbody>
-                {filteredStudents.map((std) => (
-                  <tr 
-                    key={std.mssv} 
-                    onClick={() => setSelectedStudent(std.mssv)}
-                    style={{ 
-                      borderBottom: "1px solid #F9F9F9", 
-                      cursor: "pointer",
-                      background: selectedStudent === std.mssv ? "#FFF4F4" : "transparent"
-                    }}
-                  >
-                    <td style={{ padding: "12px", fontSize: "13px" }}>{std.mssv}</td>
-                    <td style={{ padding: "12px", fontSize: "14px", fontWeight: "600", color: "#6B4F43" }}>{std.name}</td>
-                    <td style={{ padding: "12px", fontSize: "13px", color: "#8B6F5F" }}>{std.class}</td>
-                    <td style={{ padding: "12px", textAlign: "right" }}>
-                      <span style={{ fontSize: "16px" }}>👉</span>
+                {loading ? (
+                  <tr>
+                    <td colSpan={4} style={{ padding: "30px", textAlign: "center", color: "#8B6F5F" }}>
+                      Đang tải danh sách sinh viên...
                     </td>
                   </tr>
-                ))}
+                ) : filteredStudents.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} style={{ padding: "30px", textAlign: "center", color: "#8B6F5F" }}>
+                      Không tìm thấy sinh viên nào.
+                    </td>
+                  </tr>
+                ) : (
+                  filteredStudents.map((std) => (
+                    <tr 
+                      key={std.mssv} 
+                      onClick={() => setSelectedStudent(std.mssv)}
+                      style={{ 
+                        borderBottom: "1px solid #F9F9F9", 
+                        cursor: "pointer",
+                        background: selectedStudent === std.mssv ? "#FFF4F4" : "transparent"
+                      }}
+                    >
+                      <td style={{ padding: "12px", fontSize: "13px" }}>{std.mssv}</td>
+                      <td style={{ padding: "12px", fontSize: "14px", fontWeight: "600", color: "#6B4F43" }}>{std.name}</td>
+                      <td style={{ padding: "12px", fontSize: "13px", color: "#8B6F5F" }}>{std.class}</td>
+                      <td style={{ padding: "12px", textAlign: "right" }}>
+                        <span style={{ fontSize: "12px", color: "#C25450", fontWeight: "bold" }}>Xem</span>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
@@ -99,60 +212,68 @@ export function RosterView() {
 
         {/* Right Column: Detailed Card View */}
         <section className="card" style={{ border: "1px solid #F0E1D9", display: "flex", flexDirection: "column", gap: "15px" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "15px", borderBottom: "1px solid #F0E1D9", paddingBottom: "15px" }}>
-            <div style={{ width: "60px", height: "60px", borderRadius: "50%", background: "#F2A8A8", display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontSize: "24px", fontWeight: "bold" }}>
-              {currentStudent.name.charAt(0)}
-            </div>
-            <div style={{ flex: 1 }}>
-              <h3 style={{ margin: 0, fontSize: "18px", color: "#6B4F43", fontWeight: "bold" }}>{currentStudent.name}</h3>
-              <p style={{ margin: "2px 0 0", fontSize: "12px", color: "#8B6F5F" }}>MSSV: {currentStudent.mssv}</p>
-            </div>
-            <button 
-              type="button"
-              onClick={() => handleOpenEdit(currentStudent)}
-              style={{
-                padding: "6px 12px",
-                borderRadius: "8px",
-                border: "1px solid #EAD9CB",
-                background: "#FFF8F5",
-                color: "#6B4F43",
-                fontSize: "12px",
-                fontWeight: "600",
-                cursor: "pointer"
-              }}
-            >
-              📝 Sửa
-            </button>
-          </div>
+          {currentStudent ? (
+            <>
+              <div style={{ display: "flex", alignItems: "center", gap: "15px", borderBottom: "1px solid #F0E1D9", paddingBottom: "15px" }}>
+                <div style={{ width: "60px", height: "60px", borderRadius: "50%", background: "#F2A8A8", display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontSize: "24px", fontWeight: "bold" }}>
+                  {currentStudent.name.charAt(0)}
+                </div>
+                <div style={{ flex: 1 }}>
+                  <h3 style={{ margin: 0, fontSize: "18px", color: "#6B4F43", fontWeight: "bold" }}>{currentStudent.name}</h3>
+                  <p style={{ margin: "2px 0 0", fontSize: "12px", color: "#8B6F5F" }}>MSSV: {currentStudent.mssv}</p>
+                </div>
+                <button 
+                  type="button"
+                  onClick={() => handleOpenEdit(currentStudent)}
+                  style={{
+                    padding: "6px 12px",
+                    borderRadius: "8px",
+                    border: "1px solid #EAD9CB",
+                    background: "#FFF8F5",
+                    color: "#6B4F43",
+                    fontSize: "12px",
+                    fontWeight: "600",
+                    cursor: "pointer"
+                  }}
+                >
+                  Sửa
+                </button>
+              </div>
 
-          <div style={{ display: "flex", flexDirection: "column", gap: "12px", fontSize: "13px", color: "#6B4F43" }}>
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <span style={{ color: "#8B6F5F" }}>Lớp sinh hoạt:</span> <strong>{currentStudent.class}</strong>
-            </div>
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <span style={{ color: "#8B6F5F" }}>Số điện thoại:</span> <strong>{currentStudent.phone}</strong>
-            </div>
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <span style={{ color: "#8B6F5F" }}>Địa chỉ Email:</span> <strong>{currentStudent.email}</strong>
-            </div>
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <span style={{ color: "#8B6F5F" }}>Liên hệ phụ huynh:</span> <strong style={{ fontSize: "12px" }}>{currentStudent.parent}</strong>
-            </div>
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <span style={{ color: "#8B6F5F" }}>Nơi cư trú:</span> <strong>{currentStudent.address}</strong>
-            </div>
-          </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: "12px", fontSize: "13px", color: "#6B4F43" }}>
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                  <span style={{ color: "#8B6F5F" }}>Lớp sinh hoạt:</span> <strong>{currentStudent.class}</strong>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                  <span style={{ color: "#8B6F5F" }}>Số điện thoại:</span> <strong>{currentStudent.phone}</strong>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                  <span style={{ color: "#8B6F5F" }}>Địa chỉ Email:</span> <strong>{currentStudent.email}</strong>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                  <span style={{ color: "#8B6F5F" }}>Liên hệ phụ huynh:</span> <strong style={{ fontSize: "12px" }}>{currentStudent.parent}</strong>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between" }}>
+                  <span style={{ color: "#8B6F5F" }}>Nơi cư trú:</span> <strong>{currentStudent.address}</strong>
+                </div>
+              </div>
 
-          <div style={{ borderTop: "1px solid #F0E1D9", paddingTop: "15px", marginTop: "10px", display: "flex", flexDirection: "column", gap: "10px" }}>
-            <h4 style={{ margin: 0, fontSize: "14px", color: "#8B6F5F", fontWeight: "bold" }}>Nội dung nhắn phụ huynh / sinh viên</h4>
-            <textarea 
-              placeholder="Nhập lời nhắc, thông báo học vụ để gửi nhanh..."
-              style={{ padding: "10px", borderRadius: "8px", border: "1px solid #F0E1D9", background: "#FDF8F5", height: "80px", resize: "none", outline: "none", fontSize: "13px", color: "#6B4F43" }}
-            />
-            <button className={styles.primaryBtn} style={{ background: "linear-gradient(90deg, #F2A8A8 0%, #FFB4B4 100%)", width: "100%", fontWeight: "600" }}>
-              ✉️ Gửi tin nhắn liên lạc nhanh
-            </button>
-          </div>
+              <div style={{ borderTop: "1px solid #F0E1D9", paddingTop: "15px", marginTop: "10px", display: "flex", flexDirection: "column", gap: "10px" }}>
+                <h4 style={{ margin: 0, fontSize: "14px", color: "#8B6F5F", fontWeight: "bold" }}>Nội dung nhắn phụ huynh / sinh viên</h4>
+                <textarea 
+                  placeholder="Nhập lời nhắc, thông báo học vụ để gửi nhanh..."
+                  style={{ padding: "10px", borderRadius: "8px", border: "1px solid #F0E1D9", background: "#FDF8F5", height: "80px", resize: "none", outline: "none", fontSize: "13px", color: "#6B4F43" }}
+                />
+                <button className={styles.primaryBtn} style={{ background: "linear-gradient(90deg, #F2A8A8 0%, #FFB4B4 100%)", width: "100%", fontWeight: "600", border: "none" }}>
+                  Gửi tin nhắn liên lạc nhanh
+                </button>
+              </div>
+            </>
+          ) : (
+            <div style={{ padding: "40px 20px", textAlign: "center", color: "#8B6F5F" }}>
+              Hãy chọn một sinh viên để xem chi tiết
+            </div>
+          )}
         </section>
 
       </div>
@@ -232,25 +353,6 @@ export function RosterView() {
                 />
               </div>
 
-              {/* Input: Class */}
-              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                <label style={{ fontSize: "12px", fontWeight: "700", color: "#6B4F3F", textTransform: "uppercase", textAlign: "left" }}>Lớp sinh hoạt</label>
-                <input 
-                  type="text" 
-                  value={editingStudent.class}
-                  onChange={(e) => setEditingStudent(prev => prev ? { ...prev, class: e.target.value } : null)}
-                  required
-                  style={{
-                    padding: "10px 12px",
-                    borderRadius: "8px",
-                    border: "1px solid #EAD9CB",
-                    fontSize: "14px",
-                    outline: "none",
-                    color: "#2D1B14"
-                  }}
-                />
-              </div>
-
               {/* Input: Email */}
               <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                 <label style={{ fontSize: "12px", fontWeight: "700", color: "#6B4F3F", textTransform: "uppercase", textAlign: "left" }}>Địa chỉ Email</label>
@@ -289,13 +391,32 @@ export function RosterView() {
                 />
               </div>
 
-              {/* Input: Parent */}
+              {/* Input: Parent Name */}
               <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                <label style={{ fontSize: "12px", fontWeight: "700", color: "#6B4F3F", textTransform: "uppercase", textAlign: "left" }}>Liên hệ Phụ huynh</label>
+                <label style={{ fontSize: "12px", fontWeight: "700", color: "#6B4F3F", textTransform: "uppercase", textAlign: "left" }}>Họ tên Phụ huynh</label>
                 <input 
                   type="text" 
-                  value={editingStudent.parent}
-                  onChange={(e) => setEditingStudent(prev => prev ? { ...prev, parent: e.target.value } : null)}
+                  value={editingStudent.parentName}
+                  onChange={(e) => setEditingStudent(prev => prev ? { ...prev, parentName: e.target.value } : null)}
+                  required
+                  style={{
+                    padding: "10px 12px",
+                    borderRadius: "8px",
+                    border: "1px solid #EAD9CB",
+                    fontSize: "14px",
+                    outline: "none",
+                    color: "#2D1B14"
+                  }}
+                />
+              </div>
+
+              {/* Input: Parent Phone */}
+              <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                <label style={{ fontSize: "12px", fontWeight: "700", color: "#6B4F3F", textTransform: "uppercase", textAlign: "left" }}>SĐT Phụ huynh</label>
+                <input 
+                  type="text" 
+                  value={editingStudent.parentPhone}
+                  onChange={(e) => setEditingStudent(prev => prev ? { ...prev, parentPhone: e.target.value } : null)}
                   required
                   style={{
                     padding: "10px 12px",
@@ -313,8 +434,8 @@ export function RosterView() {
                 <label style={{ fontSize: "12px", fontWeight: "700", color: "#6B4F3F", textTransform: "uppercase", textAlign: "left" }}>Nơi cư trú</label>
                 <input 
                   type="text" 
-                  value={editingStudent.address}
-                  onChange={(e) => setEditingStudent(prev => prev ? { ...prev, address: e.target.value } : null)}
+                  value={editingStudent.rawAddress || editingStudent.address}
+                  onChange={(e) => setEditingStudent(prev => prev ? { ...prev, rawAddress: e.target.value } : null)}
                   required
                   style={{
                     padding: "10px 12px",
@@ -347,6 +468,7 @@ export function RosterView() {
                 </button>
                 <button 
                   type="submit" 
+                  disabled={isSaving}
                   style={{
                     padding: "10px 20px",
                     borderRadius: "8px",
@@ -359,7 +481,7 @@ export function RosterView() {
                     boxShadow: "0 4px 12px rgba(242, 168, 168, 0.4)"
                   }}
                 >
-                  ✓ Lưu thay đổi
+                  {isSaving ? "Đang lưu..." : "Lưu thay đổi"}
                 </button>
               </div>
 

@@ -132,20 +132,20 @@ async function fetchProfile(
   if (vaitro === VaiTro.SinhVien) {
     const { data: sv } = await supabase
       .from("sinhvien")
-      .select("masv, hoten, anhdaidien")
+      .select("masv, hodem, ten, anhdaidien")
       .eq("mataikhoan", mataikhoan)
       .single();
-    hoten = sv?.hoten ?? "Sinh Viên";
+    hoten = sv ? `${sv.hodem || ""} ${sv.ten || ""}`.trim() || "Sinh Viên" : "Sinh Viên";
     anhdaidien = sv?.anhdaidien ?? null;
     maSinhVien = sv?.masv;
 
   } else if (vaitro === VaiTro.GiangVien) {
     const { data: gv } = await supabase
       .from("giangvien")
-      .select("magv, hoten, anhdaidien")
+      .select("magv, hodem, ten, anhdaidien")
       .eq("mataikhoan", mataikhoan)
       .single();
-    hoten = gv?.hoten ?? "Giảng Viên";
+    hoten = gv ? `${gv.hodem || ""} ${gv.ten || ""}`.trim() || "Giảng Viên" : "Giảng Viên";
     anhdaidien = gv?.anhdaidien ?? null;
     maGiangVien = gv?.magv;
 

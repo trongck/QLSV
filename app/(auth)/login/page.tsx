@@ -84,7 +84,7 @@ export default function LoginPage() {
 
         <div className={styles.introImageWrapper}>
           <Image
-            src="/intro.png"
+            src="/intro_v2.png"
             alt="Giới thiệu hệ thống"
             width={600}
             height={500}
@@ -310,7 +310,7 @@ export default function LoginPage() {
               className={styles.activateLink}
               onClick={(e) => e.preventDefault()}
             >
-              Quên mật khẩu
+              Gửi yêu cầu cấp lại mật khẩu!
             </a>
           </p>
         </div>

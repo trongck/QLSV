@@ -94,10 +94,16 @@ export async function PUT(request: Request) {
     const supabase = createClient(cookieStore);
 
     // Cập nhật tất cả trong 1 bảng giangvien
+    const nameStr = hoten?.trim() || "";
+    const parts = nameStr.split(/\s+/);
+    const ten = parts.length > 1 ? parts[parts.length - 1] : parts[0];
+    const hodem = parts.length > 1 ? parts.slice(0, -1).join(" ") : "";
+
     const { error: gvError } = await supabase
       .from("giangvien")
       .update({
-        hoten:       hoten?.trim()       ?? null,
+        hodem:       hodem               || null,
+        ten:         ten                 || null,
         emailtruong: email?.trim()       ?? null,
         makhoa:      mapKhoa(faculty),
         ngaysinh:    ngaysinh            ?? null,
