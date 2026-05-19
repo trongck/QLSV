@@ -488,12 +488,26 @@ export const giangVienService = {
       .eq("trangthai", "Danghoc");
 
     if (svMonHoc && svMonHoc.length > 0) {
-      const inserts = svMonHoc.map((s: any) => ({
-        mabuoihoc: buoihoc.mabuoihoc,
-        masv: s.masv,
-        trangthai: "Vangmat",
-        phuongthuc: "Manual"
-      }));
+      // Fetch approved leaves for this session
+      const { data: approvedLeaves } = await supabase
+        .from("donxinnghi")
+        .select("masv")
+        .eq("mabuoihoc", buoihoc.mabuoihoc)
+        .eq("trangthai", "DaDuyet");
+        
+      const leaveSet = new Set(approvedLeaves?.map((d: any) => d.masv?.trim()) || []);
+
+      const inserts = svMonHoc.map((s: any) => {
+        const masv = s.masv?.trim();
+        const isLeave = leaveSet.has(masv);
+        return {
+          mabuoihoc: buoihoc.mabuoihoc,
+          masv: masv,
+          trangthai: isLeave ? "Cophep" : "Vangmat",
+          phuongthuc: "Manual",
+          ghichu: isLeave ? "Vắng có phép (Đơn xin nghỉ)" : null,
+        };
+      });
 
       await supabase.from("diemdanh").insert(inserts);
     }

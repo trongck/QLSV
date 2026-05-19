@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
         }
 
         // ── Xác định trạng thái (có mặt / muộn) ──────────────────────────────
-        let trangthai: string = 'co_mat';
+        let trangthai: string = 'Comat';
 
         // Nếu có mabuoihoc thực → dùng để tính muộn
         let finalMabuoihoc: number | null = mabuoihocParam ? parseInt(mabuoihocParam) : null;
@@ -109,10 +109,18 @@ export async function POST(request: NextRequest) {
                 if (lh.tietbatdau) {
                     const startStr = TIET_TO_TIME[lh.tietbatdau] ?? '07:00';
                     const [sh, sm] = startStr.split(':').map(Number);
-                    const startDate = new Date(todayStr);
-                    startDate.setHours(sh, sm, 0, 0);
-                    const diffMin = (Date.now() - startDate.getTime()) / 60000;
-                    if (diffMin > 15) trangthai = 'muon';
+                    const nowStr = new Date().toLocaleString("en-US", { timeZone: "Asia/Ho_Chi_Minh", hour12: false });
+                    const match = nowStr.match(/(\d+):(\d+):/);
+                    let currentH = 0, currentM = 0;
+                    if (match) {
+                        currentH = parseInt(match[1], 10);
+                        currentM = parseInt(match[2], 10);
+                        // Fix 24h format bug in some Node versions where midnight is 24
+                        if (currentH === 24) currentH = 0;
+                    }
+                    
+                    const diffMin = (currentH * 60 + currentM) - (sh * 60 + sm);
+                    if (diffMin > 15) trangthai = 'Dimuon';
                 }
             }
         }
@@ -156,7 +164,7 @@ export async function POST(request: NextRequest) {
 
             return NextResponse.json({
                 success: true,
-                message: trangthai === 'muon' ? 'Điểm danh thành công (đi muộn)' : 'Điểm danh thành công!',
+                message: trangthai === 'Dimuon' ? 'Điểm danh thành công (đi muộn)' : 'Điểm danh thành công!',
                 trangthai,
                 data: dd,
             });
@@ -167,7 +175,7 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({
             success: true,
             message: `Điểm danh ghi nhận lúc ${new Date().toLocaleTimeString('vi-VN')} (không có lịch học hôm nay)`,
-            trangthai: 'co_mat',
+            trangthai: 'Comat',
             noSession: true,
         });
 
