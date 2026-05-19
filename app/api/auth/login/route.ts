@@ -17,7 +17,6 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
-//
 
 
     const { email, matkhau } = body as { email: string; matkhau: string };
