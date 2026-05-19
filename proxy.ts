@@ -9,7 +9,7 @@ const ROLE_PREFIXES = {
   [VaiTro.SinhVien]: "/student",
 };
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const supabaseResponse = createClient(request);
 
@@ -44,7 +44,7 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  // 4. Tự động Silent Refresh ngay trong Middleware nếu Access Token hết hạn nhưng Refresh Token còn hạn
+  // 4. Tự động Silent Refresh ngay trong Proxy nếu Access Token hết hạn nhưng Refresh Token còn hạn
   if (!payload) {
     const refreshToken = request.cookies.get("auth_refresh_token")?.value;
     if (refreshToken) {

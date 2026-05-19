@@ -1,8 +1,6 @@
 
-
 import {
   GiangVien,
-  ChiTietGiangVien,
   Khoa,
   TaiKhoan,
   GioiTinh,
@@ -12,7 +10,6 @@ import { PaginationParams } from "./common.model";
 // ─── Extended (JOIN) ──────────────────────────────────────────────────────────
 
 export interface GiangVienFull extends GiangVien {
-  chiTiet?: ChiTietGiangVien;
   khoa?: Khoa;
   taikhoan?: Omit<TaiKhoan, "matkhau">;
 }
@@ -30,7 +27,12 @@ export interface CreateGiangVienRequest {
   emailtruong?: string;
   email: string;      // tạo tài khoản đồng thời
   matkhau: string;
-  chiTiet?: Omit<ChiTietGiangVien, "magv">;
+  // Chi tiết (đã merged vào bảng giangvien)
+  diachi?: string;
+  sodienthoai?: string;
+  emailcanhan?: string;
+  ngayvaotruong?: string;
+  hesoluong?: number;
 }
 
 export interface UpdateGiangVienRequest {
@@ -41,7 +43,11 @@ export interface UpdateGiangVienRequest {
   chuyennganh?: string;
   anhdaidien?: string;
   makhoa?: string;
-  chiTiet?: Partial<Omit<ChiTietGiangVien, "magv">>;
+  // Chi tiết (đã merged vào bảng giangvien)
+  diachi?: string;
+  sodienthoai?: string;
+  emailcanhan?: string;
+  hesoluong?: number;
 }
 
 // ─── Query Params ─────────────────────────────────────────────────────────────

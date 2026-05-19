@@ -21,10 +21,15 @@ const SV_NAV = [
 
 const GV_NAV = [
   { href: "/teacher/dashboard", label: "Tổng quan" },
-  { href: "/teacher/classes", label: "Lớp học" },
-  { href: "/teacher/students", label: "Sinh viên" },
-  { href: "/teacher/grades", label: "Nhập điểm" },
-  { href: "/teacher/tasks", label: "Bài tập" },
+  { href: "/teacher/classes",   label: "Lớp học" },
+  { href: "/teacher/attendance",     label: "Điểm danh" },
+  { href: "/teacher/students",  label: "Sinh viên" },
+  { href: "/teacher/grades",    label: "Nhập điểm" },
+  { href: "/teacher/tasks",     label: "Bài tập" },
+  { href: "/teacher/exam",     label: "Thi trực tuyến" },
+  { href: "/teacher/report",     label: "Báo cáo và thống kê" },
+  { href: "/teacher/message",     label: "Tin nhắn" },
+  { href: "/teacher/notification",     label: "Thông báo" },
 ];
 
 const ADMIN_NAV = [

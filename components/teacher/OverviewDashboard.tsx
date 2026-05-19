@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useAuth } from "@/hook/useAuth";
+import { useAuth } from "@/hooks/auth/useAuth";
 import { apiFetch } from "@/services/auth.service";
 import styles from "@/app/(dashboard)/teacher/dashboard/teacher-dashboard.module.css";
 

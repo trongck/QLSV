@@ -1,7 +1,6 @@
 
 import {
   SinhVien,
-  ChiTietSinhVien,
   Lop,
   TaiKhoan,
   GioiTinh,
@@ -12,7 +11,6 @@ import { PaginationParams } from "./common.model";
 // ─── Extended (JOIN) ──────────────────────────────────────────────────────────
 
 export interface SinhVienFull extends SinhVien {
-  chiTiet?: ChiTietSinhVien;
   lop?: Lop;
   taikhoan?: Omit<TaiKhoan, "matkhau">;
 }
@@ -28,7 +26,18 @@ export interface CreateSinhVienRequest {
   emailtruong?: string;
   email: string;      // tạo tài khoản đồng thời
   matkhau: string;
-  chiTiet?: Omit<ChiTietSinhVien, "masv">;
+  // Chi tiết (đã merged vào bảng sinhvien)
+  quequan?: string;
+  diachi?: string;
+  sodienthoai?: string;
+  emailcanhan?: string;
+  tenphuhuynh?: string;
+  sodienthoaiphuhuynh?: string;
+  cccd?: string;
+  ngaycapcccd?: string;
+  noicapcccd?: string;
+  dantoc?: string;
+  tongiao?: string;
 }
 
 export interface UpdateSinhVienRequest {
@@ -38,7 +47,18 @@ export interface UpdateSinhVienRequest {
   anhdaidien?: string;
   malop?: string;
   trangthai?: TrangThaiSinhVien;
-  chiTiet?: Partial<Omit<ChiTietSinhVien, "masv">>;
+  // Chi tiết (đã merged vào bảng sinhvien)
+  quequan?: string;
+  diachi?: string;
+  sodienthoai?: string;
+  emailcanhan?: string;
+  tenphuhuynh?: string;
+  sodienthoaiphuhuynh?: string;
+  cccd?: string;
+  ngaycapcccd?: string;
+  noicapcccd?: string;
+  dantoc?: string;
+  tongiao?: string;
 }
 
 // ─── Query Params ─────────────────────────────────────────────────────────────
