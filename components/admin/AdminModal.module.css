@@ -1,0 +1,154 @@
+/* ─── Admin Modal ─────────────────────────────────────────────────────────────── */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(45, 27, 20, 0.45);
+  backdrop-filter: blur(3px);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  animation: fadeIn 0.15s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.modal {
+  background: #FFFFFF;
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(45, 27, 20, 0.18), 0 4px 16px rgba(45, 27, 20, 0.08);
+  display: flex;
+  flex-direction: column;
+  max-height: 90vh;
+  width: 100%;
+  animation: slideUp 0.18s ease;
+  overflow: hidden;
+}
+
+@keyframes slideUp {
+  from { transform: translateY(12px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+.sm  { max-width: 420px; }
+.md  { max-width: 580px; }
+.lg  { max-width: 760px; }
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px 0;
+  flex-shrink: 0;
+}
+
+.title {
+  font-size: 17px;
+  font-weight: 700;
+  color: #2D1B14;
+  margin: 0;
+}
+
+.closeBtn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #8B6F5F;
+  padding: 6px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  transition: background 0.15s, color 0.15s;
+}
+
+.closeBtn:hover {
+  background: #FEE2E2;
+  color: #C25450;
+}
+
+.body {
+  padding: 20px 24px 24px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+/* ─── Form inside modal ───────────────────────────────────────────────────────── */
+
+.body :global(.form-grid) {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.body :global(.form-grid .full) {
+  grid-column: 1 / -1;
+}
+
+.body :global(.field) {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.body :global(.field label) {
+  font-size: 12px;
+  font-weight: 600;
+  color: #6B4F3F;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.body :global(.field input),
+.body :global(.field select),
+.body :global(.field textarea) {
+  border: 1.5px solid #EAD9CB;
+  border-radius: 10px;
+  padding: 9px 12px;
+  font-size: 14px;
+  color: #2D1B14;
+  background: #FFF;
+  font-family: inherit;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  outline: none;
+}
+
+.body :global(.field input:focus),
+.body :global(.field select:focus),
+.body :global(.field textarea:focus) {
+  border-color: #C25450;
+  box-shadow: 0 0 0 3px rgba(194, 84, 80, 0.12);
+}
+
+.body :global(.field input::placeholder) {
+  color: #BBA89A;
+}
+
+.body :global(.modal-actions) {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid #EAD9CB;
+}
+
+.body :global(.error-msg) {
+  background: #FEE2E2;
+  color: #C25450;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 13px;
+  margin-bottom: 14px;
+}
+
+@media (max-width: 520px) {
+  .body :global(.form-grid) { grid-template-columns: 1fr; }
+  .body :global(.form-grid .full) { grid-column: 1; }
+  .body { padding: 16px 16px 20px; }
+  .header { padding: 16px 16px 0; }
+}
