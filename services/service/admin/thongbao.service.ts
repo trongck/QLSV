@@ -69,6 +69,8 @@ export async function updateThongbaoService(supabase: SupabaseClient, id: number
   if (ghim !== undefined) updatePayload.ghim = Boolean(ghim);
   if (ngaytao !== undefined) updatePayload.ngaytao = ngaytao;
 
+  updatePayload.ngaycapnhat = getVietnamTimeISO();
+
   const { data, error } = await repo.updateThongbaoRepo(supabase, id, updatePayload);
   if (error) throw new Error(error.message);
 
