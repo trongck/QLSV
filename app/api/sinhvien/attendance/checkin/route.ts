@@ -201,6 +201,7 @@ export async function POST(request: NextRequest) {
             );
         }
 
+
         // Kiểm tra SV có đăng ký môn đó không
         const { data: hasRegistration } = await supabase
             .from('sinhvienmonhoc')
@@ -209,6 +210,7 @@ export async function POST(request: NextRequest) {
             .eq('maphancong', maphancong)
             .maybeSingle();
 
+
         if (!hasRegistration) {
             return NextResponse.json({ success: false, message: 'Bạn không đăng ký môn học này' }, { status: 400 });
         }
@@ -216,59 +218,63 @@ export async function POST(request: NextRequest) {
         // ── 3. Xác định trạng thái (Comat / Dimuon) ──────────────────────────
         let trangthai: string = 'Comat';
 
-        if (!finalMabuoihoc) {
-            // Tìm lịch học hôm nay của môn này để tạo buổi học
-            const { data: lichhocs } = await supabase
-                .from('lichhoc')
-                .select('malichhoc, tietbatdau, tietketthuc')
-                .eq('maphancong', maphancong)
-                .eq('thutrongtuan', thuTrongTuan)
-                .limit(1);
+        if (method !== 'qr') {
+            if (!finalMabuoihoc) {
+                // Tìm lịch học hôm nay của môn này để tạo buổi học
+                const { data: lichhocs } = await supabase
+                    .from('lichhoc')
+                    .select('malichhoc, tietbatdau, tietketthuc')
+                    .eq('maphancong', maphancong)
+                    .eq('thutrongtuan', thuTrongTuan)
+                    .limit(1);
 
-            const lh = lichhocs?.[0];
-            if (lh) {
-                const { data: existBuoi } = await supabase
-                    .from('buoihoc')
-                    .select('mabuoihoc')
-                    .eq('malichhoc', lh.malichhoc)
-                    .eq('ngayhoc', todayStr)
-                    .maybeSingle();
-
-                if (existBuoi) {
-                    finalMabuoihoc = existBuoi.mabuoihoc;
-                } else {
-                    const { data: newBuoi } = await supabase
+                const lh = lichhocs?.[0];
+                if (lh) {
+                    const { data: existBuoi } = await supabase
                         .from('buoihoc')
-                        .insert({ malichhoc: lh.malichhoc, ngayhoc: todayStr })
                         .select('mabuoihoc')
-                        .single();
-                    finalMabuoihoc = newBuoi?.mabuoihoc ?? null;
-                }
+                        .eq('malichhoc', lh.malichhoc)
+                        .eq('ngayhoc', todayStr)
+                        .maybeSingle();
 
-                // Tính đi muộn (quá 15 phút)
-                if (lh.tietbatdau) {
-                    const startStr = TIET_TO_TIME[lh.tietbatdau] ?? '07:00';
+                    if (existBuoi) {
+                        finalMabuoihoc = existBuoi.mabuoihoc;
+                    } else {
+                        const { data: newBuoi } = await supabase
+                            .from('buoihoc')
+                            .insert({ malichhoc: lh.malichhoc, ngayhoc: todayStr })
+                            .select('mabuoihoc')
+                            .single();
+                        finalMabuoihoc = newBuoi?.mabuoihoc ?? null;
+                    }
+
+                    // Tính đi muộn (quá 15 phút)
+                    if (lh.tietbatdau) {
+                        const startStr = TIET_TO_TIME[lh.tietbatdau] ?? '07:00';
+                        const [sh, sm] = startStr.split(':').map(Number);
+
+                        const startDate = new Date(todayStr);
+                        startDate.setUTCHours(sh - 7, sm, 0, 0);
+                        const diffMin = (Date.now() - startDate.getTime()) / 60000;
+
+                        if (diffMin > 15) trangthai = 'Dimuon';
+                    }
+                }
+            } else {
+                // Tính đi muộn dựa trên finalMabuoihoc đã có sẵn
+                const { data: buoi } = await supabase
+                    .from('buoihoc')
+                    .select('mabuoihoc, ngayhoc, lichhoc:malichhoc ( tietbatdau )')
+                    .eq('mabuoihoc', finalMabuoihoc)
+                    .maybeSingle();
+                if (buoi && (buoi as any).lichhoc?.tietbatdau) {
+                    const startStr = TIET_TO_TIME[(buoi as any).lichhoc.tietbatdau] ?? '07:00';
                     const [sh, sm] = startStr.split(':').map(Number);
-                    const startDate = new Date(todayStr);
+                    const startDate = new Date(buoi.ngayhoc);
                     startDate.setUTCHours(sh - 7, sm, 0, 0);
                     const diffMin = (Date.now() - startDate.getTime()) / 60000;
                     if (diffMin > 15) trangthai = 'Dimuon';
                 }
-            }
-        } else {
-            // Tính đi muộn dựa trên finalMabuoihoc đã có sẵn
-            const { data: buoi } = await supabase
-                .from('buoihoc')
-                .select('mabuoihoc, ngayhoc, lichhoc:malichhoc ( tietbatdau )')
-                .eq('mabuoihoc', finalMabuoihoc)
-                .maybeSingle();
-            if (buoi && (buoi as any).lichhoc?.tietbatdau) {
-                const startStr = TIET_TO_TIME[(buoi as any).lichhoc.tietbatdau] ?? '07:00';
-                const [sh, sm] = startStr.split(':').map(Number);
-                const startDate = new Date(buoi.ngayhoc);
-                startDate.setUTCHours(sh - 7, sm, 0, 0);
-                const diffMin = (Date.now() - startDate.getTime()) / 60000;
-                if (diffMin > 15) trangthai = 'Dimuon';
             }
         }
 
@@ -327,6 +333,7 @@ export async function POST(request: NextRequest) {
                         trangthai,
                         phuongthuc: dbMethod,
                         ghichu,
+                        ngaytao: vnNow,
                     })
                     .select()
                     .single();

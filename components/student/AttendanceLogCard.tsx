@@ -19,10 +19,14 @@ export interface LogEntry {
 const STATUS_CONFIG: Record<string, { text: string; bgColor: string; textColor: string; dotColor: string }> = {
   co_mat:         { text: "Có mặt",       bgColor: "bg-green-50",  textColor: "text-green-700",  dotColor: "bg-green-500" },
   success:        { text: "Có mặt",       bgColor: "bg-green-50",  textColor: "text-green-700",  dotColor: "bg-green-500" },
+  Comat:          { text: "Có mặt",       bgColor: "bg-green-50",  textColor: "text-green-700",  dotColor: "bg-green-500" },
   muon:           { text: "Đi muộn",      bgColor: "bg-orange-50", textColor: "text-orange-700", dotColor: "bg-orange-400" },
   late:           { text: "Đi muộn",      bgColor: "bg-orange-50", textColor: "text-orange-700", dotColor: "bg-orange-400" },
+  Dimuon:         { text: "Đi muộn",      bgColor: "bg-orange-50", textColor: "text-orange-700", dotColor: "bg-orange-400" },
   vang_co_phep:   { text: "Vắng CP",      bgColor: "bg-blue-50",   textColor: "text-blue-700",   dotColor: "bg-blue-400" },
+  Cophep:         { text: "Vắng CP",      bgColor: "bg-blue-50",   textColor: "text-blue-700",   dotColor: "bg-blue-400" },
   vang_khong_phep:{ text: "Vắng KP",      bgColor: "bg-red-50",    textColor: "text-red-700",    dotColor: "bg-red-500" },
+  Vangmat:        { text: "Vắng KP",      bgColor: "bg-red-50",    textColor: "text-red-700",    dotColor: "bg-red-500" },
 };
 
 const METHOD_ICON: Record<string, React.ReactNode> = {
