@@ -117,14 +117,13 @@ export default function StudentDashboard() {
           { data: diemRows },
           { data: lichHoc },
           { data: diemDanh },
-          { data: baiTap },
         ] = await Promise.all([
           supabase
             .from("diem")
             .select("loaidiem, giatri, maphancong")
             .eq("masv", masv)
             .order("ngaytao", { ascending: false })
-            .limit(6),
+            .limit(6),//
           supabase
             .from("lichhoc")
             .select(`
@@ -148,11 +147,6 @@ export default function StudentDashboard() {
             .select("trangthai")
             .eq("masv", masv)
             .eq("trangthai", "Vangmat"),
-          supabase
-            .from("baitap")
-            .select("hannop")
-            .gt("hannop", new Date().toISOString())
-            .limit(10),
         ]);
 
         // Compute GPA from diem rows
@@ -168,11 +162,32 @@ export default function StudentDashboard() {
           }
         }
 
+        // Lọc bài tập chưa nộp thuộc các môn SV đang học
+        let unsubmittedCount = 0;
+        if (myAssignments.length > 0) {
+          const { data: allBT } = await supabase
+            .from("baitap")
+            .select("mabaitap")
+            .in("maphancong", myAssignments);
+
+          if (allBT && allBT.length > 0) {
+            const maBTs = allBT.map(b => b.mabaitap);
+            const { data: submittedBT } = await supabase
+              .from("nopbai")
+              .select("mabaitap")
+              .eq("masv", masv)
+              .in("mabaitap", maBTs);
+
+            const submittedIDs = new Set((submittedBT ?? []).map(s => s.mabaitap));
+            unsubmittedCount = allBT.filter(b => !submittedIDs.has(b.mabaitap)).length;
+          }
+        }
+
         setData({
           monHocCount: svMonHoc?.length ?? 0,
           diemTBHK,
           soBuoiVang: diemDanh?.length ?? 0,
-          soBaiTapConHan: baiTap?.length ?? 0,
+          soBaiTapConHan: unsubmittedCount,
           lichHocHomNay: (lichHoc ?? []).map((lh: any) => ({
             tenmon: lh.phancong?.monhoc?.tenmon ?? "—",
             phonghoc: lh.maphong ?? "—",
