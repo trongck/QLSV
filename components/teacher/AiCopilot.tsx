@@ -2,7 +2,7 @@
 
 import styles from "@/app/(dashboard)/teacher/dashboard/teacher-dashboard.module.css";
 
-export function AiCopilot() {
+export function ChatbotAI() {
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>

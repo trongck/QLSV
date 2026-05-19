@@ -59,116 +59,136 @@ export const giangVienService = {
   async getDashboardStats(magv: string) {
     const cookieStore = await cookies();
     const supabase = createClient(cookieStore);
-    const todayStr = new Date().toISOString().slice(0, 10); // YYYY-MM-DD
 
-    // 1. Lấy danh sách phân công đang hiệu lực của giảng viên
+    // 1. Lấy danh sách phân công đang hiệu lực
     const { data: phancongList } = await supabase
       .from("phancong")
-      .select("maphancong, malop, mamon, monhoc(tenmon), lop(tenlop)")
+      .select(`
+        maphancong,
+        monhoc ( tenmon ),
+        lop ( tenlop )
+      `)
       .eq("magv", magv)
       .eq("danghieuluc", true);
 
     const maphancongIds = (phancongList ?? []).map((p: any) => p.maphancong);
-    const soLop = maphancongIds.length;
+    const totalClasses = maphancongIds.length;
 
-    // 2. Đếm tổng sinh viên trong các lớp đang dạy
-    let soSinhVien = 0;
-    if (maphancongIds.length > 0) {
-      const { count } = await supabase
+    let classSummaries: any[] = [];
+    let totalStudents = 0;
+
+    if (totalClasses > 0) {
+      // 2. Sĩ số thực tế từng lớp (Danghoc)
+      const { data: svCounts } = await supabase
         .from("sinhvienmonhoc")
-        .select("masv", { count: "exact", head: true })
+        .select("maphancong")
         .in("maphancong", maphancongIds)
         .eq("trangthai", "Danghoc");
-      soSinhVien = count ?? 0;
-    }
 
-    // 3. Bài tập đã tạo và đã chấm điểm
-    let soBaiTap = 0;
-    let soBaiDaCham = 0;
-    if (maphancongIds.length > 0) {
-      const { data: baitapList } = await supabase
-        .from("baitap")
-        .select("mabaitap")
+      const sisoMap: Record<number, number> = {};
+      (svCounts ?? []).forEach((row: any) => {
+        sisoMap[row.maphancong] = (sisoMap[row.maphancong] ?? 0) + 1;
+      });
+
+      // Tính tổng sĩ số
+      totalStudents = (svCounts ?? []).length;
+
+      // 3. Lấy diemtb từ vthongke_phancong
+      const { data: tkList } = await supabase
+        .from("vthongke_phancong")
+        .select("maphancong, diemtb")
         .in("maphancong", maphancongIds);
 
-      soBaiTap = baitapList?.length ?? 0;
-      const mabaitapIds = (baitapList ?? []).map((b: any) => b.mabaitap);
+      const diemtbMap: Record<number, number | null> = {};
+      (tkList ?? []).forEach((row: any) => {
+        diemtbMap[row.maphancong] = row.diemtb;
+      });
 
-      if (mabaitapIds.length > 0) {
-        const { count } = await supabase
-          .from("nopbai")
-          .select("manopbai", { count: "exact", head: true })
-          .in("mabaitap", mabaitapIds)
-          .not("diem", "is", null);
-        soBaiDaCham = count ?? 0;
-      }
-    }
+      // 4. Tính tỉ lệ chuyên cần cho từng lớp
+      const { data: lichhocList } = await supabase
+        .from("lichhoc")
+        .select("malichhoc, maphancong")
+        .in("maphancong", maphancongIds);
 
-    // 4. Tỉ lệ điểm danh hôm nay — tính từ các buổi học hôm nay
-    let tiLeDiemDanh: number | null = null;
-    const { data: lichhocList } = await supabase
-      .from("lichhoc")
-      .select("malichhoc")
-      .in("maphancong", maphancongIds.length > 0 ? maphancongIds : [-1]);
+      const malichhocIds = (lichhocList ?? []).map((l: any) => l.malichhoc);
+      const buoiToLichMap: Record<number, number> = {};
+      const tileChuyenCanMap: Record<number, number | null> = {};
 
-    const malichhocIds = (lichhocList ?? []).map((l: any) => l.malichhoc);
-    if (malichhocIds.length > 0) {
-      const { data: buoiHocHomNay } = await supabase
-        .from("buoihoc")
-        .select("mabuoihoc")
-        .in("malichhoc", malichhocIds)
-        .eq("ngayhoc", todayStr);
+      if (malichhocIds.length > 0) {
+        const { data: buoihocList } = await supabase
+          .from("buoihoc")
+          .select("mabuoihoc, malichhoc")
+          .in("malichhoc", malichhocIds);
 
-      const mabuoihocIds = (buoiHocHomNay ?? []).map((b: any) => b.mabuoihoc);
-      if (mabuoihocIds.length > 0) {
-        const { count: tongDiemdanh } = await supabase
-          .from("diemdanh")
-          .select("madiemdanh", { count: "exact", head: true })
-          .in("mabuoihoc", mabuoihocIds);
-        const { count: coMat } = await supabase
-          .from("diemdanh")
-          .select("madiemdanh", { count: "exact", head: true })
-          .in("mabuoihoc", mabuoihocIds)
-          .eq("trangthai", "CoMat");
-        if (tongDiemdanh && tongDiemdanh > 0) {
-          tiLeDiemDanh = Math.round(((coMat ?? 0) / tongDiemdanh) * 100);
+        const mabuoihocIds = (buoihocList ?? []).map((b: any) => {
+          buoiToLichMap[b.mabuoihoc] = b.malichhoc;
+          return b.mabuoihoc;
+        });
+
+        if (mabuoihocIds.length > 0) {
+          const { data: diemdanhList } = await supabase
+            .from("diemdanh")
+            .select("mabuoihoc, trangthai")
+            .in("mabuoihoc", mabuoihocIds);
+
+          const statsByPc: Record<number, { total: number; present: number }> = {};
+          maphancongIds.forEach((id: number) => {
+            statsByPc[id] = { total: 0, present: 0 };
+          });
+
+          (diemdanhList ?? []).forEach((dd: any) => {
+            const malichhoc = buoiToLichMap[dd.mabuoihoc];
+            const maphancong = (lichhocList ?? []).find((l: any) => l.malichhoc === malichhoc)?.maphancong;
+            if (maphancong) {
+              statsByPc[maphancong].total += 1;
+              if (["Comat", "Dimuon"].includes(dd.trangthai)) {
+                statsByPc[maphancong].present += 1;
+              }
+            }
+          });
+
+          maphancongIds.forEach((id: number) => {
+            const stats = statsByPc[id];
+            tileChuyenCanMap[id] = stats.total > 0 ? (stats.present / stats.total) : null;
+          });
         }
       }
+
+      classSummaries = (phancongList ?? []).map((pc: any) => ({
+        maphancong: pc.maphancong,
+        tenmon: pc.monhoc?.tenmon ?? "—",
+        tenlop: pc.lop?.tenlop ?? "—",
+        siso: sisoMap[pc.maphancong] ?? 0,
+        diemtb: diemtbMap[pc.maphancong] ?? null,
+        tilechuyencan: tileChuyenCanMap[pc.maphancong] ?? null
+      }));
     }
 
-    // 5. Thông báo mới nhất (gửi đến giảng viên này hoặc broadcast)
+    // 5. Bài tập còn hạn
+    let pendingTasks = 0;
+    if (maphancongIds.length > 0) {
+      const { count } = await supabase
+        .from("baitap")
+        .select("mabaitap", { count: "exact", head: true })
+        .in("maphancong", maphancongIds)
+        .gt("hannop", new Date().toISOString());
+      pendingTasks = count ?? 0;
+    }
+
+    // 6. Thông báo đã gửi
     const { data: thongBaoList } = await supabase
       .from("thongbao")
-      .select("mathongbao, tieude, loai, ngaytao, doituong")
-      .or(`doituong.eq.TatCa,doituong.eq.GiangVien`)
+      .select("tieude, ngaytao")
+      .eq("magvtao", magv)
       .order("ngaytao", { ascending: false })
       .limit(5);
 
-    // 6. Lịch dạy hôm nay
-    const thuHomNay = new Date().getDay(); // 0=CN, 1=T2...
-    const thuDB = thuHomNay === 0 ? 8 : thuHomNay + 1; // DB: 2=T2,...,8=CN
-    let lichHomNay: any[] = [];
-    if (maphancongIds.length > 0) {
-      const { data: lichList } = await supabase
-        .from("lichhoc")
-        .select(`
-          malichhoc, tietbatdau, tietketthuc, phonghoc,
-          phancong!inner(maphancong, monhoc(tenmon), lop(tenlop))
-        `)
-        .in("maphancong", maphancongIds)
-        .eq("thutrongtuan", thuDB)
-        .order("tietbatdau");
-      lichHomNay = lichList ?? [];
-    }
-
     return {
-      soLop,
-      soSinhVien,
-      soBaiTap,
-      soBaiDaCham,
-      tiLeDiemDanh,
-      thongBaoMoi: thongBaoList ?? [],
-      lichHomNay,
+      totalClasses,
+      totalStudents,
+      pendingTasks,
+      classSummaries,
+      thongBao: thongBaoList ?? []
     };
   },
 
@@ -214,7 +234,7 @@ export const giangVienService = {
     if (maphancongIds.length > 0) {
       const { data: lichList } = await supabase
         .from("lichhoc")
-        .select("maphancong, thutrongtuan, tietbatdau, tietketthuc, phonghoc")
+        .select("maphancong, thutrongtuan, tietbatdau, tietketthuc, phonghoc:maphong")
         .in("maphancong", maphancongIds);
       for (const l of lichList ?? []) {
         if (!lichMap[l.maphancong]) lichMap[l.maphancong] = [];
@@ -241,7 +261,7 @@ export const giangVienService = {
       const { data: lichAll } = await supabase
         .from("lichhoc")
         .select(`
-          malichhoc, thutrongtuan, tietbatdau, tietketthuc, phonghoc,
+          malichhoc, thutrongtuan, tietbatdau, tietketthuc, phonghoc:maphong,
           phancong!inner (
             maphancong,
             monhoc ( tenmon ),
@@ -1100,6 +1120,224 @@ export const giangVienService = {
       .eq("masv", masv);
 
     if (error) throw error;
+    return true;
+  },
+
+  /**
+   * Lấy danh sách bài tập của các lớp học phần giảng viên phụ trách
+   */
+  async getAssignments(magv: string) {
+    const cookieStore = await cookies();
+    const supabase = createClient(cookieStore);
+
+    // 1. Lấy tất cả phân công của giảng viên
+    const { data: phancongs, error: pcError } = await supabase
+      .from("phancong")
+      .select(`
+        maphancong,
+        monhoc(tenmon),
+        lop(tenlop)
+      `)
+      .eq("magv", magv)
+      .eq("danghieuluc", true);
+
+    if (pcError) throw pcError;
+    if (!phancongs || phancongs.length === 0) return [];
+
+    const maphancongIds = phancongs.map(pc => pc.maphancong);
+
+    // 2. Lấy danh sách bài tập của các phân công này
+    const { data: assignments, error: btError } = await supabase
+      .from("baitap")
+      .select(`
+        mabaitap,
+        maphancong,
+        tieude,
+        mota,
+        filedinh,
+        hannop,
+        diemtoida,
+        loai,
+        ngaytao,
+        ngaycapnhat
+      `)
+      .in("maphancong", maphancongIds)
+      .order("ngaytao", { ascending: false });
+
+    if (btError) throw btError;
+    if (!assignments || assignments.length === 0) return [];
+
+    // 3. Lấy số lượng sinh viên đăng ký của từng phân công (sĩ số)
+    const { data: svCounts, error: svError } = await supabase
+      .from("sinhvienmonhoc")
+      .select("maphancong")
+      .in("maphancong", maphancongIds)
+      .eq("trangthai", "Danghoc");
+
+    const enrolledMap: Record<number, number> = {};
+    (svCounts ?? []).forEach(row => {
+      enrolledMap[row.maphancong] = (enrolledMap[row.maphancong] ?? 0) + 1;
+    });
+
+    // 4. Lấy số lượng bài đã nộp của từng bài tập
+    const mabaitapIds = assignments.map(a => a.mabaitap);
+    const { data: submissionCounts, error: subError } = await supabase
+      .from("nopbai")
+      .select("mabaitap")
+      .in("mabaitap", mabaitapIds);
+
+    const submissionMap: Record<number, number> = {};
+    (submissionCounts ?? []).forEach(row => {
+      submissionMap[row.mabaitap] = (submissionMap[row.mabaitap] ?? 0) + 1;
+    });
+
+    // 5. Gộp thông tin và trả về
+    const pcMap = new Map(phancongs.map(pc => [pc.maphancong, pc]));
+    return assignments.map(a => {
+      const pc = pcMap.get(a.maphancong);
+      return {
+        mabaitap: a.mabaitap,
+        maphancong: a.maphancong,
+        tieude: a.tieude,
+        mota: a.mota,
+        filedinh: a.filedinh,
+        hannop: a.hannop,
+        diemtoida: Number(a.diemtoida),
+        loai: a.loai,
+        ngaytao: a.ngaytao,
+        ngaycapnhat: a.ngaycapnhat,
+        tenmon: (pc?.monhoc as any)?.tenmon ?? "—",
+        tenlop: (pc?.lop as any)?.tenlop ?? "—",
+        done: submissionMap[a.mabaitap] ?? 0,
+        total: enrolledMap[a.maphancong] ?? 0
+      };
+    });
+  },
+
+  /**
+   * Tạo bài tập mới
+   */
+  async createAssignment(
+    magv: string,
+    data: {
+      maphancong: number;
+      tieude: string;
+      mota?: string | null;
+      filedinh?: string | null;
+      hannop: string;
+      diemtoida?: number;
+      loai?: string;
+    }
+  ) {
+    const cookieStore = await cookies();
+    const supabase = createClient(cookieStore);
+
+    // Xác thực giảng viên có quyền trên maphancong này
+    const { data: pc, error: pcErr } = await supabase
+      .from("phancong")
+      .select("maphancong")
+      .eq("maphancong", data.maphancong)
+      .eq("magv", magv)
+      .eq("danghieuluc", true)
+      .maybeSingle();
+
+    if (pcErr || !pc) {
+      throw new Error("Bạn không có quyền giảng dạy lớp học phần này.");
+    }
+
+    const { data: inserted, error: insertErr } = await supabase
+      .from("baitap")
+      .insert({
+        maphancong: data.maphancong,
+        tieude: data.tieude,
+        mota: data.mota ?? null,
+        filedinh: data.filedinh ?? null,
+        hannop: data.hannop,
+        diemtoida: data.diemtoida ?? 10.0,
+        loai: data.loai ?? "Baitap"
+      })
+      .select()
+      .single();
+
+    if (insertErr) throw insertErr;
+    return inserted;
+  },
+
+  /**
+   * Cập nhật thông tin bài tập
+   */
+  async updateAssignment(
+    mabaitap: number,
+    magv: string,
+    data: {
+      tieude?: string;
+      mota?: string | null;
+      filedinh?: string | null;
+      hannop?: string;
+      diemtoida?: number;
+      loai?: string;
+    }
+  ) {
+    const cookieStore = await cookies();
+    const supabase = createClient(cookieStore);
+
+    // Lấy bài tập và xác thực giảng viên dạy lớp đó
+    const { data: existing, error: findErr } = await supabase
+      .from("baitap")
+      .select("mabaitap, maphancong, phancong(magv)")
+      .eq("mabaitap", mabaitap)
+      .single();
+
+    if (findErr || !existing) throw new Error("Bài tập không tồn tại.");
+    if ((existing.phancong as any)?.magv !== magv) {
+      throw new Error("Bạn không có quyền sửa bài tập của lớp học phần này.");
+    }
+
+    const { data: updated, error: updateErr } = await supabase
+      .from("baitap")
+      .update({
+        ...data,
+        ngaycapnhat: new Date().toISOString()
+      })
+      .eq("mabaitap", mabaitap)
+      .select()
+      .single();
+
+    if (updateErr) throw updateErr;
+    return updated;
+  },
+
+  /**
+   * Xóa bài tập
+   */
+  async deleteAssignment(mabaitap: number, magv: string) {
+    const cookieStore = await cookies();
+    const supabase = createClient(cookieStore);
+
+    // Lấy bài tập và xác thực giảng viên dạy lớp đó
+    const { data: existing, error: findErr } = await supabase
+      .from("baitap")
+      .select("mabaitap, maphancong, phancong(magv)")
+      .eq("mabaitap", mabaitap)
+      .single();
+
+    if (findErr || !existing) throw new Error("Bài tập không tồn tại.");
+    if ((existing.phancong as any)?.magv !== magv) {
+      throw new Error("Bạn không có quyền xóa bài tập của lớp học phần này.");
+    }
+
+    // Xóa bài nộp liên quan trước
+    await supabase
+      .from("nopbai")
+      .delete()
+      .eq("mabaitap", mabaitap);
+
+    const { error: deleteErr } = await supabase
+      .from("baitap")
+      .delete()
+      .eq("mabaitap", mabaitap);
+
+    if (deleteErr) throw deleteErr;
     return true;
   }
 };
