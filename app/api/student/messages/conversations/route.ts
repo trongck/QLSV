@@ -149,21 +149,26 @@ export async function POST(request: Request) {
     const otherMataikhoanCheck = otherMataikhoan;
 
     if (otherMataikhoanCheck) {
-      const { data: sharedConvs } = await supabase
+      const { data: sharedConvs, error: sharedConvsErr } = await supabase
         .from("thanhvientrochuyen")
         .select("macuoctrochuyen")
         .eq("mataikhoan", otherMataikhoanCheck)
         .in("macuoctrochuyen", myConvIds);
+        
+      if (sharedConvsErr) console.error("Lỗi tìm sharedConvs:", sharedConvsErr);
 
       if (sharedConvs && sharedConvs.length > 0) {
-        const { data: existingConv } = await supabase
+        const { data: existingConvs, error: existingConvErr } = await supabase
           .from("cuoctrochuyen")
           .select("macuoctrochuyen, tieude, loai, ngaytao, nguoidaxoa")
           .in("macuoctrochuyen", sharedConvs.map((r) => r.macuoctrochuyen))
           .eq("loai", "CaNhan")
-          .single();
+          .limit(1);
+          
+        if (existingConvErr) console.error("Lỗi tìm existingConvs:", existingConvErr);
 
-        if (existingConv) {
+        if (existingConvs && existingConvs.length > 0) {
+          const existingConv = existingConvs[0];
           const currentArr = existingConv.nguoidaxoa || [];
           if (currentArr.includes(payload.mataikhoan)) {
             const newArr = currentArr.filter((id: string) => id !== payload.mataikhoan);
@@ -175,14 +180,19 @@ export async function POST(request: Request) {
     }
   }
 
+  // Format YYYY-MM-DD HH:mm:ss cho múi giờ Việt Nam
+  const vnDate = new Date(new Date().getTime() + 7 * 60 * 60 * 1000);
+  const vnNow = vnDate.toISOString().replace("T", " ").substring(0, 19);
+
   // Tạo cuộc trò chuyện mới
   const { data: newConv, error: convErr } = await supabase
     .from("cuoctrochuyen")
-    .insert({ loai: "CaNhan", tieude: null })
+    .insert({ loai: "CaNhan", tieude: null, ngaytao: vnNow })
     .select("macuoctrochuyen, tieude, loai, ngaytao")
     .single();
 
   if (convErr || !newConv) {
+    console.error("Lỗi tạo cuộc trò chuyện:", convErr);
     return NextResponse.json({ error: convErr?.message ?? "Không thể tạo cuộc trò chuyện." }, { status: 500 });
   }
 
@@ -193,6 +203,7 @@ export async function POST(request: Request) {
 
   const { error: memberErr } = await supabase.from("thanhvientrochuyen").insert(membersToInsert);
   if (memberErr) {
+    console.error("Lỗi insert thành viên:", memberErr);
     return NextResponse.json({ error: memberErr.message }, { status: 500 });
   }
 

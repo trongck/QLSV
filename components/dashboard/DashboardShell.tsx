@@ -6,9 +6,10 @@ import { DashboardSidebar, DashboardTopbar } from "./DashboardSidebar";
 interface DashboardShellProps {
   children: React.ReactNode;
   pageTitle: string;
+  fullWidth?: boolean;
 }
 
-export function DashboardShell({ children, pageTitle }: DashboardShellProps) {
+export function DashboardShell({ children, pageTitle, fullWidth }: DashboardShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   // Close sidebar on route change (any click outside)
@@ -53,7 +54,7 @@ export function DashboardShell({ children, pageTitle }: DashboardShellProps) {
         </div>
 
         {/* Page content */}
-        <div className="flex-1 p-[28px_32px] max-w-[1200px] w-full m-[0_auto] max-lg:p-[20px_20px_32px] max-sm:p-[16px_16px_40px]">
+        <div className={`flex-1 w-full ${fullWidth ? 'p-0' : 'p-[28px_32px] max-w-[1200px] m-[0_auto] max-lg:p-[20px_20px_32px] max-sm:p-[16px_16px_40px]'}`}>
           {children}
         </div>
       </div>

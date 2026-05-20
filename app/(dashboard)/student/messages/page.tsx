@@ -1,50 +1,159 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/hooks/auth/useAuth";
 import { useMessages } from "@/hooks/sinhvien/useMessages"; 
+import { apiFetch, tokenStorage } from "@/services/service/auth/auth.service";
 import {
   Search,
   Edit3,
-  Phone,
-  Video,
-  Info,
   Paperclip,
-  Send,
-  Image as ImageIcon,
+  Trash2,
   FileText,
-  MoreHorizontal,
+  Send,
+  X,
 } from "lucide-react";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
 
 export default function MessagesPage() {
   // 1. Gọi các state và hàm từ Hook
   const { user, loading: authLoading } = useAuth();
-  const CURRENT_USER_ID = user?.maSinhVien || "";
+  const CURRENT_USER_ID = user?.mataikhoan || "";
 
   // 1. Gọi các state và hàm từ Hook
-  const { chatList, messages, isLoading, fetchChatRooms, fetchMessages, sendMessage, selectedChatId, setSelectedChatId, inputText, setInputText } = useMessages(CURRENT_USER_ID);
+  const { 
+    chatList, messages, isLoading, 
+    fetchChatRooms, pollChatRooms, 
+    fetchMessages, pollMessages, 
+    sendMessage, deleteChatRoom, selectedChatId, setSelectedChatId, 
+    inputText, setInputText 
+  } = useMessages(CURRENT_USER_ID);
 
-  // 3. Tải danh sách phòng khi vừa vào trang
+  const [searchTerm, setSearchTerm] = useState("");
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [pendingFile, setPendingFile] = useState<{file: File; url: string} | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Debounced search for users
+  useEffect(() => {
+    if (searchTerm.trim().length === 0) {
+      setSearchResults([]);
+      return;
+    }
+    
+    const delayDebounceFn = setTimeout(async () => {
+      setIsSearching(true);
+      try {
+        const res = await apiFetch(`/api/student/messages/users?q=${encodeURIComponent(searchTerm)}`);
+        const json = await res.json();
+        if (json.data) {
+          setSearchResults(json.data);
+        }
+      } catch (err) {
+        console.error("Search error:", err);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 500);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchTerm]);
+
+  const handleCreateChat = async (otherMataikhoan: string) => {
+    try {
+      const res = await apiFetch("/api/student/messages/conversations", {
+        method: "POST",
+        body: JSON.stringify({ otherMataikhoan })
+      });
+      const json = await res.json();
+      if (json.data) {
+        // Refresh chat list
+        await fetchChatRooms();
+        setSelectedChatId(json.data.macuoctrochuyen);
+        setSearchTerm("");
+        setSearchResults([]);
+      }
+    } catch (err) {
+      console.error("Failed to create chat:", err);
+    }
+  };
+
+  // 3. Tải danh sách phòng khi vừa vào trang và thiết lập Polling
   useEffect(() => {
     fetchChatRooms();
-  }, [fetchChatRooms]);
+    
+    // Polling danh sách chat mỗi 5 giây
+    const interval = setInterval(() => {
+      pollChatRooms();
+    }, 5000);
+    
+    return () => clearInterval(interval);
+  }, [fetchChatRooms, pollChatRooms]);
 
   // 4. Tải tin nhắn mới mỗi khi người dùng click chọn phòng chat khác
   useEffect(() => {
     if (selectedChatId) {
       fetchMessages(selectedChatId);
+      
+      // Polling tin nhắn mới mỗi 3 giây
+      const interval = setInterval(() => {
+        pollMessages(selectedChatId);
+      }, 3000);
+      
+      return () => clearInterval(interval);
     } else if (chatList.length > 0) {
       // Nếu chưa chọn ai, tự động chọn người đầu tiên trong danh sách
       setSelectedChatId(chatList[0].id);
     }
-  }, [selectedChatId, fetchMessages, chatList]);
+  }, [selectedChatId, fetchMessages, pollMessages, chatList]);
 
   // 5. Hàm xử lý khi bấm nút Gửi
-  const handleSend = () => {
-    if (!inputText.trim() || !selectedChatId) return;
-    sendMessage(selectedChatId, CURRENT_USER_ID, inputText);
-    setInputText(""); // Gửi xong thì xóa rỗng ô nhập
+  const handleSend = async () => {
+    if ((!inputText.trim() && !pendingFile) || !selectedChatId) return;
+    setUploadError(null);
+    
+    if (pendingFile) {
+      setIsUploading(true);
+      try {
+        const token = tokenStorage.getAccessToken() || '';
+        const formData = new FormData();
+        formData.append('file', pendingFile.file);
+        const res = await fetch('/api/sinhvien/upload', {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}` },
+          body: formData,
+        });
+        const json = await res.json();
+        if (json.success) {
+          const finalUrl = `${json.url}?name=${encodeURIComponent(json.fileName)}`;
+          await sendMessage(selectedChatId, CURRENT_USER_ID, inputText || '', finalUrl);
+          setPendingFile(null);
+          setInputText('');
+        } else {
+          setUploadError(json.message || 'Upload thất bại. Kiểm tra bucket "attachments" trong Supabase Storage.');
+        }
+      } catch (err: any) {
+        console.error('Upload failed:', err);
+        setUploadError('Lỗi kết nối khi upload file.');
+      } finally {
+        setIsUploading(false);
+      }
+    } else {
+      sendMessage(selectedChatId, CURRENT_USER_ID, inputText);
+      setInputText('');
+    }
+  };
+
+  // Xử lý chọn file
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const previewUrl = URL.createObjectURL(file);
+    setPendingFile({ file, url: previewUrl });
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   // 6. Lấy thông tin của người đang được chọn để hiển thị trên Header
@@ -58,161 +167,291 @@ export default function MessagesPage() {
   // PHẦN RETURN GIAO DIỆN CỦA BẠN (Đã được nối với dữ liệu thật)
   // =======================================================================
   return (
-    <DashboardShell pageTitle="Tin nhắn">
-        <div className="flex h-full bg-[#FDF8F6] overflow-hidden">
-        {/* --- CỘT 1: DANH SÁCH CHAT --- */}
-        <div className="w-[350px] flex flex-col bg-white border-r border-gray-100">
-            <div className="p-4 space-y-4">
-            <div className="flex justify-between items-center">
-                <h1 className="text-xl font-bold text-gray-800">Tin nhắn</h1>
-                <button className="p-2 bg-[#E57373] text-white rounded-lg hover:bg-[#d32f2f] transition">
-                <Edit3 size={18} />
-                </button>
-            </div>
-            <div className="relative">
-                <Search className="absolute left-3 top-2.5 text-gray-400" size={16} />
-                <input
-                type="text"
-                placeholder="Tìm kiếm"
-                className="w-full pl-10 pr-4 py-2 bg-gray-50 rounded-md border-none text-sm"
-                />
-            </div>
-            </div>
-
-            <div className="flex-1 overflow-y-auto">
-            {chatList.map((chat) => (
-                <div
-                key={chat.id}
-                onClick={() => setSelectedChatId(chat.id)}
-                className={`p-4 flex gap-3 items-center cursor-pointer hover:bg-gray-50 transition ${selectedChatId === chat.id ? "bg-red-50 border-r-4 border-red-500" : ""
-                    }`}
-                >
-                <div className="w-12 h-12 rounded-full bg-[#FFDAB9] flex items-center justify-center text-[#E57373] font-bold flex-shrink-0">
-                    {chat.avatar}
-                </div>
-                <div className="flex-1 min-w-0">
-                    <div className="flex justify-between items-center mb-1">
-                    <h3 className="font-bold text-sm text-gray-800 truncate">{chat.name}</h3>
-                    <span className="text-[10px] text-gray-400">{chat.time}</span>
-                    </div>
-                    <div className="flex justify-between items-center text-xs">
-                    <p className="text-gray-500 truncate">{chat.lastMsg}</p>
-                    {chat.unread > 0 && (
-                        <span className="bg-red-500 text-white rounded-full px-1.5 py-0.5 ml-2">
-                        {chat.unread}
-                        </span>
-                    )}
-                    </div>
-                </div>
-                </div>
-            ))}
-            </div>
+    <DashboardShell pageTitle="Tin nhắn" fullWidth={true}>
+      <div style={{ padding: "24px 32px", height: "100vh", display: "flex", flexDirection: "column" }}>
+        <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column" }}>
+        
+        {/* Tiêu đề trang */}
+        <div style={{ marginBottom: "20px" }}>
+          <h2 style={{ fontSize: "20px", fontWeight: "700", color: "#6B4F43", margin: 0 }}>Hộp thư &amp; Tin nhắn trao đổi</h2>
+          <p style={{ fontSize: "13px", color: "#8B6F5F", margin: "4px 0 0" }}>Trao đổi trực tiếp với sinh viên và đồng nghiệp qua kênh tin nhắn nội bộ</p>
         </div>
 
-        {/* --- CỘT 2: NỘI DUNG CHAT --- */}
-        <div className="flex-1 flex flex-col min-w-0">
-            <div className="p-4 bg-white border-b border-gray-100 flex justify-between items-center shadow-sm">
-            <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-[#FFDAB9] flex items-center justify-center text-[#E57373] font-bold">
-                {selectedChatInfo.avatar}
-                </div>
-                <div>
-                <h2 className="font-bold text-sm text-gray-800">{selectedChatInfo.name}</h2>
-                <p className="text-[10px] text-green-500 font-medium">{selectedChatInfo.role}</p>
-                </div>
+        {/* 3-Column Message System Layout */}
+        <section className="card" style={{ display: "flex", padding: "0", flex: 1, overflow: "hidden", border: "1px solid #EAE0DA", borderRadius: "12px", background: "#FFF", boxShadow: "0 2px 10px rgba(0,0,0,0.02)" }}>
+          
+          {/* Left: Chat thread roster */}
+          <div style={{ width: "280px", borderRight: "1px solid #EAE0DA", display: "flex", flexDirection: "column", background: "#FAFAFA" }}>
+            <div style={{ padding: "15px", borderBottom: "1px solid #EAE0DA", background: "#FFF" }}>
+              <div style={{ position: "relative" }}>
+                <Search size={15} style={{ position: "absolute", left: "14px", top: "11px", color: "#A0A0A0" }} />
+                <input 
+                  id="chat-search-input"
+                  type="text" 
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="Tìm người hoặc cuộc trò chuyện..." 
+                  style={{ width: "100%", padding: "10px 12px 10px 36px", borderRadius: "20px", border: "1px solid #EAE0DA", outline: "none", fontSize: "12.5px", background: "#FFF", color: "#333" }}
+                />
+              </div>
             </div>
-            <div className="flex gap-4 text-gray-400">
-                <Phone size={18} className="cursor-pointer hover:text-gray-600" />
-                <Video size={18} className="cursor-pointer hover:text-gray-600" />
-                <Info size={18} className="cursor-pointer hover:text-gray-600" />
-            </div>
-            </div>
-
-            <div className="flex-1 overflow-y-auto p-6 space-y-6">
-            {messages.map((msg, index) => (
-                <div
-                key={index}
-                className={`flex flex-col ${msg.isMine ? "items-end" : "items-start"} gap-1`}
-                >
-                {msg.type === "file" ? (
-                    <div className="bg-white p-3 rounded-2xl border border-gray-100 flex items-center gap-3 shadow-sm">
-                    <div className="bg-red-500 p-2 rounded text-white font-bold text-[10px]">
-                        PDF
-                    </div>
-                    <div>
-                        <p className="text-xs font-medium text-gray-800">{msg.fileName}</p>
-                        <p className="text-[10px] text-gray-400">{msg.fileSize}</p>
-                    </div>
-                    </div>
-                ) : (
-                    <div
-                    className={`p-3 rounded-2xl text-sm max-w-[70%] shadow-sm ${msg.isMine
-                        ? "bg-[#E57373] text-white rounded-tr-none"
-                        : "bg-white text-gray-700 rounded-tl-none border border-gray-50"
-                        }`}
+            <div style={{ flex: 1, overflowY: "auto", display: "flex", flexDirection: "column", position: "relative" }}>
+              {/* If search results exist, show them */}
+              {searchTerm.length > 0 && searchResults.length > 0 && (
+                <div style={{ background: "#FFF", zIndex: 10, borderBottom: "1px solid #EAE0DA" }}>
+                  <div style={{ padding: "8px 15px", fontSize: "11px", fontWeight: "bold", color: "#8B6F5F", background: "#FAFAFA" }}>
+                    TÌM THẤY TRONG HỆ THỐNG
+                  </div>
+                  {searchResults.map((userItem) => (
+                    <div 
+                      key={userItem.id}
+                      onClick={() => handleCreateChat(userItem.id)}
+                      style={{ 
+                        display: "flex", alignItems: "center", gap: "12px", padding: "15px", 
+                        borderBottom: "1px solid #EAE0DA", cursor: "pointer"
+                      }}
                     >
-                    {msg.content}
+                      <div style={{ width: "40px", height: "40px", borderRadius: "50%", background: "#E8ECEF", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "18px", color: "#555" }}>
+                        👤
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <h4 style={{ margin: 0, fontSize: "13.5px", color: "#333", fontWeight: "600" }}>{userItem.hoten}</h4>
+                        <p style={{ margin: 0, fontSize: "11px", color: "#27AE60" }}>{userItem.role === "SinhVien" ? `Sinh viên` : `Giảng viên`}</p>
+                      </div>
                     </div>
-                )}
-                <span className="text-[10px] text-gray-400 px-1">{msg.time}</span>
+                  ))}
+                  <div style={{ padding: "8px 15px", fontSize: "11px", fontWeight: "bold", color: "#8B6F5F", background: "#FAFAFA" }}>
+                    CUỘC TRÒ CHUYỆN HIỆN TẠI
+                  </div>
                 </div>
-            ))}
-            </div>
+              )}
 
-            <div className="p-4 bg-white border-t border-gray-100">
-            <div className="flex items-center gap-2 bg-gray-50 p-2 rounded-xl">
-                <button className="p-2 text-gray-400 hover:text-gray-600">
-                <Paperclip size={20} />
-                </button>
-                <input
-                type="text"
-                value={inputText}
-                onChange={(e) => setInputText(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleSend()} // Cho phép nhấn Enter để gửi
-                placeholder="Nhập tin nhắn..."
-                className="flex-1 bg-transparent border-none focus:ring-0 text-sm py-2 outline-none"
-                />
-                <button onClick={handleSend} className="p-2 bg-[#E57373] text-white rounded-lg hover:bg-[#d32f2f] transition">
-                <Send size={18} />
-                </button>
-            </div>
-            </div>
-        </div>
-
-        {/* --- CỘT 3: THÔNG TIN HỘI THOẠI --- */}
-        <div className="w-[320px] bg-white border-l border-gray-100 p-6 flex flex-col items-center">
-            <h3 className="text-sm font-bold text-gray-800 mb-6">Thông tin hội thoại</h3>
-            <div className="w-20 h-20 rounded-full bg-[#FFDAB9] flex items-center justify-center text-[#E57373] font-bold text-2xl shadow-inner mb-3">
-            {selectedChatInfo.avatar}
-            </div>
-            <h4 className="font-bold text-sm text-gray-800">{selectedChatInfo.name}</h4>
-            <p className="text-[10px] text-gray-400 uppercase tracking-widest mb-4">
-            {selectedChatInfo.role}
-            </p>
-
-            <button className="w-full py-2 border border-gray-100 rounded-lg text-xs font-semibold text-gray-600 mb-8 hover:bg-gray-50 transition">
-            Xem trang cá nhân
-            </button>
-
-            <div className="w-full space-y-4 pt-4 border-t border-gray-50">
-            <div className="flex justify-between items-center">
-                <span className="text-xs font-bold text-gray-800">Ảnh, tài liệu, link</span>
-                <span className="text-[10px] text-red-500 font-bold cursor-pointer">Xem tất cả</span>
-            </div>
-            <div className="grid grid-cols-3 gap-2">
-                <div className="aspect-square bg-gray-50 rounded-lg flex items-center justify-center">
-                <ImageIcon size={20} className="text-gray-200" />
+              {chatList.filter(chat => chat.name.toLowerCase().includes(searchTerm.toLowerCase())).map((chat) => (
+                <div 
+                  key={chat.id} 
+                  onClick={() => setSelectedChatId(chat.id)}
+                  style={{ 
+                    display: "flex", alignItems: "center", gap: "12px", padding: "15px", 
+                    borderBottom: "1px solid #EAE0DA", cursor: "pointer",
+                    background: selectedChatId === chat.id ? "#FFF" : "transparent",
+                    transition: "background 0.2s ease"
+                  }}
+                >
+                  <div style={{ width: "40px", height: "40px", borderRadius: "50%", background: "#E8ECEF", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "18px", color: "#555", flexShrink: 0 }}>
+                    {chat.avatar}
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "4px" }}>
+                      <h4 style={{ margin: 0, fontSize: "13.5px", color: "#333", fontWeight: chat.unread ? "bold" : "600", textOverflow: "ellipsis", overflow: "hidden", whiteSpace: "nowrap" }}>{chat.name}</h4>
+                      <span style={{ fontSize: "11px", color: "#999", flexShrink: 0 }}>{chat.time}</span>
+                    </div>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <p style={{ margin: 0, fontSize: "12px", color: chat.unread ? "#555" : "#888", textOverflow: "ellipsis", overflow: "hidden", whiteSpace: "nowrap", fontWeight: chat.unread ? "600" : "normal" }}>
+                        {chat.lastMsg}
+                      </p>
+                      {chat.unread > 0 && (
+                        <span style={{ background: "#F2A8A8", color: "white", borderRadius: "10px", padding: "2px 6px", fontSize: "10px", fontWeight: "bold", flexShrink: 0, marginLeft: "8px" }}>
+                          {chat.unread}
+                        </span>
+                      )}
+                    </div>
+                  </div>
                 </div>
-                <div className="aspect-square bg-gray-50 rounded-lg flex items-center justify-center">
-                <FileText size={20} className="text-red-200" />
-                </div>
-                <div className="aspect-square bg-gray-50 rounded-lg flex items-center justify-center text-[10px] font-bold text-gray-400">
-                +8
-                </div>
+              ))}
             </div>
+          </div>
+
+          {chatList.length === 0 ? (
+            <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: "#FAF9F8" }}>
+              <div style={{ fontSize: "48px", marginBottom: "10px" }}>📭</div>
+              <h3 style={{ color: "#6B4F43", marginBottom: "16px", fontWeight: "bold" }}>Hiện tại chưa có tin nhắn</h3>
+              <button 
+                onClick={() => {
+                  const input = document.getElementById('chat-search-input');
+                  if (input) input.focus();
+                }}
+                style={{ padding: "10px 20px", background: "#F2A8A8", color: "white", border: "none", borderRadius: "8px", cursor: "pointer", fontWeight: "bold", boxShadow: "0 2px 4px rgba(242, 168, 168, 0.4)" }}
+              >
+                Tạo hội thoại mới
+              </button>
             </div>
-        </div>
-        </div>
+          ) : (
+            <>
+              {/* Center: Conversation View */}
+              <div style={{ flex: 1, display: "flex", flexDirection: "column", background: "#FAF9F8" }}>
+                
+                {/* Active Header */}
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #EAE0DA", padding: "15px 24px", background: "#FFF" }}>
+                  <div>
+                    <h3 style={{ margin: 0, fontSize: "16px", color: "#333", fontWeight: "700" }}>{selectedChatInfo.name}</h3>
+                    <span style={{ fontSize: "12px", color: "#27AE60", fontWeight: "600" }}>{selectedChatInfo.role}</span>
+                  </div>
+                  <div>
+                    <button
+                      onClick={() => {
+                        if (window.confirm("Bạn có chắc muốn xóa lịch sử cuộc trò chuyện này? Nó chỉ xóa ở phía bạn, phía bên kia vẫn giữ nguyên tin nhắn.")) {
+                          if (selectedChatId !== null) deleteChatRoom(selectedChatId);
+                        }
+                      }}
+                      style={{ background: "none", border: "none", cursor: "pointer", color: "#BDBDBD", padding: "8px", borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center" }}
+                      onMouseOver={(e) => e.currentTarget.style.color = "#E57373"}
+                      onMouseOut={(e) => e.currentTarget.style.color = "#BDBDBD"}
+                      title="Xóa cuộc trò chuyện"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Messages Logs scroll */}
+                <div style={{ flex: 1, padding: "24px", overflowY: "auto", display: "flex", flexDirection: "column", gap: "16px" }}>
+                  {messages.length === 0 ? (
+                    <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", color: "#A0A0A0", fontSize: "13px" }}>
+                      Bắt đầu gửi tin nhắn trao đổi...
+                    </div>
+                  ) : (
+                    messages.map((msg, index) => (
+                      <div key={index} style={{ alignSelf: msg.isMine ? "flex-end" : "flex-start", display: "flex", gap: "12px", maxWidth: "70%", justifyContent: msg.isMine ? "flex-end" : "flex-start" }}>
+                        {!msg.isMine && (
+                          <div style={{ width: "32px", height: "32px", borderRadius: "50%", background: "#E8ECEF", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "14px", flexShrink: 0 }}>
+                            {selectedChatInfo.avatar}
+                          </div>
+                        )}
+                        <div>
+                          {!msg.isMine && <div style={{ fontSize: "11px", color: "#888", marginBottom: "4px" }}>{selectedChatInfo.name}</div>}
+                          <div style={{ 
+                            background: msg.isMine ? "#FFF4F4" : "#FFF", 
+                            padding: "12px 16px", 
+                            borderRadius: msg.isMine ? "16px 16px 4px 16px" : "4px 16px 16px 16px", 
+                            border: msg.isMine ? "1px solid #F2A8A8" : "1px solid #EAE0DA", 
+                            fontSize: "13px", 
+                            color: "#333",
+                            lineHeight: "1.4",
+                            boxShadow: "0 1px 2px rgba(0,0,0,0.02)",
+                            textAlign: msg.isMine ? "right" : "left"
+                          }}>
+                            {msg.fileUrl ? (
+                              (msg.fileName || msg.fileUrl).match(/\.(jpg|jpeg|png|gif|webp)$/i) ? (
+                                <a href={msg.fileUrl} target="_blank" rel="noopener noreferrer">
+                                  <img src={msg.fileUrl} alt="ảnh" style={{ maxWidth: "200px", maxHeight: "200px", borderRadius: "8px", display: "block" }} />
+                                </a>
+                              ) : (
+                                <a href={msg.fileUrl} target="_blank" rel="noopener noreferrer" style={{ display: "flex", alignItems: "center", gap: "8px", color: "#333", textDecoration: "none" }}>
+                                  <FileText size={18} color="#999" />
+                                  <span style={{ fontSize: "12.5px", textDecoration: "underline" }}>{msg.fileName || "Tệp đính kèm"}</span>
+                                </a>
+                              )
+                            ) : null}
+                            {msg.content && <div style={{ marginTop: msg.fileUrl ? "8px" : "0" }}>{msg.content}</div>}
+                          </div>
+                          <div style={{ fontSize: "10px", color: "#999", textAlign: msg.isMine ? "right" : "left", marginTop: "6px" }}>{msg.time}</div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+
+                {/* Typing Prompt input */}
+                <div style={{ borderTop: "1px solid #EAE0DA", background: "#FFF", padding: "16px 24px" }}>
+                  
+                  {/* File Preview */}
+                  {pendingFile && (
+                    <div style={{ paddingBottom: "12px", display: "flex", alignItems: "center", gap: "10px" }}>
+                      <div style={{ background: "#FDF0F0", border: "1px solid #F2A8A8", borderRadius: "8px", padding: "8px 12px", display: "flex", alignItems: "center", gap: "8px", fontSize: "12px", color: "#6B4F43" }}>
+                        {pendingFile.file.type.startsWith('image/') ? (
+                          <img src={pendingFile.url} alt="preview" style={{ width: "40px", height: "40px", objectFit: "cover", borderRadius: "4px" }} />
+                        ) : (
+                          <FileText size={20} color="#F2A8A8" />
+                        )}
+                        <span style={{ maxWidth: "150px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{pendingFile.file.name}</span>
+                        <button onClick={() => { setPendingFile(null); setUploadError(null); }} style={{ background: "none", border: "none", cursor: "pointer", color: "#8B6F5F", padding: "0", display: "flex" }}>
+                          <X size={14} />
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Upload Error */}
+                  {uploadError && (
+                    <div style={{ paddingBottom: "12px", fontSize: "11px", color: "#E57373", display: "flex", alignItems: "center", gap: "6px" }}>
+                      <X size={12} />
+                      {uploadError}
+                    </div>
+                  )}
+
+                  <div style={{ display: "flex", gap: "12px", alignItems: "center" }}>
+                    {/* Hidden file input */}
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      onChange={handleFileChange}
+                      style={{ display: "none" }}
+                      accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt"
+                    />
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      style={{ background: "none", border: "none", cursor: "pointer", color: pendingFile ? "#F2A8A8" : "#A0A0A0", display: "flex", alignItems: "center", padding: "4px" }}
+                      title="Đính kèm tệp"
+                    >
+                      <Paperclip size={20} />
+                    </button>
+                    <input 
+                      type="text" 
+                      value={inputText}
+                      onChange={(e) => setInputText(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+                      placeholder={pendingFile ? "Thêm tin nhắn kèm... (tùy chọn)" : "Nhập tin nhắn..."} 
+                      style={{ flex: 1, padding: "12px 18px", borderRadius: "24px", border: "1px solid #EAE0DA", outline: "none", fontSize: "13.5px", color: "#333", background: "#FAFAFA" }}
+                    />
+                    <button 
+                      onClick={handleSend}
+                      disabled={isUploading}
+                      style={{ width: "42px", height: "42px", borderRadius: "50%", background: isUploading ? "#DDD" : "#F2A8A8", border: "none", color: "white", cursor: isUploading ? "wait" : "pointer", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: "0 2px 6px rgba(242, 168, 168, 0.4)" }}
+                    >
+                      <Send size={18} />
+                    </button>
+                  </div>
+                </div>
+
+              </div>
+
+              {/* Right: Recipient Inspector metadata sidebar */}
+              <div style={{ width: "260px", borderLeft: "1px solid #EAE0DA", padding: "24px", display: "flex", flexDirection: "column", background: "#FFF" }}>
+                <h3 style={{ fontSize: "14px", color: "#333", fontWeight: "700", margin: "0 0 24px 0" }}>Thông tin chi tiết</h3>
+                <div style={{ textAlign: "center", paddingBottom: "24px", borderBottom: "1px solid #EAE0DA", marginBottom: "20px" }}>
+                  <div style={{ width: "70px", height: "70px", borderRadius: "50%", background: "#E8ECEF", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px auto", fontSize: "32px", color: "#555" }}>
+                    {selectedChatInfo.avatar}
+                  </div>
+                  <h4 style={{ margin: 0, fontSize: "15px", color: "#333", fontWeight: "700" }}>{selectedChatInfo.name}</h4>
+                  <p style={{ margin: "4px 0 0 0", fontSize: "12px", color: "#27AE60" }}>{selectedChatInfo.role}</p>
+                </div>
+                <div style={{ fontSize: "12px", color: "#555", display: "flex", flexDirection: "column", gap: "14px" }}>
+                  {selectedChatInfo.email && (
+                    <div style={{ display: "flex", gap: "10px" }}>
+                      <span style={{ fontSize: "14px" }}>📧</span> 
+                      <div>
+                        <b style={{ color: "#333" }}>Email:</b> <br /> 
+                        <span style={{ wordBreak: "break-all", color: "#777", marginTop: "2px", display: "inline-block" }}>{selectedChatInfo.email}</span>
+                      </div>
+                    </div>
+                  )}
+                  {selectedChatInfo.startDate && (
+                    <div style={{ display: "flex", gap: "10px" }}>
+                      <span style={{ fontSize: "14px" }}>📅</span> 
+                      <div>
+                        <b style={{ color: "#333" }}>Ngày bắt đầu:</b> <br /> 
+                        <span style={{ color: "#777", marginTop: "2px", display: "inline-block" }}>{selectedChatInfo.startDate}</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </>
+          )}
+
+        </section>
+      </div>
+      </div>
     </DashboardShell>
   );
 }
