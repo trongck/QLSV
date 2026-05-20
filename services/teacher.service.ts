@@ -360,7 +360,7 @@ export const giangVienService = {
         .select("mabuoihoc, malichhoc, ngayhoc, trangthai, qr_secret")
         .in("malichhoc", malichhocIds)
         .order("ngayhoc", { ascending: false });
-      
+
       const lichMap = new Map(lichhocList.map((l: any) => [l.malichhoc, l.maphancong]));
       buoiHocList = (bhAll ?? []).map((bh: any) => ({
         ...bh,
@@ -521,12 +521,28 @@ export const giangVienService = {
       .eq("trangthai", "Danghoc");
 
     if (svMonHoc && svMonHoc.length > 0) {
-      const inserts = svMonHoc.map((s: any) => ({
-        mabuoihoc: buoihoc.mabuoihoc,
-        masv: s.masv,
-        trangthai: "Vangmat",
-        phuongthuc: "Manual"
-      }));
+      // Fetch approved leaves for this session
+      const { data: approvedLeaves } = await supabase
+        .from("donxinnghi")
+        .select("masv")
+        .eq("mabuoihoc", buoihoc.mabuoihoc)
+        .eq("trangthai", "DaDuyet");
+
+      const leaveSet = new Set(approvedLeaves?.map((d: any) => d.masv?.trim()) || []);
+      const vnNow = new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString().replace("Z", "");
+
+      const inserts = svMonHoc.map((s: any) => {
+        const masv = s.masv?.trim();
+        const isLeave = leaveSet.has(masv);
+        return {
+          mabuoihoc: buoihoc.mabuoihoc,
+          masv: masv,
+          trangthai: isLeave ? "Cophep" : "Vangmat",
+          phuongthuc: "Manual",
+          ghichu: isLeave ? "Vắng có phép (Đơn xin nghỉ)" : null,
+          ngaytao: vnNow,
+        };
+      });
 
       await supabase.from("diemdanh").insert(inserts);
     }
@@ -557,6 +573,9 @@ export const giangVienService = {
       .eq("masv", masvTrimmed)
       .maybeSingle();
 
+    const vnNow = new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString().replace("Z", "");
+    const isPresent = trangthai === "Comat" || trangthai === "Dimuon";
+
     if (existing) {
       // 2. Thực hiện cập nhật
       const { error: updateError } = await supabase
@@ -564,7 +583,7 @@ export const giangVienService = {
         .update({
           trangthai,
           ghichu: ghichu === "-" ? null : ghichu,
-          thoigiandiemdanh: trangthai === "Comat" || trangthai === "Dimuon" ? new Date().toISOString() : null,
+          thoigiandiemdanh: isPresent ? vnNow : null,
           phuongthuc: "Manual"
         })
         .eq("madiemdanh", existing.madiemdanh);
@@ -578,8 +597,9 @@ export const giangVienService = {
           masv: masvTrimmed,
           trangthai,
           ghichu: ghichu === "-" ? null : ghichu,
-          thoigiandiemdanh: trangthai === "Comat" || trangthai === "Dimuon" ? new Date().toISOString() : null,
-          phuongthuc: "Manual"
+          thoigiandiemdanh: isPresent ? vnNow : null,
+          phuongthuc: "Manual",
+          ngaytao: vnNow
         });
       if (insertError) throw insertError;
     }
@@ -753,13 +773,15 @@ export const giangVienService = {
       .eq("masv", masvTrimmed)
       .maybeSingle();
 
-    const thoigiandiemdanh = new Date().toISOString();
+    const vnNow = new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString().replace("Z", "");
+    const thoigiandiemdanh = vnNow;
+    const trangthai = "Comat";
 
     if (existing) {
       const { error: updateError } = await supabase
         .from("diemdanh")
         .update({
-          trangthai: "Comat",
+          trangthai,
           thoigiandiemdanh,
           phuongthuc: "QR",
           ghichu: `Điểm danh QR thành công (vị trí cách phòng học ${maphong} ${Math.round(distance)}m)`
@@ -772,10 +794,11 @@ export const giangVienService = {
         .insert({
           mabuoihoc,
           masv: masvTrimmed,
-          trangthai: "Comat",
+          trangthai,
           thoigiandiemdanh,
           phuongthuc: "QR",
-          ghichu: `Điểm danh QR thành công (vị trí cách phòng học ${maphong} ${Math.round(distance)}m)`
+          ghichu: `Điểm danh QR thành công (vị trí cách phòng học ${maphong} ${Math.round(distance)}m)`,
+          ngaytao: vnNow
         });
       if (insertError) throw insertError;
     }

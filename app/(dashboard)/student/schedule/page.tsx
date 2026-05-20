@@ -39,7 +39,7 @@ interface HocKy {
   danghieuluc: boolean;
 }
 
-interface LichHoc{
+interface LichHoc {
   malichhoc: number;
   maphancong: number;
   thutrongtuan: number;
@@ -50,7 +50,7 @@ interface LichHoc{
   timeRange: string;
   thuLabel: string;
   phancong?: {
-    monhoc: { mamon: string; tenmon: string } | null;
+    monhoc: { mamon: string; tenmon: string; sotinchi?: number } | null;
     giangvien: { magv: string; hoten: string } | null;
     hocky: HocKy | null;
     danghieuluc?: boolean;
@@ -84,11 +84,16 @@ const DAYS = [
 ];
 
 const TIET_SLOTS = [
-  { label: "Tiết 1-3", tietStart: 1, tietEnd: 3, time: "07:00 - 09:30" },
-  { label: "Tiết 4-6", tietStart: 4, tietEnd: 6, time: "09:30 - 12:00" },
-  { label: "Tiết 7-9", tietStart: 7, tietEnd: 9, time: "12:30 - 15:00" },
-  { label: "Tiết 10-12", tietStart: 10, tietEnd: 12, time: "15:00 - 17:30" },
-  { label: "Tiết 13-15", tietStart: 13, tietEnd: 15, time: "18:00 - 20:30" },
+  { label: "Tiết 1", tietStart: 1, tietEnd: 1, time: "07:00 - 07:50" },
+  { label: "Tiết 2", tietStart: 2, tietEnd: 2, time: "07:55 - 08:45" },
+  { label: "Tiết 3", tietStart: 3, tietEnd: 3, time: "08:50 - 09:40" },
+  { label: "Tiết 4", tietStart: 4, tietEnd: 4, time: "09:55 - 10:45" },
+  { label: "Tiết 5", tietStart: 5, tietEnd: 5, time: "10:50 - 11:40" },
+  { label: "Tiết 6", tietStart: 6, tietEnd: 6, time: "12:45 - 13:35" },
+  { label: "Tiết 7", tietStart: 7, tietEnd: 7, time: "13:40 - 14:30" },
+  { label: "Tiết 8", tietStart: 8, tietEnd: 8, time: "14:35 - 15:25" },
+  { label: "Tiết 9", tietStart: 9, tietEnd: 9, time: "15:40 - 16:30" },
+  { label: "Tiết 10", tietStart: 10, tietEnd: 10, time: "16:35 - 17:25" },
 ];
 
 function getMonday(date: Date): Date {
@@ -147,9 +152,9 @@ export default function SchedulePage() {
     if (!authLoading && !user) router.replace("/login");
     if (!authLoading && user && user.vaitro !== VaiTro.SinhVien) router.replace("/login");
   }, [user, authLoading, router]);
-  const [selectedItem, setSelectedItem] = useState<LichHoc| null>(null);
+  const [selectedItem, setSelectedItem] = useState<LichHoc | null>(null);
   const [showMap, setShowMap] = useState(false);
-  
+
   // State cho Zoom & Pan (giữ lại nếu cần cho các tính năng khác, nhưng modal map sẽ đơn giản hơn)
   const [zoom, setZoom] = useState(1);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
@@ -196,7 +201,7 @@ export default function SchedulePage() {
           else if (json.data.length > 0) setSelectedMahocky(json.data[0].mahocky);
         }
       })
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   // Fetch lịch tuần
@@ -208,7 +213,7 @@ export default function SchedulePage() {
       const res = await apiFetch(`/api/sinhvien/schedule${params}`);
       const json = await res.json();
       if (json.success) setWeekData(json.data ?? []);
-    } catch {}
+    } catch { }
     finally { setLoading(false); }
   }, []);
 
@@ -220,7 +225,7 @@ export default function SchedulePage() {
       const res = await apiFetch(`/api/sinhvien/schedule?mode=semester&mahocky=${mahocky}`);
       const json = await res.json();
       if (json.success) setSemesterData(json.data ?? []);
-    } catch {}
+    } catch { }
     finally { setLoading(false); }
   }, []);
 
@@ -244,402 +249,487 @@ export default function SchedulePage() {
 
   return (
     <DashboardShell pageTitle="Lịch học">
-        <div className="p-6 bg-[#FDF8F6] min-h-screen pb-20">
+      <div className="p-6 bg-[#FDF8F6] min-h-screen pb-20">
         {/* ── HEADER ── */}
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
-            <div>
+          <div>
             <h1 className="text-2xl font-bold text-gray-800">Lịch học</h1>
             <p className="text-sm text-gray-500 mt-0.5">
-                {currentHocKy ? currentHocKy.tenhocky : "Đang tải..."}
+              {currentHocKy ? currentHocKy.tenhocky : "Đang tải..."}
             </p>
-            </div>
+          </div>
 
-            <div className="flex items-center gap-3 flex-wrap">
+          <div className="flex items-center gap-3 flex-wrap">
             {/* Toggle Tuần / Học Kỳ */}
             <div className="flex bg-white rounded-xl border border-gray-100 shadow-sm p-1 gap-1">
-                <button
+              <button
                 onClick={() => setViewMode("week")}
-                className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold transition ${
-                    viewMode === "week"
+                className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold transition ${viewMode === "week"
                     ? "bg-[#E57373] text-white shadow-sm"
                     : "text-gray-500 hover:bg-gray-50"
-                }`}
-                >
+                  }`}
+              >
                 <LayoutGrid size={15} /> Tuần
-                </button>
-                <button
+              </button>
+              <button
                 onClick={() => setViewMode("semester")}
-                className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold transition ${
-                    viewMode === "semester"
+                className={`flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-semibold transition ${viewMode === "semester"
                     ? "bg-[#E57373] text-white shadow-sm"
                     : "text-gray-500 hover:bg-gray-50"
-                }`}
-                >
+                  }`}
+              >
                 <List size={15} /> Học Kỳ
-                </button>
+              </button>
             </div>
 
             {/* Dropdown chọn học kỳ */}
             <select
-                value={selectedMahocky ?? ""}
-                onChange={(e) => setSelectedMahocky(parseInt(e.target.value))}
-                className="px-3 py-2 bg-white border border-gray-100 rounded-xl text-sm font-medium shadow-sm outline-none focus:ring-2 focus:ring-red-100 text-gray-700"
+              value={selectedMahocky ?? ""}
+              onChange={(e) => setSelectedMahocky(parseInt(e.target.value))}
+              className="px-3 py-2 bg-white border border-gray-100 rounded-xl text-sm font-medium shadow-sm outline-none focus:ring-2 focus:ring-red-100 text-gray-700"
             >
-                {hocKyList.map((hk) => (
+              {hocKyList.map((hk) => (
                 <option key={hk.mahocky} value={hk.mahocky}>
-                    {hk.tenhocky}{hk.danghieuluc ? " ★" : ""}
+                  {hk.tenhocky}{hk.danghieuluc ? " ★" : ""}
                 </option>
-                ))}
+              ))}
             </select>
 
             {/* Điều hướng tuần (chỉ hiện ở mode tuần) */}
             {viewMode === "week" && (
-                <div className="flex bg-white rounded-xl border border-gray-100 shadow-sm">
+              <div className="flex bg-white rounded-xl border border-gray-100 shadow-sm">
                 <button
-                    onClick={() => setWeekStart((w) => addDays(w, -7))}
-                    className="p-2.5 hover:bg-gray-50 rounded-l-xl transition"
+                  onClick={() => setWeekStart((w) => addDays(w, -7))}
+                  className="p-2.5 hover:bg-gray-50 rounded-l-xl transition"
                 >
-                    <ChevronLeft size={18} />
+                  <ChevronLeft size={18} />
                 </button>
                 <div className="px-3 flex items-center gap-2 text-sm font-bold text-gray-700 min-w-[160px] justify-center">
-                    <CalendarIcon size={14} className="text-red-500" />
-                    {formatDateShort(weekStart)} – {formatDateShort(addDays(weekStart, 6))}
+                  <CalendarIcon size={14} className="text-red-500" />
+                  {formatDateShort(weekStart)} – {formatDateShort(addDays(weekStart, 6))}
                 </div>
                 <button
-                    onClick={() => setWeekStart((w) => addDays(w, 7))}
-                    className="p-2.5 hover:bg-gray-50 rounded-r-xl transition"
+                  onClick={() => setWeekStart((w) => addDays(w, 7))}
+                  className="p-2.5 hover:bg-gray-50 rounded-r-xl transition"
                 >
-                    <ChevronRight size={18} />
+                  <ChevronRight size={18} />
                 </button>
-                </div>
+              </div>
             )}
 
             {viewMode === "week" && (
-                <button
+              <button
                 onClick={() => setShowMap(true)}
                 className="px-4 py-2 bg-white text-red-600 rounded-xl border border-red-100 text-sm font-bold shadow-sm hover:bg-red-50 transition flex items-center gap-1.5"
-                >
+              >
                 <MapIcon size={14} /> Xem bản đồ
-                </button>
+              </button>
             )}
-            </div>
+          </div>
         </div>
 
         {/* ── LOADING ── */}
         {loading && (
-            <div className="flex justify-center items-center py-20 text-gray-400">
+          <div className="flex justify-center items-center py-20 text-gray-400">
             <Loader2 size={28} className="animate-spin mr-3" />
             <span className="text-sm">Đang tải lịch học...</span>
-            </div>
+          </div>
         )}
 
         {/* ── CHI TIẾT MÔN HỌC (khi click) ── */}
         {!loading && selectedItem && (
-            <div className="mb-6 p-6 bg-white rounded-2xl border border-red-200 shadow-xl">
+          <div className="mb-6 p-6 bg-white rounded-2xl border border-red-200 shadow-xl">
             <div className="flex justify-between items-start mb-4">
-                <div>
+              <div>
                 <h3 className="text-xl font-bold text-red-600">
-                    {selectedItem.phancong?.monhoc?.tenmon ?? "Chưa có tên môn"}
+                  {selectedItem.phancong?.monhoc?.tenmon ?? "Chưa có tên môn"}
                 </h3>
                 <p className="text-gray-500 text-sm mt-0.5">
-                    {selectedItem.thuLabel} • {selectedItem.timeRange} • Tiết {selectedItem.tietbatdau}–{selectedItem.tietketthuc}
+                  {selectedItem.thuLabel} • {selectedItem.timeRange} • Tiết {selectedItem.tietbatdau}–{selectedItem.tietketthuc}
                 </p>
-                </div>
-                <button
+              </div>
+              <button
                 onClick={() => setSelectedItem(null)}
                 className="p-2 hover:bg-gray-100 rounded-full text-gray-400 transition text-lg leading-none"
-                >
+              >
                 ✕
-                </button>
+              </button>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="space-y-1">
+              <div className="space-y-1">
                 <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold">Phòng học</p>
                 <div className="flex items-center gap-2">
-                    <MapPin size={14} className="text-red-400" />
-                    <span className="text-sm font-bold text-gray-800">
+                  <MapPin size={14} className="text-red-400" />
+                  <span className="text-sm font-bold text-gray-800">
                     {selectedItem.maphong ?? "Chưa xếp phòng"}
-                    </span>
+                  </span>
                 </div>
-                </div>
-                <div className="space-y-1">
+              </div>
+              <div className="space-y-1">
                 <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold">Giảng viên</p>
                 <div className="flex items-center gap-2">
-                    <User size={14} className="text-blue-400" />
-                    <span className="text-sm font-bold text-gray-800">
+                  <User size={14} className="text-blue-400" />
+                  <span className="text-sm font-bold text-gray-800">
                     {selectedItem.phancong?.giangvien?.hoten ?? "Đang cập nhật"}
-                    </span>
+                  </span>
                 </div>
-                </div>
-                <div className="space-y-1">
+              </div>
+              <div className="space-y-1">
                 <p className="text-[10px] uppercase tracking-wider text-gray-400 font-bold">Khung giờ</p>
                 <div className="flex items-center gap-2">
-                    <Clock size={14} className="text-green-400" />
-                    <span className="text-sm font-bold text-gray-800">{selectedItem.timeRange}</span>
+                  <Clock size={14} className="text-green-400" />
+                  <span className="text-sm font-bold text-gray-800">{selectedItem.timeRange}</span>
                 </div>
-                </div>
+              </div>
             </div>
 
             {selectedItem.ghichu && (
-                <div className="mt-4 pt-4 border-t border-gray-100">
+              <div className="mt-4 pt-4 border-t border-gray-100">
                 <p className="text-xs text-gray-500 italic">{selectedItem.ghichu}</p>
-                </div>
+              </div>
             )}
-            </div>
+          </div>
         )}
 
         {/* ── VIEW: TUẦN ── */}
         {!loading && viewMode === "week" && (
-            <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
             {weekData.length === 0 ? (
-                <div className="flex flex-col items-center py-20 text-gray-400 gap-3">
+              <div className="flex flex-col items-center py-20 text-gray-400 gap-3">
                 <CalendarIcon size={48} strokeWidth={1} />
                 <p className="text-sm">Không có lịch học trong học kỳ này</p>
-                </div>
+              </div>
             ) : (
-                <div className="overflow-x-auto">
-                <table className="w-full border-collapse">
-                    <thead>
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse table-fixed">
+                  <thead>
                     <tr className="bg-gray-50/50">
-                        <th className="p-4 text-xs font-bold text-gray-400 uppercase tracking-wider border-b border-gray-100 w-28">
+                      <th className="p-2 text-xs font-bold text-[#6B3F2E] bg-[#FFDAC1] border-b border-[#F5C29F] w-16">
                         Buổi học
-                        </th>
-                        {weekDates.map((d) => (
+                      </th>
+                      {weekDates.map((d) => (
                         <th
-                            key={d.thu}
-                            className={`p-4 border-b border-gray-100 min-w-[140px] ${d.isToday ? "bg-red-50/30" : ""}`}
+                          key={d.thu}
+                          className={`p-2 border-b border-gray-200 min-w-[110px] ${d.isToday ? "bg-red-50/30" : ""}`}
                         >
-                            <div className={`text-xs font-bold uppercase ${d.isToday ? "text-red-500" : "text-gray-400"}`}>
+                          <div className={`text-[10px] font-bold uppercase ${d.isToday ? "text-red-500" : "text-gray-400"}`}>
                             {d.label}
-                            </div>
-                            <div className={`text-sm font-black ${d.isToday ? "text-red-600" : "text-gray-700"}`}>
+                          </div>
+                          <div className={`text-xs font-black ${d.isToday ? "text-red-600" : "text-gray-700"}`}>
                             {formatDateShort(d.date)}
-                            </div>
+                          </div>
                         </th>
-                        ))}
+                      ))}
+                      <th className="p-2 text-xs font-bold text-[#6B3F2E] bg-[#FFDAC1] border-b border-[#F5C29F] w-16">
+                        Thời gian
+                      </th>
                     </tr>
-                    </thead>
-                    <tbody>
+                  </thead>
+                  <tbody>
                     {TIET_SLOTS.map((slot) => (
-                        <tr key={slot.label}>
-                        <td className="p-3 text-center border-b border-r border-gray-50 bg-gray-50/30">
-                            <p className="text-[11px] font-bold text-gray-600">{slot.label}</p>
-                            <p className="text-[10px] text-gray-400 mt-0.5">{slot.time}</p>
+                      <tr key={slot.label} className="h-[52px]">
+                        <td className="p-1 text-center border-b border-r border-[#F5C29F] bg-[#FFE9D4] text-[#6B3F2E] font-semibold text-xs w-16">
+                          {slot.label}
                         </td>
                         {weekDates.map((d) => {
-                            const matches = weekData.filter((lh) => {
-                              const isDayMatch =
-                                lh.thutrongtuan === d.thu &&
-                                lh.tietbatdau >= slot.tietStart &&
-                                lh.tietbatdau <= slot.tietEnd;
-                              if (!isDayMatch) return false;
+                          // Check if this slot is covered by an ongoing class that started earlier
+                          const isCovered = weekData.some((lh) => {
+                            if (lh.thutrongtuan !== d.thu) return false;
 
-                              const pc = lh.phancong;
-                              if (!pc) return true;
-
+                            const pc = lh.phancong;
+                            if (pc) {
                               const yyyy = d.date.getFullYear();
                               const mm = String(d.date.getMonth() + 1).padStart(2, "0");
                               const dd = String(d.date.getDate()).padStart(2, "0");
                               const dateStr = `${yyyy}-${mm}-${dd}`;
+                              if (pc.ngaybatdau && dateStr < pc.ngaybatdau) return false;
+                              if (pc.ngayketthuc && dateStr > pc.ngayketthuc) return false;
+                            }
 
-                              if (pc.ngaybatdau && dateStr < pc.ngaybatdau) {
-                                return false;
-                              }
-                              if (pc.ngayketthuc && dateStr > pc.ngayketthuc) {
-                                return false;
-                              }
-                              return true;
-                            });
-                            return (
+                            return lh.tietbatdau < slot.tietStart && lh.tietketthuc >= slot.tietStart;
+                          });
+
+                          if (isCovered) return null;
+
+                          const matches = weekData.filter((lh) => {
+                            const isDayMatch =
+                              lh.thutrongtuan === d.thu &&
+                              lh.tietbatdau === slot.tietStart;
+                            if (!isDayMatch) return false;
+
+                            const pc = lh.phancong;
+                            if (!pc) return true;
+
+                            const yyyy = d.date.getFullYear();
+                            const mm = String(d.date.getMonth() + 1).padStart(2, "0");
+                            const dd = String(d.date.getDate()).padStart(2, "0");
+                            const dateStr = `${yyyy}-${mm}-${dd}`;
+
+                            if (pc.ngaybatdau && dateStr < pc.ngaybatdau) {
+                              return false;
+                            }
+                            if (pc.ngayketthuc && dateStr > pc.ngayketthuc) {
+                              return false;
+                            }
+                            return true;
+                          });
+
+                          // Calculate rowSpan
+                          let rowSpan = 1;
+                          if (matches.length > 0) {
+                            const firstMatch = matches[0];
+                            rowSpan = firstMatch.tietketthuc - firstMatch.tietbatdau + 1;
+                            if (isNaN(rowSpan) || rowSpan < 1) rowSpan = 1;
+                          }
+
+                          return (
                             <td
-                                key={d.thu}
-                                className={`p-2 border-b border-r border-gray-50 align-top h-24 ${d.isToday ? "bg-red-50/10" : ""}`}
+                              key={d.thu}
+                              rowSpan={rowSpan}
+                              className={`p-1 border-b border-r border-gray-200 align-top ${d.isToday ? "bg-red-50/10" : ""}`}
+                              style={{ height: `${rowSpan * 52}px` }}
                             >
-                                {matches.map((lh) => (
+                              {matches.map((lh) => (
                                 <div
-                                    key={lh.malichhoc}
-                                    onClick={() => setSelectedItem(lh)}
-                                    className={`p-2.5 rounded-xl border text-left cursor-pointer transition-all hover:shadow-md hover:scale-[1.02] active:scale-95 mb-1 ${getColor(lh.maphancong)} ${
-                                    selectedItem?.malichhoc === lh.malichhoc ? "ring-2 ring-red-400 shadow-md" : ""
+                                  key={lh.malichhoc}
+                                  onClick={() => setSelectedItem(lh)}
+                                  className={`p-1.5 rounded-lg border text-left cursor-pointer transition-all hover:shadow-md hover:scale-[1.02] active:scale-95 mb-0.5 ${getColor(lh.maphancong)} ${selectedItem?.malichhoc === lh.malichhoc ? "ring-2 ring-red-400 shadow-md" : ""
                                     }`}
+                                  style={{ height: "calc(100% - 2px)", display: "flex", flexDirection: "column", justifyContent: "space-between" }}
                                 >
-                                    <div className="font-bold text-[12px] mb-1 leading-tight line-clamp-2">
+                                  <div className="font-bold text-[11px] leading-tight line-clamp-2">
                                     {lh.phancong?.monhoc?.tenmon ?? "Môn học"}
+                                  </div>
+
+                                  {/* Hết khoảng trống: hiển thị toàn bộ thông tin có trong lịch học tương ứng với chiều cao ô */}
+                                  {lh.tietketthuc - lh.tietbatdau >= 1 && (
+                                    <div className="flex-1 flex flex-col justify-start py-1 gap-1 text-[9px] opacity-90 leading-tight select-none">
+                                      {/* 1. Mã môn học & Số tín chỉ */}
+                                      <div className="text-[9px] text-gray-500 font-medium flex items-center justify-between flex-wrap gap-1">
+                                        {lh.phancong?.monhoc?.mamon && (
+                                          <span>Mã môn: <span className="font-bold">{lh.phancong.monhoc.mamon}</span></span>
+                                        )}
+                                        {lh.phancong?.monhoc?.sotinchi !== undefined && (
+                                          <span className="bg-red-50 text-red-600 px-1 rounded text-[8px] font-bold">
+                                            {lh.phancong.monhoc.sotinchi} tín chỉ
+                                          </span>
+                                        )}
+                                      </div>
+
+                                      {/* 2. Giảng viên */}
+                                      {lh.phancong?.giangvien?.hoten && (
+                                        <div className="flex items-center gap-1 font-bold text-slate-700">
+                                          <User size={8} className="shrink-0 text-blue-500" />
+                                          <span className="truncate">GV: {lh.phancong.giangvien.hoten}</span>
+                                        </div>
+                                      )}
+
+                                      {/* 3. Mã giảng viên (chỉ hiện từ 3 tiết trở lên) */}
+                                      {lh.tietketthuc - lh.tietbatdau >= 2 && lh.phancong?.giangvien?.magv && (
+                                        <div className="text-[9px] text-gray-500 font-medium ml-3">
+                                          Mã GV: <span className="font-bold">{lh.phancong.giangvien.magv}</span>
+                                        </div>
+                                      )}
+
+                                      {/* 4. Khung giờ & Tiết học cụ thể */}
+                                      {lh.tietketthuc - lh.tietbatdau >= 2 && (
+                                        <div className="flex flex-col gap-0.5 text-slate-600 font-medium">
+                                          {lh.timeRange && (
+                                            <div className="flex items-center gap-1">
+                                              <Clock size={8} className="shrink-0 text-green-500" />
+                                              <span>Giờ: {lh.timeRange}</span>
+                                            </div>
+                                          )}
+                                          <div className="flex items-center gap-1 font-bold text-slate-700 ml-3">
+                                            <span>Tiết học: {lh.tietbatdau} – {lh.tietketthuc}</span>
+                                          </div>
+                                        </div>
+                                      )}
+
+                                      {/* 5. Ghi chú (nếu có, hiện khi hàng rất dài từ 4 tiết trở lên) */}
+                                      {lh.tietketthuc - lh.tietbatdau >= 3 && lh.ghichu && (
+                                        <div className="mt-1 p-1 bg-yellow-50/50 rounded border border-yellow-100 text-[8px] text-amber-800 italic line-clamp-2">
+                                          Note: {lh.ghichu}
+                                        </div>
+                                      )}
                                     </div>
-                                    <div className="flex items-center gap-1 text-[10px] opacity-80 font-bold">
-                                    <MapPin size={9} /> {lh.maphong ?? "---"}
-                                    </div>
-                                    <div className="flex items-center gap-1 text-[10px] opacity-70 mt-0.5">
-                                    <Clock size={9} /> T{lh.tietbatdau}–{lh.tietketthuc}
-                                    </div>
+                                  )}
+
+                                  <div className="flex items-center gap-1.5 mt-1 text-[9px] opacity-90 font-bold flex-wrap">
+                                    <span className="flex items-center gap-0.5"><MapPin size={8} /> {lh.maphong ?? "---"}</span>
+                                    <span className="flex items-center gap-0.5 opacity-80"><Clock size={8} /> T{lh.tietbatdau}–{lh.tietketthuc}</span>
+                                  </div>
                                 </div>
-                                ))}
+                              ))}
                             </td>
-                            );
+                          );
                         })}
-                        </tr>
+                        <td className="p-1 text-center border-b border-l border-[#F5C29F] bg-[#FFE9D4] text-[#6B3F2E] font-semibold text-xs w-16">
+                          {slot.time.split(" - ")[0]}
+                        </td>
+                      </tr>
                     ))}
-                    </tbody>
+                  </tbody>
                 </table>
-                </div>
+              </div>
             )}
-            </div>
+          </div>
         )}
 
         {/* ── VIEW: HỌC KỲ ── */}
         {!loading && viewMode === "semester" && (
-            <div>
+          <div>
             {semesterData.length === 0 ? (
-                <div className="flex flex-col items-center py-20 text-gray-400 gap-3 bg-white rounded-2xl border border-gray-100">
+              <div className="flex flex-col items-center py-20 text-gray-400 gap-3 bg-white rounded-2xl border border-gray-100">
                 <Layers size={48} strokeWidth={1} />
                 <p className="text-sm">Không có môn học trong học kỳ này</p>
-                </div>
+              </div>
             ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
                 {semesterData.map((subject) => {
-                    const now = new Date();
-                    const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
-                    const isExpired = subject.ngayketthuc && subject.ngayketthuc < todayStr;
-                    return (
-                        <div
-                        key={subject.maphancong}
-                        className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 hover:shadow-md transition"
-                        >
-                        {/* Tên môn */}
-                        <div className="flex items-start gap-3 mb-4">
-                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${getColor(subject.maphancong)}`}>
-                            <BookOpen size={18} />
-                            </div>
-                            <div className="min-w-0">
-                            <h3 className="font-bold text-gray-800 text-sm leading-tight">
-                                {subject.monhoc?.tenmon ?? "Chưa có tên"}
-                            </h3>
-                            <p className="text-xs text-gray-400 mt-0.5">{subject.monhoc?.mamon}</p>
-                            <div className="flex flex-wrap gap-1.5 mt-1.5">
-                                {subject.monhoc?.sotinchi && (
-                                    <span className="inline-block px-2 py-0.5 bg-blue-50 text-blue-600 text-[10px] font-bold rounded-full">
-                                    {subject.monhoc.sotinchi} tín chỉ
-                                    </span>
-                                )}
-                                {isExpired ? (
-                                    <span className="inline-block px-2 py-0.5 bg-gray-100 text-gray-500 text-[10px] font-bold rounded-full">
-                                    Đã kết thúc
-                                    </span>
-                                ) : (
-                                    <span className="inline-block px-2 py-0.5 bg-green-50 text-green-600 text-[10px] font-bold rounded-full">
-                                    Đang học
-                                    </span>
-                                )}
-                            </div>
-                            {subject.ngaybatdau && subject.ngayketthuc && (
-                                <p className="text-[10px] text-gray-400 mt-1.5 font-bold">
-                                    Thời gian: {new Date(subject.ngaybatdau).toLocaleDateString("vi-VN")} - {new Date(subject.ngayketthuc).toLocaleDateString("vi-VN")}
-                                </p>
+                  const now = new Date();
+                  const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+                  const isExpired = subject.ngayketthuc && subject.ngayketthuc < todayStr;
+                  return (
+                    <div
+                      key={subject.maphancong}
+                      className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 hover:shadow-md transition"
+                    >
+                      {/* Tên môn */}
+                      <div className="flex items-start gap-3 mb-4">
+                        <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${getColor(subject.maphancong)}`}>
+                          <BookOpen size={18} />
+                        </div>
+                        <div className="min-w-0">
+                          <h3 className="font-bold text-gray-800 text-sm leading-tight">
+                            {subject.monhoc?.tenmon ?? "Chưa có tên"}
+                          </h3>
+                          <p className="text-xs text-gray-400 mt-0.5">{subject.monhoc?.mamon}</p>
+                          <div className="flex flex-wrap gap-1.5 mt-1.5">
+                            {subject.monhoc?.sotinchi && (
+                              <span className="inline-block px-2 py-0.5 bg-blue-50 text-blue-600 text-[10px] font-bold rounded-full">
+                                {subject.monhoc.sotinchi} tín chỉ
+                              </span>
                             )}
-                            </div>
-                        </div>
-
-                        {/* Giảng viên */}
-                        <div className="flex items-center gap-2 mb-3 text-sm text-gray-600">
-                            <User size={13} className="text-gray-400 shrink-0" />
-                            <span className="font-medium">{subject.giangvien?.hoten ?? "Đang cập nhật"}</span>
-                        </div>
-
-                        {/* Lịch học cố định */}
-                        <div className="space-y-1.5">
-                            {subject.lichhoc.length === 0 ? (
-                            <p className="text-xs text-gray-400 italic">Chưa có lịch học</p>
+                            {isExpired ? (
+                              <span className="inline-block px-2 py-0.5 bg-gray-100 text-gray-500 text-[10px] font-bold rounded-full">
+                                Đã kết thúc
+                              </span>
                             ) : (
-                            subject.lichhoc.map((lh) => (
-                                <div
-                                key={lh.malichhoc}
-                                className="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-1.5"
-                                >
-                                <span className="text-xs font-bold text-gray-700 min-w-[52px]">{lh.thuLabel}</span>
-                                <Clock size={11} className="text-gray-400" />
-                                <span className="text-xs text-gray-600">{lh.timeRange}</span>
-                                {lh.maphong && (
-                                    <>
-                                    <MapPin size={11} className="text-gray-400 ml-auto shrink-0" />
-                                    <span className="text-xs font-bold text-gray-700">{lh.maphong}</span>
-                                    </>
-                                )}
-                                </div>
-                            ))
+                              <span className="inline-block px-2 py-0.5 bg-green-50 text-green-600 text-[10px] font-bold rounded-full">
+                                Đang học
+                              </span>
                             )}
+                          </div>
+                          {subject.ngaybatdau && subject.ngayketthuc && (
+                            <p className="text-[10px] text-gray-400 mt-1.5 font-bold">
+                              Thời gian: {new Date(subject.ngaybatdau).toLocaleDateString("vi-VN")} - {new Date(subject.ngayketthuc).toLocaleDateString("vi-VN")}
+                            </p>
+                          )}
                         </div>
-                        </div>
-                    );
+                      </div>
+
+                      {/* Giảng viên */}
+                      <div className="flex items-center gap-2 mb-3 text-sm text-gray-600">
+                        <User size={13} className="text-gray-400 shrink-0" />
+                        <span className="font-medium">{subject.giangvien?.hoten ?? "Đang cập nhật"}</span>
+                      </div>
+
+                      {/* Lịch học cố định */}
+                      <div className="space-y-1.5">
+                        {subject.lichhoc.length === 0 ? (
+                          <p className="text-xs text-gray-400 italic">Chưa có lịch học</p>
+                        ) : (
+                          subject.lichhoc.map((lh) => (
+                            <div
+                              key={lh.malichhoc}
+                              className="flex items-center gap-2 bg-gray-50 rounded-lg px-3 py-1.5"
+                            >
+                              <span className="text-xs font-bold text-gray-700 min-w-[52px]">{lh.thuLabel}</span>
+                              <Clock size={11} className="text-gray-400" />
+                              <span className="text-xs text-gray-600">{lh.timeRange}</span>
+                              {lh.maphong && (
+                                <>
+                                  <MapPin size={11} className="text-gray-400 ml-auto shrink-0" />
+                                  <span className="text-xs font-bold text-gray-700">{lh.maphong}</span>
+                                </>
+                              )}
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  );
                 })}
-                </div>
+              </div>
             )}
-            </div>
+          </div>
         )}
         {/* ── MODAL BẢN ĐỒ ── */}
         {showMap && (
-            <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-8 animate-fadeIn">
-            <div 
-                className="absolute inset-0 bg-black/40 backdrop-blur-sm" 
-                onClick={() => setShowMap(false)}
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-8 animate-fadeIn">
+            <div
+              className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+              onClick={() => setShowMap(false)}
             />
             <div className="relative bg-white w-full max-w-6xl h-[80vh] rounded-3xl shadow-2xl overflow-hidden flex flex-col animate-scaleUp border border-white/20">
-                {/* Header Modal */}
-                <div className="p-5 border-b border-gray-100 flex justify-between items-center bg-white/80 backdrop-blur-md sticky top-0 z-10">
+              {/* Header Modal */}
+              <div className="p-5 border-b border-gray-100 flex justify-between items-center bg-white/80 backdrop-blur-md sticky top-0 z-10">
                 <div className="flex items-center gap-3">
-                    <div className="p-2.5 bg-red-50 rounded-xl text-red-500">
+                  <div className="p-2.5 bg-red-50 rounded-xl text-red-500">
                     <MapIcon size={20} />
-                    </div>
-                    <div>
+                  </div>
+                  <div>
                     <h3 className="font-bold text-gray-800 text-lg">Bản đồ Học viện Nông nghiệp</h3>
                     <p className="text-xs text-gray-400">Khuôn viên Trâu Quỳ, Gia Lâm, Hà Nội</p>
-                    </div>
+                  </div>
                 </div>
-                <button 
-                    onClick={() => setShowMap(false)}
-                    className="p-2 hover:bg-gray-100 rounded-full text-gray-400 transition hover:text-gray-600"
+                <button
+                  onClick={() => setShowMap(false)}
+                  className="p-2 hover:bg-gray-100 rounded-full text-gray-400 transition hover:text-gray-600"
                 >
-                    <X size={20} />
+                  <X size={20} />
                 </button>
-                </div>
+              </div>
 
-                {/* Map Content */}
-                <div className="flex-1 relative bg-gray-50 overflow-hidden">
+              {/* Map Content */}
+              <div className="flex-1 relative bg-gray-50 overflow-hidden">
                 <iframe
-                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d1862.383134907954!2d105.9318!3d21.0016!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3135a96d36e2f171%3A0x6b6379893d7c50!2zSOG7jWMgdmnhu4duIE7DtG5nIG5naGnhu4dwIFZp4buHdCBOYW0!5e0!3m2!1svi!2s!4v1715851253456!5m2!1svi!2s"
-                    width="100%"
-                    height="100%"
-                    style={{ border: 0 }}
-                    allowFullScreen
-                    loading="lazy"
-                    referrerPolicy="no-referrer-when-downgrade"
-                    className="w-full h-full"
+                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d1862.383134907954!2d105.9318!3d21.0016!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3135a96d36e2f171%3A0x6b6379893d7c50!2zSOG7jWMgdmnhu4duIE7DtG5nIG5naGnhu4dwIFZp4buHdCBOYW0!5e0!3m2!1svi!2s!4v1715851253456!5m2!1svi!2s"
+                  width="100%"
+                  height="100%"
+                  style={{ border: 0 }}
+                  allowFullScreen
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                  className="w-full h-full"
                 />
-                
+
                 {/* Overlay Info */}
                 <div className="absolute bottom-6 left-6 right-6 flex justify-between items-end pointer-events-none">
-                    <div className="bg-white/90 backdrop-blur shadow-lg border border-gray-100 p-4 rounded-2xl pointer-events-auto max-w-[280px]">
+                  <div className="bg-white/90 backdrop-blur shadow-lg border border-gray-100 p-4 rounded-2xl pointer-events-auto max-w-[280px]">
                     <p className="text-xs font-bold text-gray-800 mb-1">Bản đồ Học viện</p>
                     <p className="text-[10px] text-gray-500 leading-relaxed">
-                        Sử dụng phím Ctrl + Kéo chuột để thay đổi góc nhìn 3D trên bản đồ.
+                      Sử dụng phím Ctrl + Kéo chuột để thay đổi góc nhìn 3D trên bản đồ.
                     </p>
-                    </div>
-                    <div className="flex gap-2 pointer-events-auto">
-                    <a 
-                        href="https://map.vnua.edu.vn/" 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="px-4 py-2 bg-white text-gray-700 text-xs font-bold rounded-xl shadow-lg border border-gray-100 hover:bg-gray-50 transition flex items-center gap-2"
+                  </div>
+                  <div className="flex gap-2 pointer-events-auto">
+                    <a
+                      href="https://map.vnua.edu.vn/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-4 py-2 bg-white text-gray-700 text-xs font-bold rounded-xl shadow-lg border border-gray-100 hover:bg-gray-50 transition flex items-center gap-2"
                     >
-                        Xem map.vnua.edu.vn
+                      Xem map.vnua.edu.vn
                     </a>
-                    </div>
+                  </div>
                 </div>
-                </div>
+              </div>
             </div>
-            </div>
+          </div>
         )}
-        </div>
+      </div>
     </DashboardShell>
   );
 }

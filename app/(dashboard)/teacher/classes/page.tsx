@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/auth/useAuth";
-import { apiFetch } from "@/services/auth.service";
+import { apiFetch } from "@/services/service/auth/auth.service";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import styles from "../dashboard/teacher-dashboard.module.css";
 

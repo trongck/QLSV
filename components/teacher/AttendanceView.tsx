@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { apiFetch } from "@/services/auth.service";
+import { apiFetch } from "@/services/service/auth/auth.service";
 import styles from "@/app/(dashboard)/teacher/dashboard/teacher-dashboard.module.css";
 
 type SubTab = "list" | "qrcode" | "leave_requests";

@@ -78,6 +78,19 @@ export async function GET(request: NextRequest) {
             data = [];
         }
 
+        const statusMapping: Record<string, string> = {
+            'Comat': 'co_mat',
+            'Dimuon': 'muon',
+            'Cophep': 'vang_co_phep',
+            'Vangmat': 'vang_khong_phep'
+        };
+
+        const methodMapping: Record<string, string> = {
+            'QR': 'qr',
+            'Face': 'khuon_mat',
+            'Manual': 'thu_cong'
+        };
+
         // Enrich dữ liệu cho frontend
         const enriched = (data ?? []).map((dd: any) => {
             const lh = dd.buoihoc?.lichhoc;
@@ -86,8 +99,8 @@ export async function GET(request: NextRequest) {
             return {
                 madiemdanh: dd.madiemdanh,
                 thoigian: dd.thoigiandiemdanh ?? dd.thoigian,
-                trangthai: dd.trangthai,
-                phuongthuc: dd.phuongthuc,
+                trangthai: statusMapping[dd.trangthai] ?? dd.trangthai,
+                phuongthuc: methodMapping[dd.phuongthuc] ?? dd.phuongthuc,
                 ghichu: dd.ghichu,
                 ngayhoc: dd.buoihoc?.ngayhoc ?? null,
                 day: String(ngay.getDate()).padStart(2, '0'),

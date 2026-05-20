@@ -8,7 +8,7 @@ async function getSupabase() {
 }
 
 // ─── Trạng thái điểm danh ────────────────────────────────────────────────────
-export type TrangThaiDiemDanh = 'co_mat' | 'vang_co_phep' | 'vang_khong_phep' | 'muon';
+export type TrangThaiDiemDanh = 'Comat' | 'Cophep' | 'Vangmat' | 'Dimuon' | 'co_mat' | 'vang_co_phep' | 'vang_khong_phep' | 'muon';
 
 // ─── Phương thức điểm danh ────────────────────────────────────────────────────
 export type PhuongThucDiemDanh = 'qr' | 'khuon_mat' | 'thu_cong';
@@ -164,11 +164,15 @@ export const diemdanhRepo = {
 
             bySubject[key].total++;
             bySubject[key].records.push(dd);
-            switch ((dd as any).trangthai as TrangThaiDiemDanh) {
-                case 'co_mat': bySubject[key].coMat++; break;
-                case 'muon': bySubject[key].muon++; break;
-                case 'vang_co_phep': bySubject[key].vangCoPhep++; break;
-                case 'vang_khong_phep': bySubject[key].vangKhongPhep++; break;
+            const tt = (dd as any).trangthai;
+            if (tt === 'co_mat' || tt === 'Comat') {
+                bySubject[key].coMat++;
+            } else if (tt === 'muon' || tt === 'Dimuon') {
+                bySubject[key].muon++;
+            } else if (tt === 'vang_co_phep' || tt === 'Cophep') {
+                bySubject[key].vangCoPhep++;
+            } else if (tt === 'vang_khong_phep' || tt === 'Vangmat') {
+                bySubject[key].vangKhongPhep++;
             }
         }
 
@@ -199,7 +203,7 @@ export const diemdanhRepo = {
         const insertData: any = {
             masv,
             thoigiandiemdanh: vnNow,
-            trangthai: 'co_mat' as TrangThaiDiemDanh,
+            trangthai: 'Comat' as TrangThaiDiemDanh,
             phuongthuc,
             ghichu: ghichu ?? null,
         };
@@ -224,10 +228,17 @@ export const diemdanhRepo = {
                 const tietBD = (buoi as any).lichhoc?.tietbatdau ?? 1;
                 const startStr = TIET_TO_TIME[tietBD] ?? '07:00';
                 const [sh, sm] = startStr.split(':').map(Number);
-                const startDate = new Date((buoi as any).ngayhoc);
-                startDate.setHours(sh, sm, 0, 0);
-                const diffMin = (Date.now() - startDate.getTime()) / 60000;
-                if (diffMin > 15) insertData.trangthai = 'muon';
+                const nowStr = new Date().toLocaleString("en-US", { timeZone: "Asia/Ho_Chi_Minh", hour12: false });
+                const match = nowStr.match(/(\d+):(\d+):/);
+                let currentH = 0, currentM = 0;
+                if (match) {
+                    currentH = parseInt(match[1], 10);
+                    currentM = parseInt(match[2], 10);
+                    if (currentH === 24) currentH = 0;
+                }
+                
+                const diffMin = (currentH * 60 + currentM) - (sh * 60 + sm);
+                if (diffMin > 15) insertData.trangthai = 'Dimuon';
             }
         }
 
