@@ -48,7 +48,7 @@ const ADMIN_NAV = [
 
 // ─── Component ─────────────────────────────────────────────────────────────────
 
-export function DashboardSidebar() {
+export function DashboardSidebar({ onProfileClick }: { onProfileClick?: () => void }) {
   const { user, logout } = useAuth();
   const pathname = usePathname();
 
@@ -107,7 +107,11 @@ export function DashboardSidebar() {
 
       {/* User info + logout */}
       <div className="p-[12px_6px_4px] border-t border-[#EAD9CB] mt-3 flex items-center gap-2">
-        <div className="flex items-center gap-2 flex-1 min-w-0">
+        <div 
+          className={`flex items-center gap-2 flex-1 min-w-0 ${onProfileClick ? "cursor-pointer hover:opacity-85 transition-opacity" : ""}`}
+          onClick={onProfileClick}
+          title={onProfileClick ? "Xem hồ sơ cá nhân" : undefined}
+        >
           <div className="w-[34px] h-[34px] rounded-full bg-primary text-white text-[13px] font-bold flex items-center justify-center shrink-0" aria-hidden>
             {user?.hoten?.charAt(0) ?? "?"}
           </div>
@@ -148,9 +152,11 @@ export function DashboardSidebar() {
 export function DashboardTopbar({
   title,
   onMenuClick,
+  onProfileClick,
 }: {
   title: string;
   onMenuClick: () => void;
+  onProfileClick?: () => void;
 }) {
   const { user, logout } = useAuth();
 
@@ -174,8 +180,10 @@ export function DashboardTopbar({
       <h1 className="flex-1 text-[15px] font-bold text-[#2D1B14] m-0">{title}</h1>
       <div className="flex items-center gap-2">
         <div
-          className="w-[30px] h-[30px] rounded-full bg-primary text-white text-xs font-bold flex items-center justify-center"
+          className={`w-[30px] h-[30px] rounded-full bg-primary text-white text-xs font-bold flex items-center justify-center ${onProfileClick ? "cursor-pointer hover:opacity-85 transition-opacity" : ""}`}
           aria-label={`Xin chào, ${user?.hoten}`}
+          onClick={onProfileClick}
+          title={onProfileClick ? "Xem hồ sơ cá nhân" : undefined}
         >
           {user?.hoten?.charAt(0) ?? "?"}
         </div>

@@ -3,17 +3,23 @@ import { verifyToken, extractBearer } from "@/lib/utils/jwt";
 import { VaiTro } from "@/types";
 import { giangVienService } from "@/services/teacher.service";
 
-// GET /api/giangvien/students
-// - Trả về danh sách lớp nếu không có maphancong
-// - Trả về danh sách sinh viên thực tế nếu có maphancong
 export async function GET(request: Request) {
   const token = extractBearer(request.headers.get("authorization"));
   if (!token) {
     return NextResponse.json({ error: "Chưa cung cấp token" }, { status: 401 });
   }
 
+  const { searchParams } = new URL(request.url);
+  const maphancong = searchParams.get("maphancong");
+  const action = searchParams.get("action") || "GET_STATS";
+
+  if (!maphancong) {
+    return NextResponse.json({ error: "Thiếu maphancong" }, { status: 400 });
+  }
+
   try {
     const payload = await verifyToken(token) as any;
+
     if (payload.vaitro !== VaiTro.GiangVien) {
       return NextResponse.json({ error: "Không có quyền truy cập" }, { status: 403 });
     }
@@ -33,22 +39,16 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Không tìm thấy giảng viên" }, { status: 404 });
     }
 
-    const { searchParams } = new URL(request.url);
-    const maphancongStr = searchParams.get("maphancong");
-
-    if (maphancongStr) {
-      const maphancong = Number(maphancongStr);
-      if (isNaN(maphancong)) {
-        return NextResponse.json({ error: "Mã phân công không hợp lệ" }, { status: 400 });
-      }
-      const data = await giangVienService.getRosterStudents(maphancong);
-      return NextResponse.json({ success: true, data });
+    if (action === "GET_REPORTS") {
+      const reports = await giangVienService.getReports(gv.magv, Number(maphancong));
+      return NextResponse.json({ success: true, data: reports });
     }
 
-    const classes = await giangVienService.getGradeClasses(gv.magv);
-    return NextResponse.json({ success: true, data: classes });
+    // Default: GET_STATS
+    const stats = await giangVienService.getClassStats(gv.magv, Number(maphancong));
+    return NextResponse.json({ success: true, data: stats });
   } catch (err: any) {
-    console.error("Lỗi GET /api/giangvien/students:", err.message);
+    console.error("Lỗi GET /api/giangvien/reports:", err.message);
     return NextResponse.json(
       { error: "Phiên đăng nhập hết hạn hoặc không hợp lệ" },
       { status: 401 }
@@ -56,9 +56,7 @@ export async function GET(request: Request) {
   }
 }
 
-// PUT /api/giangvien/students
-// - Cập nhật hồ sơ thông tin liên hệ sinh viên
-export async function PUT(request: Request) {
+export async function POST(request: Request) {
   const token = extractBearer(request.headers.get("authorization"));
   if (!token) {
     return NextResponse.json({ error: "Chưa cung cấp token" }, { status: 401 });
@@ -75,28 +73,40 @@ export async function PUT(request: Request) {
   }
 
   try {
+    const { createClient } = await import("@/lib/utils/supabase/server");
+    const { cookies } = await import("next/headers");
+    const cookieStore = await cookies();
+    const supabase = createClient(cookieStore);
 
-    const body = await request.json();
-    const { masv, name, email, phone, parentName, parentPhone, address } = body;
+    const { data: gv } = await supabase
+      .from("giangvien")
+      .select("magv")
+      .eq("mataikhoan", payload.mataikhoan)
+      .single();
 
-    if (!masv || !name) {
-      return NextResponse.json({ error: "Thiếu thông tin cập nhật bắt buộc" }, { status: 400 });
+    if (!gv) {
+      return NextResponse.json({ error: "Không tìm thấy giảng viên" }, { status: 404 });
     }
 
-    await giangVienService.updateRosterStudent(masv, {
-      name,
-      email: email || "",
-      phone: phone || "",
-      parentName: parentName || "",
-      parentPhone: parentPhone || "",
-      address: address || ""
-    });
+    const { maphancong, tieude, mota, stats } = await request.json();
 
-    return NextResponse.json({ success: true, message: "Đã cập nhật hồ sơ sinh viên thành công" });
+    if (!maphancong || !tieude) {
+      return NextResponse.json({ error: "Thiếu maphancong hoặc tieude" }, { status: 400 });
+    }
+
+    const newReport = await giangVienService.createReport(
+      gv.magv,
+      Number(maphancong),
+      tieude,
+      mota || "",
+      JSON.stringify(stats || {})
+    );
+
+    return NextResponse.json({ success: true, data: newReport });
   } catch (err: any) {
-    console.error("Lỗi PUT /api/giangvien/students:", err.message);
+    console.error("Lỗi POST /api/giangvien/reports:", err.message);
     return NextResponse.json(
-      { error: err.message || "Lỗi cập nhật thông tin" },
+      { error: err.message || "Lỗi máy chủ khi tạo báo cáo" },
       { status: 500 }
     );
   }
