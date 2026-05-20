@@ -13,7 +13,12 @@ import styles from "./student-dashboard.module.css";
 
 interface DashboardData {
   monHocCount: number;
-  diemTBHK: number | null;
+  // GPA từ view_gpa_sinhvien
+  gpa10_hocky_hientai: number;
+  gpa4_hocky_hientai: number;
+  gpa10_tich_luy: number;
+  gpa4_tich_luy: number;
+  xep_loai_hoc_luc: string | null;
   soBuoiVang: number;
   soBaiTapConHan: number;
   lichHocHomNay: {
@@ -23,7 +28,12 @@ interface DashboardData {
     tietketthuc: number;
   }[];
   thongBaoGanDay: { tieude: string; ngaytao: string; loai: string }[];
-  diemGanDay: { maphancong: number; loaidiem: string; giatri: number }[];
+  diemGanDay: {
+    maphancong: number;
+    loaidiem: string;
+    giatri: number;
+    tenmon?: string;
+  }[];
 }
 
 // ─── Stat card ────────────────────────────────────────────────────────────────
@@ -75,14 +85,19 @@ export default function StudentDashboard() {
       setFetching(true);
       try {
         // Parallel queries
-        // Fetch Student Info & Assignments
-        const [{ data: svInfo }, { data: svMonHoc }] = await Promise.all([
+        // Fetch Student Info, Assignments & GPA view
+        const [{ data: svInfo }, { data: svMonHoc }, { data: gpaView }] = await Promise.all([
           supabase.from("sinhvien").select("malop").eq("masv", masv).single(),
           supabase
             .from("sinhvienmonhoc")
             .select("maphancong")
             .eq("masv", masv)
             .eq("trangthai", "Danghoc"),
+          supabase
+            .from("view_gpa_sinhvien")
+            .select("gpa10_hocky_hientai,gpa4_hocky_hientai,gpa10_tich_luy,gpa4_tich_luy,xep_loai_hoc_luc")
+            .eq("masv", masv)
+            .maybeSingle(),
         ]);
 
         const myLop = svInfo?.malop;
@@ -120,7 +135,18 @@ export default function StudentDashboard() {
         ] = await Promise.all([
           supabase
             .from("diem")
-            .select("loaidiem, giatri, maphancong")
+            .select(`
+              loaidiem,
+              giatri,
+              maphancong,
+              sinhvienmonhoc (
+                phancong (
+                  monhoc (
+                    tenmon
+                  )
+                )
+              )
+            `)
             .eq("masv", masv)
             .order("ngaytao", { ascending: false })
             .limit(6),
@@ -149,18 +175,7 @@ export default function StudentDashboard() {
             .eq("trangthai", "Vangmat"),
         ]);
 
-        // Compute GPA from diem rows
-        let diemTBHK: number | null = null;
-        if (diemRows && diemRows.length > 0) {
-          const cuoiky = diemRows.filter((d) => d.loaidiem === "CuoiKy");
-          if (cuoiky.length > 0) {
-            diemTBHK = parseFloat(
-              (
-                cuoiky.reduce((s, d) => s + d.giatri, 0) / cuoiky.length
-              ).toFixed(2),
-            );
-          }
-        }
+        // GPA lấy từ view_gpa_sinhvien (đã xử lý học lại, thang VNUA)
 
         // Lọc bài tập chưa nộp thuộc các môn SV đang học
         let unsubmittedCount = 0;
@@ -185,7 +200,11 @@ export default function StudentDashboard() {
 
         setData({
           monHocCount: svMonHoc?.length ?? 0,
-          diemTBHK,
+          gpa10_hocky_hientai: gpaView?.gpa10_hocky_hientai ?? 0,
+          gpa4_hocky_hientai:  gpaView?.gpa4_hocky_hientai  ?? 0,
+          gpa10_tich_luy:      gpaView?.gpa10_tich_luy       ?? 0,
+          gpa4_tich_luy:       gpaView?.gpa4_tich_luy        ?? 0,
+          xep_loai_hoc_luc:    gpaView?.xep_loai_hoc_luc     ?? null,
           soBuoiVang: diemDanh?.length ?? 0,
           soBaiTapConHan: unsubmittedCount,
           lichHocHomNay: (lichHoc ?? []).map((lh: any) => ({
@@ -198,7 +217,17 @@ export default function StudentDashboard() {
             ...t,
             ngaytao: new Date(t.ngaytao).toLocaleDateString("vi-VN"),
           })),
-          diemGanDay: diemRows ?? [],
+          diemGanDay: (diemRows ?? []).map((d: any) => {
+            const svm = Array.isArray(d.sinhvienmonhoc) ? d.sinhvienmonhoc[0] : d.sinhvienmonhoc;
+            const pc = Array.isArray(svm?.phancong) ? svm?.phancong[0] : svm?.phancong;
+            const mh = Array.isArray(pc?.monhoc) ? pc?.monhoc[0] : pc?.monhoc;
+            return {
+              maphancong: d.maphancong,
+              loaidiem: d.loaidiem,
+              giatri: d.giatri,
+              tenmon: mh?.tenmon
+            };
+          }),
         });
       } catch {
         // Keep null data — show empty states
@@ -241,16 +270,15 @@ export default function StudentDashboard() {
             sub="học kỳ này"
           />
           <StatCard
-            label="GPA học kỳ"
-            value={
-              fetching
-                ? "…"
-                : data?.diemTBHK !== null
-                  ? data!.diemTBHK!.toFixed(2)
-                  : "—"
-            }
-            sub="điểm hệ 10"
+            label="GPA kỳ hiện tại"
+            value={fetching ? "…" : (data?.gpa10_hocky_hientai ?? 0).toFixed(2)}
+            sub={`Thang 4: ${fetching ? "…" : (data?.gpa4_hocky_hientai ?? 0).toFixed(2)}`}
             accent
+          />
+          <StatCard
+            label="GPA tích lũy"
+            value={fetching ? "…" : (data?.gpa10_tich_luy ?? 0).toFixed(2)}
+            sub={data?.xep_loai_hoc_luc ?? `H4: ${(data?.gpa4_tich_luy ?? 0).toFixed(2)}`}
           />
           <StatCard
             label="Buổi vắng"
@@ -313,7 +341,7 @@ export default function StudentDashboard() {
               <table className="data-table" aria-label="Bảng điểm gần đây">
                 <thead>
                   <tr>
-                    <th>Phân công</th>
+                    <th>Môn học</th>
                     <th>Loại</th>
                     <th>Điểm</th>
                   </tr>
@@ -321,7 +349,7 @@ export default function StudentDashboard() {
                 <tbody>
                   {data.diemGanDay.map((d, i) => (
                     <tr key={i}>
-                      <td>{d.maphancong}</td>
+                      <td>{d.tenmon ?? `Lớp học #${d.maphancong}`}</td>
                       <td>
                         <span
                           className={`badge ${

@@ -51,7 +51,7 @@ export default function ResultTable({ data = [] }: ResultTableProps) {
               <td className="py-5 px-2 font-bold text-gray-700">{row.sotinchi}</td>
               <td className="py-5 px-2">
                 <span className={`px-3 py-1 rounded-full font-black text-xs ${row.diem10 !== null ? "bg-gray-100 text-gray-900" : "text-gray-300"}`}>
-                    {row.diem10 !== null ? row.diem10.toFixed(1) : "—"}
+                    {row.diem10 !== null ? row.diem10.toFixed(2) : "—"}
                 </span>
               </td>
               <td className="py-5 px-2 font-black text-gray-900">{row.diem4 !== null ? row.diem4.toFixed(1) : "—"}</td>

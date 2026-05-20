@@ -1,31 +1,138 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import ResultTable from "@/components/student/ResultTable";
 import { useAuth } from "@/hooks/auth/useAuth";
 import { useRouter } from "next/navigation";
 import { VaiTro } from "@/types";
 import { apiFetch } from "@/services/service/auth/auth.service";
-import { Loader2, TrendingUp, Clock, BookOpen } from "lucide-react";
+import { Loader2, TrendingUp, BookOpen, Award, BarChart3, CheckCircle, XCircle } from "lucide-react";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
 
-interface GradeSummary {
-  gpa: number | null;
-  totalTinchi: number;
-  totalTinchiDat: number;
-  soMon: number;
-  soMonDat: number;
-  soMonKhongDat: number;
-  tilechuyencan: number | null;
+// ─── Types khớp đúng với view_gpa_sinhvien ───────────────────────────────────
+
+interface GpaView {
+  masv: string;
+  hoten: string;
+  emailtruong: string;
+  malop: string;
+  tenlop: string;
+  // GPA kỳ hiện tại (hocky.danghieuluc = true)
+  gpa10_hocky_hientai: number;
+  gpa4_hocky_hientai: number;
+  sotinchi_hocky_hientai: number;
+  sotinchi_dat_hocky_hientai: number;
+  // GPA tích lũy toàn bộ
+  gpa10_tich_luy: number;
+  gpa4_tich_luy: number;
+  tong_sotinchi_da_hoc: number;
+  sotinchi_tich_luy_dat: number;
+  // Xếp loại
+  xep_loai_hoc_luc: string | null;
+  xep_loai_hoc_luc_he4: string | null;
 }
+
+interface GradeRow {
+  stt: number;
+  mamon: string;
+  malophoc: string;
+  mahocky: number;
+  tenmon: string;
+  sotinchi: number;
+  giangvien: string;
+  diem10: number | null;
+  diemchu: string | null;
+  ketqua: string | null;
+  dat: boolean;
+  coDiem: boolean;
+  diemThanhPhan: { loai: string; giatri: number; heso: number }[];
+}
+
+interface HocKy {
+  mahocky: number;
+  tenhocky: string;
+  namhoc: string;
+  ky: number;
+  danghieuluc: boolean;
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+
+function xepLoaiStyle(xl: string | null) {
+  switch (xl) {
+    case "Xuất sắc": return { bg: "#fef3c7", text: "#92400e", border: "#fbbf24" };
+    case "Giỏi":     return { bg: "#d1fae5", text: "#065f46", border: "#34d399" };
+    case "Khá":      return { bg: "#dbeafe", text: "#1e40af", border: "#60a5fa" };
+    case "Trung bình": return { bg: "#f3f4f6", text: "#374151", border: "#9ca3af" };
+    case "Yếu":      return { bg: "#fee2e2", text: "#991b1b", border: "#f87171" };
+    case "Kém":      return { bg: "#fce7f3", text: "#831843", border: "#f472b6" };
+    default:         return { bg: "#f3f4f6", text: "#6b7280", border: "#d1d5db" };
+  }
+}
+
+function diem10Color(d: number | null) {
+  if (d === null) return "#9ca3af";
+  if (d >= 8.5) return "#065f46";
+  if (d >= 7.0) return "#1d4ed8";
+  if (d >= 5.5) return "#92400e";
+  if (d >= 4.0) return "#c2410c";
+  return "#991b1b";
+}
+
+function loaiLabel(loai: string) {
+  const m: Record<string, string> = {
+    ChuyenCan: "CC", GiuaKy: "GK", CuoiKy: "CK",
+    Thuchanh: "TH", Tieuluan: "TL",
+  };
+  return m[loai] ?? loai;
+}
+
+// ─── GPA Card ─────────────────────────────────────────────────────────────────
+
+function GpaCard({
+  label, value, sub, accent, badge,
+}: {
+  label: string; value: string; sub?: string;
+  accent?: boolean; badge?: { text: string; style: ReturnType<typeof xepLoaiStyle> };
+}) {
+  return (
+    <div style={{
+      borderRadius: 18, padding: "20px 22px", display: "flex", flexDirection: "column", gap: 6,
+      background: accent ? "linear-gradient(135deg,#c25450 0%,#a8443f 100%)" : "#fff",
+      border: accent ? "none" : "1px solid #ead9cb",
+    }}>
+      <span style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.06em", color: accent ? "rgba(255,255,255,0.7)" : "#8b6f5f" }}>
+        {label}
+      </span>
+      <span style={{ fontSize: 34, fontWeight: 800, lineHeight: 1, color: accent ? "#fff" : "#2d1b14" }}>
+        {value}
+      </span>
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        {sub && <span style={{ fontSize: 11, color: accent ? "rgba(255,255,255,0.6)" : "#8b6f5f" }}>{sub}</span>}
+        {badge && (
+          <span style={{
+            fontSize: 10, fontWeight: 800, padding: "2px 10px", borderRadius: 20,
+            background: badge.style.bg, color: badge.style.text, border: `1px solid ${badge.style.border}`,
+          }}>
+            {badge.text}
+          </span>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function StudentGradesPage() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
-  const [data, setData] = useState<{ grades: any[]; summary: GradeSummary } | null>(null);
+  const [gpaView, setGpaView] = useState<GpaView | null>(null);
+  const [grades, setGrades] = useState<GradeRow[]>([]);
+  const [hocKyList, setHocKyList] = useState<HocKy[]>([]);
+  const [mahocky, setMahocky] = useState<string>("all");
   const [loading, setLoading] = useState(true);
+  const [tab, setTab] = useState<"chitiet" | "tongket">("chitiet");
 
-  // Route guard
   useEffect(() => {
     if (!authLoading && !user) router.replace("/login");
     if (!authLoading && user && user.vaitro !== VaiTro.SinhVien) router.replace("/login");
@@ -33,93 +140,244 @@ export default function StudentGradesPage() {
 
   useEffect(() => {
     if (!user) return;
-    async function fetchData() {
-      setLoading(true);
-      try {
-        const res = await apiFetch("/api/student/grades");
-        const json = await res.json();
-        if (json.grades) {
-          setData({ grades: json.grades, summary: json.summary });
-        }
-      } catch (err) {
-        console.error("Failed to fetch grades:", err);
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchData();
-  }, [user]);
+    setLoading(true);
+    apiFetch(`/api/student/grades?mahocky=${mahocky}`)
+      .then((r) => r.json())
+      .then((json) => {
+        setGpaView(json.gpaView ?? null);
+        setGrades(json.grades ?? []);
+        setHocKyList(json.hocKyList ?? []);
+      })
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, [user, mahocky]);
 
   if (authLoading || !user) return null;
 
+  const xl10  = xepLoaiStyle(gpaView?.xep_loai_hoc_luc  ?? null);
+  const xl4   = xepLoaiStyle(gpaView?.xep_loai_hoc_luc_he4 ?? null);
+
   return (
     <DashboardShell pageTitle="Kết quả học tập">
-        <div className="flex flex-col gap-6 w-full p-6 md:p-8 bg-[#FAF7F6] min-h-screen">
-        {/* 3 Thẻ thống kê */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex flex-col items-center justify-center relative overflow-hidden group hover:shadow-md transition-all">
-            <div className="absolute top-0 right-0 p-3 bg-red-50 rounded-bl-2xl text-red-400 opacity-20 group-hover:opacity-40 transition-opacity">
-                <TrendingUp size={48} />
-            </div>
-            <p className="text-[10px] text-gray-400 uppercase tracking-[0.2em] font-black mb-2 z-10">
-                GPA Học Kỳ
-            </p>
-            <h2 className="text-4xl font-black text-gray-900 z-10">
-                {loading ? "..." : (data?.summary.gpa?.toFixed(2) ?? "0.00")}
-            </h2>
-            </div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 20, padding: "8px 0" }}>
 
-            <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex flex-col items-center justify-center relative overflow-hidden group hover:shadow-md transition-all">
-            <div className="absolute top-0 right-0 p-3 bg-blue-50 rounded-bl-2xl text-blue-400 opacity-20 group-hover:opacity-40 transition-opacity">
-                <Clock size={48} />
+        {/* ── Bộ lọc học kỳ ─────────────────────────────────────────────── */}
+        <div style={{
+          display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap",
+          background: "#fff", borderRadius: 16, padding: "12px 20px", border: "1px solid #ead9cb",
+        }}>
+          <span style={{ fontSize: 13, fontWeight: 600, color: "#8b6f5f" }}>Học kỳ:</span>
+          <select
+            id="select-hocky"
+            value={mahocky}
+            onChange={(e) => setMahocky(e.target.value)}
+            style={{
+              padding: "6px 14px", borderRadius: 10, border: "1px solid #ead9cb",
+              fontSize: 13, fontWeight: 600, color: "#2d1b14", background: "#fff8f5", cursor: "pointer",
+            }}
+          >
+            <option value="all">Tất cả học kỳ</option>
+            {hocKyList.map((hk) => (
+              <option key={hk.mahocky} value={hk.mahocky}>
+                {hk.tenhocky}{hk.danghieuluc ? " ★ (hiện tại)" : ""}
+              </option>
+            ))}
+          </select>
+          {gpaView && (
+            <div style={{ marginLeft: "auto", display: "flex", gap: 8, alignItems: "center" }}>
+              <span style={{ fontSize: 12, color: "#8b6f5f" }}>{gpaView.tenlop} · {gpaView.emailtruong}</span>
             </div>
-            <p className="text-[10px] text-gray-400 uppercase tracking-[0.2em] font-black mb-2 z-10">
-                Tỉ lệ chuyên cần
-            </p>
-            <h2 className="text-4xl font-black text-gray-900 z-10">
-                {loading ? "..." : (data?.summary.tilechuyencan ? `${data.summary.tilechuyencan}%` : "100%")}
-            </h2>
-            </div>
-
-            <div className="bg-white p-6 rounded-3xl shadow-sm border border-gray-100 flex flex-col items-center justify-center relative overflow-hidden group hover:shadow-md transition-all">
-            <div className="absolute top-0 right-0 p-3 bg-green-50 rounded-bl-2xl text-green-400 opacity-20 group-hover:opacity-40 transition-opacity">
-                <BookOpen size={48} />
-            </div>
-            <p className="text-[10px] text-gray-400 uppercase tracking-[0.2em] font-black mb-2 z-10">
-                Tín chỉ tích lũy
-            </p>
-            <h2 className="text-4xl font-black text-gray-900 z-10">
-                {loading ? "..." : (data?.summary.totalTinchiDat ?? 0)}
-            </h2>
-            </div>
+          )}
         </div>
 
-        {/* Bảng điểm chi tiết */}
-        <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-gray-100 mt-2">
-            <div className="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
-                <div>
-                    <h3 className="text-xl font-black text-gray-900">
-                        Kết quả học tập
-                    </h3>
-                    <p className="text-sm text-gray-400 font-medium">Học kỳ hiện tại</p>
-                </div>
-                {/* Có thể thêm nút In bảng điểm ở đây */}
-            </div>
+        {/* ── 4 GPA Cards (đọc trực tiếp từ view) ──────────────────────── */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14 }}>
+          <GpaCard
+            label="GPA kỳ hiện tại"
+            value={loading ? "…" : (gpaView?.gpa10_hocky_hientai ?? 0).toFixed(2)}
+            sub={`Thang 4: ${loading ? "…" : (gpaView?.gpa4_hocky_hientai ?? 0).toFixed(2)}`}
+            accent
+          />
+          <GpaCard
+            label="GPA tích lũy"
+            value={loading ? "…" : (gpaView?.gpa10_tich_luy ?? 0).toFixed(2)}
+            sub={`Thang 4: ${loading ? "…" : (gpaView?.gpa4_tich_luy ?? 0).toFixed(2)}`}
+            badge={gpaView?.xep_loai_hoc_luc ? { text: gpaView.xep_loai_hoc_luc, style: xl10 } : undefined}
+          />
+          <GpaCard
+            label="Tín chỉ tích lũy đạt"
+            value={loading ? "…" : String(gpaView?.sotinchi_tich_luy_dat ?? 0)}
+            sub={`/ ${gpaView?.tong_sotinchi_da_hoc ?? 0} TC đã học`}
+          />
+          <GpaCard
+            label="TC kỳ hiện tại"
+            value={loading ? "…" : String(gpaView?.sotinchi_hocky_hientai ?? 0)}
+            sub={`Đạt: ${gpaView?.sotinchi_dat_hocky_hientai ?? 0} TC`}
+          />
+        </div>
 
-            {loading ? (
-                <div className="flex flex-col items-center py-20 gap-3 text-gray-400">
-                    <Loader2 size={32} className="animate-spin text-red-500" />
-                    <p className="text-sm font-bold">Đang tải dữ liệu điểm...</p>
-                </div>
+        {/* ── Xếp loại 2 thang ──────────────────────────────────────────── */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+          {[
+            { label: "Xếp loại học lực (thang 10)", value: gpaView?.xep_loai_hoc_luc, style: xl10 },
+            { label: "Xếp loại học lực (thang 4 – VNUA)", value: gpaView?.xep_loai_hoc_luc_he4, style: xl4 },
+          ].map((item, i) => (
+            <div key={i} style={{
+              borderRadius: 16, padding: "16px 24px", display: "flex", alignItems: "center",
+              gap: 16, background: item.style.bg, border: `1px solid ${item.style.border}`,
+            }}>
+              <div>
+                <div style={{ fontSize: 11, fontWeight: 600, color: item.style.text, marginBottom: 4 }}>{item.label}</div>
+                <div style={{ fontSize: 24, fontWeight: 800, color: item.style.text }}>{item.value ?? "—"}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* ── Bảng điểm chi tiết ────────────────────────────────────────── */}
+        <div style={{ background: "#fff", borderRadius: 24, border: "1px solid #ead9cb", overflow: "hidden" }}>
+          {/* Header + Tab */}
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 24px 0", borderBottom: "1px solid #ead9cb", flexWrap: "wrap", gap: 8 }}>
+            <div>
+              <h2 style={{ fontSize: 15, fontWeight: 700, color: "#2d1b14", margin: 0 }}>Bảng điểm chi tiết</h2>
+              <p style={{ fontSize: 12, color: "#8b6f5f", margin: "2px 0 0" }}>
+                {mahocky === "all" ? "Tất cả học kỳ" : hocKyList.find((h) => String(h.mahocky) === mahocky)?.tenhocky}
+                {" · "}{grades.length} môn
+              </p>
+            </div>
+            <div style={{ display: "flex", gap: 4, background: "#f5ede8", padding: 4, borderRadius: 12, marginBottom: 4 }}>
+              {(["chitiet", "tongket"] as const).map((t) => (
+                <button key={t} onClick={() => setTab(t)} style={{
+                  padding: "6px 18px", borderRadius: 10, border: "none", fontSize: 12, fontWeight: 700,
+                  cursor: "pointer", transition: "all 0.15s",
+                  background: tab === t ? "#fff" : "transparent",
+                  color: tab === t ? "#2d1b14" : "#8b6f5f",
+                  boxShadow: tab === t ? "0 1px 4px rgba(0,0,0,0.08)" : "none",
+                }}>
+                  {t === "chitiet" ? "Chi tiết điểm" : "Tổng kết GPA"}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {loading ? (
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, padding: "60px 20px", color: "#8b6f5f" }}>
+              <Loader2 size={24} style={{ animation: "spin 1s linear infinite", color: "#c25450" }} />
+              <span style={{ fontSize: 13, fontWeight: 600 }}>Đang tải dữ liệu điểm…</span>
+            </div>
+          ) : tab === "chitiet" ? (
+            /* ── Tab Chi tiết ─────────────────────────────────────────────── */
+            grades.length === 0 ? (
+              <p style={{ padding: "40px 24px", textAlign: "center", color: "#8b6f5f", fontSize: 13 }}>Không có dữ liệu điểm.</p>
             ) : (
-                /* Truyền dữ liệu thật vào ResultTable nếu component này hỗ trợ props, 
-                nhưng hiện tại ResultTable đang dùng mock. 
-                Tôi sẽ cập nhật ResultTable sau hoặc giả định nó hiển thị data từ context.
-                */
-                <ResultTable data={data?.grades} />
-            )}
+              <div style={{ overflowX: "auto" }}>
+                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                  <thead>
+                    <tr style={{ background: "#fff8f5" }}>
+                      {["STT", "Mã MH", "Tên môn học", "TC", "Điểm thành phần", "TK (H10)", "Chữ", "Kết quả"].map((h, i) => (
+                        <th key={i} style={{
+                          padding: "12px 14px", textAlign: i < 3 ? "left" : "center",
+                          fontSize: 10, fontWeight: 800, color: "#8b6f5f",
+                          textTransform: "uppercase", letterSpacing: "0.08em",
+                          borderBottom: "1px solid #ead9cb", whiteSpace: "nowrap",
+                        }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {grades.map((row, i) => (
+                      <tr key={i} style={{ borderBottom: "1px solid #f5ede8", background: i % 2 === 0 ? "#fff" : "#fffaf8" }}>
+                        <td style={{ padding: "11px 14px", color: "#9ca3af", fontWeight: 600 }}>{row.stt}</td>
+                        <td style={{ padding: "11px 14px", fontWeight: 700, color: "#c25450", fontSize: 12, whiteSpace: "nowrap" }}>{row.mamon}</td>
+                        <td style={{ padding: "11px 14px", fontWeight: 700, color: "#2d1b14", maxWidth: 240 }}>{row.tenmon}</td>
+                        <td style={{ padding: "11px 14px", textAlign: "center", fontWeight: 700 }}>{row.sotinchi}</td>
+                        <td style={{ padding: "11px 14px" }}>
+                          {row.diemThanhPhan.length > 0 ? (
+                            <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+                              {row.diemThanhPhan.map((d, idx) => (
+                                <span key={idx} style={{
+                                  padding: "2px 8px", borderRadius: 20, fontSize: 11, fontWeight: 600,
+                                  background: "#f5ede8", border: "1px solid #ead9cb", color: "#2d1b14", whiteSpace: "nowrap",
+                                }}>
+                                  {loaiLabel(d.loai)} ({Math.round(d.heso * 100)}%): <strong style={{ color: "#c25450" }}>{d.giatri}</strong>
+                                </span>
+                              ))}
+                            </div>
+                          ) : <span style={{ color: "#d1d5db", fontSize: 12, fontStyle: "italic" }}>—</span>}
+                        </td>
+                        <td style={{ padding: "11px 14px", textAlign: "center" }}>
+                          <span style={{ fontSize: 15, fontWeight: 800, color: diem10Color(row.diem10) }}>
+                            {row.diem10 !== null ? row.diem10.toFixed(2) : "—"}
+                          </span>
+                        </td>
+                        <td style={{ padding: "11px 14px", textAlign: "center" }}>
+                          <span style={{
+                            padding: "3px 10px", borderRadius: 20, fontSize: 12, fontWeight: 800,
+                            background: row.diemchu ? "#f5ede8" : "#f3f4f6",
+                            color: row.diemchu ? "#c25450" : "#9ca3af",
+                          }}>
+                            {row.diemchu ?? "—"}
+                          </span>
+                        </td>
+                        <td style={{ padding: "11px 14px", textAlign: "center" }}>
+                          {!row.coDiem ? (
+                            <span style={{ fontSize: 11, color: "#9ca3af" }}>Chưa có</span>
+                          ) : row.dat ? (
+                            <span style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
+                              <CheckCircle size={14} color="#059669" />
+                              <span style={{ fontSize: 11, fontWeight: 700, color: "#059669" }}>Đạt</span>
+                            </span>
+                          ) : (
+                            <span style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
+                              <XCircle size={14} color="#dc2626" />
+                              <span style={{ fontSize: 11, fontWeight: 700, color: "#dc2626" }}>Không đạt</span>
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )
+          ) : (
+            /* ── Tab Tổng kết GPA (đọc trực tiếp từ gpaView) ─────────────── */
+            <div style={{ padding: 24, display: "flex", flexDirection: "column", gap: 16 }}>
+              {/* Bảng so sánh 2 thang */}
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                <thead>
+                  <tr style={{ background: "#fff8f5" }}>
+                    {["Chỉ số", "Kỳ hiện tại", "Tích lũy toàn khóa"].map((h, i) => (
+                      <th key={i} style={{
+                        padding: "12px 16px", textAlign: i === 0 ? "left" : "center",
+                        fontSize: 11, fontWeight: 800, color: "#8b6f5f",
+                        textTransform: "uppercase", letterSpacing: "0.08em",
+                        borderBottom: "1px solid #ead9cb",
+                      }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {[
+                    { label: "GPA thang 10", ky: (gpaView?.gpa10_hocky_hientai ?? 0).toFixed(2), tl: (gpaView?.gpa10_tich_luy ?? 0).toFixed(2) },
+                    { label: "GPA thang 4 (VNUA)", ky: (gpaView?.gpa4_hocky_hientai ?? 0).toFixed(2), tl: (gpaView?.gpa4_tich_luy ?? 0).toFixed(2) },
+                    { label: "Tín chỉ đăng ký", ky: String(gpaView?.sotinchi_hocky_hientai ?? 0), tl: String(gpaView?.tong_sotinchi_da_hoc ?? 0) },
+                    { label: "Tín chỉ đạt", ky: String(gpaView?.sotinchi_dat_hocky_hientai ?? 0), tl: String(gpaView?.sotinchi_tich_luy_dat ?? 0) },
+                    { label: "Xếp loại học lực", ky: gpaView?.xep_loai_hoc_luc ?? "—", tl: gpaView?.xep_loai_hoc_luc ?? "—" },
+                    { label: "Xếp loại (thang 4)", ky: gpaView?.xep_loai_hoc_luc_he4 ?? "—", tl: gpaView?.xep_loai_hoc_luc_he4 ?? "—" },
+                  ].map((row, i) => (
+                    <tr key={i} style={{ borderBottom: "1px solid #f5ede8", background: i % 2 === 0 ? "#fff" : "#fffaf8" }}>
+                      <td style={{ padding: "12px 16px", fontWeight: 600, color: "#6b7280" }}>{row.label}</td>
+                      <td style={{ padding: "12px 16px", textAlign: "center", fontWeight: 800, color: "#2d1b14" }}>{row.ky}</td>
+                      <td style={{ padding: "12px 16px", textAlign: "center", fontWeight: 800, color: "#c25450" }}>{row.tl}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
-        </div>
+      </div>
     </DashboardShell>
   );
 }
