@@ -20,7 +20,7 @@ export function FaceRegistrationModal({ isOpen, onClose, onSuccess }: FaceRegist
   const [message, setMessage] = useState("");
   const [captures, setCaptures] = useState<Float32Array[]>([]);
 
-  // Load models from CDN
+  // Load models from
   useEffect(() => {
     if (!isOpen) return;
     
