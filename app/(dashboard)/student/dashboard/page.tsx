@@ -31,10 +31,12 @@ interface DashboardData {
   }[];
   thongBaoGanDay: { tieude: string; ngaytao: string; loai: string }[];
   diemGanDay: {
-    maphancong: number;
-    loaidiem: string;
-    giatri: number;
-    tenmon?: string;
+    tenmon: string;
+    chuyencan: number | string;
+    giuaky: number | string;
+    cuoiky: number | string;
+    tongket: number | string;
+    diemchu: string | null;
   }[];
 }
 
@@ -129,27 +131,9 @@ export default function StudentDashboard() {
           .limit(5);
 
         const [
-          { data: diemRows },
           { data: lichHoc },
           { data: diemDanh },
         ] = await Promise.all([
-          supabase
-            .from("diem")
-            .select(`
-              loaidiem,
-              giatri,
-              maphancong,
-              sinhvienmonhoc (
-                phancong (
-                  monhoc (
-                    tenmon
-                  )
-                )
-              )
-            `)
-            .eq("masv", masv)
-            .order("ngaytao", { ascending: false })
-            .limit(6),
           supabase
             .from("lichhoc")
             .select(`
@@ -217,15 +201,17 @@ export default function StudentDashboard() {
             ...t,
             ngaytao: new Date(t.ngaytao).toLocaleDateString("vi-VN"),
           })),
-          diemGanDay: (diemRows ?? []).map((d: any) => {
-            const svm = Array.isArray(d.sinhvienmonhoc) ? d.sinhvienmonhoc[0] : d.sinhvienmonhoc;
-            const pc = Array.isArray(svm?.phancong) ? svm?.phancong[0] : svm?.phancong;
-            const mh = Array.isArray(pc?.monhoc) ? pc?.monhoc[0] : pc?.monhoc;
+          diemGanDay: (gpaResponse?.grades ?? []).slice(0, 5).map((g: any) => {
+            const cc = g.diemThanhPhan.find((d: any) => d.loai === "ChuyenCan")?.giatri;
+            const gk = g.diemThanhPhan.find((d: any) => d.loai === "GiuaKy")?.giatri;
+            const ck = g.diemThanhPhan.find((d: any) => d.loai === "CuoiKy")?.giatri;
             return {
-              maphancong: d.maphancong,
-              loaidiem: d.loaidiem,
-              giatri: d.giatri,
-              tenmon: mh?.tenmon
+              tenmon: g.tenmon,
+              chuyencan: cc !== undefined && cc !== null ? cc.toFixed(1) : "—",
+              giuaky: gk !== undefined && gk !== null ? gk.toFixed(1) : "—",
+              cuoiky: ck !== undefined && ck !== null ? ck.toFixed(1) : "—",
+              tongket: g.diem10 !== null ? g.diem10.toFixed(1) : "—",
+              diemchu: g.diemchu
             };
           }),
         });
@@ -340,37 +326,53 @@ export default function StudentDashboard() {
             ) : (
               <table className="data-table" aria-label="Bảng điểm gần đây">
                 <thead>
-                  <tr>
-                    <th>Môn học</th>
-                    <th>Loại</th>
-                    <th>Điểm</th>
+                  <tr style={{ background: "#fff8f5" }}>
+                    <th style={{ padding: "10px 14px", textTransform: "uppercase", fontSize: 10, letterSpacing: "0.06em", color: "#8b6f5f" }}>Môn học</th>
+                    <th style={{ padding: "10px 14px", textAlign: "center", textTransform: "uppercase", fontSize: 10, letterSpacing: "0.06em", color: "#8b6f5f" }}>Chuyên cần</th>
+                    <th style={{ padding: "10px 14px", textAlign: "center", textTransform: "uppercase", fontSize: 10, letterSpacing: "0.06em", color: "#8b6f5f" }}>Giữa kỳ</th>
+                    <th style={{ padding: "10px 14px", textAlign: "center", textTransform: "uppercase", fontSize: 10, letterSpacing: "0.06em", color: "#8b6f5f" }}>Cuối kỳ</th>
+                    <th style={{ padding: "10px 14px", textAlign: "center", textTransform: "uppercase", fontSize: 10, letterSpacing: "0.06em", color: "#8b6f5f" }}>Tổng kết</th>
                   </tr>
                 </thead>
                 <tbody>
                   {data.diemGanDay.map((d, i) => (
-                    <tr key={i}>
-                      <td>{d.tenmon ?? `Lớp học #${d.maphancong}`}</td>
-                      <td>
-                        <span
-                          className={`badge ${
-                            d.loaidiem === "CuoiKy"
-                              ? "badge-blue"
-                              : d.loaidiem === "GiuaKy"
-                                ? "badge-yellow"
-                                : "badge-peach"
-                          }`}
-                        >
-                          {d.loaidiem}
-                        </span>
+                    <tr key={i} style={{ background: i % 2 === 0 ? "#fff" : "#fffaf8" }}>
+                      <td style={{ padding: "12px 14px", fontWeight: 700, color: "#2d1b14" }}>{d.tenmon}</td>
+                      <td style={{ padding: "12px 14px", textAlign: "center", fontWeight: 600, color: d.chuyencan === "—" ? "#9ca3af" : "#2d1b14" }}>
+                        {d.chuyencan}
                       </td>
-                      <td>
-                        <strong
-                          style={{
-                            color: d.giatri >= 5 ? "#065F46" : "#991B1B",
-                          }}
-                        >
-                          {d.giatri.toFixed(1)}
-                        </strong>
+                      <td style={{ padding: "12px 14px", textAlign: "center", fontWeight: 600, color: d.giuaky === "—" ? "#9ca3af" : "#2d1b14" }}>
+                        {d.giuaky}
+                      </td>
+                      <td style={{ padding: "12px 14px", textAlign: "center", fontWeight: 600, color: d.cuoiky === "—" ? "#9ca3af" : "#2d1b14" }}>
+                        {d.cuoiky}
+                      </td>
+                      <td style={{ padding: "12px 14px", textAlign: "center" }}>
+                        {d.tongket !== "—" ? (
+                          <div style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                            <strong style={{
+                              color: Number(d.tongket) >= 4.0 ? "#065f46" : "#991b1b",
+                              fontSize: 14,
+                            }}>
+                              {d.tongket}
+                            </strong>
+                            {d.diemchu && (
+                              <span style={{
+                                fontSize: 10,
+                                fontWeight: 800,
+                                background: "#f5ede8",
+                                color: "#c25450",
+                                padding: "2px 6px",
+                                borderRadius: 12,
+                                border: "1px solid #ead9cb"
+                              }}>
+                                {d.diemchu}
+                              </span>
+                            )}
+                          </div>
+                        ) : (
+                          <span style={{ color: "#d1d5db", fontStyle: "italic" }}>Chưa có</span>
+                        )}
                       </td>
                     </tr>
                   ))}
