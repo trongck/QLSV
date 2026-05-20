@@ -4,9 +4,8 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/auth/useAuth";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
-import { createClient } from "@/lib/utils/supabase/client";
 import { VaiTro } from "@/types";
-import { getVietnamTimeISO } from "@/lib/utils/date";
+import { apiFetch } from "@/services/service/auth/auth.service";
 import styles from "./teacher-dashboard.module.css";
 
 interface ClassSummary {
@@ -58,66 +57,27 @@ export default function TeacherDashboard() {
 
   useEffect(() => {
     if (!user?.maGiangVien) return;
-    const magv = user.maGiangVien;
-    const supabase = createClient();
 
     async function load() {
       setFetching(true);
       try {
-        const [{ data: phancong }, { data: thongBao }, { data: baitap }] =
-          await Promise.all([
-            supabase
-              .from("phancong")
-              .select(
-                `
-              maphancong,
-              monhoc(tenmon),
-              lop(tenlop, siso),
-              thongkephancong(diemtb, tilechuyencan)
-            `,
-              )
-              .eq("magv", magv)
-              .eq("danghieuluc", true),
-            supabase
-              .from("thongbao")
-              .select("tieude, ngaytao")
-              .eq("magvtao", magv)
-              .lte("ngaytao", getVietnamTimeISO())
-              .order("ngaytao", { ascending: false })
-              .limit(5),
-            supabase
-              .from("baitap")
-              .select("mabaitap")
-              .eq("magv", magv)
-              .gt("hannop", new Date().toISOString()),
-          ]);
-
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const classSummaries: ClassSummary[] = (phancong ?? []).map(
-          (pc: any) => ({
-            maphancong: pc.maphancong,
-            tenmon: pc.monhoc?.tenmon ?? "—",
-            tenlop: pc.lop?.tenlop ?? "—",
-            siso: pc.lop?.siso ?? 0,
-            diemtb: pc.thongkephancong?.diemtb ?? null,
-            tilechuyencan: pc.thongkephancong?.tilechuyencan ?? null,
-          }),
-        );
-
-        const totalStudents = classSummaries.reduce((s, c) => s + c.siso, 0);
-
-        setData({
-          totalClasses: classSummaries.length,
-          totalStudents,
-          pendingTasks: baitap?.length ?? 0,
-          classSummaries,
-          thongBao: (thongBao ?? []).map((t) => ({
-            tieude: t.tieude,
-            ngaytao: new Date(t.ngaytao).toLocaleDateString("vi-VN"),
-          })),
-        });
-      } catch {
-        // keep null
+        const res = await apiFetch("/api/giangvien/dashboard");
+        const json = await res.json();
+        if (json.success && json.data) {
+          const stats = json.data;
+          setData({
+            totalClasses: stats.totalClasses ?? 0,
+            totalStudents: stats.totalStudents ?? 0,
+            pendingTasks: stats.pendingTasks ?? 0,
+            classSummaries: stats.classSummaries ?? [],
+            thongBao: (stats.thongBao ?? []).map((t: any) => ({
+              tieude: t.tieude,
+              ngaytao: new Date(t.ngaytao).toLocaleDateString("vi-VN"),
+            })),
+          });
+        }
+      } catch (err) {
+        console.error("Lỗi tải dashboard:", err);
       } finally {
         setFetching(false);
       }

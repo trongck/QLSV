@@ -42,6 +42,7 @@ export async function GET(request: NextRequest) {
                 mabaitap,
                 tieude,
                 mota,
+                filedinh,
                 hannop,
                 loai,
                 ngaytao,

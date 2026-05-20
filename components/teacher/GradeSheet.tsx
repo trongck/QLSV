@@ -1,8 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { apiFetch } from "@/services/auth.service";
+import { apiFetch } from "@/services/service/auth/auth.service";
 import styles from "@/app/(dashboard)/teacher/dashboard/teacher-dashboard.module.css";
+import * as XLSX from "xlsx";
 
 interface StudentGradeRow {
   stt: number;
@@ -10,7 +11,6 @@ interface StudentGradeRow {
   hoten: string;
   malop: string;
   diemChuyenCan: { giatri: number; heso: number } | null;
-  diemBaiTap: { giatri: number; heso: number } | null;
   diemGiuaKy: { giatri: number; heso: number } | null;
   diemCuoiKy: { giatri: number; heso: number } | null;
   tongKet: { diemtongket: number; diemchu: string; ketqua: string } | null;
@@ -23,7 +23,7 @@ export function GradeSheet() {
   const [loading, setLoading] = useState(true);
   const [savingRow, setSavingRow] = useState<string | null>(null);
   const [editingRows, setEditingRows] = useState<Record<string, boolean>>({});
-  const [tempGrades, setTempGrades] = useState<Record<string, { ChuyenCan: string; BaiTap: string; GiuaKy: string; CuoiKy: string }>>({});
+  const [tempGrades, setTempGrades] = useState<Record<string, { ChuyenCan: string; GiuaKy: string; CuoiKy: string }>>({});
   const [searchQuery, setSearchQuery] = useState("");
 
   // Tải danh sách lớp học
@@ -63,7 +63,6 @@ export function GradeSheet() {
           json.data.forEach((s: StudentGradeRow) => {
             initialInputs[s.masv] = {
               ChuyenCan: s.diemChuyenCan?.giatri?.toString() ?? "",
-              BaiTap: s.diemBaiTap?.giatri?.toString() ?? "",
               GiuaKy: s.diemGiuaKy?.giatri?.toString() ?? "",
               CuoiKy: s.diemCuoiKy?.giatri?.toString() ?? "",
             };
@@ -79,7 +78,7 @@ export function GradeSheet() {
     loadGradeSheet();
   }, [selectedPC]);
 
-  const handleGradeChange = (masv: string, type: "ChuyenCan" | "BaiTap" | "GiuaKy" | "CuoiKy", val: string) => {
+  const handleGradeChange = (masv: string, type: "ChuyenCan" | "GiuaKy" | "CuoiKy", val: string) => {
     if (val !== "" && !/^[0-9]*\.?[0-9]*$/.test(val)) return;
     const num = parseFloat(val);
     if (!isNaN(num) && num > 10) return;
@@ -108,7 +107,6 @@ export function GradeSheet() {
         ...prev,
         [masv]: {
           ChuyenCan: original.diemChuyenCan?.giatri?.toString() ?? "",
-          BaiTap: original.diemBaiTap?.giatri?.toString() ?? "",
           GiuaKy: original.diemGiuaKy?.giatri?.toString() ?? "",
           CuoiKy: original.diemCuoiKy?.giatri?.toString() ?? "",
         },
@@ -128,9 +126,8 @@ export function GradeSheet() {
       const row = tempGrades[masv];
       const gradesPayload = [
         { loaidiem: "ChuyenCan", giatri: parseFloat(row.ChuyenCan), heso: 0.1 },
-        { loaidiem: "BaiTap", giatri: parseFloat(row.BaiTap), heso: 0.2 },
         { loaidiem: "GiuaKy", giatri: parseFloat(row.GiuaKy), heso: 0.3 },
-        { loaidiem: "CuoiKy", giatri: parseFloat(row.CuoiKy), heso: 0.4 },
+        { loaidiem: "CuoiKy", giatri: parseFloat(row.CuoiKy), heso: 0.6 },
       ].filter((g) => !isNaN(g.giatri));
 
       const res = await apiFetch("/api/giangvien/grades", {
@@ -166,12 +163,51 @@ export function GradeSheet() {
     const row = tempGrades[masv];
     if (!row) return "—";
     const cc = parseFloat(row.ChuyenCan) || 0;
-    const bt = parseFloat(row.BaiTap) || 0;
     const gk = parseFloat(row.GiuaKy) || 0;
     const ck = parseFloat(row.CuoiKy) || 0;
 
-    const total = cc * 0.1 + bt * 0.2 + gk * 0.3 + ck * 0.4;
+    const total = cc * 0.1 + gk * 0.3 + ck * 0.6;
     return total.toFixed(2);
+  };
+
+  const handleExportExcel = () => {
+    if (!students || students.length === 0) {
+      alert("Không có dữ liệu để xuất.");
+      return;
+    }
+
+    const currentClass = classes.find(c => c.maphancong === selectedPC);
+    const className = currentClass ? `${currentClass.lop?.tenlop ?? ""} - ${currentClass.monhoc?.tenmon ?? ""}` : "Bảng điểm";
+
+    const exportData = students.map(s => {
+      const inputs = tempGrades[s.masv] || { ChuyenCan: "", GiuaKy: "", CuoiKy: "" };
+      const cc = inputs.ChuyenCan || (s.diemChuyenCan?.giatri?.toString() ?? "");
+      const gk = inputs.GiuaKy || (s.diemGiuaKy?.giatri?.toString() ?? "");
+      const ck = inputs.CuoiKy || (s.diemCuoiKy?.giatri?.toString() ?? "");
+      
+      const tk = (s.tongKet && typeof s.tongKet.diemtongket === "number") ? `${s.tongKet.diemtongket.toFixed(2)} (${s.tongKet.diemchu})` : "—";
+
+      return {
+        "STT": s.stt,
+        "Mã SV": s.masv,
+        "Họ và tên": s.hoten,
+        "Lớp": s.malop,
+        "Chuyên cần (10%)": cc,
+        "Giữa kỳ (30%)": gk,
+        "Cuối kỳ (60%)": ck,
+        "Tổng kết": tk
+      };
+    });
+
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Bảng Điểm");
+    
+    // Auto-size columns
+    const maxWidths = [5, 12, 30, 10, 15, 15, 15, 15, 15];
+    worksheet["!cols"] = maxWidths.map(w => ({ wch: w }));
+
+    XLSX.writeFile(workbook, `BangDiem_${className.replace(/\s+/g, "_")}.xlsx`);
   };
 
   // Lọc danh sách sinh viên theo thanh tìm kiếm
@@ -186,7 +222,7 @@ export function GradeSheet() {
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
         <div>
           <h2 style={{ fontSize: "20px", fontWeight: "700", color: "#6B4F43", margin: 0 }}>Nhập điểm &amp; Đánh giá kết quả</h2>
-          <p style={{ fontSize: "13px", color: "#8B6F5F", margin: "4px 0 0" }}>Cập nhật điểm chuyên cần, bài tập, giữa kỳ và cuối kỳ trực tiếp của sinh viên</p>
+          <p style={{ fontSize: "13px", color: "#8B6F5F", margin: "4px 0 0" }}>Cập nhật điểm chuyên cần, giữa kỳ và cuối kỳ trực tiếp của sinh viên</p>
         </div>
         <div style={{ display: "flex", gap: "10px" }}>
           <button
@@ -201,7 +237,10 @@ export function GradeSheet() {
           >
             Lưu bảng điểm
           </button>
-          <button style={{ border: "1px solid #EAD9CB", background: "white", padding: "10px 20px", borderRadius: "10px", fontSize: "14px", cursor: "pointer", color: "#6B4F43", fontWeight: "600" }}>
+          <button 
+            onClick={handleExportExcel}
+            style={{ border: "1px solid #EAD9CB", background: "white", padding: "10px 20px", borderRadius: "10px", fontSize: "14px", cursor: "pointer", color: "#6B4F43", fontWeight: "600" }}
+          >
             Xuất Excel
           </button>
         </div>
@@ -247,9 +286,8 @@ export function GradeSheet() {
                 <th style={{ padding: "12px", textAlign: "left", fontSize: "13px", color: "#8B6F5F" }}>Mã SV</th>
                 <th style={{ padding: "12px", textAlign: "left", fontSize: "13px", color: "#8B6F5F" }}>Họ và tên</th>
                 <th style={{ padding: "12px", textAlign: "center", fontSize: "13px", color: "#8B6F5F", width: "120px" }}>Chuyên cần (10%)</th>
-                <th style={{ padding: "12px", textAlign: "center", fontSize: "13px", color: "#8B6F5F", width: "120px" }}>Bài tập (20%)</th>
                 <th style={{ padding: "12px", textAlign: "center", fontSize: "13px", color: "#8B6F5F", width: "120px" }}>Giữa kỳ (30%)</th>
-                <th style={{ padding: "12px", textAlign: "center", fontSize: "13px", color: "#8B6F5F", width: "120px" }}>Cuối kỳ (40%)</th>
+                <th style={{ padding: "12px", textAlign: "center", fontSize: "13px", color: "#8B6F5F", width: "120px" }}>Cuối kỳ (60%)</th>
                 <th style={{ padding: "12px", textAlign: "center", fontSize: "13px", color: "#8B6F5F" }}>Tổng kết</th>
                 <th style={{ padding: "12px", textAlign: "center", fontSize: "13px", color: "#8B6F5F" }}>Thao tác</th>
               </tr>
@@ -258,13 +296,13 @@ export function GradeSheet() {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={9} style={{ padding: "40px", textAlign: "center", color: "#8B6F5F", fontWeight: "bold" }}>
+                  <td colSpan={8} style={{ padding: "40px", textAlign: "center", color: "#8B6F5F", fontWeight: "bold" }}>
                     Đang tải dữ liệu bảng điểm...
                   </td>
                 </tr>
               ) : filteredStudents.length === 0 ? (
                 <tr>
-                  <td colSpan={9} style={{ padding: "40px", textAlign: "center", color: "#8B6F5F" }}>
+                  <td colSpan={8} style={{ padding: "40px", textAlign: "center", color: "#8B6F5F" }}>
                     Không tìm thấy sinh viên nào trong lớp này.
                   </td>
                 </tr>
@@ -292,21 +330,6 @@ export function GradeSheet() {
                           />
                         ) : (
                           row.diemChuyenCan?.giatri?.toFixed(1) || "—"
-                        )}
-                      </td>
-
-                      {/* Bài tập */}
-                      <td style={{ padding: "12px", textAlign: "center" }}>
-                        {isEditing ? (
-                          <input
-                            type="text"
-                            value={inputs.BaiTap}
-                            onChange={(e) => handleGradeChange(row.masv, "BaiTap", e.target.value)}
-                            className={styles.gradeInput}
-                            style={{ width: "60px", textAlign: "center", border: "1px solid #EAD9CB", borderRadius: "6px", padding: "6px" }}
-                          />
-                        ) : (
-                          row.diemBaiTap?.giatri?.toFixed(1) || "—"
                         )}
                       </td>
 
@@ -345,7 +368,7 @@ export function GradeSheet() {
                         {isEditing ? (
                           <span style={{ color: "#8B6F5F" }}>{calculateTempFinal(row.masv)}</span>
                         ) : (
-                          row.tongKet ? (
+                          (row.tongKet && typeof row.tongKet.diemtongket === "number") ? (
                             <span style={{ color: row.tongKet.diemtongket >= 4.0 ? "#065F46" : "#991B1B" }}>
                               {row.tongKet.diemtongket.toFixed(2)} ({row.tongKet.diemchu})
                             </span>

@@ -49,10 +49,10 @@ export async function getStudentNotifications(params?: {
 }): Promise<NotificationListResponse> {
   const q = new URLSearchParams();
   if (params?.search) q.set("search", params.search);
-  if (params?.loai)   q.set("loai", params.loai);
-  if (params?.tab)    q.set("tab", params.tab);
-  if (params?.page)   q.set("page", String(params.page));
-  if (params?.limit)  q.set("limit", String(params.limit));
+  if (params?.loai) q.set("loai", params.loai);
+  if (params?.tab) q.set("tab", params.tab);
+  if (params?.page) q.set("page", String(params.page));
+  if (params?.limit) q.set("limit", String(params.limit));
   const url = `/api/student/notification${q.toString() ? `?${q}` : ""}`;
   const res = await apiFetch(url);
   return apiJson<NotificationListResponse>(res);

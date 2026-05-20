@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import React, { useState, useCallback } from "react";
 import { apiFetch } from "@/services/service/auth/auth.service";
 
 export interface ChatRoom {
@@ -17,7 +17,7 @@ export interface ChatRoom {
 
 export interface Message {
   id: number;
-  content: string;
+  content: React.ReactNode;
   time: string;
   isMine: boolean;
   type: "text" | "file";
@@ -167,15 +167,47 @@ export function useMessages(currentMataikhoan: string) {
       const res = await apiFetch(`/api/sinhvien/messages?roomId=${roomId}`);
       const json = await res.json();
       if (json.success && Array.isArray(json.data)) {
-        const mapped = json.data.map((msg: any) => ({
-          id: msg.matinnhan,
-          content: msg.noidung,
-          time: new Date(msg.ngaytao).toLocaleTimeString("vi-VN", { hour: '2-digit', minute: '2-digit' }),
-          isMine: msg.mataikhoangui === currentMataikhoan,
-          type: msg.filedinh ? "file" as const : "text" as const,
-          fileName: extractFileName(msg.filedinh),
-          fileUrl: msg.filedinh || undefined,
-        }));
+
+        const mapped = json.data.map((msg: any) => {
+          const isMine = msg.mataikhoangui === currentMataikhoan;
+          return {
+            id: msg.matinnhan,
+            content: msg.filedinh ? React.createElement(
+              "div",
+              { style: { display: "flex", flexDirection: "column", gap: "5px" } },
+              /\.(png|jpe?g|gif|webp|svg)(\?.*)?$/i.test(msg.filedinh) ? React.createElement(
+                "img",
+                {
+                  src: msg.filedinh,
+                  alt: "ảnh",
+                  style: { maxWidth: "200px", maxHeight: "200px", borderRadius: "8px", objectFit: "cover", border: "1px solid #eee" }
+                }
+              ) : null,
+              React.createElement(
+                "a",
+                {
+                  href: msg.filedinh,
+                  target: "_blank",
+                  rel: "noopener noreferrer",
+                  style: {
+                    color: isMine ? "#000000ff" : "#E57373",
+                    textDecoration: "underline",
+                    fontWeight: "bold",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "3px"
+                  }
+                },
+                "📁 ",
+                extractFileName(msg.filedinh) || "Tải xuống tệp"
+              )
+            ) : msg.noidung,
+            time: new Date(msg.ngaytao).toLocaleTimeString("vi-VN", { hour: '2-digit', minute: '2-digit' }),
+            isMine,
+            type: "text", // Mặc định là text
+          };
+        });
+
         setMessages(mapped);
       }
     } catch (error) {
@@ -228,7 +260,36 @@ export function useMessages(currentMataikhoan: string) {
       if (json.success && json.data) {
         const newMsg = {
           id: json.data.matinnhan,
-          content: json.data.noidung,
+          content: json.data.filedinh ? React.createElement(
+            "div",
+            { style: { display: "flex", flexDirection: "column", gap: "5px" } },
+            /\.(png|jpe?g|gif|webp|svg)(\?.*)?$/i.test(json.data.filedinh) ? React.createElement(
+              "img",
+              {
+                src: json.data.filedinh,
+                alt: "ảnh",
+                style: { maxWidth: "200px", maxHeight: "200px", borderRadius: "8px", objectFit: "cover", border: "1px solid #eee" }
+              }
+            ) : null,
+            React.createElement(
+              "a",
+              {
+                href: json.data.filedinh,
+                target: "_blank",
+                rel: "noopener noreferrer",
+                style: {
+                  color: "#FFFFFF",
+                  textDecoration: "underline",
+                  fontWeight: "bold",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "3px"
+                }
+              },
+              "📁 ",
+              extractFileName(json.data.filedinh) || "Tải xuống tệp"
+            )
+          ) : json.data.noidung,
           time: new Date(json.data.ngaytao).toLocaleTimeString("vi-VN", { hour: '2-digit', minute: '2-digit' }),
           isMine: true,
           type: json.data.filedinh ? "file" as const : "text" as const,

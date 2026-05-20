@@ -1,14 +1,81 @@
 "use client";
-import React, { useState } from "react";
+
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import {
   MessageFilled,
   CloseOutlined,
   SendOutlined,
   RobotOutlined,
 } from "@ant-design/icons";
+import { apiFetch } from "@/services/service/auth/auth.service";
+
+interface ChatMessage {
+  role: "user" | "model";
+  text: string;
+}
+
+// Simple markdown formatter helper
+function renderMarkdown(text: string): string {
+  return text
+    .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+    .replace(/\*(.+?)\*/g, "<em>$1</em>")
+    .replace(/`([^`]+)`/g, '<code style="background: rgba(0,0,0,0.06); padding: 2px 4px; border-radius: 4px; font-family: monospace;">$1</code>')
+    .replace(/\n/g, "<br/>");
+}
 
 const FloatingChat = () => {
   const [isOpen, setIsOpen] = useState(false);
+  const [messages, setMessages] = useState<ChatMessage[]>([
+    {
+      role: "model",
+      text: "Chào Thầy/Cô! Tôi là Trợ lý AI hỗ trợ giảng dạy. Thầy/Cô có câu hỏi nào về quy chế đào tạo, lập đề thi hoặc phân tích kết quả học tập không?",
+    },
+  ]);
+  const [input, setInput] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Auto scroll to bottom when new message arrives or loading state changes
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [messages, isLoading]);
+
+  const handleSend = useCallback(async () => {
+    const textToSend = input.trim();
+    if (!textToSend || isLoading) return;
+
+    setInput("");
+    const userMsg: ChatMessage = { role: "user", text: textToSend };
+    setMessages((prev) => [...prev, userMsg]);
+    setIsLoading(true);
+
+    try {
+      const res = await apiFetch("/api/chat", {
+        method: "POST",
+        body: JSON.stringify({
+          message: textToSend,
+          history: messages.map((m) => ({
+            role: m.role,
+            parts: [{ text: m.text }],
+          })),
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Không thể kết nối máy chủ AI");
+
+      setMessages((prev) => [...prev, { role: "model", text: data.text }]);
+    } catch (err: any) {
+      setMessages((prev) => [
+        ...prev,
+        { role: "model", text: `❌ **Lỗi:** ${err.message || "Lỗi kết nối. Vui lòng thử lại sau!"}` },
+      ]);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [input, isLoading, messages]);
 
   return (
     <div
@@ -43,7 +110,7 @@ const FloatingChat = () => {
         {/* Header */}
         <div
           style={{
-            backgroundColor: "#ff0000",
+            backgroundColor: "#C25450",
             color: "white",
             padding: "20px",
             display: "flex",
@@ -55,7 +122,7 @@ const FloatingChat = () => {
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
             <RobotOutlined style={{ fontSize: "24px" }} />
             <span style={{ fontWeight: "bold", fontSize: "18px" }}>
-              Trợ lý AI Học viện
+              Trợ lý AI Giảng viên
             </span>
           </div>
           <CloseOutlined
@@ -66,6 +133,7 @@ const FloatingChat = () => {
 
         {/* Nội dung tin nhắn */}
         <div
+          ref={scrollRef}
           style={{
             flex: 1,
             padding: "20px",
@@ -76,26 +144,53 @@ const FloatingChat = () => {
             gap: "15px",
           }}
         >
-          {/* Tin nhắn từ AI */}
-          <div style={{ alignSelf: "flex-start", maxWidth: "85%" }}>
+          {messages.map((msg, index) => (
             <div
+              key={index}
               style={{
-                backgroundColor: "#f0f0f0",
-                padding: "12px 16px",
-                borderRadius: "15px 15px 15px 0px",
-                fontSize: "15px",
-                lineHeight: "1.5",
-                color: "#333",
+                alignSelf: msg.role === "user" ? "flex-end" : "flex-start",
+                maxWidth: "85%",
               }}
             >
-              Chào bạn! Tôi có thể hỗ trợ gì cho bạn về các môn học IT hay quản
-              lý sinh viên không?
+              <div
+                style={{
+                  backgroundColor: msg.role === "user" ? "#FFF2EB" : "#f0f0f0",
+                  border: msg.role === "user" ? "1px solid #EAD9CB" : "1px solid #eee",
+                  padding: "12px 16px",
+                  borderRadius: msg.role === "user" ? "15px 15px 0px 15px" : "15px 15px 15px 0px",
+                  fontSize: "14px",
+                  lineHeight: "1.5",
+                  color: "#333",
+                }}
+                dangerouslySetInnerHTML={{ __html: renderMarkdown(msg.text) }}
+              />
             </div>
-          </div>
+          ))}
+
+          {isLoading && (
+            <div style={{ alignSelf: "flex-start", maxWidth: "85%" }}>
+              <div
+                style={{
+                  backgroundColor: "#f0f0f0",
+                  padding: "12px 16px",
+                  borderRadius: "15px 15px 15px 0px",
+                  fontSize: "14px",
+                  color: "#888",
+                  fontStyle: "italic",
+                }}
+              >
+                AI đang suy nghĩ...
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Ô nhập tin nhắn */}
-        <div
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleSend();
+          }}
           style={{
             padding: "20px",
             borderTop: "1px solid #eee",
@@ -106,6 +201,9 @@ const FloatingChat = () => {
         >
           <input
             type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            disabled={isLoading}
             placeholder="Nhập nội dung câu hỏi..."
             style={{
               flex: 1,
@@ -116,29 +214,36 @@ const FloatingChat = () => {
               fontSize: "15px",
               transition: "border 0.3s",
             }}
-            onFocus={(e) => (e.target.style.borderColor = "#ff0000")}
+            onFocus={(e) => (e.target.style.borderColor = "#C25450")}
             onBlur={(e) => (e.target.style.borderColor = "#ddd")}
           />
-          <div
+          <button
+            type="submit"
+            disabled={isLoading || !input.trim()}
             style={{
-              backgroundColor: "#ff0000",
+              backgroundColor: (isLoading || !input.trim()) ? "#ccc" : "#C25450",
               width: "45px",
               height: "45px",
               borderRadius: "50%",
               display: "flex",
               justifyContent: "center",
               alignItems: "center",
-              cursor: "pointer",
+              cursor: (isLoading || !input.trim()) ? "not-allowed" : "pointer",
+              border: "none",
               transition: "transform 0.2s",
             }}
-            onMouseEnter={(e) =>
-              (e.currentTarget.style.transform = "scale(1.1)")
-            }
-            onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}
+            onMouseEnter={(e) => {
+              if (!isLoading && input.trim()) {
+                e.currentTarget.style.transform = "scale(1.1)";
+              }
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.transform = "scale(1)";
+            }}
           >
             <SendOutlined style={{ color: "white", fontSize: "18px" }} />
-          </div>
-        </div>
+          </button>
+        </form>
       </div>
 
       {/* 2. NÚT TRÒN & BONG BÓNG CHÀO */}
@@ -174,18 +279,18 @@ const FloatingChat = () => {
           </div>
         )}
 
-        {/* Nút tròn đỏ */}
+        {/* Nút tròn */}
         <div
           onClick={() => setIsOpen(!isOpen)}
           style={{
-            backgroundColor: "#ff0000",
+            backgroundColor: "#C25450",
             borderRadius: "50%",
             width: "65px",
             height: "65px",
             display: "flex",
             justifyContent: "center",
             alignItems: "center",
-            boxShadow: "0 6px 20px rgba(255,0,0,0.3)",
+            boxShadow: "0 6px 20px rgba(194,84,80,0.3)",
             cursor: "pointer",
             transition: "all 0.3s",
           }}

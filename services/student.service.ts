@@ -32,7 +32,8 @@ export const sinhVienService = {
         ngaycapcccd,
         noicapcccd,
         dantoc,
-        tongiao
+        tongiao,
+        face_embedding
       `)
       .eq("mataikhoan", mataikhoan)
       .single();

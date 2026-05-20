@@ -45,9 +45,9 @@ export async function POST(request: Request) {
         await verifyToken(token);
 
         const body = await request.json();
-        
+
         if (!body.macuoctrochuyen || !body.mataikhoangui || (!body.noidung?.trim() && !body.filedinh)) {
-             return NextResponse.json({ success: false, message: 'Dữ liệu không hợp lệ' }, { status: 400 });
+            return NextResponse.json({ success: false, message: 'Dữ liệu không hợp lệ' }, { status: 400 });
         }
 
         // Format YYYY-MM-DD HH:mm:ss cho múi giờ Việt Nam

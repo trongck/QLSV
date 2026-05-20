@@ -7,13 +7,20 @@ import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { createClient } from "@/lib/utils/supabase/client";
 import { VaiTro } from "@/types";
 import { getVietnamTimeISO } from "@/lib/utils/date";
+import { apiFetch } from "@/services/service/auth/auth.service";
 import styles from "./student-dashboard.module.css";
+
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface DashboardData {
   monHocCount: number;
-  diemTBHK: number | null;
+  // GPA từ view_gpa_sinhvien
+  gpa10_hocky_hientai: number;
+  gpa4_hocky_hientai: number;
+  gpa10_tich_luy: number;
+  gpa4_tich_luy: number;
+  xep_loai_hoc_luc: string | null;
   soBuoiVang: number;
   soBaiTapConHan: number;
   lichHocHomNay: {
@@ -23,7 +30,14 @@ interface DashboardData {
     tietketthuc: number;
   }[];
   thongBaoGanDay: { tieude: string; ngaytao: string; loai: string }[];
-  diemGanDay: { maphancong: number; loaidiem: string; giatri: number }[];
+  diemGanDay: {
+    tenmon: string;
+    chuyencan: number | string;
+    giuaky: number | string;
+    cuoiky: number | string;
+    tongket: number | string;
+    diemchu: string | null;
+  }[];
 }
 
 // ─── Stat card ────────────────────────────────────────────────────────────────
@@ -75,15 +89,18 @@ export default function StudentDashboard() {
       setFetching(true);
       try {
         // Parallel queries
-        // Fetch Student Info & Assignments
-        const [{ data: svInfo }, { data: svMonHoc }] = await Promise.all([
+        // Fetch Student Info, Assignments & GPA view
+        const [{ data: svInfo }, { data: svMonHoc }, gpaResponse] = await Promise.all([
           supabase.from("sinhvien").select("malop").eq("masv", masv).single(),
           supabase
             .from("sinhvienmonhoc")
             .select("maphancong")
             .eq("masv", masv)
             .eq("trangthai", "Danghoc"),
+          apiFetch("/api/student/grades?mahocky=all").then(r => r.json()).catch(() => null),
         ]);
+
+        const gpaView = gpaResponse?.gpaView;
 
         const myLop = svInfo?.malop;
         const myAssignments = (svMonHoc ?? []).map((m) => m.maphancong);
@@ -114,16 +131,9 @@ export default function StudentDashboard() {
           .limit(5);
 
         const [
-          { data: diemRows },
           { data: lichHoc },
           { data: diemDanh },
         ] = await Promise.all([
-          supabase
-            .from("diem")
-            .select("loaidiem, giatri, maphancong")
-            .eq("masv", masv)
-            .order("ngaytao", { ascending: false })
-            .limit(6),
           supabase
             .from("lichhoc")
             .select(`
@@ -149,18 +159,7 @@ export default function StudentDashboard() {
             .eq("trangthai", "Vangmat"),
         ]);
 
-        // Compute GPA from diem rows
-        let diemTBHK: number | null = null;
-        if (diemRows && diemRows.length > 0) {
-          const cuoiky = diemRows.filter((d) => d.loaidiem === "CuoiKy");
-          if (cuoiky.length > 0) {
-            diemTBHK = parseFloat(
-              (
-                cuoiky.reduce((s, d) => s + d.giatri, 0) / cuoiky.length
-              ).toFixed(2),
-            );
-          }
-        }
+        // GPA lấy từ view_gpa_sinhvien (đã xử lý học lại, thang VNUA)
 
         // Lọc bài tập chưa nộp thuộc các môn SV đang học
         let unsubmittedCount = 0;
@@ -185,7 +184,11 @@ export default function StudentDashboard() {
 
         setData({
           monHocCount: svMonHoc?.length ?? 0,
-          diemTBHK,
+          gpa10_hocky_hientai: gpaView?.gpa10_hocky_hientai ?? 0,
+          gpa4_hocky_hientai:  gpaView?.gpa4_hocky_hientai  ?? 0,
+          gpa10_tich_luy:      gpaView?.gpa10_tich_luy       ?? 0,
+          gpa4_tich_luy:       gpaView?.gpa4_tich_luy        ?? 0,
+          xep_loai_hoc_luc:    gpaView?.xep_loai_hoc_luc     ?? null,
           soBuoiVang: diemDanh?.length ?? 0,
           soBaiTapConHan: unsubmittedCount,
           lichHocHomNay: (lichHoc ?? []).map((lh: any) => ({
@@ -198,7 +201,19 @@ export default function StudentDashboard() {
             ...t,
             ngaytao: new Date(t.ngaytao).toLocaleDateString("vi-VN"),
           })),
-          diemGanDay: diemRows ?? [],
+          diemGanDay: (gpaResponse?.grades ?? []).slice(0, 5).map((g: any) => {
+            const cc = g.diemThanhPhan.find((d: any) => d.loai === "ChuyenCan")?.giatri;
+            const gk = g.diemThanhPhan.find((d: any) => d.loai === "GiuaKy")?.giatri;
+            const ck = g.diemThanhPhan.find((d: any) => d.loai === "CuoiKy")?.giatri;
+            return {
+              tenmon: g.tenmon,
+              chuyencan: cc !== undefined && cc !== null ? cc.toFixed(1) : "—",
+              giuaky: gk !== undefined && gk !== null ? gk.toFixed(1) : "—",
+              cuoiky: ck !== undefined && ck !== null ? ck.toFixed(1) : "—",
+              tongket: g.diem10 !== null ? g.diem10.toFixed(1) : "—",
+              diemchu: g.diemchu
+            };
+          }),
         });
       } catch {
         // Keep null data — show empty states
@@ -241,16 +256,15 @@ export default function StudentDashboard() {
             sub="học kỳ này"
           />
           <StatCard
-            label="GPA học kỳ"
-            value={
-              fetching
-                ? "…"
-                : data?.diemTBHK !== null
-                  ? data!.diemTBHK!.toFixed(2)
-                  : "—"
-            }
-            sub="điểm hệ 10"
+            label="GPA kỳ hiện tại"
+            value={fetching ? "…" : (data?.gpa10_hocky_hientai ?? 0).toFixed(2)}
+            sub={`Thang 4: ${fetching ? "…" : (data?.gpa4_hocky_hientai ?? 0).toFixed(2)}`}
             accent
+          />
+          <StatCard
+            label="GPA tích lũy"
+            value={fetching ? "…" : (data?.gpa10_tich_luy ?? 0).toFixed(2)}
+            sub={data?.xep_loai_hoc_luc ?? `H4: ${(data?.gpa4_tich_luy ?? 0).toFixed(2)}`}
           />
           <StatCard
             label="Buổi vắng"
@@ -312,37 +326,53 @@ export default function StudentDashboard() {
             ) : (
               <table className="data-table" aria-label="Bảng điểm gần đây">
                 <thead>
-                  <tr>
-                    <th>Phân công</th>
-                    <th>Loại</th>
-                    <th>Điểm</th>
+                  <tr style={{ background: "#fff8f5" }}>
+                    <th style={{ padding: "10px 14px", textTransform: "uppercase", fontSize: 10, letterSpacing: "0.06em", color: "#8b6f5f" }}>Môn học</th>
+                    <th style={{ padding: "10px 14px", textAlign: "center", textTransform: "uppercase", fontSize: 10, letterSpacing: "0.06em", color: "#8b6f5f" }}>Chuyên cần</th>
+                    <th style={{ padding: "10px 14px", textAlign: "center", textTransform: "uppercase", fontSize: 10, letterSpacing: "0.06em", color: "#8b6f5f" }}>Giữa kỳ</th>
+                    <th style={{ padding: "10px 14px", textAlign: "center", textTransform: "uppercase", fontSize: 10, letterSpacing: "0.06em", color: "#8b6f5f" }}>Cuối kỳ</th>
+                    <th style={{ padding: "10px 14px", textAlign: "center", textTransform: "uppercase", fontSize: 10, letterSpacing: "0.06em", color: "#8b6f5f" }}>Tổng kết</th>
                   </tr>
                 </thead>
                 <tbody>
                   {data.diemGanDay.map((d, i) => (
-                    <tr key={i}>
-                      <td>{d.maphancong}</td>
-                      <td>
-                        <span
-                          className={`badge ${
-                            d.loaidiem === "CuoiKy"
-                              ? "badge-blue"
-                              : d.loaidiem === "GiuaKy"
-                                ? "badge-yellow"
-                                : "badge-peach"
-                          }`}
-                        >
-                          {d.loaidiem}
-                        </span>
+                    <tr key={i} style={{ background: i % 2 === 0 ? "#fff" : "#fffaf8" }}>
+                      <td style={{ padding: "12px 14px", fontWeight: 700, color: "#2d1b14" }}>{d.tenmon}</td>
+                      <td style={{ padding: "12px 14px", textAlign: "center", fontWeight: 600, color: d.chuyencan === "—" ? "#9ca3af" : "#2d1b14" }}>
+                        {d.chuyencan}
                       </td>
-                      <td>
-                        <strong
-                          style={{
-                            color: d.giatri >= 5 ? "#065F46" : "#991B1B",
-                          }}
-                        >
-                          {d.giatri.toFixed(1)}
-                        </strong>
+                      <td style={{ padding: "12px 14px", textAlign: "center", fontWeight: 600, color: d.giuaky === "—" ? "#9ca3af" : "#2d1b14" }}>
+                        {d.giuaky}
+                      </td>
+                      <td style={{ padding: "12px 14px", textAlign: "center", fontWeight: 600, color: d.cuoiky === "—" ? "#9ca3af" : "#2d1b14" }}>
+                        {d.cuoiky}
+                      </td>
+                      <td style={{ padding: "12px 14px", textAlign: "center" }}>
+                        {d.tongket !== "—" ? (
+                          <div style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                            <strong style={{
+                              color: Number(d.tongket) >= 4.0 ? "#065f46" : "#991b1b",
+                              fontSize: 14,
+                            }}>
+                              {d.tongket}
+                            </strong>
+                            {d.diemchu && (
+                              <span style={{
+                                fontSize: 10,
+                                fontWeight: 800,
+                                background: "#f5ede8",
+                                color: "#c25450",
+                                padding: "2px 6px",
+                                borderRadius: 12,
+                                border: "1px solid #ead9cb"
+                              }}>
+                                {d.diemchu}
+                              </span>
+                            )}
+                          </div>
+                        ) : (
+                          <span style={{ color: "#d1d5db", fontStyle: "italic" }}>Chưa có</span>
+                        )}
                       </td>
                     </tr>
                   ))}

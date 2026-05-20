@@ -1,9 +1,10 @@
-
 // app/api/chat/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { verifyToken, extractBearer } from "@/lib/utils/jwt";
+import { VaiTro } from "@/types";
 
-const SYSTEM_INSTRUCTION = `trả lời các câu hỏi liên quan đến học tập, và các câu hỏi liên quan đến trường Học Viện Nông Nghiệp Việt Nam, có thể báo cáo được lịch học,
+const STUDENT_SYSTEM_INSTRUCTION = `trả lời các câu hỏi liên quan đến học tập, và các câu hỏi liên quan đến trường Học Viện Nông Nghiệp Việt Nam, có thể báo cáo được lịch học,
 
 Nhiệm vụ của bạn:
 - Hỗ trợ sinh viên tra cứu thông tin học tập: điểm số, lịch học, lịch thi, thời khóa biểu
@@ -28,6 +29,20 @@ Phong cách giao tiếp:
 - Nếu không biết thông tin cụ thể của sinh viên (như điểm số cụ thể), hãy hướng dẫn họ xem trên hệ thống
 - Luôn trả lời bằng tiếng Việt trừ khi được yêu cầu khác`;
 
+const TEACHER_SYSTEM_INSTRUCTION = `Bạn là Trợ lý Giảng viên Trí tuệ nhân tạo (AI Copilot) của hệ thống QLSV Học viện Nông nghiệp Việt Nam.
+
+Nhiệm vụ của bạn:
+- Hỗ trợ giảng viên soạn đề kiểm tra, soạn giáo án, câu hỏi ôn tập (trắc nghiệm/tự luận ngắn).
+- Phân tích phổ điểm thi, kết quả học tập của lớp và đề xuất giải pháp cải thiện chất lượng giảng dạy.
+- Đưa ra cảnh báo rủi ro học vụ (ví dụ: phát hiện sinh viên vắng nhiều, điểm thấp, có nguy cơ trượt môn).
+- Tóm tắt giáo trình, bài giảng, tài liệu tham khảo khoa học.
+- Tư vấn các phương pháp sư phạm, gợi ý tài liệu học tập bổ sung cho môn học.
+
+Phong cách giao tiếp:
+- Chuyên nghiệp, lịch sự, tôn trọng giảng viên, hỗ trợ đắc lực và súc tích.
+- Dùng emoji phù hợp để tăng tính tương tác nhưng vẫn giữ sự nghiêm túc sư phạm.
+- Luôn trả lời bằng tiếng Việt trừ khi được giảng viên yêu cầu khác.`;
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
@@ -42,12 +57,31 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Chưa cấu hình GEMINI_API_KEY" }, { status: 500 });
     }
 
+    // Xác định vai trò từ token gửi kèm trong header
+    const token = extractBearer(req.headers.get("authorization"));
+    let systemInstruction = STUDENT_SYSTEM_INSTRUCTION;
+    let actualUserName = userName;
+
+    if (token) {
+      try {
+        const payload = await verifyToken(token) as any;
+        if (payload.vaitro === VaiTro.GiangVien) {
+          systemInstruction = TEACHER_SYSTEM_INSTRUCTION;
+        }
+        if (payload.hoten && !actualUserName) {
+          actualUserName = payload.hoten;
+        }
+      } catch (err) {
+        console.warn("Không thể giải mã hoặc token hết hạn trong API chat:", err);
+      }
+    }
+
     // Khởi tạo bên trong handler để luôn đọc env mới nhất
     const genAI = new GoogleGenerativeAI(apiKey);
 
     const model = genAI.getGenerativeModel({
-      model: "gemini-3.1-flash-lite",
-      systemInstruction: SYSTEM_INSTRUCTION,
+      model: "gemini-1.5-flash",
+      systemInstruction: systemInstruction,
     });
 
     // Chuyển đổi history sang định dạng Gemini
@@ -69,13 +103,13 @@ export async function POST(req: NextRequest) {
     const chat = model.startChat({
       history: safeHistory,
       generationConfig: {
-        maxOutputTokens: 1024,
+        maxOutputTokens: 2048,
         temperature: 0.7,
       },
     });
 
-    const contextualMessage = userName
-      ? `[Sinh viên: ${userName}] ${message}`
+    const contextualMessage = actualUserName
+      ? `[Họ tên: ${actualUserName}] ${message}`
       : message;
 
     const result = await chat.sendMessage(contextualMessage);
@@ -104,6 +138,5 @@ export async function POST(req: NextRequest) {
     if (isModelError) friendlyError = "Model AI không khả dụng. Đang thử model dự phòng.";
 
     return NextResponse.json({ error: friendlyError }, { status: 500 });
-
   }
 }

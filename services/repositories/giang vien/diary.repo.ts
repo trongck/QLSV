@@ -40,8 +40,8 @@ export async function getDiaryList(params?: {
 }): Promise<DiaryListResponse> {
   const q = new URLSearchParams();
   if (params?.search) q.set("search", params.search);
-  if (params?.page)   q.set("page", String(params.page));
-  if (params?.limit)  q.set("limit", String(params.limit));
+  if (params?.page) q.set("page", String(params.page));
+  if (params?.limit) q.set("limit", String(params.limit));
   const url = `/api/student/diary${q.toString() ? `?${q}` : ""}`;
   const res = await apiFetch(url);
   return apiJson<DiaryListResponse>(res);
