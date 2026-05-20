@@ -7,7 +7,9 @@ import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { createClient } from "@/lib/utils/supabase/client";
 import { VaiTro } from "@/types";
 import { getVietnamTimeISO } from "@/lib/utils/date";
+import { apiFetch } from "@/services/service/auth/auth.service";
 import styles from "./student-dashboard.module.css";
+
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -86,19 +88,17 @@ export default function StudentDashboard() {
       try {
         // Parallel queries
         // Fetch Student Info, Assignments & GPA view
-        const [{ data: svInfo }, { data: svMonHoc }, { data: gpaView }] = await Promise.all([
+        const [{ data: svInfo }, { data: svMonHoc }, gpaResponse] = await Promise.all([
           supabase.from("sinhvien").select("malop").eq("masv", masv).single(),
           supabase
             .from("sinhvienmonhoc")
             .select("maphancong")
             .eq("masv", masv)
             .eq("trangthai", "Danghoc"),
-          supabase
-            .from("view_gpa_sinhvien")
-            .select("gpa10_hocky_hientai,gpa4_hocky_hientai,gpa10_tich_luy,gpa4_tich_luy,xep_loai_hoc_luc")
-            .eq("masv", masv)
-            .maybeSingle(),
+          apiFetch("/api/student/grades?mahocky=all").then(r => r.json()).catch(() => null),
         ]);
+
+        const gpaView = gpaResponse?.gpaView;
 
         const myLop = svInfo?.malop;
         const myAssignments = (svMonHoc ?? []).map((m) => m.maphancong);

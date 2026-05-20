@@ -45,32 +45,175 @@ export async function GET(request: Request) {
   }
   const { masv } = svData;
 
-  // ── 2. Đọc toàn bộ GPA từ view_gpa_sinhvien (DB tính sẵn) ───────────────
-  const { data: gpaView, error: gpaErr } = await supabase
-    .from("view_gpa_sinhvien")
+  // ── 2. Đọc toàn bộ GPA bằng cách tính toán trong JS (Tránh lỗi Permission Denied trên view) ──
+  const { data: svFullData } = await supabase
+    .from("sinhvien")
     .select(`
       masv,
-      hoten,
+      hodem,
+      ten,
       emailtruong,
       malop,
-      tenlop,
-      gpa10_hocky_hientai,
-      gpa4_hocky_hientai,
-      sotinchi_hocky_hientai,
-      sotinchi_dat_hocky_hientai,
-      gpa10_tich_luy,
-      gpa4_tich_luy,
-      tong_sotinchi_da_hoc,
-      sotinchi_tich_luy_dat,
-      xep_loai_hoc_luc,
-      xep_loai_hoc_luc_he4
+      lop:malop ( tenlop )
     `)
     .eq("masv", masv)
-    .maybeSingle();
+    .single();
 
-  if (gpaErr) {
-    console.error("view_gpa_sinhvien error:", gpaErr);
+  const hoten = svFullData
+    ? [svFullData.hodem, svFullData.ten].filter(Boolean).join(" ").trim()
+    : "Sinh Viên";
+  const emailtruong = svFullData?.emailtruong ?? "";
+  const malop = svFullData?.malop ?? "";
+  const tenlop = (svFullData as any)?.lop?.tenlop ?? "";
+
+  // 2b. Tính toán điểm tổng kết
+  const { data: allDiemTongKet } = await supabase
+    .from("diemtongket")
+    .select("maphancong, diemtongket, ketqua")
+    .eq("masv", masv);
+
+  const pcIds = (allDiemTongKet ?? []).map(dt => dt.maphancong);
+
+  let diemMoinhat: any[] = [];
+  if (pcIds.length > 0) {
+    const { data: allPhanCong } = await supabase
+      .from("phancong")
+      .select(`
+        maphancong,
+        mamon,
+        mahocky,
+        monhoc:mamon ( sotinchi ),
+        hocky:mahocky ( danghieuluc )
+      `)
+      .in("maphancong", pcIds);
+
+    const rawList = (allDiemTongKet ?? []).map(dt => {
+      const pc = (allPhanCong ?? []).find(p => p.maphancong === dt.maphancong);
+      if (!pc) return null;
+      return {
+        mamon: pc.mamon,
+        mahocky: pc.mahocky,
+        sotinchi: (pc.monhoc as any)?.sotinchi ?? 0,
+        diemtongket: dt.diemtongket !== null ? Number(dt.diemtongket) : null,
+        ketqua: dt.ketqua,
+        la_hocky_hientai: (pc.hocky as any)?.danghieuluc ?? false
+      };
+    }).filter(Boolean);
+
+    const mapMoinhat: Record<string, any> = {};
+    rawList.forEach(item => {
+      if (!item || item.diemtongket === null) return;
+      if (item.ketqua !== "Dat" && item.ketqua !== "KhongDat") return;
+
+      const existing = mapMoinhat[item.mamon];
+      if (!existing || item.mahocky > existing.mahocky) {
+        mapMoinhat[item.mamon] = item;
+      }
+    });
+
+    diemMoinhat = Object.values(mapMoinhat);
   }
+
+  const tinhDiemHe4 = (d: number) => {
+    if (d >= 9.5) return 4.0;
+    if (d >= 8.5) return 3.7;
+    if (d >= 7.8) return 3.3;
+    if (d >= 7.0) return 3.0;
+    if (d >= 6.3) return 2.5;
+    if (d >= 5.5) return 2.0;
+    if (d >= 4.8) return 1.5;
+    if (d >= 4.0) return 1.0;
+    return 0.0;
+  };
+
+  let gpa10_hocky_hientai = 0;
+  let gpa4_hocky_hientai = 0;
+  let sotinchi_hocky_hientai = 0;
+  let sotinchi_dat_hocky_hientai = 0;
+
+  let gpa10_tich_luy = 0;
+  let gpa4_tich_luy = 0;
+  let tong_sotinchi_da_hoc = 0;
+  let sotinchi_tich_luy_dat = 0;
+
+  const listKHT = diemMoinhat.filter(d => d.la_hocky_hientai);
+  if (listKHT.length > 0) {
+    let sumD10 = 0;
+    let sumD4 = 0;
+    let sumTC = 0;
+    listKHT.forEach(d => {
+      sumD10 += d.diemtongket * d.sotinchi;
+      sumD4 += tinhDiemHe4(d.diemtongket) * d.sotinchi;
+      sumTC += d.sotinchi;
+      if (d.ketqua === "Dat") {
+        sotinchi_dat_hocky_hientai += d.sotinchi;
+      }
+    });
+    if (sumTC > 0) {
+      gpa10_hocky_hientai = sumD10 / sumTC;
+      gpa4_hocky_hientai = sumD4 / sumTC;
+      sotinchi_hocky_hientai = sumTC;
+    }
+  }
+
+  if (diemMoinhat.length > 0) {
+    let sumD10 = 0;
+    let sumD4 = 0;
+    let sumTC = 0;
+    diemMoinhat.forEach(d => {
+      sumD10 += d.diemtongket * d.sotinchi;
+      sumD4 += tinhDiemHe4(d.diemtongket) * d.sotinchi;
+      sumTC += d.sotinchi;
+      if (d.ketqua === "Dat") {
+        sotinchi_tich_luy_dat += d.sotinchi;
+      }
+    });
+    if (sumTC > 0) {
+      gpa10_tich_luy = sumD10 / sumTC;
+      gpa4_tich_luy = sumD4 / sumTC;
+      tong_sotinchi_da_hoc = sumTC;
+    }
+  }
+
+  const getXepLoai10 = (gpa: number) => {
+    if (gpa >= 9.0) return "Xuất sắc";
+    if (gpa >= 8.0) return "Giỏi";
+    if (gpa >= 7.0) return "Khá";
+    if (gpa >= 5.0) return "Trung bình";
+    if (gpa >= 4.0) return "Yếu";
+    return "Kém";
+  };
+
+  const getXepLoai4 = (gpa: number) => {
+    if (gpa >= 3.6) return "Xuất sắc";
+    if (gpa >= 3.2) return "Giỏi";
+    if (gpa >= 2.5) return "Khá";
+    if (gpa >= 2.0) return "Trung bình";
+    if (gpa >= 1.0) return "Yếu";
+    return "Kém";
+  };
+
+  const xep_loai_hoc_luc = tong_sotinchi_da_hoc > 0 ? getXepLoai10(gpa10_tich_luy) : null;
+  const xep_loai_hoc_luc_he4 = tong_sotinchi_da_hoc > 0 ? getXepLoai4(gpa4_tich_luy) : null;
+
+  const gpaView = {
+    masv,
+    hoten,
+    emailtruong,
+    malop,
+    tenlop,
+    gpa10_hocky_hientai,
+    gpa4_hocky_hientai,
+    sotinchi_hocky_hientai,
+    sotinchi_dat_hocky_hientai,
+    gpa10_tich_luy,
+    gpa4_tich_luy,
+    tong_sotinchi_da_hoc,
+    sotinchi_tich_luy_dat,
+    xep_loai_hoc_luc,
+    xep_loai_hoc_luc_he4
+  };
+
 
   // ── 3. Danh sách học kỳ ───────────────────────────────────────────────────
   const { data: dsHocKy } = await supabase
