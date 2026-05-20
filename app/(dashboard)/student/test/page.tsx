@@ -58,7 +58,11 @@ export default function ExamPage() {
   const filteredExams =
     activeTab === "Tất cả"
       ? exams
-      : exams.filter((exam) => exam.trangthai === "DaLam");
+      : exams.filter((exam) => {
+          const now = new Date();
+          const end = new Date(exam.thoigianketthuc);
+          return exam.trangthai === "DaLam" || now > end;
+        });
 
   return (
     <DashboardShell pageTitle="Bài thi">
@@ -185,7 +189,7 @@ export default function ExamPage() {
                         </button>
                     ) : (
                         <button disabled className="w-full py-3 px-4 bg-gray-50 text-gray-400 rounded-xl text-sm font-bold cursor-not-allowed border border-gray-100">
-                        Chưa đến giờ
+                        {new Date() > new Date(exam.thoigianketthuc) ? "Đã kết thúc" : "Chưa đến giờ"}
                         </button>
                     )}
                     </div>
