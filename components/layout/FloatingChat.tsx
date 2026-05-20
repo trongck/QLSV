@@ -7,7 +7,7 @@ import {
   SendOutlined,
   RobotOutlined,
 } from "@ant-design/icons";
-import { apiFetch } from "@/services/auth.service";
+import { apiFetch } from "@/services/service/auth/auth.service";
 
 interface ChatMessage {
   role: "user" | "model";

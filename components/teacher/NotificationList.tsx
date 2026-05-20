@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/auth/useAuth";
-import { apiFetch } from "@/services/auth.service";
+import { apiFetch } from "@/services/service/auth/auth.service";
 import styles from "@/app/(dashboard)/teacher/dashboard/teacher-dashboard.module.css";
 
 interface ThongBao {
