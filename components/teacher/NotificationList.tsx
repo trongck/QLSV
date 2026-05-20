@@ -32,6 +32,9 @@ export function NotificationList() {
   const [filterType, setFilterType] = useState("Tất cả thông báo");
   const [markedAll, setMarkedAll] = useState(false);
 
+  // Detailed view modal state
+  const [selectedNote, setSelectedNote] = useState<ThongBao | null>(null);
+
   // States for inline editing
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editTitle, setEditTitle] = useState("");
@@ -76,6 +79,28 @@ export function NotificationList() {
       setLoading(false);
     }
   }
+
+  const handleSelectNote = async (note: ThongBao) => {
+    setSelectedNote(note);
+    if (!note.dadoc) {
+      try {
+        const res = await apiFetch("/api/giangvien/notifications", {
+          method: "PATCH",
+          body: JSON.stringify({ mathongbao: note.mathongbao, dadoc: true }),
+        });
+        const json = await res.json();
+        if (json.success) {
+          setNotifications(prev =>
+            prev.map(n =>
+              n.mathongbao === note.mathongbao ? { ...n, dadoc: true } : n
+            )
+          );
+        }
+      } catch (err) {
+        console.error("Lỗi tự động đánh dấu đã đọc khi xem chi tiết:", err);
+      }
+    }
+  };
 
   useEffect(() => {
     fetchNotifications();
@@ -233,15 +258,15 @@ export function NotificationList() {
   const getLoaiDetails = (loai: string) => {
     switch (loai) {
       case "Khancap":
-        return { label: "Khẩn cấp", bg: "#FFF0F0", color: "#EB5757", icon: "🚨" };
+        return { label: "Khẩn cấp", bg: "#FFF0F0", color: "#EB5757" };
       case "Hoctap":
-        return { label: "Học tập", bg: "#FFF8F0", color: "#F2994A", icon: "📝" };
+        return { label: "Học tập", bg: "#FFF8F0", color: "#F2994A" };
       case "Thoikhoabieu":
-        return { label: "Thời khóa biểu", bg: "#E8F5E9", color: "#2E7D32", icon: "📅" };
+        return { label: "Thời khóa biểu", bg: "#E8F5E9", color: "#2E7D32" };
       case "Baitap":
-        return { label: "Bài tập", bg: "#FFF8F0", color: "#F2994A", icon: "📝" };
+        return { label: "Bài tập", bg: "#FFF8F0", color: "#F2994A" };
       default:
-        return { label: "Thông báo", bg: "#F0F5FF", color: "#2D9CDB", icon: "🔔" };
+        return { label: "Thông báo", bg: "#F0F5FF", color: "#2D9CDB" };
     }
   };
 
@@ -249,6 +274,51 @@ export function NotificationList() {
     if (note.taikhoan?.vaitro === "Admin") return "Ban Giám Hiệu";
     if (note.taikhoan?.email) return note.taikhoan.email;
     return "Hệ thống";
+  };
+
+  const renderContent = (content: string) => {
+    if (!content) return null;
+    const regex = /\[IMAGE_URL:([^\]]+)\]/g;
+    const parts = [];
+    let lastIndex = 0;
+    let match;
+    while ((match = regex.exec(content)) !== null) {
+      const matchIndex = match.index;
+      if (matchIndex > lastIndex) {
+        parts.push(content.substring(lastIndex, matchIndex));
+      }
+      const imageUrl = match[1];
+      parts.push(
+        <div key={matchIndex} style={{ margin: "10px 0" }}>
+          <img 
+            src={imageUrl} 
+            alt="Hình ảnh đính kèm" 
+            style={{ 
+              maxWidth: "100%", 
+              maxHeight: "350px", 
+              borderRadius: "8px", 
+              border: "1px solid #EAD9CB",
+              display: "block",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.05)"
+            }} 
+          />
+        </div>
+      );
+      lastIndex = regex.lastIndex;
+    }
+    if (lastIndex < content.length) {
+      parts.push(content.substring(lastIndex));
+    }
+    return (
+      <>
+        {parts.map((part, idx) => {
+          if (typeof part === "string") {
+            return <span key={idx} style={{ whiteSpace: "pre-line" }}>{part}</span>;
+          }
+          return part;
+        })}
+      </>
+    );
   };
 
   return (
@@ -326,14 +396,10 @@ export function NotificationList() {
                 }}
               >
                 <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
-                  <div style={{ 
-                    width: "45px", height: "45px", borderRadius: "50%", background: !note.dadoc ? "#FFEAEA" : "#F5F5F5",
-                    display: "flex", alignItems: "center", justifyContent: "center", fontSize: "20px"
-                  }}>
-                    {details.icon}
-                  </div>
-
-                  <div style={{ flex: 1 }}>
+                  <div 
+                    style={{ flex: 1, cursor: editingId === note.mathongbao ? "default" : "pointer" }}
+                    onClick={() => editingId !== note.mathongbao && handleSelectNote(note)}
+                  >
                     {editingId === note.mathongbao ? (
                       <div style={{ display: "flex", flexDirection: "column", gap: "8px", width: "100%" }}>
                         <input 
@@ -386,9 +452,9 @@ export function NotificationList() {
                         <h4 style={{ margin: 0, fontSize: "15px", color: "#6B4F43", fontWeight: !note.dadoc ? "700" : "500" }}>
                           {note.tieude}
                         </h4>
-                        <p style={{ margin: "4px 0 0", fontSize: "13px", color: "#6B4F43", whiteSpace: "pre-line" }}>
-                          {note.noidung}
-                        </p>
+                        <div style={{ margin: "4px 0 0", fontSize: "13px", color: "#6B4F43" }}>
+                          {renderContent(note.noidung)}
+                        </div>
                         <p style={{ margin: "6px 0 0", fontSize: "11px", color: "#8B6F5F" }}>
                           Người gửi: {getSenderName(note)} • {new Date(note.ngaytao).toLocaleDateString("vi-VN")}
                         </p>
@@ -409,7 +475,7 @@ export function NotificationList() {
                       style={{ background: "none", border: "none", color: note.dadoc ? "#2D9CDB" : "#BDBDBD", cursor: "pointer", fontSize: "16px" }} 
                       title={note.dadoc ? "Đánh dấu chưa đọc" : "Đánh dấu đã đọc"}
                     >
-                      ✔️
+                      đã đọc
                     </button>
                     
                     {isMyNotification && editingId !== note.mathongbao && (
@@ -418,7 +484,7 @@ export function NotificationList() {
                         style={{ background: "none", border: "none", color: "#2D9CDB", cursor: "pointer", fontSize: "16px" }} 
                         title="Chỉnh sửa thông báo"
                       >
-                        ✏️
+                        sửa 
                       </button>
                     )}
 
@@ -428,7 +494,7 @@ export function NotificationList() {
                         style={{ background: "none", border: "none", cursor: "pointer", color: "#EB5757", fontSize: "16px" }} 
                         title="Xóa thông báo"
                       >
-                        🗑️
+                        xoá 
                       </button>
                     )}
                   </div>
@@ -590,6 +656,90 @@ export function NotificationList() {
                 style={{ padding: "8px 16px", borderRadius: "8px", background: "#C25450", color: "white", border: "none", cursor: "pointer" }}
               >
                 Tạo thông báo
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* DETAILED VIEW MODAL */}
+      {selectedNote && (
+        <div 
+          className="fixed inset-0 bg-[#2D1B14]/40 backdrop-blur-[4px] z-[999] flex items-center justify-center p-4"
+          onClick={() => setSelectedNote(null)}
+        >
+          <div 
+            className="bg-white rounded-2xl w-full max-w-[650px] max-h-[85vh] shadow-[0_20px_50px_rgba(76,38,24,0.15)] border border-[#EAD9CB] overflow-hidden flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="p-5 border-b border-[#EAD9CB] flex justify-between items-center bg-[#FFF2EB]">
+              <div className="flex items-center gap-3">
+                <span className="text-xl">📢</span>
+                <h3 className="text-lg font-bold text-[#2D1B14]">Chi tiết thông báo</h3>
+              </div>
+              <button 
+                onClick={() => setSelectedNote(null)}
+                className="text-2xl text-[#8B6F5F] hover:text-[#2D1B14] transition-colors"
+                style={{ background: "none", border: "none", cursor: "pointer" }}
+              >
+                &times;
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 overflow-y-auto flex-1 flex flex-col gap-4">
+              <div className="flex justify-between items-start gap-4">
+                <h2 className="text-xl font-bold text-[#6B4F43] leading-snug">
+                  {selectedNote.tieude}
+                </h2>
+                <span style={{ 
+                  padding: "6px 12px", 
+                  borderRadius: "6px", 
+                  fontSize: "11px", 
+                  fontWeight: "600",
+                  whiteSpace: "nowrap",
+                  background: getLoaiDetails(selectedNote.loai).bg, 
+                  color: getLoaiDetails(selectedNote.loai).color 
+                }}>
+                  {getLoaiDetails(selectedNote.loai).label}
+                </span>
+              </div>
+
+              {/* Meta Info */}
+              <div className="flex flex-wrap gap-x-4 gap-y-2 text-xs text-[#8B6F5F] border-b border-[#F0E1D9] pb-3" style={{ display: "flex", flexWrap: "wrap", gap: "10px 20px" }}>
+                <div>
+                  <span className="font-semibold text-[#6B4F43]">Người gửi:</span> {getSenderName(selectedNote)}
+                </div>
+                <div>
+                  <span className="font-semibold text-[#6B4F43]">Thời gian:</span> {new Date(selectedNote.ngaytao).toLocaleDateString("vi-VN")} {new Date(selectedNote.ngaytao).toLocaleTimeString("vi-VN", { hour: '2-digit', minute: '2-digit' })}
+                </div>
+                {selectedNote.lop?.tenlop && (
+                  <div>
+                    <span className="font-semibold text-[#6B4F43]">Lớp học:</span> {selectedNote.lop.tenlop}
+                  </div>
+                )}
+                {selectedNote.ngayhethan && (
+                  <div>
+                    <span className="font-semibold text-red-500">Hết hạn:</span> {new Date(selectedNote.ngayhethan).toLocaleDateString("vi-VN")}
+                  </div>
+                )}
+              </div>
+
+              {/* Rich Content Viewport */}
+              <div className="text-sm text-[#4E3629] leading-relaxed break-words bg-[#FAF6F3] p-4 rounded-xl border border-[#F5ECE5]">
+                {renderContent(selectedNote.noidung)}
+              </div>
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 border-t border-[#EAD9CB] bg-[#FFF2EB] flex justify-end">
+              <button 
+                onClick={() => setSelectedNote(null)}
+                className="px-5 py-2 rounded-xl text-sm font-semibold text-white bg-[#6B4F43] hover:bg-[#523C32] transition-colors"
+                style={{ background: "#6B4F43", color: "white", border: "none", borderRadius: "8px", padding: "8px 16px", cursor: "pointer" }}
+              >
+                Đóng
               </button>
             </div>
           </div>

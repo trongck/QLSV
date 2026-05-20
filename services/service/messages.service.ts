@@ -5,11 +5,11 @@
  */
 
 // Re-export tất cả từ repository để các page không cần đổi import
-export * from "@/services/repositories/messages.repo";
+export * from "@/services/repositories/giang vien/messages.repo";
 
 // ─── UI Helpers ───────────────────────────────────────────────────────────────
 
-import type { ConversationRow, ConversationMember } from "@/services/repositories/messages.repo";
+import type { ConversationRow, ConversationMember } from "@/services/repositories/giang vien/messages.repo";
 
 /**
  * Lấy tên hiển thị của cuộc trò chuyện.

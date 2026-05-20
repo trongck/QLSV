@@ -49,7 +49,11 @@ export async function POST(req: Request) {
   if (file.size > MAX_SIZE)
     return NextResponse.json({ error: "File vượt quá giới hạn 10MB" }, { status: 413 });
 
-  if (!ALLOWED_TYPES.includes(file.type))
+  const ext = file.name.split(".").pop()?.toLowerCase();
+  const ALLOWED_EXTS = ["jpg", "jpeg", "png", "gif", "webp", "svg", "pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "txt", "zip", "rar", "7z"];
+  const isAllowed = ALLOWED_TYPES.includes(file.type) || (ext && ALLOWED_EXTS.includes(ext));
+
+  if (!isAllowed)
     return NextResponse.json({ error: "Loại file không được hỗ trợ" }, { status: 415 });
 
   const supabase = createClient(await cookies());
@@ -59,27 +63,30 @@ export async function POST(req: Request) {
 
   const arrayBuffer = await file.arrayBuffer();
   const { error: uploadError } = await supabase.storage
-    .from("tinnhan-files")
+    .from("attachments")
     .upload(filePath, arrayBuffer, {
       contentType: file.type,
       upsert: false,
     });
 
-  if (uploadError)
+  if (uploadError) {
     return NextResponse.json({ error: uploadError.message }, { status: 500 });
+  }
 
   const { data: urlData } = supabase.storage
-    .from("tinnhan-files")
+    .from("attachments")
     .getPublicUrl(filePath);
+
+  const fileUrl = urlData.publicUrl;
 
   await logAuditAction({
     supabase,
     mataikhoan: payload.mataikhoan,
-    hanhdong: "Tải lên tệp đính kèm tin nhắn",
+    hanhdong: "Tải lên tệp đính kèm tin nhắn (Supabase)",
     tentable: "tinnhan-files",
-    makhoachinh: filePath,
+    makhoachinh: fileUrl,
     request: req,
   });
 
-  return NextResponse.json({ url: urlData.publicUrl, name: file.name, type: file.type, size: file.size });
+  return NextResponse.json({ url: fileUrl, name: file.name, type: file.type, size: file.size });
 }

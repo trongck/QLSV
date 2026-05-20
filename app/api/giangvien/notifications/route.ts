@@ -185,19 +185,29 @@ export async function PATCH(req: Request) {
         return NextResponse.json({ success: true });
       }
 
-      const upsertRows = all.map((tb) => ({
+      const tbIds = all.map((tb) => tb.mathongbao);
+      
+      // Delete existing records to avoid conflict
+      await supabase
+        .from("thongbaodadoc")
+        .delete()
+        .eq("mataikhoan", payload.mataikhoan)
+        .in("mathongbao", tbIds);
+
+      // Insert new read records
+      const insertRows = all.map((tb) => ({
         mathongbao: tb.mathongbao,
         mataikhoan: payload.mataikhoan,
         dadoc: true,
         thoigiandoc: vnNow,
       }));
 
-      const { error: upsertError } = await supabase
+      const { error: insertError } = await supabase
         .from("thongbaodadoc")
-        .upsert(upsertRows, { onConflict: "mathongbao,mataikhoan" });
+        .insert(insertRows);
 
-      if (upsertError) {
-        return NextResponse.json({ error: upsertError.message }, { status: 500 });
+      if (insertError) {
+        return NextResponse.json({ error: insertError.message }, { status: 500 });
       }
 
       return NextResponse.json({ success: true });
@@ -207,20 +217,27 @@ export async function PATCH(req: Request) {
       return NextResponse.json({ error: "mathongbao không hợp lệ" }, { status: 400 });
     }
 
-    const { error: upsertError } = await supabase
+    // Delete existing to avoid conflict
+    await supabase
       .from("thongbaodadoc")
-      .upsert(
-        {
+      .delete()
+      .eq("mathongbao", body.mathongbao)
+      .eq("mataikhoan", payload.mataikhoan);
+
+    // Insert only if dadoc is true
+    if (body.dadoc !== false) {
+      const { error: insertError } = await supabase
+        .from("thongbaodadoc")
+        .insert({
           mathongbao: body.mathongbao,
           mataikhoan: payload.mataikhoan,
-          dadoc: body.dadoc !== false,
-          thoigiandoc: body.dadoc !== false ? vnNow : null,
-        },
-        { onConflict: "mathongbao,mataikhoan" }
-      );
+          dadoc: true,
+          thoigiandoc: vnNow,
+        });
 
-    if (upsertError) {
-      return NextResponse.json({ error: upsertError.message }, { status: 500 });
+      if (insertError) {
+        return NextResponse.json({ error: insertError.message }, { status: 500 });
+      }
     }
 
     return NextResponse.json({ success: true });

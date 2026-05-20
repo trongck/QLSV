@@ -81,6 +81,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
   const supabase = createClient(await cookies());
 
+  const vnNow = new Date(new Date().getTime() + 7 * 60 * 60 * 1000).toISOString().replace("Z", "");
+
   const { data, error } = await supabase
     .from("tinnhan")
     .insert({
@@ -89,6 +91,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
       noidung: noidung?.trim() ?? "",
       filedinh: filedinh ?? null,
       dachinh: false,
+      ngaytao: vnNow,
+      ngaycapnhat: vnNow
     })
     .select("matinnhan, macuoctrochuyen, mataikhoangui, noidung, filedinh, dachinh, ngaytao")
     .single();

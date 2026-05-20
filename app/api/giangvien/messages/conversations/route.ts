@@ -106,18 +106,24 @@ export async function GET(request: Request) {
         let avatar = null;
         let secondaryId = "";
 
-        if (role === VaiTro.SinhVien && m.taikhoan?.sinhvien?.[0]) {
-          const sv = m.taikhoan.sinhvien[0];
+        const rawSv = m.taikhoan?.sinhvien;
+        const sv = Array.isArray(rawSv) ? rawSv[0] : rawSv;
+
+        const rawGv = m.taikhoan?.giangvien;
+        const gv = Array.isArray(rawGv) ? rawGv[0] : rawGv;
+
+        const rawAdm = m.taikhoan?.admin;
+        const adm = Array.isArray(rawAdm) ? rawAdm[0] : rawAdm;
+
+        if (role === VaiTro.SinhVien && sv) {
           displayName = `${sv.hodem || ""} ${sv.ten || ""}`.trim() || "Sinh viên";
           avatar = sv.anhdaidien;
           secondaryId = sv.masv;
-        } else if (role === VaiTro.GiangVien && m.taikhoan?.giangvien?.[0]) {
-          const gv = m.taikhoan.giangvien[0];
+        } else if (role === VaiTro.GiangVien && gv) {
           displayName = `${gv.hodem || ""} ${gv.ten || ""}`.trim() || "Giảng viên";
           avatar = gv.anhdaidien;
           secondaryId = gv.magv;
-        } else if (role === VaiTro.Admin && m.taikhoan?.admin?.[0]) {
-          const adm = m.taikhoan.admin[0];
+        } else if (role === VaiTro.Admin && adm) {
           displayName = adm.hoten || "Quản trị viên";
           secondaryId = adm.maadmin;
         }

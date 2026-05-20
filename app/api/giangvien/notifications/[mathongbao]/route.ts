@@ -126,6 +126,12 @@ export async function DELETE(
       );
     }
 
+    // 1.5 Delete related read status records first to avoid foreign key violation
+    await supabase
+      .from("thongbaodadoc")
+      .delete()
+      .eq("mathongbao", id);
+
     // 2. Perform delete
     const { error: deleteError } = await supabase
       .from("thongbao")

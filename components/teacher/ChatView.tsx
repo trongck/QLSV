@@ -1,14 +1,14 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import * as repo from "@/services/repositories/teacher-messages.repo";
+import * as repo from "@/services/repositories/giang vien/teacher-messages.repo";
 import styles from "@/app/(dashboard)/teacher/dashboard/teacher-dashboard.module.css";
 
 export function ChatView() {
   const [conversations, setConversations] = useState<repo.ConversationRow[]>([]);
   const [activeConv, setActiveConv] = useState<repo.ConversationRow | null>(null);
   const [messages, setMessages] = useState<repo.MessageRow[]>([]);
-  
+
   // Search state
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<repo.UserSearchResult[]>([]);
@@ -19,7 +19,7 @@ export function ChatView() {
   const [inputText, setInputText] = useState("");
   const [sending, setSending] = useState(false);
   const [uploading, setUploading] = useState(false);
-  
+
   // Loadings
   const [loadingConvs, setLoadingConvs] = useState(true);
   const [loadingMsgs, setLoadingMsgs] = useState(false);
@@ -30,6 +30,7 @@ export function ChatView() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const searchContainerRef = useRef<HTMLDivElement>(null);
+  const isSendingRef = useRef(false);
 
   // Fetch conversations list
   const loadConversations = async (silent = false) => {
@@ -134,7 +135,7 @@ export function ChatView() {
     try {
       const res = await repo.createOrGetConversation(user.mataikhoan);
       await loadConversations();
-      
+
       // Select the conversation
       const found = conversations.find(c => c.macuoctrochuyen === res.data.macuoctrochuyen);
       if (found) {
@@ -153,12 +154,14 @@ export function ChatView() {
 
   // Send message
   const handleSendMessage = async () => {
-    if (!activeConv || (!inputText.trim() && !sending)) return;
+    if (!activeConv || !inputText.trim() || isSendingRef.current) return;
+    isSendingRef.current = true;
     setSending(true);
     try {
       const text = inputText.trim();
       setInputText("");
       const newMsg = await repo.sendMessage(activeConv.macuoctrochuyen, text);
+      setInputText("");
       setMessages(prev => [...prev, newMsg]);
       // Reload list to update last messages
       loadConversations(true);
@@ -166,6 +169,7 @@ export function ChatView() {
       console.error("Error sending message:", err);
       alert("Gửi tin nhắn thất bại");
     } finally {
+      isSendingRef.current = false;
       setSending(false);
     }
   };
@@ -195,7 +199,7 @@ export function ChatView() {
 
   // Delete message
   const handleDeleteMessage = async (msgId: number) => {
-    if (!confirm("Bạn có chắc chắn muốn ẩn tin nhắn này phía bạn không?")) return;
+    if (!confirm("Bạn có chắc chắn muốn xoá tin nhắn này phía bạn không?")) return;
     try {
       await repo.deleteMessage(msgId);
       setMessages(prev => prev.filter(m => m.matinnhan !== msgId));
@@ -207,7 +211,7 @@ export function ChatView() {
   // Delete/hide conversation
   const handleDeleteConversation = async () => {
     if (!activeConv) return;
-    if (!confirm(`Bạn có muốn ẩn cuộc hội thoại với ${getRecipientName(activeConv)}?`)) return;
+    if (!confirm(`Bạn có muốn xoá cuộc hội thoại với ${getRecipientName(activeConv)}?`)) return;
     try {
       await repo.deleteConversation(activeConv.macuoctrochuyen);
       setActiveConv(null);
@@ -233,30 +237,35 @@ export function ChatView() {
     return null;
   };
 
-  const parseDate = (isoString: string) => {
+  const parseDate = (isoString: string, senderId?: string) => {
     if (!isoString) return new Date();
     let normalized = isoString.trim();
     if (normalized.includes(" ")) {
       normalized = normalized.replace(" ", "T");
     }
-    if (!normalized.includes("Z") && !/[+-]\d{2}(:\d{2})?$/.test(normalized)) {
-      normalized += "Z";
+    if (normalized.includes("Z") || /[+-]\d{2}(:\d{2})?$/.test(normalized)) {
+      return new Date(normalized);
     }
-    return new Date(normalized);
+    const utcDate = new Date(normalized + "Z");
+    const localDate = new Date(normalized);
+    if (utcDate.getTime() > new Date().getTime() + 10 * 60 * 1000) {
+      return localDate;
+    }
+    return utcDate;
   };
 
-  const formatMessageTime = (isoString: string) => {
+  const formatMessageTime = (isoString: string, senderId?: string) => {
     try {
-      const d = parseDate(isoString);
+      const d = parseDate(isoString, senderId);
       return d.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
     } catch {
       return "";
     }
   };
 
-  const formatLastMsgTime = (isoString: string) => {
+  const formatLastMsgTime = (isoString: string, senderId?: string) => {
     try {
-      const d = parseDate(isoString);
+      const d = parseDate(isoString, senderId);
       const now = new Date();
       if (d.toDateString() === now.toDateString()) {
         return d.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
@@ -266,6 +275,10 @@ export function ChatView() {
       return "";
     }
   };
+
+  const sortedMessages = [...messages].sort((a, b) => {
+    return parseDate(a.ngaytao, a.mataikhoangui).getTime() - parseDate(b.ngaytao, b.mataikhoangui).getTime();
+  });
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
@@ -277,15 +290,15 @@ export function ChatView() {
       </div>
 
       <section className="card" style={{ display: "flex", padding: "0", height: "580px", overflow: "hidden", border: "1px solid #F0E1D9", background: "#FFF" }}>
-        
+
         {/* Left: Conversations roster */}
         <div style={{ width: "300px", borderRight: "1px solid #F0E1D9", display: "flex", flexDirection: "column", background: "#FDF8F5" }}>
-          
+
           {/* Search bar */}
           <div ref={searchContainerRef} style={{ padding: "15px", borderBottom: "1px solid #F0E1D9", position: "relative" }}>
-            <input 
-              type="text" 
-              placeholder="🔍 Tìm người hoặc cuộc trò chuyện..." 
+            <input
+              type="text"
+              placeholder="🔍 Tìm người hoặc cuộc trò chuyện..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               style={{ width: "100%", padding: "8px 12px", borderRadius: "8px", border: "1px solid #F0E1D9", outline: "none", fontSize: "12px", background: "#FFF" }}
@@ -293,7 +306,7 @@ export function ChatView() {
             {searching && (
               <span style={{ position: "absolute", right: "25px", top: "23px", fontSize: "11px", color: "#8B6F5F" }}>Đang tìm...</span>
             )}
-            
+
             {/* Search results dropdown */}
             {showSearchResults && searchResults.length > 0 && (
               <div style={{
@@ -302,8 +315,8 @@ export function ChatView() {
                 boxShadow: "0 4px 12px rgba(0,0,0,0.1)", zIndex: 10, maxHeight: "250px", overflowY: "auto"
               }}>
                 {searchResults.map((user) => (
-                  <div 
-                    key={user.id} 
+                  <div
+                    key={user.id}
                     onClick={() => handleSelectUser(user)}
                     style={{
                       display: "flex", alignItems: "center", gap: "10px", padding: "10px",
@@ -346,11 +359,11 @@ export function ChatView() {
                 const recipientName = getRecipientName(conv);
 
                 return (
-                  <div 
-                    key={conv.macuoctrochuyen} 
+                  <div
+                    key={conv.macuoctrochuyen}
                     onClick={() => setActiveConv(conv)}
-                    style={{ 
-                      display: "flex", alignItems: "center", gap: "10px", padding: "12px 15px", 
+                    style={{
+                      display: "flex", alignItems: "center", gap: "10px", padding: "12px 15px",
                       borderBottom: "1px solid #F0E1D9", cursor: "pointer",
                       background: isSelected ? "#FFF" : "transparent"
                     }}
@@ -371,7 +384,7 @@ export function ChatView() {
                           {recipientName}
                         </h4>
                         <span style={{ fontSize: "10px", color: "#8B6F5F" }}>
-                          {conv.lastMsg ? formatLastMsgTime(conv.lastMsg.ngaytao) : formatLastMsgTime(conv.ngaytao)}
+                          {conv.lastMsg ? formatLastMsgTime(conv.lastMsg.ngaytao, conv.lastMsg.mataikhoangui) : formatLastMsgTime(conv.ngaytao)}
                         </span>
                       </div>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "2px" }}>
@@ -409,30 +422,30 @@ export function ChatView() {
                     {getRecipientProfile(activeConv)?.vaitro === "SinhVien" ? "Sinh viên" : "Đồng nghiệp"}
                   </p>
                 </div>
-                <button 
+                <button
                   onClick={handleDeleteConversation}
                   title="Ẩn hội thoại"
                   style={{ background: "none", border: "none", fontSize: "15px", cursor: "pointer", color: "#8B6F5F", padding: "5px" }}
                 >
-                  🗑️
+                  xoá
                 </button>
               </div>
 
               {/* Message scroll list */}
               <div style={{ flex: 1, padding: "20px", overflowY: "auto", display: "flex", flexDirection: "column", gap: "15px", background: "#FAF6F3" }}>
-                {loadingMsgs && messages.length === 0 ? (
+                {loadingMsgs && sortedMessages.length === 0 ? (
                   <div style={{ textAlign: "center", color: "#8B6F5F", fontSize: "12px", marginTop: "10px" }}>Đang tải tin nhắn...</div>
-                ) : messages.length === 0 ? (
+                ) : sortedMessages.length === 0 ? (
                   <div style={{ textAlign: "center", color: "#8B6F5F", fontSize: "12px", marginTop: "20px" }}>Bắt đầu gửi tin nhắn trao đổi...</div>
                 ) : (
-                  messages.map((msg) => {
+                  sortedMessages.map((msg) => {
                     const isSelf = msg.mataikhoangui === myMataikhoan;
-                    
+
                     return (
-                      <div 
+                      <div
                         key={msg.matinnhan}
-                        style={{ 
-                          alignSelf: isSelf ? "flex-end" : "flex-start", 
+                        style={{
+                          alignSelf: isSelf ? "flex-end" : "flex-start",
                           display: "flex", gap: "10px", maxWidth: "70%",
                           flexDirection: isSelf ? "row-reverse" : "row"
                         }}
@@ -458,32 +471,51 @@ export function ChatView() {
                               {getRecipientName(activeConv)}
                             </span>
                           )}
-                          
+
                           {/* Message box */}
-                          <div 
-                            style={{ 
-                              background: isSelf ? "#FFF4F4" : "#FFF", 
-                              padding: "10px 14px", 
-                              borderRadius: isSelf ? "12px 12px 0 12px" : "0 12px 12px 12px", 
-                              border: isSelf ? "1px solid #F2A8A8" : "1px solid #EAD9CB", 
-                              fontSize: "12.5px", 
+                          <div
+                            style={{
+                              background: isSelf ? "#FFF4F4" : "#FFF",
+                              padding: "10px 14px",
+                              borderRadius: isSelf ? "12px 12px 0 12px" : "0 12px 12px 12px",
+                              border: isSelf ? "1px solid #F2A8A8" : "1px solid #EAD9CB",
+                              fontSize: "12.5px",
                               color: "#6B4F43",
                               position: "relative",
                               boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
                               wordBreak: "break-word"
                             }}
-                            className={styles.messageBoxHover}
                           >
                             {msg.filedinh ? (
-                              <a href={msg.filedinh} target="_blank" rel="noopener noreferrer" style={{ color: "#E05A47", fontWeight: "600", textDecoration: "underline", display: "flex", alignItems: "center", gap: "5px" }}>
-                                📁 {msg.noidung || "Tải xuống tệp"}
-                              </a>
+                              <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
+                                {/\.(png|jpe?g|gif|webp|svg)(\?.*)?$/i.test(msg.filedinh) ? (
+                                  <img
+                                    src={msg.filedinh}
+                                    alt="ảnh"
+                                    style={{ maxWidth: "200px", maxHeight: "200px", borderRadius: "8px", objectFit: "cover", border: "1px solid #EAD9CB" }}
+                                  />
+                                ) : null}
+                                <a
+                                  href={msg.filedinh}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  style={{
+                                    color: "#E05A47",
+                                    fontWeight: "600",
+                                    textDecoration: "underline",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: "5px"
+                                  }}
+                                >
+                                  📁 {msg.noidung || "Tải xuống tệp"}
+                                </a>
+                              </div>
                             ) : (
                               msg.noidung
                             )}
 
-                            {/* Delete single message trigger */}
-                            <button 
+                            <button
                               onClick={() => handleDeleteMessage(msg.matinnhan)}
                               title="Ẩn tin nhắn này"
                               style={{
@@ -500,7 +532,7 @@ export function ChatView() {
 
                           {/* Time label */}
                           <span style={{ fontSize: "9px", color: "#8B6F5F", marginTop: "3px" }}>
-                            {formatMessageTime(msg.ngaytao)}
+                            {formatMessageTime(msg.ngaytao, msg.mataikhoangui)}
                           </span>
                         </div>
                       </div>
@@ -512,15 +544,15 @@ export function ChatView() {
 
               {/* Compose bar */}
               <div style={{ padding: "15px 20px", borderTop: "1px solid #F0E1D9", display: "flex", gap: "10px", alignItems: "center", background: "#FFF" }}>
-                
+
                 {/* File Attachment */}
-                <input 
-                  type="file" 
-                  ref={fileInputRef} 
+                <input
+                  type="file"
+                  ref={fileInputRef}
                   onChange={handleUploadAttachment}
-                  style={{ display: "none" }} 
+                  style={{ display: "none" }}
                 />
-                <button 
+                <button
                   onClick={() => fileInputRef.current?.click()}
                   disabled={uploading}
                   title="Đính kèm tệp"
@@ -530,9 +562,9 @@ export function ChatView() {
                 </button>
 
                 {/* Text input */}
-                <input 
-                  type="text" 
-                  placeholder="Nhập tin nhắn..." 
+                <input
+                  type="text"
+                  placeholder="Nhập tin nhắn..."
                   value={inputText}
                   onChange={(e) => setInputText(e.target.value)}
                   onKeyDown={(e) => {
@@ -545,7 +577,7 @@ export function ChatView() {
                 />
 
                 {/* Send */}
-                <button 
+                <button
                   onClick={handleSendMessage}
                   disabled={sending || (!inputText.trim() && !sending)}
                   style={{ width: "38px", height: "38px", borderRadius: "50%", background: "#F2A8A8", border: "none", color: "white", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}
@@ -567,7 +599,7 @@ export function ChatView() {
         {activeConv && getRecipientProfile(activeConv) && (
           <div style={{ width: "220px", borderLeft: "1px solid #F0E1D9", padding: "20px", display: "flex", flexDirection: "column", gap: "15px", background: "#FDF8F5" }}>
             <h3 style={{ fontSize: "13px", color: "#8B6F5F", fontWeight: "bold", margin: 0 }}>Thông tin chi tiết</h3>
-            
+
             <div style={{ textAlign: "center", paddingBottom: "15px", borderBottom: "1px solid #F0E1D9" }}>
               <div style={{
                 width: "60px", height: "60px", borderRadius: "50%", background: "#EAD9CB",
