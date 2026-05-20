@@ -2,6 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { DashboardSidebar, DashboardTopbar } from "./DashboardSidebar";
+import { useAuth } from "@/hooks/auth/useAuth";
+import { VaiTro } from "@/types";
+import { ProfileModal } from "@/components/teacher/ProfileModal";
 
 interface DashboardShellProps {
   children: React.ReactNode;
@@ -10,6 +13,9 @@ interface DashboardShellProps {
 
 export function DashboardShell({ children, pageTitle }: DashboardShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
+  const { user } = useAuth();
+  const isTeacher = user?.vaitro === VaiTro.GiangVien;
 
   // Close sidebar on route change (any click outside)
   useEffect(() => {
@@ -39,7 +45,7 @@ export function DashboardShell({ children, pageTitle }: DashboardShellProps) {
         data-sidebar
         className={`w-[220px] shrink-0 bg-white border-r border-[#EAD9CB] flex flex-col p-[20px_12px] gap-1 h-screen sticky top-0 overflow-y-auto max-lg:fixed max-lg:left-0 max-lg:top-0 max-lg:z-[100] max-lg:h-screen max-lg:transition-transform max-lg:duration-250 max-lg:ease max-lg:shadow-[4px_0_24px_rgba(76,38,24,0.12)] max-sm:w-[200px] ${sidebarOpen ? "max-lg:translate-x-0" : "max-lg:-translate-x-full"}`}
       >
-        <DashboardSidebar />
+        <DashboardSidebar onProfileClick={isTeacher ? () => setProfileOpen(true) : undefined} />
       </div>
 
       {/* Main area */}
@@ -49,6 +55,7 @@ export function DashboardShell({ children, pageTitle }: DashboardShellProps) {
           <DashboardTopbar
             title={pageTitle}
             onMenuClick={() => setSidebarOpen(v => !v)}
+            onProfileClick={isTeacher ? () => setProfileOpen(true) : undefined}
           />
         </div>
 
@@ -57,6 +64,10 @@ export function DashboardShell({ children, pageTitle }: DashboardShellProps) {
           {children}
         </div>
       </div>
+
+      {isTeacher && (
+        <ProfileModal isOpen={profileOpen} onClose={() => setProfileOpen(false)} />
+      )}
     </div>
   );
 }

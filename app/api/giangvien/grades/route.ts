@@ -64,12 +64,17 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Chưa cung cấp token" }, { status: 401 });
   }
 
+  let payload: any;
   try {
-    const payload = await verifyToken(token) as any;
+    payload = await verifyToken(token);
     if (payload.vaitro !== VaiTro.GiangVien) {
       return NextResponse.json({ error: "Không có quyền truy cập" }, { status: 403 });
     }
+  } catch (err: any) {
+    return NextResponse.json({ error: "Phiên đăng nhập hết hạn hoặc không hợp lệ" }, { status: 401 });
+  }
 
+  try {
     const { createClient } = await import("@/lib/utils/supabase/server");
     const { cookies } = await import("next/headers");
     const cookieStore = await cookies();
