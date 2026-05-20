@@ -4,8 +4,12 @@ import { useEffect, useState } from "react";
 import { apiFetch } from "@/services/service/auth/auth.service";
 import { useAuth } from "@/hooks/auth/useAuth";
 import { User, Shield, Mail, Phone, MapPin, Award, Calendar, BookOpen, UserCheck, X, Edit3, Save, Heart, CreditCard, ScanFace, AlertCircle } from "lucide-react";
-import { FaceRegistrationModal } from "./FaceRegistrationModal";
+import dynamic from "next/dynamic";
 
+const FaceRegistrationModal = dynamic(
+  () => import("./FaceRegistrationModal").then((mod) => mod.FaceRegistrationModal),
+  { ssr: false }
+);
 interface ProfileData {
   masv: string;
   mataikhoan: string;

@@ -83,32 +83,38 @@ export async function PUT(request: Request) {
     const cookieStore = await cookies();
     const supabase = createClient(cookieStore);
 
-    const nameStr = hoten?.trim() || "";
-    const parts = nameStr.split(/\s+/);
-    const ten = parts.length > 1 ? parts[parts.length - 1] : parts[0];
-    const hodem = parts.length > 1 ? parts.slice(0, -1).join(" ") : "";
+    const updateData: any = {};
+    
+    if (face_embedding !== undefined) {
+      updateData.face_embedding = face_embedding;
+    }
+
+    // Nếu request gửi lên form cập nhật thông tin cá nhân (có trường hoten)
+    if ("hoten" in body) {
+      const nameStr = hoten?.trim() || "";
+      const parts = nameStr.split(/\s+/);
+      updateData.ten = parts.length > 1 ? parts[parts.length - 1] : parts[0] || null;
+      updateData.hodem = parts.length > 1 ? parts.slice(0, -1).join(" ") || null : null;
+      
+      updateData.ngaysinh = ngaysinh ?? null;
+      updateData.gioitinh = normalizeGioiTinh(gioitinh);
+      updateData.anhdaidien = anhdaidien?.trim() || null;
+      updateData.quequan = quequan?.trim() || null;
+      updateData.diachi = diachi?.trim() || null;
+      updateData.sodienthoai = sodienthoai?.trim() || null;
+      updateData.emailcanhan = emailcanhan?.trim() || null;
+      updateData.tenphuhuynh = tenphuhuynh?.trim() || null;
+      updateData.sodienthoaiphuhuynh = sodienthoaiphuhuynh?.trim() || null;
+      updateData.cccd = cccd?.trim() || null;
+      updateData.ngaycapcccd = ngaycapcccd ?? null;
+      updateData.noicapcccd = noicapcccd?.trim() || null;
+      updateData.dantoc = dantoc?.trim() || null;
+      updateData.tongiao = tongiao?.trim() || null;
+    }
 
     const { error: svError } = await supabase
       .from("sinhvien")
-      .update({
-        hodem:       hodem               || null,
-        ten:         ten                 || null,
-        ngaysinh:    ngaysinh            ?? null,
-        gioitinh:    normalizeGioiTinh(gioitinh),
-        anhdaidien:  anhdaidien?.trim()  || null,
-        quequan:     quequan?.trim()     || null,
-        diachi:      diachi?.trim()      || null,
-        sodienthoai: sodienthoai?.trim() || null,
-        emailcanhan: emailcanhan?.trim() || null,
-        tenphuhuynh: tenphuhuynh?.trim() || null,
-        sodienthoaiphuhuynh: sodienthoaiphuhuynh?.trim() || null,
-        cccd:        cccd?.trim()        || null,
-        ngaycapcccd: ngaycapcccd         ?? null,
-        noicapcccd:  noicapcccd?.trim()  || null,
-        dantoc:      dantoc?.trim()      || null,
-        tongiao:     tongiao?.trim()     || null,
-        ...(face_embedding !== undefined ? { face_embedding } : {})
-      })
+      .update(updateData)
       .eq("mataikhoan", payload.mataikhoan);
 
     if (svError) {
