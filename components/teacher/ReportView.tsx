@@ -40,7 +40,6 @@ interface StatsData {
     C: number;
     DF: number;
   };
-  weeklyAttendance: number[];
 }
 
 export function ReportView() {
@@ -48,23 +47,66 @@ export function ReportView() {
   const [classes, setClasses] = useState<ClassInfo[]>([]);
   const [selectedPC, setSelectedPC] = useState<number | "">("");
 
+  // Filters for Semester and Academic Year
+  const [selectedYear, setSelectedYear] = useState<string>("Tất cả");
+  const [selectedSemester, setSelectedSemester] = useState<string>("Tất cả");
+
   // Statistics
   const [stats, setStats] = useState<StatsData>({
-    avgAttendance: 92.5,
-    passRate: 96.2,
-    avgGpa: 8.15,
-    gradeDist: { A: 45, B: 30, C: 10, DF: 15 },
-    weeklyAttendance: [80, 85, 90, 88, 92, 95, 93, 96]
+    avgAttendance: 0,
+    passRate: 0,
+    avgGpa: 0,
+    gradeDist: { A: 0, B: 0, C: 0, DF: 0 }
   });
 
   // History & Modal states
   const [reports, setReports] = useState<ReportData[]>([]);
   const [selectedReportId, setSelectedReportId] = useState<number | "live">("live");
   const [comments, setComments] = useState("");
-  const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newReportTitle, setNewReportTitle] = useState("");
   const [saving, setSaving] = useState(false);
+  // Inline edit state for saved report title
+  const [editingReportId, setEditingReportId] = useState<number | null>(null);
+  const [editingTitle, setEditingTitle] = useState("");
+
+  // Dynamic filter values extraction
+  const yearOptions = Array.from(
+    new Set(
+      classes
+        .map((c) => c.hocky?.namhoc)
+        .filter((nh): nh is number => nh !== undefined && nh !== null)
+        .map((nh) => `${nh}-${nh + 1}`)
+    )
+  ).sort() as string[];
+
+  const semesterOptions = Array.from(
+    new Set(
+      classes
+        .map((c) => c.hocky?.tenhocky)
+        .filter(Boolean)
+    )
+  ).sort() as string[];
+
+  // Filtered classes list
+  const filteredClasses = classes.filter((c) => {
+    const classYear = c.hocky?.namhoc ? `${c.hocky.namhoc}-${c.hocky.namhoc + 1}` : "";
+    const matchYear = selectedYear === "Tất cả" || classYear === selectedYear;
+    const matchSem = selectedSemester === "Tất cả" || c.hocky?.tenhocky === selectedSemester;
+    return matchYear && matchSem;
+  });
+
+  // Synchronize selected class with filtered list
+  useEffect(() => {
+    if (filteredClasses.length > 0) {
+      const exists = filteredClasses.some((c) => c.maphancong === selectedPC);
+      if (!exists) {
+        setSelectedPC(filteredClasses[0].maphancong);
+      }
+    } else {
+      setSelectedPC("");
+    }
+  }, [selectedYear, selectedSemester, classes, selectedPC]);
 
   // Load classes initially
   useEffect(() => {
@@ -88,7 +130,10 @@ export function ReportView() {
 
   // Fetch stats and reports list when class selection changes
   useEffect(() => {
-    if (!selectedPC) return;
+    if (!selectedPC) {
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     setSelectedReportId("live");
     setComments("");
@@ -167,7 +212,6 @@ export function ReportView() {
       });
       const json = await res.json();
       if (json.success) {
-        alert("Lưu báo cáo mới thành công!");
         setShowCreateModal(false);
         // Refresh list of reports
         const reportsRes = await apiFetch(`/api/giangvien/reports?maphancong=${selectedPC}&action=GET_REPORTS`);
@@ -272,33 +316,30 @@ export function ReportView() {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+      <style>{`
+        @media (max-width: 900px) {
+          .report-filter-grid { grid-template-columns: 1fr 1fr !important; }
+          .report-kpi-grid { grid-template-columns: 1fr !important; }
+          .report-charts-grid { grid-template-columns: 1fr !important; }
+        }
+        @media (max-width: 560px) {
+          .report-filter-grid { grid-template-columns: 1fr !important; }
+          .report-header-row { flex-direction: column !important; align-items: flex-start !important; gap: 12px !important; }
+          .report-header-btns { width: 100% !important; }
+          .report-header-btns button { flex: 1 !important; }
+        }
+      `}</style>
+      <div className="report-header-row" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px" }}>
         <div>
           <h2 style={{ fontSize: "20px", fontWeight: "700", color: "#6B4F43", margin: 0 }}>Phân tích &amp; Thống kê kết quả học tập</h2>
           <p style={{ fontSize: "13px", color: "#8B6F5F", margin: "4px 0 0" }}>Nhận thông tin trực quan về kết quả và tình hình tham gia của sinh viên</p>
         </div>
-        <div style={{ display: "flex", gap: "10px" }}>
-          <button 
-            onClick={() => setShowHistoryModal(true)}
-            style={{ 
-              padding: "10px 18px", 
-              borderRadius: "8px", 
-              border: "1px solid #F2A8A8", 
-              background: "#FFF", 
-              color: "#F2A8A8", 
-              fontWeight: "600", 
-              cursor: "pointer", 
-              fontSize: "13px" 
-            }}
-          >
-            📋 Xem báo cáo cũ ({reports.length})
-          </button>
-          <button 
+        <div className="report-header-btns" style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+          <button
             onClick={handleOpenCreateModal}
-            className={styles.primaryBtn} 
-            style={{ 
-              background: "linear-gradient(90deg, #F2A8A8 0%, #FFB4B4 100%)", 
-              padding: "10px 20px", 
+            style={{
+              background: "linear-gradient(90deg, #F2A8A8 0%, #FFB4B4 100%)",
+              padding: "10px 20px",
               fontWeight: "600",
               cursor: "pointer",
               border: "none",
@@ -307,43 +348,66 @@ export function ReportView() {
               fontSize: "13px"
             }}
           >
-            💾 Tạo báo cáo mới
+            Tạo báo cáo mới
           </button>
         </div>
       </div>
 
       {/* Filter Box */}
       <section className="card" style={{ padding: "20px", border: "1px solid #F0E1D9" }}>
-        <div style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr 1fr 1fr", gap: "20px", alignItems: "flex-end" }}>
+        <div className="report-filter-grid" style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr 1fr 1fr", gap: "16px", alignItems: "flex-end" }}>
+          {/* Năm học */}
           <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-            <label style={{ fontSize: "11px", fontWeight: "700", color: "#8B6F5F", textTransform: "uppercase" }}>Chọn lớp giảng dạy</label>
-            <select 
-              value={selectedPC} 
-              onChange={e => setSelectedPC(Number(e.target.value))}
-              style={{ padding: "10px", borderRadius: "8px", border: "1px solid #F0E1D9", color: "#6B4F43", outline: "none", fontSize: "13px" }}
+            <label style={{ fontSize: "11px", fontWeight: "700", color: "#8B6F5F", textTransform: "uppercase" }}>Năm học</label>
+            <select
+              value={selectedYear}
+              onChange={(e) => setSelectedYear(e.target.value)}
+              style={{ padding: "10px", borderRadius: "8px", border: "1px solid #F0E1D9", color: "#6B4F43", outline: "none", fontSize: "13px", background: "white", cursor: "pointer" }}
             >
-              {classes.map((cls) => (
-                <option key={cls.maphancong} value={cls.maphancong}>
-                  {cls.monhoc?.tenmon} - {cls.lop?.tenlop}
-                </option>
+              <option value="Tất cả">Tất cả năm học</option>
+              {yearOptions.map((y) => (
+                <option key={y} value={y}>{y}</option>
               ))}
             </select>
           </div>
-          
+
+          {/* Học kỳ */}
           <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
             <label style={{ fontSize: "11px", fontWeight: "700", color: "#8B6F5F", textTransform: "uppercase" }}>Học kỳ</label>
-            <div style={{ padding: "10px", borderRadius: "8px", border: "1px solid #FDF8F5", background: "#FDF8F5", color: "#6B4F43", fontSize: "13px", fontWeight: "600" }}>
-              {selectedClass?.hocky?.tenhocky || "—"}
-            </div>
+            <select
+              value={selectedSemester}
+              onChange={(e) => setSelectedSemester(e.target.value)}
+              style={{ padding: "10px", borderRadius: "8px", border: "1px solid #F0E1D9", color: "#6B4F43", outline: "none", fontSize: "13px", background: "white", cursor: "pointer" }}
+            >
+              <option value="Tất cả">Tất cả học kỳ</option>
+              {semesterOptions.map((s) => (
+                <option key={s} value={s}>{s}</option>
+              ))}
+            </select>
           </div>
 
-          <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-            <label style={{ fontSize: "11px", fontWeight: "700", color: "#8B6F5F", textTransform: "uppercase" }}>Năm học</label>
-            <div style={{ padding: "10px", borderRadius: "8px", border: "1px solid #FDF8F5", background: "#FDF8F5", color: "#6B4F43", fontSize: "13px", fontWeight: "600" }}>
-              {selectedClass?.hocky?.namhoc ? `${selectedClass.hocky.namhoc}-${selectedClass.hocky.namhoc + 1}` : "—"}
-            </div>
+          {/* Chọn lớp */}
+          <div style={{ display: "flex", flexDirection: "column", gap: "6px", gridColumn: "span 1" }}>
+            <label style={{ fontSize: "11px", fontWeight: "700", color: "#8B6F5F", textTransform: "uppercase" }}>Chọn lớp giảng dạy</label>
+            <select
+              value={selectedPC}
+              onChange={(e) => setSelectedPC(Number(e.target.value))}
+              disabled={filteredClasses.length === 0}
+              style={{ padding: "10px", borderRadius: "8px", border: "1px solid #F0E1D9", color: filteredClasses.length === 0 ? "#bbb" : "#6B4F43", outline: "none", fontSize: "13px", background: "white", cursor: filteredClasses.length === 0 ? "not-allowed" : "pointer" }}
+            >
+              {filteredClasses.length === 0 ? (
+                <option value="">— Không có lớp phù hợp —</option>
+              ) : (
+                filteredClasses.map((cls) => (
+                  <option key={cls.maphancong} value={cls.maphancong}>
+                    {cls.monhoc?.tenmon} - {cls.lop?.tenlop}
+                  </option>
+                ))
+              )}
+            </select>
           </div>
 
+          {/* Số tín chỉ (static) */}
           <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
             <label style={{ fontSize: "11px", fontWeight: "700", color: "#8B6F5F", textTransform: "uppercase" }}>Số tín chỉ</label>
             <div style={{ padding: "10px", borderRadius: "8px", border: "1px solid #FDF8F5", background: "#FDF8F5", color: "#6B4F43", fontSize: "13px", fontWeight: "600" }}>
@@ -352,6 +416,13 @@ export function ReportView() {
           </div>
         </div>
       </section>
+
+      {/* Empty filter message */}
+      {filteredClasses.length === 0 && (
+        <div style={{ padding: "20px", borderRadius: "10px", border: "1px solid #F0E1D9", background: "#FDF8F5", color: "#8B6F5F", textAlign: "center", fontSize: "14px" }}>
+          Không tìm thấy lớp học phần nào phù hợp với bộ lọc đã chọn.
+        </div>
+      )}
 
       {/* Warning showing we are looking at an old report */}
       {selectedReportId !== "live" && (
@@ -369,11 +440,12 @@ export function ReportView() {
       )}
 
       {/* KPI statistics cards */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "20px" }}>
+      {filteredClasses.length > 0 && (
+      <div className="report-kpi-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "16px" }}>
         {[
-          { title: "Tỷ lệ điểm danh trung bình", value: `${stats.avgAttendance}%`, sub: "Dựa trên số buổi điểm danh", color: "#6FCF97" },
-          { title: "Tỷ lệ đạt học phần (>=4.0)", value: `${stats.passRate}%`, sub: "Dựa trên điểm tổng kết hiện tại", color: "#6FCF97" },
-          { title: "Điểm tích lũy trung bình", value: stats.avgGpa.toString(), sub: "Thang điểm 10 học phần", color: "#6FCF97" }
+          { title: "Tỷ lệ điểm danh trung bình", value: `${stats.avgAttendance}%`, sub: "Dựa trên số buổi điểm danh" },
+          { title: "Tỷ lệ đạt học phần (>=4.0)", value: `${stats.passRate}%`, sub: "Dựa trên điểm tổng kết hiện tại" },
+          { title: "Điểm tích lũy trung bình", value: stats.avgGpa.toString(), sub: "Thang điểm 10 học phần" }
         ].map((card, i) => (
           <div key={i} className="card" style={{ padding: "20px", border: "1px solid #F0E1D9" }}>
             <div style={{ color: "#8B6F5F", fontSize: "13px" }}>{card.title}</div>
@@ -382,9 +454,10 @@ export function ReportView() {
           </div>
         ))}
       </div>
+      )}
 
-      {/* Charts & Comments */}
-      <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1.8fr 1.2fr", gap: "20px" }}>
+      {filteredClasses.length > 0 && (
+      <div className="report-charts-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
         
         {/* Pie chart (Donut) */}
         <section className="card" style={{ padding: "20px", border: "1px solid #F0E1D9", display: "flex", flexDirection: "column", gap: "15px" }}>
@@ -400,20 +473,6 @@ export function ReportView() {
             <div style={{ display: "flex", alignItems: "center", gap: "5px" }}><div style={{ width: "8px", height: "8px", background: "#EB5757" }}></div> Điểm C ({dist.C}%)</div>
             <div style={{ display: "flex", alignItems: "center", gap: "5px" }}><div style={{ width: "8px", height: "8px", background: "#2D9CDB" }}></div> Điểm D/F ({dist.DF}%)</div>
           </div>
-        </section>
-
-        {/* Bar chart (Attendance trend) */}
-        <section className="card" style={{ padding: "20px", border: "1px solid #F0E1D9", display: "flex", flexDirection: "column", gap: "15px" }}>
-          <h3 style={{ fontSize: "15px", color: "#6B4F43", fontWeight: "bold", margin: 0 }}>Xu hướng điểm danh hàng tuần</h3>
-          <div style={{ height: "150px", display: "flex", alignItems: "flex-end", justifyContent: "space-between", borderLeft: "1px solid #F0E1D9", borderBottom: "1px solid #F0E1D9", padding: "0 10px 5px 5px" }}>
-            {(stats.weeklyAttendance || []).map((val, i) => (
-              <div key={i} style={{ width: "16px", height: `${val}%`, background: "#F2A8A8", borderRadius: "4px 4px 0 0", position: "relative" }}>
-                <span style={{ position: "absolute", top: "-18px", left: "-6px", fontSize: "9px", color: "#6B4F43", fontWeight: "bold" }}>{val}%</span>
-                <span style={{ position: "absolute", bottom: "-20px", left: "-2px", fontSize: "9px", color: "#8B6F5F", whiteSpace: "nowrap" }}>B.{i+1}</span>
-              </div>
-            ))}
-          </div>
-          <div style={{ height: "10px" }} />
         </section>
 
         {/* Notes block */}
@@ -448,8 +507,160 @@ export function ReportView() {
         </section>
 
       </div>
+      )}
 
-      {/* Export action */}
+      {/* Saved Reports Panel — luôn hiển thị khi đã chọn lớp */}
+      {filteredClasses.length > 0 && (
+        <section className="card" style={{ padding: "20px", border: "1px solid #F0E1D9" }}>
+          <h3 style={{ fontSize: "15px", color: "#6B4F43", fontWeight: "bold", margin: "0 0 14px 0" }}>
+            Báo cáo đã lưu {reports.length > 0 ? `(${reports.length})` : ""}
+          </h3>
+
+          {reports.length === 0 ? (
+            <div style={{
+              textAlign: "center",
+              padding: "30px 20px",
+              color: "#8B6F5F",
+              fontSize: "13px",
+              background: "#FDF8F5",
+              borderRadius: "10px",
+              border: "1px dashed #F0E1D9"
+            }}>
+              Chưa có báo cáo nào được lưu cho lớp học phần này.<br/>
+              <span style={{ fontSize: "12px", color: "#BFADA7" }}>Nhấn "Tạo báo cáo mới" ở góc trên phải để lưu thống kê hiện tại vào cơ sở dữ liệu.</span>
+            </div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+              {/* Live entry */}
+              <div
+                onClick={() => handleSelectReport("live")}
+                style={{
+                  padding: "10px 14px",
+                  borderRadius: "8px",
+                  border: `2px solid ${selectedReportId === "live" ? "#F2A8A8" : "#F0E1D9"}`,
+                  background: selectedReportId === "live" ? "#FFF5F5" : "white",
+                  cursor: "pointer",
+                  fontSize: "13px",
+                  fontWeight: selectedReportId === "live" ? "700" : "400",
+                  color: "#6B4F43"
+                }}
+              >
+                ✓ Xem dữ liệu hiện tại (Live)
+              </div>
+
+              {/* Saved report entries */}
+              {reports.map((rep) => (
+                <div
+                  key={rep.matailieu}
+                  style={{
+                    borderRadius: "8px",
+                    border: `2px solid ${selectedReportId === rep.matailieu ? "#F2A8A8" : "#F0E1D9"}`,
+                    background: selectedReportId === rep.matailieu ? "#FFF5F5" : "white",
+                    overflow: "hidden",
+                    transition: "all 0.15s"
+                  }}
+                >
+                  {editingReportId === rep.matailieu ? (
+                    /* Inline edit mode */
+                    <div style={{ padding: "10px 14px", display: "flex", flexDirection: "column", gap: "8px" }}>
+                      <input
+                        value={editingTitle}
+                        onChange={(e) => setEditingTitle(e.target.value)}
+                        autoFocus
+                        onClick={(e) => e.stopPropagation()}
+                        style={{
+                          padding: "6px 10px",
+                          borderRadius: "6px",
+                          border: "1px solid #F2A8A8",
+                          fontSize: "13px",
+                          color: "#6B4F43",
+                          outline: "none",
+                          width: "100%",
+                          boxSizing: "border-box"
+                        }}
+                      />
+                      <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end" }}>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setEditingReportId(null);
+                          }}
+                          style={{ padding: "5px 12px", borderRadius: "6px", border: "1px solid #F0E1D9", background: "white", color: "#6B4F43", fontSize: "12px", cursor: "pointer" }}
+                        >
+                          Hủy
+                        </button>
+                        <button
+                          disabled={saving}
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            if (!editingTitle.trim()) return;
+                            setSaving(true);
+                            try {
+                              const res = await apiFetch(`/api/giangvien/reports/${rep.matailieu}`, {
+                                method: "PUT",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ tieude: editingTitle })
+                              });
+                              const json = await res.json();
+                              if (json.success) {
+                                setReports(prev => prev.map(r => r.matailieu === rep.matailieu ? { ...r, tieude: editingTitle } : r));
+                                setEditingReportId(null);
+                              } else {
+                                alert("Lỗi: " + json.error);
+                              }
+                            } catch {
+                              alert("Lỗi khi cập nhật tên báo cáo");
+                            } finally {
+                              setSaving(false);
+                            }
+                          }}
+                          style={{ padding: "5px 12px", borderRadius: "6px", border: "none", background: "#F2A8A8", color: "white", fontSize: "12px", fontWeight: "bold", cursor: "pointer" }}
+                        >
+                          {saving ? "Đang lưu..." : "Lưu"}
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    /* View mode */
+                    <div
+                      style={{ padding: "10px 14px", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }}
+                      onClick={() => handleSelectReport(rep)}
+                    >
+                      <div>
+                        <div style={{ fontWeight: "bold", color: "#6B4F43", fontSize: "13px" }}>{rep.tieude}</div>
+                        <div style={{ fontSize: "11px", color: "#8B6F5F", marginTop: "3px" }}>
+                          Lưu lúc: {new Date(rep.ngaytao).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+                        </div>
+                      </div>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setEditingReportId(rep.matailieu);
+                          setEditingTitle(rep.tieude);
+                        }}
+                        title="Chỉnh sửa tên báo cáo"
+                        style={{
+                          padding: "4px 10px",
+                          borderRadius: "6px",
+                          border: "1px solid #F0E1D9",
+                          background: "white",
+                          color: "#8B6F5F",
+                          fontSize: "11px",
+                          cursor: "pointer",
+                          flexShrink: 0,
+                          marginLeft: "8px"
+                        }}
+                      >
+                        Sửa
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+      )}
       <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "10px" }}>
         <button 
           onClick={handleDownloadCSV}
@@ -470,39 +681,6 @@ export function ReportView() {
           Tải xuống báo cáo học phần (.csv)
         </button>
       </div>
-
-      {/* History Modal */}
-      {showHistoryModal && (
-        <div style={{ position: "fixed", top: 0, left: 0, width: "100%", height: "100%", backgroundColor: "rgba(0,0,0,0.4)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 1000 }}>
-          <div className="card" style={{ background: "white", padding: "30px", borderRadius: "16px", width: "500px", maxWidth: "90%", border: "1px solid #EAD9CB", display: "flex", flexDirection: "column", gap: "20px" }}>
-            <h3 style={{ fontSize: "18px", fontWeight: "bold", color: "#6B4F43", margin: 0 }}>Lịch sử báo cáo đã lưu</h3>
-            {reports.length === 0 ? (
-              <div style={{ textAlign: "center", color: "#8B6F5F", padding: "20px 0" }}>Chưa có báo cáo nào được lưu cho lớp học phần này.</div>
-            ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: "10px", maxHeight: "300px", overflowY: "auto" }}>
-                {reports.map((rep) => (
-                  <div 
-                    key={rep.matailieu} 
-                    onClick={() => {
-                      handleSelectReport(rep);
-                      setShowHistoryModal(false);
-                    }}
-                    style={{ padding: "12px", borderRadius: "8px", border: "1px solid #F0E1D9", cursor: "pointer", transition: "all 0.2s" }}
-                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "#FDF8F5"}
-                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "transparent"}
-                  >
-                    <div style={{ fontWeight: "bold", color: "#6B4F43", fontSize: "14px" }}>{rep.tieude}</div>
-                    <div style={{ fontSize: "11px", color: "#8B6F5F", marginTop: "4px" }}>Ngày tạo: {new Date(rep.ngaytao).toLocaleDateString("vi-VN")} {new Date(rep.ngaytao).toLocaleTimeString("vi-VN")}</div>
-                  </div>
-                ))}
-              </div>
-            )}
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px" }}>
-              <button onClick={() => setShowHistoryModal(false)} style={{ padding: "8px 16px", borderRadius: "6px", border: "1px solid #EAD9CB", background: "white", color: "#6B4F43", cursor: "pointer" }}>Đóng</button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Create Modal */}
       {showCreateModal && (

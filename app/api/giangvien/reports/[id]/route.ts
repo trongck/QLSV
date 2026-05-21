@@ -45,15 +45,15 @@ export async function PUT(
       return NextResponse.json({ error: "ID báo cáo không hợp lệ" }, { status: 400 });
     }
 
-    const { mota } = await request.json();
+    const { mota, tieude } = await request.json();
 
-    if (mota === undefined) {
-      return NextResponse.json({ error: "Thiếu nội dung nhận xét" }, { status: 400 });
+    if (mota === undefined && tieude === undefined) {
+      return NextResponse.json({ error: "Thiếu nội dung cần cập nhật (tieude hoặc mota)" }, { status: 400 });
     }
 
-    await giangVienService.updateReport(gv.magv, matailieu, mota);
+    await giangVienService.updateReport(gv.magv, matailieu, { tieude, mota });
 
-    return NextResponse.json({ success: true, message: "Cập nhật nhận xét thành công" });
+    return NextResponse.json({ success: true, message: "Cập nhật báo cáo thành công" });
   } catch (err: any) {
     console.error("Lỗi PUT /api/giangvien/reports/[id]:", err.message);
     return NextResponse.json(

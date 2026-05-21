@@ -35,6 +35,61 @@ const FloatingChat = () => {
   const [isLoading, setIsLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  // Dragging states
+  const [offset, setOffset] = useState({ x: 0, y: 0 });
+  const dragStartRef = useRef({
+    startX: 0,
+    startY: 0,
+    startOffsetX: 0,
+    startOffsetY: 0,
+    active: false,
+    hasDragged: false
+  });
+
+  const handleMouseMove = useCallback((e: MouseEvent) => {
+    if (!dragStartRef.current.active) return;
+    
+    const dx = e.clientX - dragStartRef.current.startX;
+    const dy = e.clientY - dragStartRef.current.startY;
+    if (Math.abs(dx) > 5 || Math.abs(dy) > 5) {
+      dragStartRef.current.hasDragged = true;
+    }
+    
+    setOffset({
+      x: dragStartRef.current.startOffsetX + dx,
+      y: dragStartRef.current.startOffsetY + dy
+    });
+  }, []);
+
+  const handleMouseUp = useCallback(() => {
+    dragStartRef.current.active = false;
+    document.removeEventListener("mousemove", handleMouseMove);
+    document.removeEventListener("mouseup", handleMouseUp);
+  }, [handleMouseMove]);
+
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    if ((e.target as HTMLElement).closest(".anticon-close")) return;
+
+    dragStartRef.current = {
+      startX: e.clientX,
+      startY: e.clientY,
+      startOffsetX: offset.x,
+      startOffsetY: offset.y,
+      active: true,
+      hasDragged: false
+    };
+
+    document.addEventListener("mousemove", handleMouseMove);
+    document.addEventListener("mouseup", handleMouseUp);
+  }, [offset, handleMouseMove, handleMouseUp]);
+
+  useEffect(() => {
+    return () => {
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, [handleMouseMove, handleMouseUp]);
+
   // Auto scroll to bottom when new message arrives or loading state changes
   useEffect(() => {
     if (scrollRef.current) {
@@ -88,13 +143,15 @@ const FloatingChat = () => {
         flexDirection: "column",
         alignItems: "flex-end",
         fontFamily: "Arial, sans-serif",
+        transform: `translate(${offset.x}px, ${offset.y}px)`,
+        userSelect: dragStartRef.current.active ? "none" : "auto",
       }}
     >
       {/* 1. KHUNG CHAT TO & TỐI GIẢN */}
       <div
         style={{
-          width: isOpen ? "450px" : "0px", // Chiều rộng khi mở là 450px
-          height: isOpen ? "650px" : "0px", // Chiều cao khi mở là 650px
+          width: isOpen ? "380px" : "0px", // Chiều rộng khi mở là 380px
+          height: isOpen ? "520px" : "0px", // Chiều cao khi mở là 520px
           opacity: isOpen ? 1 : 0,
           visibility: isOpen ? "visible" : "hidden",
           backgroundColor: "white",
@@ -109,6 +166,7 @@ const FloatingChat = () => {
       >
         {/* Header */}
         <div
+          onMouseDown={handleMouseDown}
           style={{
             backgroundColor: "#C25450",
             color: "white",
@@ -117,6 +175,8 @@ const FloatingChat = () => {
             justifyContent: "space-between",
             alignItems: "center",
             boxShadow: "0 2px 5px rgba(0,0,0,0.1)",
+            cursor: "move",
+            userSelect: "none",
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
@@ -281,7 +341,15 @@ const FloatingChat = () => {
 
         {/* Nút tròn */}
         <div
-          onClick={() => setIsOpen(!isOpen)}
+          onMouseDown={handleMouseDown}
+          onClick={(e) => {
+            if (dragStartRef.current.hasDragged) {
+              e.preventDefault();
+              e.stopPropagation();
+              return;
+            }
+            setIsOpen(!isOpen);
+          }}
           style={{
             backgroundColor: "#C25450",
             borderRadius: "50%",

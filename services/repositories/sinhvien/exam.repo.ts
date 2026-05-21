@@ -85,7 +85,7 @@ export const examRepo = {
     /**
      * Nộp bài thi
      */
-    submitExam: async (masv: string, madethi: number, answers: { macauhoi: number, madapan: number | null, cautraloituluan: string | null }[]) => {
+    submitExam: async (masv: string, madethi: number, answers: { macauhoi: number, madapan: number | null, cautraloituluan: string | null }[], cheatCount?: number) => {
         const supabase = await getSupabase();
         console.log('--- START SUBMIT EXAM ---');
         console.log('MASV:', masv, 'MaDeThi:', madethi);
@@ -150,6 +150,11 @@ export const examRepo = {
 
         // 3. Lưu kết quả thi
         const vnNow = new Date(new Date().getTime() + 7 * 60 * 60 * 1000).toISOString().replace("Z", "");
+        
+        const isCheat = cheatCount && cheatCount > 0;
+        const trangthai = isCheat ? 'ViPham' : 'DaNop';
+        const ghichu = isCheat ? `Đã rời màn hình thi (chuyển tab) ${cheatCount} lần` : null;
+
         const { data: result, error: resErr } = await supabase
             .from('ketquathi')
             .insert({
@@ -160,7 +165,8 @@ export const examRepo = {
                 thoigiannopbai: vnNow,
                 diemtong: totalScore,
                 socandung: correctCount,
-                trangthai: 'DaNop'
+                trangthai: trangthai,
+                ghichu: ghichu
             })
             .select()
             .single();

@@ -43,7 +43,7 @@ export async function POST(
 
         const { id } = await params;
         const body = await request.json();
-        const { answers } = body;
+        const { answers, cheatCount } = body;
 
         const cookieStore = await cookies();
         const supabase = createClient(cookieStore);
@@ -59,7 +59,7 @@ export async function POST(
             return NextResponse.json({ success: false, message: 'Student profile not found' }, { status: 404 });
         }
 
-        const { data, error } = await examRepo.submitExam(sinhvien.masv, parseInt(id), answers);
+        const { data, error } = await examRepo.submitExam(sinhvien.masv, parseInt(id), answers, cheatCount);
 
         if (error) {
             return NextResponse.json({ success: false, error: error.message }, { status: 500 });

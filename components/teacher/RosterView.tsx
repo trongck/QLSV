@@ -6,6 +6,7 @@ import styles from "@/app/(dashboard)/teacher/dashboard/teacher-dashboard.module
 
 interface RosterStudent {
   mssv: string;
+  accountId: string | null;
   name: string;
   class: string;
   phone: string;
@@ -28,6 +29,9 @@ export function RosterView() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingStudent, setEditingStudent] = useState<RosterStudent | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+
+  const [quickMessage, setQuickMessage] = useState("");
+  const [isSendingMsg, setIsSendingMsg] = useState(false);
 
   // Tải danh sách lớp phân công
   useEffect(() => {
@@ -118,6 +122,48 @@ export function RosterView() {
       alert("Đã xảy ra lỗi: " + err.message);
     } finally {
       setIsSaving(false);
+      setIsSaving(false);
+    }
+  };
+
+  const handleSendQuickMessage = async () => {
+    if (!currentStudent || !quickMessage.trim() || !currentStudent.accountId) {
+      alert("Thiếu thông tin người nhận hoặc nội dung tin nhắn.");
+      return;
+    }
+
+    setIsSendingMsg(true);
+    try {
+      // 1. Lấy hoặc tạo cuộc trò chuyện
+      const convRes = await apiFetch("/api/giangvien/messages/conversations", {
+        method: "POST",
+        body: JSON.stringify({ otherMataikhoan: currentStudent.accountId }),
+      });
+      const convJson = await convRes.json();
+      
+      if (!convJson.success || !convJson.data?.macuoctrochuyen) {
+        throw new Error(convJson.error || "Không thể khởi tạo cuộc trò chuyện");
+      }
+
+      const conversationId = convJson.data.macuoctrochuyen;
+
+      // 2. Gửi tin nhắn
+      const msgRes = await apiFetch(`/api/giangvien/messages/conversations/${conversationId}`, {
+        method: "POST",
+        body: JSON.stringify({ noidung: quickMessage.trim(), filedinh: null }),
+      });
+      const msgJson = await msgRes.json();
+
+      if (!msgJson.success) {
+        throw new Error(msgJson.error || "Lỗi khi gửi tin nhắn");
+      }
+
+      alert("Đã gửi tin nhắn liên lạc nhanh thành công!");
+      setQuickMessage("");
+    } catch (err: any) {
+      alert("Đã xảy ra lỗi: " + err.message);
+    } finally {
+      setIsSendingMsg(false);
     }
   };
 
@@ -169,7 +215,6 @@ export function RosterView() {
                   <th style={{ padding: "12px", fontSize: "13px", color: "#8B6F5F" }}>Mã SV</th>
                   <th style={{ padding: "12px", fontSize: "13px", color: "#8B6F5F" }}>Họ và tên</th>
                   <th style={{ padding: "12px", fontSize: "13px", color: "#8B6F5F" }}>Lớp</th>
-                  <th style={{ padding: "12px", fontSize: "13px", color: "#8B6F5F", textAlign: "right" }}>Chi tiết</th>
                 </tr>
               </thead>
               <tbody>
@@ -199,9 +244,7 @@ export function RosterView() {
                       <td style={{ padding: "12px", fontSize: "13px" }}>{std.mssv}</td>
                       <td style={{ padding: "12px", fontSize: "14px", fontWeight: "600", color: "#6B4F43" }}>{std.name}</td>
                       <td style={{ padding: "12px", fontSize: "13px", color: "#8B6F5F" }}>{std.class}</td>
-                      <td style={{ padding: "12px", textAlign: "right" }}>
-                        <span style={{ fontSize: "12px", color: "#C25450", fontWeight: "bold" }}>Xem</span>
-                      </td>
+                      
                     </tr>
                   ))
                 )}
@@ -241,31 +284,42 @@ export function RosterView() {
               </div>
 
               <div style={{ display: "flex", flexDirection: "column", gap: "12px", fontSize: "13px", color: "#6B4F43" }}>
-                <div style={{ display: "flex", justifyContent: "space-between" }}>
-                  <span style={{ color: "#8B6F5F" }}>Lớp sinh hoạt:</span> <strong>{currentStudent.class}</strong>
+                <div style={{ display: "flex", gap: "8px", justifyContent: "space-between" }}>
+                  <span style={{ color: "#8B6F5F", flexShrink: 0 }}>Lớp sinh hoạt:</span> 
+                  <strong style={{ textAlign: "right", wordBreak: "break-word" }}>{currentStudent.class}</strong>
                 </div>
-                <div style={{ display: "flex", justifyContent: "space-between" }}>
-                  <span style={{ color: "#8B6F5F" }}>Số điện thoại:</span> <strong>{currentStudent.phone}</strong>
+                <div style={{ display: "flex", gap: "8px", justifyContent: "space-between" }}>
+                  <span style={{ color: "#8B6F5F", flexShrink: 0 }}>Số điện thoại:</span> 
+                  <strong style={{ textAlign: "right", wordBreak: "break-word" }}>{currentStudent.phone}</strong>
                 </div>
-                <div style={{ display: "flex", justifyContent: "space-between" }}>
-                  <span style={{ color: "#8B6F5F" }}>Địa chỉ Email:</span> <strong>{currentStudent.email}</strong>
+                <div style={{ display: "flex", gap: "8px", justifyContent: "space-between" }}>
+                  <span style={{ color: "#8B6F5F", flexShrink: 0 }}>Địa chỉ Email:</span> 
+                  <strong style={{ textAlign: "right", wordBreak: "break-word" }}>{currentStudent.email}</strong>
                 </div>
-                <div style={{ display: "flex", justifyContent: "space-between" }}>
-                  <span style={{ color: "#8B6F5F" }}>Liên hệ phụ huynh:</span> <strong style={{ fontSize: "12px" }}>{currentStudent.parent}</strong>
+                <div style={{ display: "flex", gap: "8px", justifyContent: "space-between" }}>
+                  <span style={{ color: "#8B6F5F", flexShrink: 0 }}>Liên hệ phụ huynh:</span> 
+                  <strong style={{ fontSize: "12px", textAlign: "right", wordBreak: "break-word" }}>{currentStudent.parent}</strong>
                 </div>
-                <div style={{ display: "flex", justifyContent: "space-between" }}>
-                  <span style={{ color: "#8B6F5F" }}>Nơi cư trú:</span> <strong>{currentStudent.address}</strong>
+                <div style={{ display: "flex", gap: "8px", justifyContent: "space-between" }}>
+                  <span style={{ color: "#8B6F5F", flexShrink: 0 }}>Nơi cư trú:</span> 
+                  <strong style={{ textAlign: "right", wordBreak: "break-word" }}>{currentStudent.address}</strong>
                 </div>
               </div>
 
               <div style={{ borderTop: "1px solid #F0E1D9", paddingTop: "15px", marginTop: "10px", display: "flex", flexDirection: "column", gap: "10px" }}>
                 <h4 style={{ margin: 0, fontSize: "14px", color: "#8B6F5F", fontWeight: "bold" }}>Nội dung nhắn phụ huynh / sinh viên</h4>
                 <textarea 
+                  value={quickMessage}
+                  onChange={(e) => setQuickMessage(e.target.value)}
                   placeholder="Nhập lời nhắc, thông báo học vụ để gửi nhanh..."
                   style={{ padding: "10px", borderRadius: "8px", border: "1px solid #F0E1D9", background: "#FDF8F5", height: "80px", resize: "none", outline: "none", fontSize: "13px", color: "#6B4F43" }}
                 />
-                <button className={styles.primaryBtn} style={{ background: "linear-gradient(90deg, #F2A8A8 0%, #FFB4B4 100%)", width: "100%", fontWeight: "600", border: "none" }}>
-                  Gửi tin nhắn liên lạc nhanh
+                <button 
+                  className={styles.primaryBtn} 
+                  onClick={handleSendQuickMessage}
+                  disabled={isSendingMsg || !currentStudent.accountId}
+                  style={{ background: "linear-gradient(90deg, #F2A8A8 0%, #FFB4B4 100%)", width: "100%", fontWeight: "600", border: "none", borderRadius: "999px" }}>
+                  {isSendingMsg ? "Đang gửi..." : "Gửi tin nhắn liên lạc nhanh"}
                 </button>
               </div>
             </>

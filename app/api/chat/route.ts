@@ -80,7 +80,7 @@ export async function POST(req: NextRequest) {
     const genAI = new GoogleGenerativeAI(apiKey);
 
     const model = genAI.getGenerativeModel({
-      model: "gemini-1.5-flash",
+      model: "gemini-2.5-flash",
       systemInstruction: systemInstruction,
     });
 
@@ -128,14 +128,23 @@ export async function POST(req: NextRequest) {
       msg.includes("PERMISSION_DENIED") ||
       msg.includes("invalid");
 
+    const isQuotaError =
+      msg.includes("429") ||
+      msg.includes("quota") ||
+      msg.includes("Quota") ||
+      msg.includes("limit") ||
+      msg.includes("Limit");
+
     const isModelError =
-      msg.includes("not found") ||
-      msg.includes("404") ||
-      msg.includes("models/");
+      !isQuotaError &&
+      (msg.includes("not found") ||
+        msg.includes("404") ||
+        msg.includes("models/"));
 
     let friendlyError = "Không thể kết nối AI lúc này. Vui lòng thử lại sau.";
     if (isKeyError) friendlyError = "API key Gemini không hợp lệ. Vui lòng kiểm tra lại.";
-    if (isModelError) friendlyError = "Model AI không khả dụng. Đang thử model dự phòng.";
+    else if (isQuotaError) friendlyError = "Tài khoản AI đang quá tải hoặc hết hạn ngạch. Vui lòng thử lại sau ít phút!";
+    else if (isModelError) friendlyError = "Model AI không khả dụng. Đang thử model dự phòng.";
 
     return NextResponse.json({ error: friendlyError }, { status: 500 });
   }

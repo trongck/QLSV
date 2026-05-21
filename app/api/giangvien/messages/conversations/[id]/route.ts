@@ -50,10 +50,10 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
   // Cập nhật thoigianxemcuoi của thành viên này
-  const now = new Date().toISOString();
+  const vnNow = new Date(new Date().getTime() + 7 * 60 * 60 * 1000).toISOString().replace("Z", "");
   await supabase
     .from("thanhvientrochuyen")
-    .update({ thoigianxemcuoi: now })
+    .update({ thoigianxemcuoi: vnNow })
     .eq("macuoctrochuyen", convId)
     .eq("mataikhoan", payload.mataikhoan);
 
@@ -103,10 +103,10 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   await supabase.from("cuoctrochuyen").update({ nguoidaxoa: [] }).eq("macuoctrochuyen", convId);
 
   // Cập nhật thoigianxemcuoi
-  const now = new Date().toISOString();
+  const vnNowForMe = new Date(new Date().getTime() + 7 * 60 * 60 * 1000).toISOString().replace("Z", "");
   await supabase
     .from("thanhvientrochuyen")
-    .update({ thoigianxemcuoi: now })
+    .update({ thoigianxemcuoi: vnNowForMe })
     .eq("macuoctrochuyen", convId)
     .eq("mataikhoan", payload.mataikhoan);
 

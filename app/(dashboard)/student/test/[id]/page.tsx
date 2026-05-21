@@ -29,6 +29,7 @@ export default function ExamSessionPage() {
   const [result, setResult] = useState<any>(null);
   const [showSubmitModal, setShowSubmitModal] = useState(false);
   const [unansweredCount, setUnansweredCount] = useState(0);
+  const [cheatCount, setCheatCount] = useState(0);
   
   // Password state
   const [showPasswordModal, setShowPasswordModal] = useState(false);
@@ -76,6 +77,22 @@ export default function ExamSessionPage() {
     return () => clearInterval(timer);
   }, [timeLeft, loading, isFinished, showPasswordModal]);
 
+  // Cheat detection (Tab switching & Window blur)
+  useEffect(() => {
+    if (loading || isFinished || showPasswordModal) return;
+    
+    const handleBlur = () => {
+      setCheatCount(prev => prev + 1);
+      // Optional: show a warning toast here if needed
+    };
+    
+    window.addEventListener('blur', handleBlur);
+    
+    return () => {
+      window.removeEventListener('blur', handleBlur);
+    };
+  }, [loading, isFinished, showPasswordModal]);
+
   const handleAnswerSelect = (questionId: number, answerId: number) => {
     setAnswers(prev => ({
       ...prev,
@@ -112,7 +129,7 @@ export default function ExamSessionPage() {
 
       const res = await apiFetch(`/api/sinhvien/exam/${id}`, {
         method: "POST",
-        body: JSON.stringify({ answers: formattedAnswers })
+        body: JSON.stringify({ answers: formattedAnswers, cheatCount })
       });
       
       const json = await res.json();

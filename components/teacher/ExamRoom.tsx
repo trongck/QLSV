@@ -13,7 +13,7 @@ export function ExamRoom() {
 
   // Modals state
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [showEditTimeModal, setShowEditTimeModal] = useState(false);
+  const [showEditExamModal, setShowEditExamModal] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   const [newTaskData, setNewTaskData] = useState({
@@ -27,10 +27,14 @@ export function ExamRoom() {
   });
   const [uploadFile, setUploadFile] = useState<File | null>(null);
 
-  const [editTimeData, setEditTimeData] = useState({
+  const [editExamData, setEditExamData] = useState({
+    maphancong: "",
+    tieude: "",
+    mota: "",
     thoigianlam: 60,
     thoigianbatdau: "",
-    thoigianketthuc: ""
+    thoigianketthuc: "",
+    matkhau: ""
   });
 
   useEffect(() => {
@@ -88,38 +92,51 @@ export function ExamRoom() {
     }
   };
 
-  const openEditTime = () => {
+  const openEditExam = () => {
     if (exams.length === 0) return;
     const activeExam = exams[activeExamIdx];
-    setEditTimeData({
+    setEditExamData({
+      maphancong: activeExam.maphancong?.toString() || "",
+      tieude: activeExam.tieude || "",
+      mota: activeExam.mota || "",
       thoigianlam: activeExam.thoigianlam || 60,
       thoigianbatdau: activeExam.thoigianbatdau ? activeExam.thoigianbatdau.slice(0, 16) : "",
-      thoigianketthuc: activeExam.thoigianketthuc ? activeExam.thoigianketthuc.slice(0, 16) : ""
+      thoigianketthuc: activeExam.thoigianketthuc ? activeExam.thoigianketthuc.slice(0, 16) : "",
+      matkhau: activeExam.matkhau || ""
     });
-    setShowEditTimeModal(true);
+    setUploadFile(null);
+    setShowEditExamModal(true);
   };
 
-  const handleEditTimeSubmit = async (e: React.FormEvent) => {
+  const handleEditExamSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (exams.length === 0) return;
     const activeExam = exams[activeExamIdx];
 
     setSubmitting(true);
     try {
+      const formData = new FormData();
+      formData.append("action", "UPDATE_EXAM");
+      formData.append("maphancong", editExamData.maphancong);
+      formData.append("tieude", editExamData.tieude);
+      formData.append("mota", editExamData.mota);
+      formData.append("thoigianlam", editExamData.thoigianlam.toString());
+      formData.append("thoigianbatdau", new Date(editExamData.thoigianbatdau).toISOString());
+      formData.append("thoigianketthuc", new Date(editExamData.thoigianketthuc).toISOString());
+      formData.append("matkhau", editExamData.matkhau);
+      
+      if (uploadFile) {
+        formData.append("file", uploadFile);
+      }
+
       const res = await apiFetch(`/api/giangvien/exams/${activeExam.madethi}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "UPDATE_TIME",
-          thoigianlam: editTimeData.thoigianlam,
-          thoigianbatdau: new Date(editTimeData.thoigianbatdau).toISOString(),
-          thoigianketthuc: new Date(editTimeData.thoigianketthuc).toISOString()
-        })
+        body: formData
       });
       const json = await res.json();
       if (json.success) {
-        alert("Cập nhật thời gian thi thành công");
-        setShowEditTimeModal(false);
+        alert("Cập nhật đề thi thành công");
+        setShowEditExamModal(false);
         // Reload exams
         const reloadRes = await apiFetch("/api/giangvien/exams");
         const reloadJson = await reloadRes.json();
@@ -130,7 +147,7 @@ export function ExamRoom() {
         alert("Lỗi: " + json.error);
       }
     } catch (err) {
-      alert("Lỗi kết nối khi cập nhật thời gian");
+      alert("Lỗi kết nối khi cập nhật đề thi");
     } finally {
       setSubmitting(false);
     }
@@ -216,221 +233,187 @@ export function ExamRoom() {
   const isEnded = activeExam.thoigianketthuc && new Date(activeExam.thoigianketthuc) <= new Date();
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-        <div>
-          <h2 style={{ fontSize: "20px", fontWeight: "700", color: "#6B4F43", margin: 0 }}>Giao diện giám sát Thi trực tuyến</h2>
-          <p style={{ fontSize: "13px", color: "#8B6F5F", margin: "4px 0 0" }}>Theo dõi sinh viên làm kiểm tra trắc nghiệm kết hợp giám sát AI thông minh</p>
-        </div>
-        <div style={{ display: "flex", gap: "10px" }}>
-          <button 
-            onClick={() => setShowCreateModal(true)}
-            style={{ 
-              background: "linear-gradient(90deg, #F2A8A8 0%, #FFB4B4 100%)", 
-              padding: "10px 20px", 
-              fontWeight: "600",
-              cursor: "pointer",
-              border: "none",
-              color: "white",
-              borderRadius: "8px",
-              fontSize: "13px"
-            }}
-          >
-            + Tạo đề thi mới
-          </button>
-          <button 
-            onClick={openEditTime}
-            style={{ 
-              background: "white", 
-              border: "1px solid #EAD9CB",
-              color: "#6B4F43",
-              padding: "10px 20px", 
-              fontWeight: "600",
-              cursor: "pointer",
-              borderRadius: "8px",
-              fontSize: "13px"
-            }}
-          >
-            ⚙️ Sửa thời gian
-          </button>
-          <button 
-            onClick={handleEndExam}
-            disabled={isEnded}
-            className={styles.primaryBtn} 
-            style={{ 
-              background: isEnded ? "#D9D9D9" : "#D65D5D", 
-              padding: "10px 20px", 
-              fontWeight: "600",
-              cursor: isEnded ? "not-allowed" : "pointer",
-              border: "none",
-              color: isEnded ? "#8B6F5F" : "white",
-              borderRadius: "8px",
-              fontSize: "13px"
-            }}
-          >
-            {isEnded ? "Ca thi đã kết thúc" : "🛑 Kết thúc ca thi"}
-          </button>
-        </div>
+    <div style={{ display: "flex", flexWrap: "wrap", gap: "20px" }}>
+      {/* LEFT SIDEBAR: Exam List */}
+      <div style={{ flex: "1 1 300px", maxWidth: "400px", minWidth: "250px", display: "flex", flexDirection: "column", gap: "12px", maxHeight: "calc(100vh - 100px)", overflowY: "auto", paddingRight: "5px" }}>
+        <h2 style={{ fontSize: "18px", fontWeight: "700", color: "#6B4F43", margin: "0 0 5px 0" }}>Ca thi / Lịch thi</h2>
+        
+        {exams.map((ex, idx) => {
+          const isSelected = activeExamIdx === idx;
+          const isExEnded = ex.thoigianketthuc && new Date(ex.thoigianketthuc) <= new Date();
+          return (
+            <div 
+              key={ex.madethi} 
+              onClick={() => setActiveExamIdx(idx)}
+              style={{ 
+                padding: "16px", borderRadius: "12px", cursor: "pointer", transition: "all 0.2s",
+                background: isSelected ? "#FDF8F5" : "white",
+                border: isSelected ? "1px solid #F2A8A8" : "1px solid #F0E1D9",
+                boxShadow: isSelected ? "0 4px 12px rgba(242, 168, 168, 0.15)" : "none"
+              }}
+            >
+              <div style={{ fontSize: "15px", fontWeight: "bold", color: isSelected ? "#D65D5D" : "#2D1B14", marginBottom: "6px" }}>{ex.tieude}</div>
+              <div style={{ fontSize: "13px", color: "#8B6F5F" }}>{ex.tenmon} - {ex.tenlop}</div>
+              <div style={{ display: "flex", justifyContent: "space-between", marginTop: "12px", alignItems: "center" }}>
+                <span style={{ fontSize: "12px", color: "#8B6F5F", display: "flex", alignItems: "center", gap: "4px" }}>
+                  {ex.thoigianbatdau ? new Date(ex.thoigianbatdau).toLocaleDateString("vi-VN") : "--/--"}
+                </span>
+                <span style={{ 
+                  fontSize: "11px", fontWeight: "bold", padding: "4px 8px", borderRadius: "6px",
+                  background: isExEnded ? "#FFF0F0" : "#FDF8F5",
+                  color: isExEnded ? "#D65D5D" : "#6B4F43"
+                }}>
+                  {isExEnded ? "Đã kết thúc" : "Đang mở"}
+                </span>
+              </div>
+            </div>
+          );
+        })}
       </div>
 
-      {exams.length > 1 && (
-        <div style={{ marginBottom: "10px" }}>
-          <select 
-            value={activeExamIdx} 
-            onChange={e => setActiveExamIdx(Number(e.target.value))}
-            style={{ padding: "8px", borderRadius: "6px", border: "1px solid #EAD9CB", color: "#6B4F43", outline: "none" }}
-          >
-            {exams.map((ex, idx) => (
-              <option key={ex.madethi} value={idx}>{ex.tieude} - {ex.tenlop}</option>
-            ))}
-          </select>
-        </div>
-      )}
-
-      {/* Three Column Exam Room Layout */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr 1.2fr", gap: "20px" }}>
-        
-        {/* Column 1: Test general info & circular question sheet */}
-        <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-          <section className="card" style={{ padding: "20px", border: "1px solid #F0E1D9" }}>
-            <h3 style={{ fontSize: "15px", marginBottom: "15px", borderBottom: "1px solid #F0E1D9", paddingBottom: "10px", color: "#6B4F43", fontWeight: "bold", margin: 0 }}>Thông tin đề kiểm tra</h3>
-            <div style={{ marginBottom: "20px", marginTop: "10px" }}>
-              <h4 style={{ margin: "0 0 5px 0", color: "#2D1B14", fontWeight: "bold" }}>{activeExam.tieude} - {activeExam.tenmon}</h4>
-              <span style={{ fontSize: "12px", background: isEnded ? "#FDECEC" : "#EAFDF5", color: isEnded ? "#D65D5D" : "#178A57", padding: "3px 8px", borderRadius: "4px", fontWeight: "bold" }}>
-                {isEnded ? "Đã đóng" : "Ca thi đang mở"}
-              </span>
-            </div>
-            
-            <div style={{ display: "flex", flexDirection: "column", gap: "10px", fontSize: "13px", color: "#8B6F5F" }}>
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <span>⏱ Thời gian làm bài</span> <strong style={{ color: "#6B4F43" }}>{activeExam.thoigianlam || "--"} phút</strong>
-              </div>
-              <div style={{ display: "flex", justifyContent: "space-between", color: "#D65D5D" }}>
-                <span>⏳ Thời gian bắt đầu</span> <strong>{activeExam.thoigianbatdau ? new Date(activeExam.thoigianbatdau).toLocaleString('vi-VN') : "--"}</strong>
-              </div>
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <span>📝 Số lượng câu hỏi</span> <strong style={{ color: "#6B4F43" }}>{questions.length}</strong>
-              </div>
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <span>✅ SV đã nộp bài</span> <strong style={{ color: "#6B4F43" }}>{activeExam.ketquathi?.length || 0}</strong>
-              </div>
-            </div>
-          </section>
-
-          <section className="card" style={{ padding: "20px", border: "1px solid #F0E1D9" }}>
-            <h3 style={{ fontSize: "15px", marginBottom: "15px", color: "#6B4F43", fontWeight: "bold", margin: 0 }}>Danh sách câu hỏi</h3>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: "8px", marginTop: "10px" }}>
-              {questions.map((_: any, i: number) => (
-                <div key={i} 
-                  onClick={() => setActiveQIdx(i)}
-                  style={{ 
-                    width: "32px", height: "32px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "11px",
-                    background: i === activeQIdx ? "#F2A8A8" : "#F5F5F5",
-                    color: i === activeQIdx ? "white" : "#8B6F5F",
-                    border: i === activeQIdx ? "none" : "1px solid #EAD9CB",
-                    fontWeight: "600",
-                    cursor: "pointer"
-                  }}
-                >
-                  {i + 1}
-                </div>
-              ))}
-            </div>
-          </section>
+      {/* MAIN CONTENT */}
+      <div style={{ flex: "3 1 600px", minWidth: "300px", display: "flex", flexDirection: "column", gap: "20px", maxHeight: "calc(100vh - 100px)", overflowY: "auto", paddingRight: "10px" }}>
+        {/* Header Section */}
+        <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "flex-start", gap: "15px", background: "white", padding: "24px", borderRadius: "16px", border: "1px solid #F0E1D9", boxShadow: "0 2px 10px rgba(107, 79, 67, 0.05)" }}>
+          <div style={{ flex: "1 1 300px" }}>
+            <h2 style={{ fontSize: "22px", fontWeight: "700", color: "#2D1B14", margin: 0 }}>{activeExam.tieude}</h2>
+            <p style={{ fontSize: "14px", color: "#8B6F5F", margin: "8px 0 0" }}>
+              {activeExam.tenmon} - {activeExam.tenlop} | Bắt đầu: {activeExam.thoigianbatdau ? new Date(activeExam.thoigianbatdau).toLocaleString('vi-VN') : "--"}
+            </p>
+          </div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "12px" }}>
+            <button 
+              onClick={() => setShowCreateModal(true)}
+              style={{ background: "#FDF8F5", border: "1px solid #F2A8A8", color: "#D65D5D", padding: "10px 18px", fontWeight: "600", cursor: "pointer", borderRadius: "10px", fontSize: "14px", transition: "all 0.2s" }}
+            >
+              Tạo đề thi mới
+            </button>
+            <button 
+              onClick={openEditExam}
+              style={{ background: "white", border: "1px solid #EAD9CB", color: "#6B4F43", padding: "10px 18px", fontWeight: "600", cursor: "pointer", borderRadius: "10px", fontSize: "14px", transition: "all 0.2s" }}
+            >
+              Sửa đề thi
+            </button>
+            <button 
+              onClick={handleEndExam}
+              disabled={isEnded}
+              style={{ background: isEnded ? "#F0E1D9" : "linear-gradient(90deg, #F2A8A8 0%, #FFB4B4 100%)", padding: "10px 18px", fontWeight: "600", cursor: isEnded ? "not-allowed" : "pointer", border: "none", color: isEnded ? "#8B6F5F" : "white", borderRadius: "10px", fontSize: "14px", transition: "all 0.2s" }}
+            >
+              {isEnded ? "Ca thi đã kết thúc" : "Kết thúc ca thi"}
+            </button>
+          </div>
         </div>
 
-        {/* Column 2: Specific question details preview */}
-        <section className="card" style={{ padding: "25px", border: "1px solid #F0E1D9", display: "flex", flexDirection: "column", gap: "15px" }}>
-          {activeQuestion ? (
-            <>
-              <h3 style={{ fontSize: "16px", color: "#2D1B14", fontWeight: "bold", margin: 0 }}>
-                Câu {activeQIdx + 1}: {activeQuestion.noidung}
-              </h3>
-              
-              {activeQuestion.hinhanh && (
-                 <div style={{ background: "#FDF8F5", padding: "15px", borderRadius: "10px", border: "1px solid #F0E1D9" }}>
-                   <img src={activeQuestion.hinhanh} alt="Question" style={{ maxWidth: "100%", borderRadius: "8px" }} />
-                 </div>
-              )}
-
-              <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                {(activeQuestion.dapan || []).sort((a: any, b: any) => a.thutu - b.thutu).map((opt: any, idx: number) => (
-                  <label key={idx} style={{ 
-                    display: "flex", alignItems: "center", gap: "12px", padding: "12px 15px", borderRadius: "8px", 
-                    border: opt.ladapandung ? "2px solid #178A57" : "1px solid #F0E1D9", 
-                    background: opt.ladapandung ? "#EAFDF5" : "transparent",
-                    fontSize: "13px", color: "#6B4F43"
-                  }}>
-                    <input type="radio" name={`q${activeQuestion.macauhoi}`} disabled defaultChecked={opt.ladapandung} />
-                    <span>{String.fromCharCode(65 + idx)}. {opt.noidung}</span>
-                  </label>
-                ))}
-              </div>
-            </>
-          ) : (
-            <div style={{ color: "#8B6F5F", textAlign: "center", marginTop: "40px" }}>Chưa có câu hỏi nào</div>
-          )}
-        </section>
-
-        {/* Column 3: Live AI Proctoring Cheat Warnings Panel */}
-        <section className="card" style={{ padding: "20px", border: "1px solid #F0E1D9", display: "flex", flexDirection: "column", gap: "15px" }}>
-          <h3 style={{ fontSize: "15px", color: "#6B4F43", fontWeight: "bold", margin: 0 }}>Cảnh báo gian lận (AI Proctor)</h3>
-          
-          <div style={{ 
-            flex: 1, 
-            maxHeight: "350px", 
-            overflowY: "auto", 
-            display: "flex", 
-            flexDirection: "column", 
-            gap: "10px",
-            paddingRight: "5px"
-          }}>
-            {activeExam.ketquathi && activeExam.ketquathi.length > 0 ? (
-              activeExam.ketquathi.map((result: any, idx: number) => {
-                const logs = [
-                  { type: "tab", msg: `Sinh viên mã số ${result.masv} đã rời màn hình thi (chuyển tab) 2 lần`, time: "14:15" },
-                  { type: "face", msg: `Không phát hiện khuôn mặt sinh viên ${result.masv} trước camera`, time: "14:22" },
-                  { type: "eyes", msg: `Phát hiện sinh viên ${result.masv} thường xuyên nhìn ra ngoài màn hình`, time: "14:35" }
-                ];
-                const log = logs[idx % logs.length];
-                
-                return (
-                  <div key={result.maketqua} style={{ 
-                    padding: "10px", 
-                    borderRadius: "8px", 
-                    backgroundColor: log.type === "tab" ? "#FDF3F3" : "#FFFBEB", 
-                    borderLeft: `4px solid ${log.type === "tab" ? "#EB5757" : "#F2C94C"}`,
-                    fontSize: "12px"
-                  }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
-                      <span style={{ fontWeight: "bold", color: log.type === "tab" ? "#D65D5D" : "#B7791F" }}>
-                        {log.type === "tab" ? "🚨 Chuyển tab" : log.type === "face" ? "⚠️ Mất khuôn mặt" : "👁 Ánh mắt bất thường"}
-                      </span>
-                      <span style={{ color: "#8B6F5F" }}>{log.time}</span>
-                    </div>
-                    <p style={{ margin: 0, color: "#6B4F43" }}>{log.msg}</p>
-                  </div>
-                );
-              })
-            ) : (
-              <div style={{ textAlign: "center", color: "#8B6F5F", padding: "20px 0", fontSize: "13px" }}>
-                🟢 Không phát hiện hành vi gian lận nào trong ca thi này.
-              </div>
-            )}
-          </div>
-          
-          <div style={{ display: "flex", flexDirection: "column", gap: "10px", fontSize: "13px", color: "#8B6F5F", borderTop: "1px solid #F0E1D9", paddingTop: "15px" }}>
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <span>Trạng thái phòng thi</span> <strong style={{ color: isEnded ? "#8B6F5F" : "#178A57" }}>{isEnded ? "Đã đóng" : "Đang giám sát"}</strong>
+        {/* QUICK STATS */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "20px" }}>
+          <div style={{ background: "white", padding: "20px", borderRadius: "16px", border: "1px solid #F0E1D9", display: "flex", flexDirection: "column", gap: "8px", boxShadow: "0 2px 10px rgba(107, 79, 67, 0.05)" }}>
+            <div style={{ fontSize: "14px", color: "#8B6F5F", fontWeight: "600", display: "flex", alignItems: "center", gap: "8px" }}>
+              Thời gian làm bài
             </div>
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <span>Đánh giá chung AI</span> <strong style={{ color: activeExam.ketquathi?.length > 1 ? "#EB5757" : "#178A57" }}>
-                {activeExam.ketquathi?.length > 1 ? "Có nghi vấn" : "An toàn"}
-              </strong>
+            <div style={{ fontSize: "28px", color: "#6B4F43", fontWeight: "bold" }}>{activeExam.thoigianlam || "--"} <span style={{ fontSize: "16px", fontWeight: "normal", color: "#8B6F5F" }}>phút</span></div>
+          </div>
+          <div style={{ background: "white", padding: "20px", borderRadius: "16px", border: "1px solid #F0E1D9", display: "flex", flexDirection: "column", gap: "8px", boxShadow: "0 2px 10px rgba(107, 79, 67, 0.05)" }}>
+            <div style={{ fontSize: "14px", color: "#8B6F5F", fontWeight: "600", display: "flex", alignItems: "center", gap: "8px" }}>
+              Sinh viên đã nộp bài
+            </div>
+            <div style={{ fontSize: "28px", color: "#6B4F43", fontWeight: "bold" }}>{activeExam.ketquathi?.length || 0} <span style={{ fontSize: "16px", fontWeight: "normal", color: "#8B6F5F" }}>SV</span></div>
+          </div>
+          <div style={{ background: "white", padding: "20px", borderRadius: "16px", border: "1px solid #F0E1D9", display: "flex", flexDirection: "column", gap: "8px", boxShadow: "0 2px 10px rgba(107, 79, 67, 0.05)" }}>
+            <div style={{ fontSize: "14px", color: "#8B6F5F", fontWeight: "600", display: "flex", alignItems: "center", gap: "8px" }}>
+              Cảnh báo gian lận
+            </div>
+            <div style={{ fontSize: "28px", color: "#D65D5D", fontWeight: "bold" }}>
+              {activeExam.ketquathi?.filter((r: any) => r.trangthai === 'ViPham').length || 0} <span style={{ fontSize: "16px", fontWeight: "normal", color: "#D65D5D" }}>SV</span>
             </div>
           </div>
-        </section>
+        </div>
 
+        {/* AI PROCTORING TABLE */}
+        <section style={{ flex: 1, background: "white", padding: "24px", borderRadius: "16px", border: "1px solid #F0E1D9", display: "flex", flexDirection: "column", gap: "20px", boxShadow: "0 2px 10px rgba(107, 79, 67, 0.05)" }}>
+          <div>
+            <h3 style={{ fontSize: "18px", color: "#2D1B14", fontWeight: "bold", margin: "0 0 5px 0" }}>Giám sát AI Proctoring</h3>
+            <p style={{ fontSize: "14px", color: "#8B6F5F", margin: 0 }}>Theo dõi hành vi sinh viên trong quá trình làm bài thi trực tuyến.</p>
+          </div>
+          
+          <div style={{ width: "100%", overflowX: "auto", border: "1px solid #F0E1D9", borderRadius: "12px" }}>
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "14px" }}>
+              <thead>
+                <tr style={{ background: "#FDF8F5", color: "#6B4F43", textAlign: "left" }}>
+                  <th style={{ padding: "16px", fontWeight: "bold", borderBottom: "1px solid #F0E1D9" }}>Học sinh</th>
+                  <th style={{ padding: "16px", fontWeight: "bold", borderBottom: "1px solid #F0E1D9" }}>Trạng thái</th>
+                  <th style={{ padding: "16px", fontWeight: "bold", borderBottom: "1px solid #F0E1D9", textAlign: "center" }}>Điểm số</th>
+                  <th style={{ padding: "16px", fontWeight: "bold", borderBottom: "1px solid #F0E1D9" }}>Live cheat vi phạm</th>
+                </tr>
+              </thead>
+              <tbody>
+                {activeExam.ketquathi && activeExam.ketquathi.length > 0 ? (
+                  activeExam.ketquathi.map((result: any, idx: number) => {
+                    // Read from actual database columns instead of mocking
+                    const isCheat = result.trangthai === 'ViPham';
+                    const cheatWarningText = result.ghichu || "Đã ghi nhận vi phạm";
+
+                    let statusText = "Đang làm";
+                    let statusBg = "#FDF8F5";
+                    let statusColor = "#6B4F43";
+                    
+                    if (result.trangthai === 'DaNop') {
+                      statusText = "Đã nộp bài";
+                      statusBg = "#EAFDF5";
+                      statusColor = "#178A57";
+                    } else if (result.trangthai === 'ViPham') {
+                      statusText = "Vi phạm";
+                      statusBg = "#FFF0F0";
+                      statusColor = "#D65D5D";
+                    } else if (result.trangthai === 'HetGio') {
+                      statusText = "Hết giờ";
+                      statusBg = "#F0E1D9";
+                      statusColor = "#8B6F5F";
+                    }
+                    
+                    return (
+                      <tr key={result.maketqua} style={{ borderBottom: "1px solid #F0E1D9", background: isCheat ? "#FFFDFD" : "white" }}>
+                        <td style={{ padding: "16px", display: "flex", alignItems: "center", gap: "12px" }}>
+                          <div style={{ width: "36px", height: "36px", borderRadius: "50%", background: "#F2A8A8", display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontWeight: "bold", fontSize: "14px" }}>
+                            {result.sinhvien?.hoten ? result.sinhvien.hoten.charAt(0) : "S"}
+                          </div>
+                          <div>
+                            <div style={{ fontWeight: "600", color: "#2D1B14" }}>{result.sinhvien?.hoten || "Sinh viên"}</div>
+                            <div style={{ fontSize: "12px", color: "#8B6F5F" }}>{result.masv}</div>
+                          </div>
+                        </td>
+                        <td style={{ padding: "16px" }}>
+                          <span style={{ background: statusBg, color: statusColor, padding: "6px 10px", borderRadius: "8px", fontWeight: "600", fontSize: "12px", border: `1px solid ${statusBg === "#FDF8F5" ? "#F0E1D9" : statusBg === "#EAFDF5" ? "#BFEFDB" : statusBg === "#FFF0F0" ? "#FAD1D1" : "#EAD9CB"}` }}>
+                            {statusText}
+                          </span>
+                        </td>
+                        <td style={{ padding: "16px", textAlign: "center", fontWeight: "bold", color: "#6B4F43", fontSize: "16px" }}>
+                          {result.diemtong != null ? `${result.diemtong}` : "--"}
+                        </td>
+                        <td style={{ padding: "16px" }}>
+                          {isCheat ? (
+                            <span style={{ background: "#FFF0F0", color: "#D65D5D", padding: "8px 12px", borderRadius: "8px", fontSize: "13px", border: "1px solid #FAD1D1", display: "inline-flex", alignItems: "center", gap: "8px", fontWeight: "500" }}>
+                              {cheatWarningText}
+                            </span>
+                          ) : (
+                            <span style={{ color: "#8B6F5F", fontSize: "13px", display: "inline-flex", alignItems: "center", gap: "8px" }}>
+                              Bình thường
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })
+                ) : (
+                  <tr>
+                    <td colSpan={3} style={{ textAlign: "center", padding: "40px", color: "#8B6F5F" }}>
+                      Chưa có học sinh nào nộp bài hoặc bị ghi nhận vi phạm.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </section>
       </div>
 
       {/* CREATE EXAM MODAL */}
@@ -555,22 +538,69 @@ export function ExamRoom() {
         </div>
       )}
 
-      {/* EDIT TIME MODAL */}
-      {showEditTimeModal && (
+      {/* EDIT EXAM MODAL */}
+      {showEditExamModal && (
         <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, background: "rgba(45, 27, 20, 0.4)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
-          <form onSubmit={handleEditTimeSubmit} style={{ background: "white", padding: "30px", borderRadius: "16px", width: "400px", maxWidth: "95%", display: "flex", flexDirection: "column", gap: "15px", border: "1px solid #F0E1D9", boxShadow: "0 10px 30px rgba(107, 79, 67, 0.15)" }}>
-            <h3 style={{ margin: "0 0 10px 0", color: "#6B4F43", fontWeight: "bold", fontSize: "17px", borderBottom: "1px solid #F0E1D9", paddingBottom: "10px" }}>Chỉnh sửa thời gian ca thi</h3>
+          <form onSubmit={handleEditExamSubmit} style={{ background: "white", padding: "30px", borderRadius: "16px", width: "500px", maxWidth: "95%", display: "flex", flexDirection: "column", gap: "15px", border: "1px solid #F0E1D9", boxShadow: "0 10px 30px rgba(107, 79, 67, 0.15)", maxHeight: "90vh", overflowY: "auto" }}>
+            <h3 style={{ margin: "0 0 10px 0", color: "#6B4F43", fontWeight: "bold", fontSize: "18px", borderBottom: "1px solid #F0E1D9", paddingBottom: "10px" }}>Sửa đề thi trực tuyến</h3>
+            
+            <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
+              <label style={{ fontSize: "13px", fontWeight: "600", color: "#6B4F43" }}>Lớp học phần *</label>
+              <select 
+                required
+                value={editExamData.maphancong} 
+                onChange={e => setEditExamData(prev => ({ ...prev, maphancong: e.target.value }))}
+                style={{ padding: "10px", borderRadius: "8px", border: "1px solid #EAD9CB", fontSize: "13px", outline: "none", color: "#6B4F43" }}
+              >
+                <option value="">-- Chọn lớp học phần --</option>
+                {classes.map((c: any) => (
+                  <option key={c.maphancong} value={c.maphancong}>{c.tenmon} - {c.tenlop}</option>
+                ))}
+              </select>
+            </div>
 
             <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
-              <label style={{ fontSize: "13px", fontWeight: "600", color: "#6B4F43" }}>Thời lượng (phút) *</label>
+              <label style={{ fontSize: "13px", fontWeight: "600", color: "#6B4F43" }}>Tiêu đề đề thi *</label>
               <input 
-                type="number" 
+                type="text" 
                 required 
-                min={5}
-                value={editTimeData.thoigianlam}
-                onChange={e => setEditTimeData(prev => ({ ...prev, thoigianlam: Number(e.target.value) }))}
+                placeholder="VD: Kiểm tra giữa kỳ"
+                value={editExamData.tieude}
+                onChange={e => setEditExamData(prev => ({ ...prev, tieude: e.target.value }))}
                 style={{ padding: "10px", borderRadius: "8px", border: "1px solid #EAD9CB", fontSize: "13px", outline: "none", color: "#6B4F43" }}
               />
+            </div>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
+              <label style={{ fontSize: "13px", fontWeight: "600", color: "#6B4F43" }}>Mô tả ngắn</label>
+              <textarea 
+                value={editExamData.mota}
+                onChange={e => setEditExamData(prev => ({ ...prev, mota: e.target.value }))}
+                style={{ padding: "10px", borderRadius: "8px", border: "1px solid #EAD9CB", fontSize: "13px", outline: "none", color: "#6B4F43", minHeight: "60px", resize: "vertical" }}
+              />
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
+                <label style={{ fontSize: "13px", fontWeight: "600", color: "#6B4F43" }}>Thời lượng (phút) *</label>
+                <input 
+                  type="number" 
+                  required 
+                  min={5}
+                  value={editExamData.thoigianlam}
+                  onChange={e => setEditExamData(prev => ({ ...prev, thoigianlam: Number(e.target.value) }))}
+                  style={{ padding: "10px", borderRadius: "8px", border: "1px solid #EAD9CB", fontSize: "13px", outline: "none", color: "#6B4F43" }}
+                />
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
+                <label style={{ fontSize: "13px", fontWeight: "600", color: "#6B4F43" }}>Mật khẩu ca thi</label>
+                <input 
+                  type="text" 
+                  value={editExamData.matkhau}
+                  onChange={e => setEditExamData(prev => ({ ...prev, matkhau: e.target.value }))}
+                  style={{ padding: "10px", borderRadius: "8px", border: "1px solid #EAD9CB", fontSize: "13px", outline: "none", color: "#6B4F43" }}
+                />
+              </div>
             </div>
 
             <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
@@ -578,8 +608,8 @@ export function ExamRoom() {
               <input 
                 type="datetime-local" 
                 required 
-                value={editTimeData.thoigianbatdau}
-                onChange={e => setEditTimeData(prev => ({ ...prev, thoigianbatdau: e.target.value }))}
+                value={editExamData.thoigianbatdau}
+                onChange={e => setEditExamData(prev => ({ ...prev, thoigianbatdau: e.target.value }))}
                 style={{ padding: "10px", borderRadius: "8px", border: "1px solid #EAD9CB", fontSize: "13px", outline: "none", color: "#6B4F43" }}
               />
             </div>
@@ -589,16 +619,27 @@ export function ExamRoom() {
               <input 
                 type="datetime-local" 
                 required 
-                value={editTimeData.thoigianketthuc}
-                onChange={e => setEditTimeData(prev => ({ ...prev, thoigianketthuc: e.target.value }))}
+                value={editExamData.thoigianketthuc}
+                onChange={e => setEditExamData(prev => ({ ...prev, thoigianketthuc: e.target.value }))}
                 style={{ padding: "10px", borderRadius: "8px", border: "1px solid #EAD9CB", fontSize: "13px", outline: "none", color: "#6B4F43" }}
               />
             </div>
 
-            <div style={{ display: "flex", gap: "10px", marginTop: "15px", justifyContent: "flex-end" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "5px", padding: "10px", background: "#FDF8F5", borderRadius: "8px", border: "1px solid #F0E1D9" }}>
+              <label style={{ fontSize: "13px", fontWeight: "600", color: "#6B4F43" }}>File tài liệu đề thi mới (Tùy chọn)</label>
+              <input 
+                type="file" 
+                accept=".docx,.doc,.pdf"
+                onChange={e => setUploadFile(e.target.files ? e.target.files[0] : null)}
+                style={{ padding: "5px 0", fontSize: "13px", color: "#6B4F43" }}
+              />
+              <span style={{ fontSize: "11px", color: "#8B6F5F" }}>Nếu tải file mới lên, hệ thống AI sẽ phân tích và <strong>thay thế toàn bộ</strong> câu hỏi cũ của đề thi này. Nếu để trống, câu hỏi cũ được giữ nguyên.</span>
+            </div>
+
+            <div style={{ display: "flex", gap: "10px", marginTop: "10px", justifyContent: "flex-end" }}>
               <button 
                 type="button" 
-                onClick={() => setShowEditTimeModal(false)}
+                onClick={() => setShowEditExamModal(false)}
                 disabled={submitting}
                 style={{ background: "#F5F5F5", border: "1px solid #EAD9CB", color: "#6B4F43", padding: "10px 15px", borderRadius: "8px", fontWeight: "600", cursor: "pointer", fontSize: "13px" }}
               >
@@ -609,7 +650,7 @@ export function ExamRoom() {
                 disabled={submitting}
                 style={{ background: "linear-gradient(90deg, #F2A8A8 0%, #FFB4B4 100%)", border: "none", color: "white", padding: "10px 20px", borderRadius: "8px", fontWeight: "600", cursor: submitting ? "not-allowed" : "pointer", fontSize: "13px" }}
               >
-                {submitting ? "Đang lưu..." : "Cập nhật"}
+                {submitting ? "Đang xử lý..." : "Cập nhật đề thi"}
               </button>
             </div>
           </form>

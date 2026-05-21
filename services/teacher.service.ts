@@ -960,6 +960,114 @@ export const giangVienService = {
   },
 
   /**
+   * Cập nhật toàn diện đề thi (Thông tin cơ bản và câu hỏi nếu có file mới)
+   */
+  async updateExamFull(
+    magv: string,
+    madethi: number,
+    examData: {
+      maphancong: number;
+      tieude: string;
+      mota: string;
+      thoigianlam: number;
+      thoigianbatdau: string;
+      thoigianketthuc: string;
+      matkhau: string;
+    },
+    newQuestions?: Array<{
+      noidung: string;
+      diem: number;
+      dapan: Array<{ noidung: string; ladapandung: boolean }>;
+    }>
+  ) {
+    const cookieStore = await cookies();
+    const supabase = createClient(cookieStore);
+
+    // Validate quyền (phải là đề thi của GV này)
+    const { data: dethiCheck } = await supabase
+      .from("dethi")
+      .select("madethi, phancong!inner(magv)")
+      .eq("madethi", madethi)
+      .single();
+
+    if (!dethiCheck || (dethiCheck.phancong as any).magv !== magv) {
+      throw new Error("Không tìm thấy đề thi hoặc bạn không có quyền");
+    }
+
+    // Validate lớp học phần mới
+    const { data: pcCheck } = await supabase
+      .from("phancong")
+      .select("maphancong")
+      .eq("maphancong", examData.maphancong)
+      .eq("magv", magv)
+      .maybeSingle();
+
+    if (!pcCheck) {
+      throw new Error("Phân công mới không hợp lệ");
+    }
+
+    // 1. Cập nhật thông tin đề thi
+    const { error: examError } = await supabase
+      .from("dethi")
+      .update({
+        maphancong: examData.maphancong,
+        tieude: examData.tieude,
+        mota: examData.mota,
+        thoigianlam: examData.thoigianlam,
+        thoigianbatdau: examData.thoigianbatdau,
+        thoigianketthuc: examData.thoigianketthuc,
+        matkhau: examData.matkhau
+      })
+      .eq("madethi", madethi);
+
+    if (examError) throw examError;
+
+    // 2. Cập nhật câu hỏi nếu có newQuestions
+    if (newQuestions && newQuestions.length > 0) {
+      // Xóa câu hỏi cũ (cascade sẽ xóa đáp án cũ)
+      const { error: delError } = await supabase
+        .from("cauhoi")
+        .delete()
+        .eq("madethi", madethi);
+
+      if (delError) throw delError;
+
+      // Chèn câu hỏi mới
+      for (let i = 0; i < newQuestions.length; i++) {
+        const q = newQuestions[i];
+        const { data: newQ, error: qError } = await supabase
+          .from("cauhoi")
+          .insert({
+            madethi,
+            noidung: q.noidung,
+            loaicauhoi: "TracNghiem",
+            diem: q.diem || 0.2,
+            thutu: i + 1
+          })
+          .select("macauhoi")
+          .single();
+
+        if (qError) throw qError;
+
+        const dapanInserts = q.dapan.map((d, dIdx) => ({
+          macauhoi: newQ.macauhoi,
+          noidung: d.noidung,
+          ladapandung: d.ladapandung,
+          thutu: dIdx + 1
+        }));
+
+        const { error: dError } = await supabase
+          .from("dapan")
+          .insert(dapanInserts);
+
+        if (dError) throw dError;
+      }
+    }
+
+    return true;
+  },
+
+  /**
    * Lưu hàng loạt điểm cho 1 SV (4 cột điểm cùng lúc) + tự tính tổng kết
    */
   async saveGradeRow(magv: string, maphancong: number, masv: string, grades: { loaidiem: string; giatri: number; heso: number }[]) {
@@ -1076,6 +1184,7 @@ export const giangVienService = {
       .select(`
         masv,
         sinhvien:masv (
+          mataikhoan,
           hodem,
           ten,
           malop,
@@ -1098,6 +1207,7 @@ export const giangVienService = {
       const hoten = sv ? `${sv.hodem || ""} ${sv.ten || ""}`.trim() : "—";
       return {
         mssv: item.masv,
+        accountId: sv?.mataikhoan ?? null,
         name: hoten || "—",
         class: sv?.malop ?? "—",
         phone: sv?.sodienthoai ?? "—",
@@ -1571,7 +1681,6 @@ export const giangVienService = {
     const lichIds = (lichList ?? []).map((l: any) => l.malichhoc);
 
     let avgAttendance = 0;
-    const weeklyAttendance: number[] = [];
 
     if (lichIds.length > 0) {
       const { data: buoiList } = await supabase
@@ -1583,46 +1692,26 @@ export const giangVienService = {
       if (buoiIds.length > 0) {
         const { data: ddRows } = await supabase
           .from("diemdanh")
-          .select("trangthai, mabuoihoc")
+          .select("trangthai")
           .in("mabuoihoc", buoiIds);
 
         if (ddRows && ddRows.length > 0) {
-          const present = ddRows.filter((d: any) => d.trangthai === "Hiendien" || d.trangthai === "Muon").length;
+          const present = ddRows.filter((d: any) => d.trangthai === "Comat" || d.trangthai === "Dimuon").length;
           avgAttendance = Number(((present / ddRows.length) * 100).toFixed(1));
-
-          const buoiGroups: Record<number, { present: number, total: number }> = {};
-          ddRows.forEach((d: any) => {
-            if (!buoiGroups[d.mabuoihoc]) buoiGroups[d.mabuoihoc] = { present: 0, total: 0 };
-            buoiGroups[d.mabuoihoc].total++;
-            if (d.trangthai === "Hiendien" || d.trangthai === "Muon") {
-              buoiGroups[d.mabuoihoc].present++;
-            }
-          });
-
-          const sortedBuoiIds = Object.keys(buoiGroups).map(Number).sort((a, b) => a - b);
-          sortedBuoiIds.slice(-8).forEach((bId) => {
-            const g = buoiGroups[bId];
-            weeklyAttendance.push(Math.round((g.present / g.total) * 100));
-          });
         }
       }
     }
 
-    while (weeklyAttendance.length < 8) {
-      weeklyAttendance.push(Math.floor(Math.random() * 20) + 80);
-    }
-
     return {
-      avgAttendance: avgAttendance || 92.5,
-      passRate: passRate || 96.2,
-      avgGpa: avgGpa || 8.15,
+      avgAttendance,
+      passRate,
+      avgGpa,
       gradeDist: {
-        A: totalStudents > 0 ? Math.round((gradeDist.A / totalStudents) * 100) : 45,
-        B: totalStudents > 0 ? Math.round((gradeDist.B / totalStudents) * 100) : 30,
-        C: totalStudents > 0 ? Math.round((gradeDist.C / totalStudents) * 100) : 10,
-        DF: totalStudents > 0 ? Math.round((gradeDist.D + gradeDist.F) / totalStudents * 100) : 15
-      },
-      weeklyAttendance
+        A: totalStudents > 0 ? Math.round((gradeDist.A / totalStudents) * 100) : 0,
+        B: totalStudents > 0 ? Math.round((gradeDist.B / totalStudents) * 100) : 0,
+        C: totalStudents > 0 ? Math.round((gradeDist.C / totalStudents) * 100) : 0,
+        DF: totalStudents > 0 ? Math.round((gradeDist.D + gradeDist.F) / totalStudents * 100) : 0
+      }
     };
   },
 
@@ -1648,7 +1737,7 @@ export const giangVienService = {
       .from("tailieu")
       .select("matailieu, tieude, mota, duongdan, ngaytao")
       .eq("maphancong", maphancong)
-      .eq("loai", "BaoCao")
+      .eq("loai", "File")
       .order("ngaytao", { ascending: false });
 
     return list ?? [];
@@ -1684,7 +1773,7 @@ export const giangVienService = {
         maphancong,
         tieude,
         mota,
-        loai: "BaoCao",
+        loai: "File",
         duongdan: statsJson,
         chopheptai: false,
         dungluong: 0,
@@ -1698,12 +1787,12 @@ export const giangVienService = {
   },
 
   /**
-   * Cập nhật nhận xét báo cáo
+   * Cập nhật báo cáo (tiêu đề và/hoặc nhận xét)
    */
   async updateReport(
     magv: string,
     matailieu: number,
-    mota: string
+    updates: { tieude?: string; mota?: string }
   ) {
     const cookieStore = await cookies();
     const supabase = createClient(cookieStore);
@@ -1725,12 +1814,15 @@ export const giangVienService = {
       throw new Error("Không tìm thấy báo cáo hoặc bạn không có quyền chỉnh sửa");
     }
 
+    const updatePayload: Record<string, any> = {
+      ngaycapnhat: new Date().toISOString()
+    };
+    if (updates.tieude !== undefined) updatePayload.tieude = updates.tieude;
+    if (updates.mota !== undefined) updatePayload.mota = updates.mota;
+
     const { error } = await supabase
       .from("tailieu")
-      .update({
-        mota,
-        ngaycapnhat: new Date().toISOString()
-      })
+      .update(updatePayload)
       .eq("matailieu", matailieu);
 
     if (error) throw error;

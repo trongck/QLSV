@@ -32,12 +32,24 @@ export function ChatView() {
   const searchContainerRef = useRef<HTMLDivElement>(null);
   const isSendingRef = useRef(false);
 
+  const activeConvRef = useRef<repo.ConversationRow | null>(null);
+  useEffect(() => {
+    activeConvRef.current = activeConv;
+  }, [activeConv]);
+
   // Fetch conversations list
   const loadConversations = async (silent = false) => {
     if (!silent) setLoadingConvs(true);
     try {
       const data = await repo.getConversations();
-      setConversations(data);
+      const currentActive = activeConvRef.current;
+      const mapped = data.map(c => {
+        if (currentActive && c.macuoctrochuyen === currentActive.macuoctrochuyen) {
+          return { ...c, unread: 0 };
+        }
+        return c;
+      });
+      setConversations(mapped);
     } catch (err) {
       console.error("Error loading conversations:", err);
     } finally {
@@ -237,22 +249,6 @@ export function ChatView() {
     return null;
   };
 
-  const parseDate = (isoString: string, senderId?: string) => {
-    if (!isoString) return new Date();
-    let normalized = isoString.trim();
-    if (normalized.includes(" ")) {
-      normalized = normalized.replace(" ", "T");
-    }
-    if (normalized.includes("Z") || /[+-]\d{2}(:\d{2})?$/.test(normalized)) {
-      return new Date(normalized);
-    }
-    const utcDate = new Date(normalized + "Z");
-    const localDate = new Date(normalized);
-    if (utcDate.getTime() > new Date().getTime() + 10 * 60 * 1000) {
-      return localDate;
-    }
-    return utcDate;
-  };
 
   const formatMessageTime = (isoString: string, senderId?: string) => {
     try {
@@ -273,6 +269,25 @@ export function ChatView() {
       return d.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit" });
     } catch {
       return "";
+    }
+  };
+
+  const handleDownloadFile = async (fileUrl: string, originalName: string) => {
+    try {
+      const response = await fetch(fileUrl);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = originalName || "file_download";
+      document.body.appendChild(a);
+      a.click();
+      a.removeAttribute("download");
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error("Lỗi khi tải file:", error);
+      window.open(fileUrl, "_blank");
     }
   };
 
@@ -361,7 +376,10 @@ export function ChatView() {
                 return (
                   <div
                     key={conv.macuoctrochuyen}
-                    onClick={() => setActiveConv(conv)}
+                    onClick={() => {
+                      setActiveConv(conv);
+                      setConversations(prev => prev.map(c => c.macuoctrochuyen === conv.macuoctrochuyen ? { ...c, unread: 0 } : c));
+                    }}
                     style={{
                       display: "flex", alignItems: "center", gap: "10px", padding: "12px 15px",
                       borderBottom: "1px solid #F0E1D9", cursor: "pointer",
@@ -391,7 +409,7 @@ export function ChatView() {
                         <p style={{ margin: 0, fontSize: "11px", color: conv.unread > 0 ? "#6B4F43" : "#8B6F5F", textOverflow: "ellipsis", overflow: "hidden", whiteSpace: "nowrap", fontWeight: conv.unread > 0 ? "600" : "normal", flex: 1 }}>
                           {conv.lastMsg ? conv.lastMsg.noidung : "Chưa có tin nhắn"}
                         </p>
-                        {conv.unread > 0 && (
+                        {conv.unread > 0 && !isSelected && (
                           <span style={{
                             background: "#F2A8A8", color: "#FFF", fontSize: "9px", fontWeight: "bold",
                             padding: "2px 6px", borderRadius: "10px", marginLeft: "5px"
@@ -495,39 +513,24 @@ export function ChatView() {
                                     style={{ maxWidth: "200px", maxHeight: "200px", borderRadius: "8px", objectFit: "cover", border: "1px solid #EAD9CB" }}
                                   />
                                 ) : null}
-                                <a
-                                  href={msg.filedinh}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
+                                <span
+                                  onClick={() => handleDownloadFile(msg.filedinh!, (msg.noidung || "").replace("[Đính kèm] ", ""))}
                                   style={{
                                     color: "#E05A47",
                                     fontWeight: "600",
                                     textDecoration: "underline",
                                     display: "flex",
                                     alignItems: "center",
-                                    gap: "5px"
+                                    gap: "5px",
+                                    cursor: "pointer"
                                   }}
                                 >
                                   📁 {msg.noidung || "Tải xuống tệp"}
-                                </a>
+                                </span>
                               </div>
                             ) : (
                               msg.noidung
                             )}
-
-                            <button
-                              onClick={() => handleDeleteMessage(msg.matinnhan)}
-                              title="Ẩn tin nhắn này"
-                              style={{
-                                position: "absolute", right: isSelf ? "auto" : "-20px", left: isSelf ? "-20px" : "auto",
-                                top: "50%", transform: "translateY(-50%)",
-                                background: "none", border: "none", color: "#C0392B", fontSize: "10px",
-                                cursor: "pointer", display: "none"
-                              }}
-                              className="delete-msg-btn"
-                            >
-                              ❌
-                            </button>
                           </div>
 
                           {/* Time label */}
@@ -621,12 +624,12 @@ export function ChatView() {
 
             <div style={{ fontSize: "11px", color: "#6B4F43", display: "flex", flexDirection: "column", gap: "10px" }}>
               {getRecipientProfile(activeConv)?.id_phu && (
-                <div>🆔 <b>Mã:</b> {getRecipientProfile(activeConv)!.id_phu}</div>
+                <div><b>Mã:</b> {getRecipientProfile(activeConv)!.id_phu}</div>
               )}
               {getRecipientProfile(activeConv)?.email && (
-                <div style={{ wordBreak: "break-all" }}>📧 <b>Email:</b> {getRecipientProfile(activeConv)!.email}</div>
+                <div style={{ wordBreak: "break-all" }}><b>Email:</b> {getRecipientProfile(activeConv)!.email}</div>
               )}
-              <div>📅 <b>Ngày bắt đầu:</b> {formatDate(activeConv.ngaytao)}</div>
+              <div><b>Ngày bắt đầu:</b> {formatDate(activeConv.ngaytao)}</div>
             </div>
           </div>
         )}
@@ -648,17 +651,27 @@ export function ChatView() {
   );
 }
 
+function parseDate(isoString: string, senderId?: string) {
+  if (!isoString) return new Date();
+  let normalized = isoString.trim();
+  if (normalized.includes(" ")) {
+    normalized = normalized.replace(" ", "T");
+  }
+  if (normalized.includes("Z") || /[+-]\d{2}(:\d{2})?$/.test(normalized)) {
+    return new Date(normalized);
+  }
+  const utcDate = new Date(normalized + "Z");
+  const localDate = new Date(normalized);
+  if (utcDate.getTime() > new Date().getTime() + 10 * 60 * 1000) {
+    return localDate;
+  }
+  return utcDate;
+}
+
 function formatDate(isoString: string) {
   try {
     if (!isoString) return "";
-    let normalized = isoString.trim();
-    if (normalized.includes(" ")) {
-      normalized = normalized.replace(" ", "T");
-    }
-    if (!normalized.includes("Z") && !/[+-]\d{2}(:\d{2})?$/.test(normalized)) {
-      normalized += "Z";
-    }
-    const d = new Date(normalized);
+    const d = parseDate(isoString);
     return d.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" });
   } catch {
     return "";
