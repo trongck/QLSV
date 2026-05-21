@@ -17,6 +17,18 @@ export function DashboardShell({ children, pageTitle }: DashboardShellProps) {
   const { user } = useAuth();
   const isTeacher = user?.vaitro === VaiTro.GiangVien;
 
+  // State quản lý đóng/mở nhanh popup thông báo và profile tại thanh topbar
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+
+  const handleLogout = () => {
+    if (confirm("Bạn có chắc chắn muốn đăng xuất không?")) {
+      localStorage.removeItem("token"); 
+      sessionStorage.clear();
+      window.location.href = "/login";
+    }
+  };
+
   // Close sidebar on route change (any click outside)
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -39,7 +51,7 @@ export function DashboardShell({ children, pageTitle }: DashboardShellProps) {
           aria-hidden
         />
       )}
-
+      
       {/* Sidebar */}
       <div
         data-sidebar
@@ -59,6 +71,7 @@ export function DashboardShell({ children, pageTitle }: DashboardShellProps) {
           />
         </div>
 
+        
         {/* Page content */}
         <div className="flex-1 p-[28px_32px] max-w-[1200px] w-full m-[0_auto] max-lg:p-[20px_20px_32px] max-sm:p-[16px_16px_40px]">
           {children}
@@ -71,4 +84,3 @@ export function DashboardShell({ children, pageTitle }: DashboardShellProps) {
     </div>
   );
 }
-
