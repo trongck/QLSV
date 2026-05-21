@@ -402,7 +402,7 @@ export default function SchedulePage() {
               </div>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full border-collapse table-fixed">
+                <table className="w-full border-collapse table-fixed min-w-[900px]">
                   <thead>
                     <tr className="bg-gray-50/50">
                       <th className="p-2 text-xs font-bold text-[#6B3F2E] bg-[#FFDAC1] border-b border-[#F5C29F] w-16">

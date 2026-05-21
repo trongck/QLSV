@@ -103,9 +103,9 @@ export default function AssignmentPage() {
 
   return (
     <DashboardShell pageTitle="Bài tập">
-        <div className="p-8 bg-[#FAF7F6] min-h-screen font-sans">
+        <div className="p-4 sm:p-8 bg-[#FAF7F6] min-h-screen font-sans">
         {/* Header */}
-        <div className="mb-10 flex justify-between items-center">
+        <div className="mb-6 sm:mb-10 flex flex-wrap justify-between items-center gap-4">
             <div>
                 <h1 className="text-3xl font-extrabold text-gray-900">Bài tập</h1>
                 <p className="text-gray-400 text-sm mt-1">Danh sách bài tập và đồ án cần hoàn thành</p>
@@ -166,7 +166,7 @@ export default function AssignmentPage() {
                 return (
                     <div
                         key={item.mabaitap}
-                        className="bg-white p-6 rounded-[2rem] border border-gray-100 shadow-sm flex flex-col md:flex-row items-center gap-8 hover:shadow-lg transition-all duration-300 group"
+                        className="bg-white p-4 sm:p-6 rounded-[1.5rem] sm:rounded-[2rem] border border-gray-100 shadow-sm flex flex-col lg:flex-row items-center gap-6 sm:gap-8 hover:shadow-lg transition-all duration-300 group"
                     >
                         {/* Icon Section */}
                         <div
@@ -176,8 +176,8 @@ export default function AssignmentPage() {
                         </div>
 
                         {/* Info Section */}
-                        <div className="flex-1 min-w-0 text-center md:text-left">
-                            <h3 className="text-lg font-black text-gray-900 mb-1 truncate">
+                        <div className="flex-1 min-w-0 w-full lg:w-auto text-center lg:text-left">
+                            <h3 className="text-lg font-black text-gray-900 mb-1 break-words">
                                 {item.tieude}
                             </h3>
                             <p className="text-gray-500 text-sm mb-4 leading-relaxed line-clamp-2">
@@ -191,7 +191,7 @@ export default function AssignmentPage() {
                         </div>
 
                         {/* Meta Section */}
-                        <div className="grid grid-cols-2 md:flex md:gap-16 shrink-0 w-full md:w-auto border-t md:border-t-0 pt-4 md:pt-0">
+                        <div className="flex flex-col sm:flex-row gap-4 sm:gap-16 shrink-0 w-full lg:w-auto border-t lg:border-t-0 pt-4 lg:pt-0 text-left sm:text-center lg:text-left">
                             <div className="space-y-1">
                                 <p className="text-[10px] text-gray-400 uppercase font-black tracking-widest">
                                     Hạn nộp
@@ -212,7 +212,7 @@ export default function AssignmentPage() {
                         </div>
 
                         {/* Buttons Section */}
-                        <div className="flex flex-col gap-2 w-full md:w-48 shrink-0">
+                        <div className="flex flex-col gap-2 w-full lg:w-48 shrink-0">
                             {item.nopbai && (
                                 <div className="flex items-center justify-center gap-1.5 bg-green-50 text-green-700 py-2.5 rounded-xl text-xs font-bold border border-green-200/50 mb-1 w-full">
                                     <CheckCircle size={14} className="shrink-0 text-green-500" />

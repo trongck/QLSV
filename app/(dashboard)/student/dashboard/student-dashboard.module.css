@@ -32,7 +32,7 @@
 /* Stats grid */
 .statsGrid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 14px;
 }
 
@@ -210,6 +210,12 @@
 }
 
 /* ─── Responsive ─────────────────────────────────────────────────────────────── */
+
+@media (max-width: 1200px) {
+  .statsGrid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
 
 @media (max-width: 1023px) {
   .statsGrid {

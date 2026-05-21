@@ -324,6 +324,7 @@ export default function StudentDashboard() {
             ) : !data?.diemGanDay.length ? (
               <p className={styles.emptyText}>Chưa có điểm nào được công bố.</p>
             ) : (
+              <div style={{ overflowX: "auto" }}>
               <table className="data-table" aria-label="Bảng điểm gần đây">
                 <thead>
                   <tr style={{ background: "#fff8f5" }}>
@@ -378,6 +379,7 @@ export default function StudentDashboard() {
                   ))}
                 </tbody>
               </table>
+              </div>
             )}
           </section>
         </div>

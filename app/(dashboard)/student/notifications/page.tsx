@@ -131,7 +131,7 @@ export default function StudentNotificationsPage() {
   return (
     <DashboardShell pageTitle="Thông báo">
         <div className="animate-fadeInUp">
-        <div className="card p-8 rounded-[24px]">
+        <div className="card p-4 sm:p-8 rounded-[24px]">
             {/* ── Header ── */}
             <div className="flex items-center justify-between mb-8 flex-wrap gap-4">
             <div>
@@ -148,9 +148,9 @@ export default function StudentNotificationsPage() {
                 </p>
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 flex-wrap">
                 {/* Search */}
-                <div className="w-[280px] h-[44px] bg-white border border-[var(--color-border)] rounded-xl px-4 flex items-center gap-3">
+                <div className="h-[44px] bg-white border border-[var(--color-border)] rounded-xl px-4 flex items-center gap-3 w-full sm:w-[280px]">
                 <Search size={16} className="text-[var(--color-fg-subtle)]" />
                 <input
                     type="text"

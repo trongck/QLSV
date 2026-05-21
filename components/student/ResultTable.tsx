@@ -27,7 +27,7 @@ export default function ResultTable({ data = [] }: ResultTableProps) {
 
   return (
     <div className="w-full overflow-x-auto">
-      <table className="w-full text-sm text-center border-collapse">
+      <table className="w-full min-w-[650px] text-sm text-center border-collapse">
         <thead>
           <tr className="text-gray-400 border-b border-gray-100">
             <th className="py-4 px-2 text-[10px] uppercase font-black tracking-widest text-left pl-6">Mã MH</th>

@@ -319,3 +319,48 @@ body {
   .form-grid { grid-template-columns: 1fr; }
   .form-grid .full { grid-column: 1; }
 }
+
+/* ─── Global Responsive Fixes ───────────────────────────────────────────────── */
+/* Prevent layout shift from scrollbar on desktop, allow table scroll */
+html {
+  overflow-x: hidden;
+}
+
+/* Flex/grid children must not overflow their container */
+.card {
+  min-width: 0;
+}
+
+/* Tables always scrollable horizontally */
+.table-responsive {
+  overflow-x: auto;
+  width: 100%;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Page content padding on mobile */
+@media (max-width: 640px) {
+  .page-content {
+    padding: 12px;
+  }
+}
+
+/* Prevent grid overflow */
+@media (max-width: 768px) {
+  /* Any hard-coded grid should not have more than 2 columns on tablet */
+  [style*="grid-template-columns: repeat(4"],
+  [style*="grid-template-columns: repeat(5"],
+  [style*="grid-template-columns: repeat(6"] {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Any hard-coded grid should be single column on mobile */
+  [style*="grid-template-columns: repeat(4"],
+  [style*="grid-template-columns: repeat(5"],
+  [style*="grid-template-columns: repeat(6"],
+  [style*="grid-template-columns: 1fr 1fr"] {
+    grid-template-columns: 1fr !important;
+  }
+}

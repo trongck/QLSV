@@ -208,9 +208,45 @@ export default function StudentNotePage() {
 
   return (
     <DashboardShell pageTitle="Nhật ký học tập">
-        <div className="flex h-full bg-[#FDF8F6] overflow-hidden">
+        <style>{`
+          .note-layout {
+            display: flex;
+            height: 100%;
+            background: #FDF8F6;
+            overflow: hidden;
+          }
+          .note-sidebar {
+            width: 360px;
+            flex-shrink: 0;
+            display: flex;
+            flex-direction: column;
+            background: white;
+            border-right: 1px solid #f3f4f6;
+            box-shadow: 1px 0 4px rgba(0,0,0,0.04);
+          }
+          .note-editor {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: white;
+            min-width: 0;
+          }
+          @media (max-width: 768px) {
+            .note-layout {
+              flex-direction: column;
+            }
+            .note-sidebar {
+              width: 100%;
+              height: 260px;
+              border-right: none;
+              border-bottom: 1px solid #f3f4f6;
+              flex-shrink: 0;
+            }
+          }
+        `}</style>
+        <div className="note-layout">
         {/* ══ CỘT 1: DANH SÁCH ══════════════════════════════════════════════════ */}
-        <div className="w-[360px] flex flex-col bg-white border-r border-gray-100 shadow-sm">
+        <div className="note-sidebar">
             <div className="p-5 space-y-3">
             {/* Header */}
             <div className="flex justify-between items-center">
@@ -295,7 +331,7 @@ export default function StudentNotePage() {
 
         {/* ══ CỘT 2: TRÌNH SOẠN THẢO ════════════════════════════════════════════ */}
         {selectedId && draft ? (
-            <div className="flex-1 flex flex-col bg-white min-w-0">
+            <div className="note-editor">
             {/* Toolbar */}
             <div className="px-8 py-3 border-b border-gray-100 flex justify-between items-center bg-white shrink-0">
                 <div className="flex items-center gap-4 text-gray-400">
@@ -352,7 +388,7 @@ export default function StudentNotePage() {
             </div>
 
             {/* Editor */}
-            <div className="flex-1 overflow-y-auto p-10 max-w-4xl mx-auto w-full">
+            <div className="flex-1 overflow-y-auto p-5 md:p-10 max-w-4xl mx-auto w-full">
                 {/* Title */}
                 <input
                 type="text"

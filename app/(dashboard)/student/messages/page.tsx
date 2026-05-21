@@ -35,6 +35,7 @@ export default function MessagesPage() {
   const [pendingFile, setPendingFile] = useState<{file: File; url: string} | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [showChatMobile, setShowChatMobile] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Debounced search for users
@@ -73,6 +74,7 @@ export default function MessagesPage() {
         // Refresh chat list
         await fetchChatRooms();
         setSelectedChatId(json.data.macuoctrochuyen);
+        setShowChatMobile(true);
         setSearchTerm("");
         setSearchResults([]);
       }
@@ -168,7 +170,94 @@ export default function MessagesPage() {
   // =======================================================================
   return (
     <DashboardShell pageTitle="Tin nhắn" fullWidth={true}>
-      <div style={{ padding: "24px 32px", height: "100vh", display: "flex", flexDirection: "column" }}>
+      <style>{`
+        .msg-container {
+          padding: 24px 32px;
+          height: calc(100vh - 90px);
+          display: flex;
+          flex-direction: column;
+        }
+        .msg-layout {
+          display: flex;
+          padding: 0;
+          flex: 1;
+          overflow: hidden;
+          border: 1px solid #EAE0DA;
+          border-radius: 12px;
+          background: #FFF;
+          box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+        }
+        .msg-sidebar-left {
+          width: 280px;
+          border-right: 1px solid #EAE0DA;
+          display: flex;
+          flex-direction: column;
+          background: #FAFAFA;
+          flex-shrink: 0;
+        }
+        .msg-main {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          background: #FAF9F8;
+          min-width: 0;
+        }
+        .msg-sidebar-right {
+          width: 260px;
+          border-left: 1px solid #EAE0DA;
+          padding: 24px;
+          display: flex;
+          flex-direction: column;
+          background: #FFF;
+          flex-shrink: 0;
+          overflow-y: auto;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+          .msg-sidebar-right {
+            display: none !important;
+          }
+        }
+        @media (max-width: 768px) {
+          .msg-container {
+            padding: 12px;
+            height: calc(100vh - 60px);
+          }
+          .msg-layout {
+            flex-direction: column;
+            height: 100%;
+          }
+          
+          /* When showing list (hide chat panel) */
+          .msg-layout.show-list .msg-sidebar-left {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            border-right: none;
+            border-bottom: none;
+          }
+          .msg-layout.show-list .msg-main {
+            display: none !important;
+          }
+          
+          /* When showing chat panel (hide list panel) */
+          .msg-layout.show-chat .msg-sidebar-left {
+            display: none !important;
+          }
+          .msg-layout.show-chat .msg-main {
+            width: 100%;
+            height: 100%;
+            display: flex;
+          }
+          
+          /* Show back button on mobile */
+          .msg-back-btn {
+            display: block !important;
+          }
+        }
+      `}</style>
+      <div className="msg-container">
         <div style={{ width: "100%", height: "100%", display: "flex", flexDirection: "column" }}>
         
         {/* Tiêu đề trang */}
@@ -178,10 +267,10 @@ export default function MessagesPage() {
         </div>
 
         {/* 3-Column Message System Layout */}
-        <section className="card" style={{ display: "flex", padding: "0", flex: 1, overflow: "hidden", border: "1px solid #EAE0DA", borderRadius: "12px", background: "#FFF", boxShadow: "0 2px 10px rgba(0,0,0,0.02)" }}>
+        <section className={`card msg-layout ${showChatMobile ? "show-chat" : "show-list"}`}>
           
           {/* Left: Chat thread roster */}
-          <div style={{ width: "280px", borderRight: "1px solid #EAE0DA", display: "flex", flexDirection: "column", background: "#FAFAFA" }}>
+          <div className="msg-sidebar-left">
             <div style={{ padding: "15px", borderBottom: "1px solid #EAE0DA", background: "#FFF" }}>
               <div style={{ position: "relative" }}>
                 <Search size={15} style={{ position: "absolute", left: "14px", top: "11px", color: "#A0A0A0" }} />
@@ -229,7 +318,10 @@ export default function MessagesPage() {
               {chatList.filter(chat => chat.name.toLowerCase().includes(searchTerm.toLowerCase())).map((chat) => (
                 <div 
                   key={chat.id} 
-                  onClick={() => setSelectedChatId(chat.id)}
+                  onClick={() => {
+                    setSelectedChatId(chat.id);
+                    setShowChatMobile(true);
+                  }}
                   style={{ 
                     display: "flex", alignItems: "center", gap: "12px", padding: "15px", 
                     borderBottom: "1px solid #EAE0DA", cursor: "pointer",
@@ -262,7 +354,7 @@ export default function MessagesPage() {
           </div>
 
           {chatList.length === 0 ? (
-            <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: "#FAF9F8" }}>
+            <div className="msg-main" style={{ alignItems: "center", justifyContent: "center" }}>
               <div style={{ fontSize: "48px", marginBottom: "10px" }}>📭</div>
               <h3 style={{ color: "#6B4F43", marginBottom: "16px", fontWeight: "bold" }}>Hiện tại chưa có tin nhắn</h3>
               <button 
@@ -278,13 +370,33 @@ export default function MessagesPage() {
           ) : (
             <>
               {/* Center: Conversation View */}
-              <div style={{ flex: 1, display: "flex", flexDirection: "column", background: "#FAF9F8" }}>
+              <div className="msg-main">
                 
                 {/* Active Header */}
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #EAE0DA", padding: "15px 24px", background: "#FFF" }}>
-                  <div>
-                    <h3 style={{ margin: 0, fontSize: "16px", color: "#333", fontWeight: "700" }}>{selectedChatInfo.name}</h3>
-                    <span style={{ fontSize: "12px", color: "#27AE60", fontWeight: "600" }}>{selectedChatInfo.role}</span>
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                    <button
+                      className="msg-back-btn"
+                      onClick={() => setShowChatMobile(false)}
+                      style={{
+                        background: "none",
+                        border: "none",
+                        cursor: "pointer",
+                        color: "#6B4F43",
+                        fontSize: "20px",
+                        fontWeight: "bold",
+                        padding: "4px 8px",
+                        marginRight: "4px",
+                        display: "none"
+                      }}
+                      title="Quay lại"
+                    >
+                      ←
+                    </button>
+                    <div>
+                      <h3 style={{ margin: 0, fontSize: "16px", color: "#333", fontWeight: "700" }}>{selectedChatInfo.name}</h3>
+                      <span style={{ fontSize: "12px", color: "#27AE60", fontWeight: "600" }}>{selectedChatInfo.role}</span>
+                    </div>
                   </div>
                   <div>
                     <button
@@ -416,7 +528,7 @@ export default function MessagesPage() {
               </div>
 
               {/* Right: Recipient Inspector metadata sidebar */}
-              <div style={{ width: "260px", borderLeft: "1px solid #EAE0DA", padding: "24px", display: "flex", flexDirection: "column", background: "#FFF" }}>
+              <div className="msg-sidebar-right">
                 <h3 style={{ fontSize: "14px", color: "#333", fontWeight: "700", margin: "0 0 24px 0" }}>Thông tin chi tiết</h3>
                 <div style={{ textAlign: "center", paddingBottom: "24px", borderBottom: "1px solid #EAE0DA", marginBottom: "20px" }}>
                   <div style={{ width: "70px", height: "70px", borderRadius: "50%", background: "#E8ECEF", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px auto", fontSize: "32px", color: "#555" }}>

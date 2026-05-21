@@ -172,6 +172,42 @@ export default function StudentGradesPage() {
 
   return (
     <DashboardShell pageTitle="Kết quả học tập">
+      <style>{`
+        .grades-gpa-grid {
+          display: grid;
+          grid-template-columns: repeat(4, 1fr);
+          gap: 14px;
+        }
+        .grades-xl-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 14px;
+        }
+        .grades-info-row {
+          display: flex;
+          gap: 10px;
+          flex-wrap: wrap;
+        }
+        @media (max-width: 1024px) {
+          .grades-gpa-grid {
+            grid-template-columns: repeat(2, 1fr);
+          }
+        }
+        @media (max-width: 640px) {
+          .grades-gpa-grid {
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+          }
+          .grades-xl-grid {
+            grid-template-columns: 1fr;
+          }
+        }
+        @media (max-width: 480px) {
+          .grades-gpa-grid {
+            grid-template-columns: 1fr;
+          }
+        }
+      `}</style>
       <div style={{ display: "flex", flexDirection: "column", gap: 20, padding: "8px 0" }}>
 
         {/* ── Thông tin sinh viên ─────────────────────────────────────────── */}
@@ -198,7 +234,7 @@ export default function StudentGradesPage() {
               </div>
             </div>
           </div>
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+          <div className="grades-info-row">
             <InfoCard icon={<Mail size={16} />} label="Email trường" value={loading ? "…" : (gpaView?.emailtruong ?? "—")} />
             <InfoCard icon={<Users size={16} />} label="Lớp" value={loading ? "…" : (gpaView?.tenlop ?? gpaView?.malop ?? "—")} />
           </div>
@@ -234,7 +270,7 @@ export default function StudentGradesPage() {
         </div>
 
         {/* ── 4 GPA Cards ─────────────────────────────────────────────────── */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14 }}>
+        <div className="grades-gpa-grid">
           <GpaCard
             label="GPA kỳ hiện tại"
             value={loading ? "…" : fmt(gpaView?.gpa10_hocky_hientai)}
@@ -260,7 +296,7 @@ export default function StudentGradesPage() {
         </div>
 
         {/* ── Xếp loại 2 thang ────────────────────────────────────────────── */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+        <div className="grades-xl-grid">
           {[
             { label: "Xếp loại học lực (thang 10)", value: gpaView?.xep_loai_hoc_luc, style: xl10, icon: <TrendingUp size={20} /> },
             { label: "Xếp loại học lực (thang 4 – VNUA)", value: gpaView?.xep_loai_hoc_luc_he4, style: xl4, icon: <Star size={20} /> },
@@ -279,7 +315,7 @@ export default function StudentGradesPage() {
         </div>
 
         {/* ── Bảng điểm ───────────────────────────────────────────────────── */}
-        <div style={{ background: "#fff", borderRadius: 24, border: "1px solid #ead9cb", overflow: "hidden" }}>
+        <div style={{ background: "#fff", borderRadius: 24, border: "1px solid #ead9cb", overflow: "hidden", minWidth: 0 }}>
           {/* Header + Tab */}
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 24px 0", borderBottom: "1px solid #ead9cb", flexWrap: "wrap", gap: 8 }}>
             <div>
@@ -317,7 +353,7 @@ export default function StudentGradesPage() {
               </div>
             ) : (
               <div style={{ overflowX: "auto" }}>
-                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                <table style={{ width: "100%", minWidth: "900px", borderCollapse: "collapse", fontSize: 13 }}>
                   <thead>
                     <tr style={{ background: "#fff8f5" }}>
                       {["STT", "Mã MH", "Tên môn học", "TC", "GV", "Điểm thành phần", "TK (H10)", "Chữ", "Kết quả"].map((h, i) => (
