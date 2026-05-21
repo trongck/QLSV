@@ -141,7 +141,7 @@ export function RosterView() {
       });
       const convJson = await convRes.json();
       
-      if (!convJson.success || !convJson.data?.macuoctrochuyen) {
+      if (convJson.error || !convJson.data?.macuoctrochuyen) {
         throw new Error(convJson.error || "Không thể khởi tạo cuộc trò chuyện");
       }
 
@@ -154,7 +154,7 @@ export function RosterView() {
       });
       const msgJson = await msgRes.json();
 
-      if (!msgJson.success) {
+      if (msgJson.error) {
         throw new Error(msgJson.error || "Lỗi khi gửi tin nhắn");
       }
 
@@ -183,11 +183,11 @@ export function RosterView() {
         </div>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1.8fr 1.2fr", gap: "20px" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "1.8fr 1.2fr", gap: "20px", height: "calc(100vh - 160px)" }}>
         
         {/* Left Column: Master Table */}
-        <section className="card" style={{ padding: "0", overflow: "hidden", border: "1px solid #F0E1D9" }}>
-          <div style={{ padding: "15px 20px", borderBottom: "1px solid #F0E1D9", display: "flex", gap: "10px" }}>
+        <section className="card" style={{ padding: "0", overflow: "hidden", border: "1px solid #F0E1D9", display: "flex", flexDirection: "column" }}>
+          <div style={{ padding: "15px 20px", borderBottom: "1px solid #F0E1D9", display: "flex", gap: "10px", flexShrink: 0 }}>
             <input 
               type="text" 
               placeholder="Tìm kiếm mã số hoặc tên..." 
@@ -208,7 +208,7 @@ export function RosterView() {
             </select>
           </div>
 
-          <div style={{ padding: "10px 20px" }}>
+          <div style={{ padding: "10px 20px", flex: 1, overflowY: "auto" }}>
             <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
               <thead>
                 <tr style={{ borderBottom: "1px solid #F0E1D9" }}>
@@ -254,7 +254,7 @@ export function RosterView() {
         </section>
 
         {/* Right Column: Detailed Card View */}
-        <section className="card" style={{ border: "1px solid #F0E1D9", display: "flex", flexDirection: "column", gap: "15px" }}>
+        <section className="card" style={{ border: "1px solid #F0E1D9", display: "flex", flexDirection: "column", gap: "15px", overflowY: "auto" }}>
           {currentStudent ? (
             <>
               <div style={{ display: "flex", alignItems: "center", gap: "15px", borderBottom: "1px solid #F0E1D9", paddingBottom: "15px" }}>
@@ -284,23 +284,23 @@ export function RosterView() {
               </div>
 
               <div style={{ display: "flex", flexDirection: "column", gap: "12px", fontSize: "13px", color: "#6B4F43" }}>
-                <div style={{ display: "flex", gap: "8px", justifyContent: "space-between" }}>
+                <div style={{ display: "flex", gap: "10px", justifyContent: "space-between" }}>
                   <span style={{ color: "#8B6F5F", flexShrink: 0 }}>Lớp sinh hoạt:</span> 
                   <strong style={{ textAlign: "right", wordBreak: "break-word" }}>{currentStudent.class}</strong>
                 </div>
-                <div style={{ display: "flex", gap: "8px", justifyContent: "space-between" }}>
+                <div style={{ display: "flex", gap: "10px", justifyContent: "space-between" }}>
                   <span style={{ color: "#8B6F5F", flexShrink: 0 }}>Số điện thoại:</span> 
                   <strong style={{ textAlign: "right", wordBreak: "break-word" }}>{currentStudent.phone}</strong>
                 </div>
-                <div style={{ display: "flex", gap: "8px", justifyContent: "space-between" }}>
+                <div style={{ display: "flex", gap: "10px", justifyContent: "space-between" }}>
                   <span style={{ color: "#8B6F5F", flexShrink: 0 }}>Địa chỉ Email:</span> 
                   <strong style={{ textAlign: "right", wordBreak: "break-word" }}>{currentStudent.email}</strong>
                 </div>
-                <div style={{ display: "flex", gap: "8px", justifyContent: "space-between" }}>
+                <div style={{ display: "flex", gap: "10px", justifyContent: "space-between" }}>
                   <span style={{ color: "#8B6F5F", flexShrink: 0 }}>Liên hệ phụ huynh:</span> 
                   <strong style={{ fontSize: "12px", textAlign: "right", wordBreak: "break-word" }}>{currentStudent.parent}</strong>
                 </div>
-                <div style={{ display: "flex", gap: "8px", justifyContent: "space-between" }}>
+                <div style={{ display: "flex", gap: "10px", justifyContent: "space-between" }}>
                   <span style={{ color: "#8B6F5F", flexShrink: 0 }}>Nơi cư trú:</span> 
                   <strong style={{ textAlign: "right", wordBreak: "break-word" }}>{currentStudent.address}</strong>
                 </div>

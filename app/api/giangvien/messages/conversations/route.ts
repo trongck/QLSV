@@ -220,7 +220,7 @@ export async function POST(request: Request) {
   // Tạo cuộc trò chuyện mới
   const { data: newConv, error: convErr } = await supabase
     .from("cuoctrochuyen")
-    .insert({ loai: "CaNhan", tieude: null })
+    .insert({ loai: "CaNhan", tieude: null, nguoidaxoa: [] })
     .select("macuoctrochuyen, tieude, loai, ngaytao")
     .single();
 

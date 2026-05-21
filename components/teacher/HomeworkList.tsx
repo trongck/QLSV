@@ -18,6 +18,7 @@ interface Homework {
   bg: string;
   label: string;
   maxScore: number;
+  filedinhUrl?: string;
 }
 
 export function HomeworkList() {
@@ -35,6 +36,13 @@ export function HomeworkList() {
     mota: "",
     hannop: ""
   });
+  const [createFile, setCreateFile] = useState<File | null>(null);
+  const [editFile, setEditFile] = useState<File | null>(null);
+
+  const [viewSubmissionsTask, setViewSubmissionsTask] = useState<Homework | null>(null);
+  const [submissions, setSubmissions] = useState<any[]>([]);
+  const [loadingSubmissions, setLoadingSubmissions] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
 
   const fetchTasks = async () => {
     setLoading(true);
@@ -61,24 +69,45 @@ export function HomeworkList() {
     fetchTasks();
   }, []);
 
+  const handleViewSubmissions = async (task: Homework) => {
+    setViewSubmissionsTask(task);
+    setLoadingSubmissions(true);
+    setSubmissions([]);
+    try {
+      const res = await apiFetch(`/api/giangvien/tasks/${task.id}`);
+      const json = await res.json();
+      if (json.success) {
+        setSubmissions(json.data);
+      }
+    } catch (err) {
+      alert("Lỗi tải danh sách bài nộp");
+    } finally {
+      setLoadingSubmissions(false);
+    }
+  };
+
   const handleEditSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editTask) return;
     
     setSaving(true);
     try {
+      const formData = new FormData();
+      formData.append("title", editTask.title);
+      formData.append("description", editTask.description);
+      formData.append("isoDate", editTask.isoDate);
+      if (editFile) {
+        formData.append("file", editFile);
+      }
+
       const res = await apiFetch(`/api/giangvien/tasks/${editTask.id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: editTask.title,
-          description: editTask.description,
-          isoDate: editTask.isoDate
-        })
+        body: formData
       });
       const json = await res.json();
       if (json.success) {
         setEditTask(null);
+        setEditFile(null);
         fetchTasks();
       } else {
         alert("Lỗi khi lưu bài tập: " + json.error);
@@ -99,15 +128,24 @@ export function HomeworkList() {
 
     setSaving(true);
     try {
+      const formData = new FormData();
+      formData.append("maphancong", newTaskData.maphancong);
+      formData.append("tieude", newTaskData.tieude);
+      formData.append("mota", newTaskData.mota);
+      formData.append("hannop", newTaskData.hannop);
+      if (createFile) {
+        formData.append("file", createFile);
+      }
+
       const res = await apiFetch("/api/giangvien/tasks", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newTaskData)
+        body: formData
       });
       const json = await res.json();
       if (json.success) {
         setShowCreateModal(false);
         setNewTaskData({ maphancong: "", tieude: "", mota: "", hannop: "" });
+        setCreateFile(null);
         fetchTasks();
       } else {
         alert("Lỗi khi tạo bài tập: " + json.error);
@@ -140,7 +178,9 @@ export function HomeworkList() {
       <div className="card" style={{ padding: "16px", display: "flex", gap: "16px", border: "1px solid #F0E1D9" }}>
         <input 
           type="text" 
-          placeholder="🔍 Tìm kiếm tên bài tập hoặc chủ đề..." 
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          placeholder="Tìm kiếm tên bài tập hoặc chủ đề..." 
           style={{ flex: 1, padding: "10px 16px", borderRadius: "8px", border: "1px solid #F0E1D9", outline: "none", fontSize: "13px" }}
         />
       </div>
@@ -148,19 +188,24 @@ export function HomeworkList() {
       {/* Assignments Grid */}
       {loading ? (
         <p style={{ textAlign: "center", color: "#8B6F5F" }}>Đang tải danh sách bài tập...</p>
-      ) : tasks.length === 0 ? (
-        <p style={{ textAlign: "center", color: "#8B6F5F" }}>Chưa có bài tập nào được giao.</p>
+      ) : tasks.filter(t => t.title.toLowerCase().includes(searchTerm.toLowerCase())).length === 0 ? (
+        <p style={{ textAlign: "center", color: "#8B6F5F" }}>Chưa có bài tập nào phù hợp.</p>
       ) : (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: "20px" }}>
-          {tasks.map((item) => (
+          {tasks.filter(t => t.title.toLowerCase().includes(searchTerm.toLowerCase())).map((item) => (
             <div key={item.id} className="card" style={{ padding: "20px", display: "flex", flexDirection: "column", gap: "16px", border: "1px solid #F0E1D9" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                 <h3 style={{ margin: 0, fontSize: "16px", color: "#2D1B14", fontWeight: "bold" }}>{item.title}</h3>
                 <span style={{ backgroundColor: item.bg, color: item.color, padding: "4px 8px", borderRadius: "4px", fontSize: "12px", fontWeight: "bold", whiteSpace: "nowrap", marginLeft: "10px" }}>{item.label}</span>
               </div>
               <div style={{ fontSize: "13px", color: "#8B6F5F" }}>
-                <p style={{ margin: "4px 0" }}>🏷️ <b>Lớp học:</b> {item.class}</p>
-                <p style={{ margin: "4px 0" }}>⏰ <b>Hạn nộp bài:</b> {item.date}</p>
+                <p style={{ margin: "4px 0" }}><b style={{ color: "#6B4F43" }}>Lớp học:</b> {item.class}</p>
+                <p style={{ margin: "4px 0" }}><b style={{ color: "#6B4F43" }}>Hạn nộp bài:</b> {item.date}</p>
+                {item.filedinhUrl && (
+                  <p style={{ margin: "4px 0" }}>
+                    <a href={item.filedinhUrl} target="_blank" rel="noopener noreferrer" style={{ color: "#178A57", textDecoration: "underline", fontWeight: "bold" }}>Tài liệu đính kèm</a>
+                  </p>
+                )}
               </div>
               <div>
                 <div style={{ display: "flex", justifyContent: "space-between", fontSize: "12px", marginBottom: "4px", color: "#8B6F5F" }}>
@@ -173,13 +218,13 @@ export function HomeworkList() {
               </div>
               <div style={{ display: "flex", gap: "10px", marginTop: "10px" }}>
                 <button 
-                  onClick={() => setEditTask(item)}
+                  onClick={() => { setEditTask(item); setEditFile(null); }}
                   style={{ flex: 1, padding: "8px", fontSize: "12px", borderRadius: "6px", border: "1px solid #EAD9CB", background: "white", color: "#6B4F43", cursor: "pointer" }}
                 >Sửa</button>
                 <button 
                   style={{ flex: 1, padding: "8px", fontSize: "12px", borderRadius: "6px", border: "none", background: "linear-gradient(90deg, #F2A8A8 0%, #FFB4B4 100%)", color: "white", cursor: "pointer", fontWeight: "600" }} 
-                  onClick={() => router.push(`/teacher/grades`)}
-                >Chấm bài</button>
+                  onClick={() => handleViewSubmissions(item)}
+                >Xem bài nộp</button>
               </div>
             </div>
           ))}
@@ -219,6 +264,17 @@ export function HomeworkList() {
                   onChange={(e) => setEditTask({...editTask, isoDate: e.target.value})}
                   required
                   style={{ width: "100%", padding: "8px", borderRadius: "6px", border: "1px solid #EAD9CB", outline: "none" }}
+                />
+              </div>
+              
+              <div style={{ background: "#FDF8F5", padding: "10px", borderRadius: "8px", border: "1px solid #F0E1D9" }}>
+                <label style={{ display: "block", fontSize: "13px", color: "#8B6F5F", marginBottom: "4px", fontWeight: "600" }}>File đính kèm thay thế (Tùy chọn)</label>
+                {editTask.filedinhUrl && <div style={{ fontSize: "12px", color: "#F2A8A8", marginBottom: "8px" }}>Bài tập này đang có file đính kèm. Tải file mới lên sẽ thay thế file cũ.</div>}
+                <input 
+                  type="file" 
+                  accept=".pdf,.doc,.docx,.xlsx,.xls,.ppt,.pptx,.zip,.rar"
+                  onChange={(e) => setEditFile(e.target.files ? e.target.files[0] : null)}
+                  style={{ width: "100%", fontSize: "13px", color: "#6B4F43" }}
                 />
               </div>
               
@@ -285,6 +341,16 @@ export function HomeworkList() {
                 />
               </div>
               
+              <div style={{ background: "#FDF8F5", padding: "10px", borderRadius: "8px", border: "1px solid #F0E1D9" }}>
+                <label style={{ display: "block", fontSize: "13px", color: "#8B6F5F", marginBottom: "4px", fontWeight: "600" }}>Tài liệu đính kèm (Word/PDF...)</label>
+                <input 
+                  type="file" 
+                  accept=".pdf,.doc,.docx,.xlsx,.xls,.ppt,.pptx,.zip,.rar"
+                  onChange={(e) => setCreateFile(e.target.files ? e.target.files[0] : null)}
+                  style={{ width: "100%", fontSize: "13px", color: "#6B4F43" }}
+                />
+              </div>
+              
               <div style={{ display: "flex", gap: "10px", marginTop: "10px" }}>
                 <button type="button" onClick={() => setShowCreateModal(false)} disabled={saving} style={{ flex: 1, padding: "10px", borderRadius: "6px", border: "1px solid #EAD9CB", background: "#FFF", cursor: "pointer", color: "#6B4F43" }}>Hủy</button>
                 <button type="submit" disabled={saving} style={{ flex: 1, padding: "10px", borderRadius: "6px", border: "none", background: "#F2A8A8", color: "white", cursor: "pointer", fontWeight: "bold" }}>
@@ -292,6 +358,60 @@ export function HomeworkList() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Submissions Modal */}
+      {viewSubmissionsTask && (
+        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
+          <div style={{ backgroundColor: "#FFF", padding: "24px", borderRadius: "12px", width: "600px", maxWidth: "90%", maxHeight: "80vh", display: "flex", flexDirection: "column", boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}>
+            <h3 style={{ marginTop: 0, color: "#6B4F43" }}>Danh sách nộp bài - {viewSubmissionsTask.title}</h3>
+            
+            <div style={{ flex: 1, overflowY: "auto", margin: "10px 0", borderTop: "1px solid #F0E1D9", borderBottom: "1px solid #F0E1D9", padding: "10px 0" }}>
+              {loadingSubmissions ? (
+                <p style={{ textAlign: "center", color: "#8B6F5F" }}>Đang tải...</p>
+              ) : submissions.length === 0 ? (
+                <p style={{ textAlign: "center", color: "#8B6F5F" }}>Chưa có sinh viên nào nộp bài.</p>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                  {submissions.map((sub: any) => (
+                    <div key={sub.manopbai} style={{ padding: "12px", background: "#FDF8F5", borderRadius: "8px", border: "1px solid #F0E1D9" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px" }}>
+                        <span style={{ fontWeight: "bold", color: "#2D1B14" }}>{sub.hoten} ({sub.masv})</span>
+                        <span style={{ fontSize: "12px", color: "#8B6F5F" }}>
+                          {new Date(sub.thoigiannop).toLocaleString("vi-VN")}
+                        </span>
+                      </div>
+                      
+                      {sub.noidungnop && (
+                        <div style={{ fontSize: "13px", color: "#6B4F43", marginBottom: "8px", padding: "8px", background: "white", borderRadius: "6px", border: "1px solid #EAD9CB" }}>
+                          {sub.noidungnop}
+                        </div>
+                      )}
+
+                      {sub.filenop && (
+                        <a 
+                          href={sub.filenop} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          style={{ display: "inline-block", fontSize: "12px", color: "#178A57", textDecoration: "none", background: "#EAFDF5", padding: "6px 12px", borderRadius: "6px", fontWeight: "bold" }}
+                        >
+                          Tải File Nộp
+                        </a>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <button 
+              onClick={() => setViewSubmissionsTask(null)} 
+              style={{ width: "100%", padding: "10px", borderRadius: "6px", border: "1px solid #EAD9CB", background: "#FFF", cursor: "pointer", color: "#6B4F43", fontWeight: "bold", marginTop: "10px" }}
+            >
+              Đóng
+            </button>
           </div>
         </div>
       )}

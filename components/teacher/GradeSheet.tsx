@@ -14,6 +14,7 @@ interface StudentGradeRow {
   diemGiuaKy: { giatri: number; heso: number } | null;
   diemCuoiKy: { giatri: number; heso: number } | null;
   tongKet: { diemtongket: number; diemchu: string; ketqua: string } | null;
+  nopbaiFiles?: { tieude: string; filenop: string }[];
 }
 
 export function GradeSheet() {
@@ -25,6 +26,7 @@ export function GradeSheet() {
   const [editingRows, setEditingRows] = useState<Record<string, boolean>>({});
   const [tempGrades, setTempGrades] = useState<Record<string, { ChuyenCan: string; GiuaKy: string; CuoiKy: string }>>({});
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedHocKy, setSelectedHocKy] = useState<string>("all");
 
   // Tải danh sách lớp học
   useEffect(() => {
@@ -233,7 +235,7 @@ export function GradeSheet() {
               }
             }}
             className={styles.primaryBtn}
-            style={{ background: "linear-gradient(90deg, #F2A8A8 0%, #FFB4B4 100%)", display: "flex", alignItems: "center", gap: "8px", border: "none", cursor: "pointer" }}
+            style={{ padding: "10px 20px", borderRadius: "10px", fontSize: "14px", background: "linear-gradient(90deg, #F2A8A8 0%, #FFB4B4 100%)", display: "flex", alignItems: "center", gap: "8px", border: "none", cursor: "pointer", color: "white", fontWeight: "600" }}
           >
             Lưu bảng điểm
           </button>
@@ -247,13 +249,39 @@ export function GradeSheet() {
       </div>
 
       {/* Bộ lọc và Tìm kiếm */}
-      <div style={{ display: "flex", gap: "15px", alignItems: "center" }}>
+      <div style={{ display: "flex", gap: "15px", alignItems: "center", flexWrap: "wrap" }}>
+        <select
+          value={selectedHocKy}
+          onChange={(e) => {
+            const newHk = e.target.value;
+            setSelectedHocKy(newHk);
+            const filtered = newHk === "all" ? classes : classes.filter(c => c.hocky?.mahocky?.toString() === newHk);
+            if (filtered.length > 0) {
+              setSelectedPC(filtered[0].maphancong);
+            } else {
+              setSelectedPC(null);
+              setStudents([]);
+            }
+          }}
+          style={{ padding: "8px 12px", borderRadius: "8px", border: "1px solid #EAD9CB", outline: "none", color: "#6B4F43", background: "white" }}
+        >
+          <option value="all">Tất cả học kỳ</option>
+          {Array.from(new Map(classes.map(c => [c.hocky?.mahocky, c.hocky])).values())
+            .filter(Boolean)
+            .map((hk: any) => (
+              <option key={hk.mahocky} value={hk.mahocky.toString()}>
+                {hk.tenhocky} - Năm học {hk.namhoc}
+              </option>
+            ))
+          }
+        </select>
+
         <select
           value={selectedPC ?? ""}
           onChange={(e) => setSelectedPC(Number(e.target.value))}
           style={{ padding: "8px 12px", borderRadius: "8px", border: "1px solid #EAD9CB", outline: "none", color: "#6B4F43", background: "white" }}
         >
-          {classes.map((cls) => (
+          {(selectedHocKy === "all" ? classes : classes.filter(c => c.hocky?.mahocky?.toString() === selectedHocKy)).map((cls) => (
             <option key={cls.maphancong} value={cls.maphancong}>
               Lớp: {cls.lop?.tenlop ?? cls.malop} - Môn: {cls.monhoc?.tenmon} ({cls.malophoc || "Chưa chia nhóm"})
             </option>
@@ -289,6 +317,7 @@ export function GradeSheet() {
                 <th style={{ padding: "12px", textAlign: "center", fontSize: "13px", color: "#8B6F5F", width: "120px" }}>Giữa kỳ (30%)</th>
                 <th style={{ padding: "12px", textAlign: "center", fontSize: "13px", color: "#8B6F5F", width: "120px" }}>Cuối kỳ (60%)</th>
                 <th style={{ padding: "12px", textAlign: "center", fontSize: "13px", color: "#8B6F5F" }}>Tổng kết</th>
+                <th style={{ padding: "12px", textAlign: "center", fontSize: "13px", color: "#8B6F5F" }}>Bài nộp</th>
                 <th style={{ padding: "12px", textAlign: "center", fontSize: "13px", color: "#8B6F5F" }}>Thao tác</th>
               </tr>
             </thead>
@@ -375,6 +404,28 @@ export function GradeSheet() {
                           ) : (
                             "—"
                           )
+                        )}
+                      </td>
+
+                      {/* Bài nộp */}
+                      <td style={{ padding: "12px", textAlign: "center", fontSize: "12px" }}>
+                        {row.nopbaiFiles && row.nopbaiFiles.length > 0 ? (
+                          <div style={{ display: "flex", flexDirection: "column", gap: "4px", alignItems: "center" }}>
+                            {row.nopbaiFiles.map((f, idx) => (
+                              <a 
+                                key={idx} 
+                                href={f.filenop} 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                title={f.tieude}
+                                style={{ color: "#178A57", textDecoration: "none", background: "#EAFDF5", padding: "4px 8px", borderRadius: "4px", whiteSpace: "nowrap" }}
+                              >
+                                📎 {f.tieude.substring(0, 10)}{f.tieude.length > 10 ? '...' : ''}
+                              </a>
+                            ))}
+                          </div>
+                        ) : (
+                          <span style={{ color: "#8B6F5F" }}>—</span>
                         )}
                       </td>
 

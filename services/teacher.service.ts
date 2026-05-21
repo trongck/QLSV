@@ -829,7 +829,7 @@ export const giangVienService = {
         malop,
         danghieuluc,
         monhoc:mamon ( tenmon, sotinchi ),
-        hocky:mahocky ( tenhocky, namhoc, ky ),
+        hocky:mahocky ( mahocky, tenhocky, namhoc, ky ),
         lop:malop ( tenlop )
       `)
       .eq("magv", magv)
@@ -878,7 +878,26 @@ export const giangVienService = {
       .eq("maphancong", maphancong)
       .in("masv", masvList);
 
-    // 4. Gom dữ liệu theo từng SV
+    // 4. Lấy file nộp bài (nopbai) của sinh viên trong lớp này
+    const { data: baitapList } = await supabase
+      .from("baitap")
+      .select("mabaitap, tieude")
+      .eq("maphancong", maphancong);
+
+    const mabaitapIds = (baitapList ?? []).map(b => b.mabaitap);
+    
+    let nopbaiRows: any[] = [];
+    if (mabaitapIds.length > 0) {
+      const { data } = await supabase
+        .from("nopbai")
+        .select("masv, mabaitap, filenop")
+        .in("mabaitap", mabaitapIds)
+        .in("masv", masvList)
+        .not("filenop", "is", null);
+      nopbaiRows = data ?? [];
+    }
+
+    // 5. Gom dữ liệu theo từng SV
     const diemMap: Record<string, Record<string, any>> = {};
     for (const d of (diemRows ?? [])) {
       if (!diemMap[d.masv]) diemMap[d.masv] = {};
@@ -893,6 +912,17 @@ export const giangVienService = {
     return svList.map((sv, idx) => {
       const student = sv.sinhvien as any;
       const hoten = student ? `${student.hodem || ""} ${student.ten || ""}`.trim() : "—";
+      
+      const studentFiles = nopbaiRows
+        .filter(n => n.masv === sv.masv)
+        .map(n => {
+          const bt = (baitapList ?? []).find(b => b.mabaitap === n.mabaitap);
+          return {
+            tieude: bt?.tieude || `Bài tập ${n.mabaitap}`,
+            filenop: n.filenop
+          };
+        });
+
       return {
         stt: idx + 1,
         masv: sv.masv,
@@ -901,7 +931,8 @@ export const giangVienService = {
         diemChuyenCan: diemMap[sv.masv]?.["ChuyenCan"] ?? null,
         diemGiuaKy: diemMap[sv.masv]?.["GiuaKy"] ?? null,
         diemCuoiKy: diemMap[sv.masv]?.["CuoiKy"] ?? null,
-        tongKet: tongKetMap[sv.masv] ?? null
+        tongKet: tongKetMap[sv.masv] ?? null,
+        nopbaiFiles: studentFiles
       };
     });
   },
@@ -1338,7 +1369,8 @@ export const giangVienService = {
         label: isClosed ? "Đã đóng" : "Đang mở",
         color: isClosed ? "#d32f2f" : "#1e8e3e",
         bg: isClosed ? "#ffebee" : "#e6f4ea",
-        maxScore: bt.diemtoida
+        maxScore: bt.diemtoida,
+        filedinhUrl: bt.filedinh
       };
     });
   },
@@ -1350,18 +1382,53 @@ export const giangVienService = {
     const cookieStore = await cookies();
     const supabase = createClient(cookieStore);
 
+    const updatePayload: any = {
+      tieude: updates.tieude || updates.title,
+      mota: updates.mota || updates.description,
+      hannop: updates.hannop || updates.isoDate,
+      ngaycapnhat: new Date().toISOString()
+    };
+
+    if (updates.filedinh !== undefined) {
+      updatePayload.filedinh = updates.filedinh;
+    }
+
     const { error } = await supabase
       .from("baitap")
-      .update({
-        tieude: updates.title,
-        mota: updates.description,
-        hannop: updates.isoDate,
-        ngaycapnhat: new Date().toISOString()
-      })
+      .update(updatePayload)
       .eq("mabaitap", mabaitap);
 
     if (error) throw error;
     return true;
+  },
+
+  /**
+   * Lấy danh sách bài nộp của một bài tập
+   */
+  async getTaskSubmissions(mabaitap: number) {
+    const cookieStore = await cookies();
+    const supabase = createClient(cookieStore);
+
+    const { data, error } = await supabase
+      .from("nopbai")
+      .select(`
+        manopbai,
+        noidungnop,
+        filenop,
+        thoigiannop,
+        masv,
+        sinhvien:masv ( hoten, malop )
+      `)
+      .eq("mabaitap", mabaitap)
+      .order("thoigiannop", { ascending: false });
+
+    if (error) throw error;
+    
+    return (data ?? []).map((row: any) => ({
+      ...row,
+      hoten: row.sinhvien?.hoten || "—",
+      malop: row.sinhvien?.malop || "—"
+    }));
   },
 
   /**
@@ -1374,6 +1441,7 @@ export const giangVienService = {
       tieude: string;
       mota: string;
       hannop: string;
+      filedinh?: string;
     }
   ) {
     const cookieStore = await cookies();
@@ -1398,6 +1466,7 @@ export const giangVienService = {
         tieude: taskData.tieude,
         mota: taskData.mota,
         hannop: taskData.hannop,
+        filedinh: taskData.filedinh,
         // set default values for others
         loai: "Baitap", // Fallback type
         diemtoida: 10
@@ -1406,6 +1475,26 @@ export const giangVienService = {
       .single();
 
     if (error) throw error;
+
+    // Create a notification for the students
+    const { data: gvData } = await supabase
+      .from("giangvien")
+      .select("mataikhoan")
+      .eq("magv", magv)
+      .single();
+
+    if (gvData?.mataikhoan) {
+      await supabase.from("thongbao").insert({
+        mataikhoantao: gvData.mataikhoan,
+        tieude: `Bài tập mới: ${taskData.tieude}`,
+        noidung: `Giảng viên vừa giao bài tập mới: "${taskData.tieude}". Hạn nộp: ${new Date(taskData.hannop).toLocaleString("vi-VN")}. ${taskData.mota || ""}`,
+        loai: "HocTap",
+        doituong: "SinhVien",
+        maphancong: taskData.maphancong,
+        ghim: false
+      });
+    }
+
     return data;
   },
 
