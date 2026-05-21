@@ -21,6 +21,14 @@ interface Homework {
   filedinhUrl?: string;
 }
 
+const getViewerUrl = (url: string) => {
+  const ext = url.split('.').pop()?.toLowerCase();
+  if (['pdf', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx'].includes(ext || '')) {
+    return `https://docs.google.com/viewer?url=${encodeURIComponent(url)}&embedded=true`;
+  }
+  return url;
+};
+
 export function HomeworkList() {
   const router = useRouter();
   const [tasks, setTasks] = useState<Homework[]>([]);
@@ -203,7 +211,7 @@ export function HomeworkList() {
                 <p style={{ margin: "4px 0" }}><b style={{ color: "#6B4F43" }}>Hạn nộp bài:</b> {item.date}</p>
                 {item.filedinhUrl && (
                   <p style={{ margin: "4px 0" }}>
-                    <a href={item.filedinhUrl} target="_blank" rel="noopener noreferrer" style={{ color: "#178A57", textDecoration: "underline", fontWeight: "bold" }}>Tài liệu đính kèm</a>
+                    <a href={getViewerUrl(item.filedinhUrl)} target="_blank" rel="noopener noreferrer" style={{ color: "#178A57", textDecoration: "underline", fontWeight: "bold" }}>Tài liệu đính kèm</a>
                   </p>
                 )}
               </div>
@@ -392,12 +400,12 @@ export function HomeworkList() {
 
                       {sub.filenop && (
                         <a 
-                          href={sub.filenop} 
+                          href={getViewerUrl(sub.filenop)} 
                           target="_blank" 
                           rel="noopener noreferrer"
                           style={{ display: "inline-block", fontSize: "12px", color: "#178A57", textDecoration: "none", background: "#EAFDF5", padding: "6px 12px", borderRadius: "6px", fontWeight: "bold" }}
                         >
-                          Tải File Nộp
+                          Xem File Nộp
                         </a>
                       )}
                     </div>

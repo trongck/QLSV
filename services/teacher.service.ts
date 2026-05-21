@@ -1386,7 +1386,7 @@ export const giangVienService = {
       tieude: updates.tieude || updates.title,
       mota: updates.mota || updates.description,
       hannop: updates.hannop || updates.isoDate,
-      ngaycapnhat: new Date().toISOString()
+      ngaycapnhat: new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString().replace("Z", "")
     };
 
     if (updates.filedinh !== undefined) {
@@ -1417,7 +1417,7 @@ export const giangVienService = {
         filenop,
         thoigiannop,
         masv,
-        sinhvien:masv ( hoten, malop )
+        sinhvien:masv ( hodem, ten, malop )
       `)
       .eq("mabaitap", mabaitap)
       .order("thoigiannop", { ascending: false });
@@ -1426,7 +1426,7 @@ export const giangVienService = {
     
     return (data ?? []).map((row: any) => ({
       ...row,
-      hoten: row.sinhvien?.hoten || "—",
+      hoten: row.sinhvien ? `${row.sinhvien.hodem || ""} ${row.sinhvien.ten || ""}`.trim() : "—",
       malop: row.sinhvien?.malop || "—"
     }));
   },
@@ -1469,7 +1469,9 @@ export const giangVienService = {
         filedinh: taskData.filedinh,
         // set default values for others
         loai: "Baitap", // Fallback type
-        diemtoida: 10
+        diemtoida: 10,
+        ngaytao: new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString().replace("Z", ""),
+        ngaycapnhat: new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString().replace("Z", "")
       })
       .select("mabaitap")
       .single();
@@ -1619,7 +1621,9 @@ export const giangVienService = {
         xaotroncauhoi: false,
         xaotrondapan: false,
         solan: 1,
-        hienthidapan: true
+        hienthidapan: true,
+        ngaytao: new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString().replace("Z", ""),
+        ngaycapnhat: new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString().replace("Z", "")
       })
       .select("madethi")
       .single();
@@ -1700,7 +1704,8 @@ export const giangVienService = {
       .update({
         thoigianlam: timeData.thoigianlam,
         thoigianbatdau: timeData.thoigianbatdau,
-        thoigianketthuc: timeData.thoigianketthuc
+        thoigianketthuc: timeData.thoigianketthuc,
+        ngaycapnhat: new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString().replace("Z", "")
       })
       .eq("madethi", madethi);
 

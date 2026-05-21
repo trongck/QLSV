@@ -317,7 +317,6 @@ export function GradeSheet() {
                 <th style={{ padding: "12px", textAlign: "center", fontSize: "13px", color: "#8B6F5F", width: "120px" }}>Giữa kỳ (30%)</th>
                 <th style={{ padding: "12px", textAlign: "center", fontSize: "13px", color: "#8B6F5F", width: "120px" }}>Cuối kỳ (60%)</th>
                 <th style={{ padding: "12px", textAlign: "center", fontSize: "13px", color: "#8B6F5F" }}>Tổng kết</th>
-                <th style={{ padding: "12px", textAlign: "center", fontSize: "13px", color: "#8B6F5F" }}>Bài nộp</th>
                 <th style={{ padding: "12px", textAlign: "center", fontSize: "13px", color: "#8B6F5F" }}>Thao tác</th>
               </tr>
             </thead>
@@ -407,27 +406,6 @@ export function GradeSheet() {
                         )}
                       </td>
 
-                      {/* Bài nộp */}
-                      <td style={{ padding: "12px", textAlign: "center", fontSize: "12px" }}>
-                        {row.nopbaiFiles && row.nopbaiFiles.length > 0 ? (
-                          <div style={{ display: "flex", flexDirection: "column", gap: "4px", alignItems: "center" }}>
-                            {row.nopbaiFiles.map((f, idx) => (
-                              <a 
-                                key={idx} 
-                                href={f.filenop} 
-                                target="_blank" 
-                                rel="noopener noreferrer"
-                                title={f.tieude}
-                                style={{ color: "#178A57", textDecoration: "none", background: "#EAFDF5", padding: "4px 8px", borderRadius: "4px", whiteSpace: "nowrap" }}
-                              >
-                                📎 {f.tieude.substring(0, 10)}{f.tieude.length > 10 ? '...' : ''}
-                              </a>
-                            ))}
-                          </div>
-                        ) : (
-                          <span style={{ color: "#8B6F5F" }}>—</span>
-                        )}
-                      </td>
 
                       {/* Thao tác */}
                       <td style={{ padding: "12px", textAlign: "center" }}>

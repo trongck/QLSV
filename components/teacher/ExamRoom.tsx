@@ -121,8 +121,8 @@ export function ExamRoom() {
       formData.append("tieude", editExamData.tieude);
       formData.append("mota", editExamData.mota);
       formData.append("thoigianlam", editExamData.thoigianlam.toString());
-      formData.append("thoigianbatdau", new Date(editExamData.thoigianbatdau).toISOString());
-      formData.append("thoigianketthuc", new Date(editExamData.thoigianketthuc).toISOString());
+      formData.append("thoigianbatdau", editExamData.thoigianbatdau);
+      formData.append("thoigianketthuc", editExamData.thoigianketthuc);
       formData.append("matkhau", editExamData.matkhau);
       
       if (uploadFile) {
@@ -171,8 +171,8 @@ export function ExamRoom() {
       formData.append("tieude", newTaskData.tieude);
       formData.append("mota", newTaskData.mota);
       formData.append("thoigianlam", newTaskData.thoigianlam.toString());
-      formData.append("thoigianbatdau", new Date(newTaskData.thoigianbatdau).toISOString());
-      formData.append("thoigianketthuc", new Date(newTaskData.thoigianketthuc).toISOString());
+      formData.append("thoigianbatdau", newTaskData.thoigianbatdau);
+      formData.append("thoigianketthuc", newTaskData.thoigianketthuc);
       formData.append("matkhau", newTaskData.matkhau);
       formData.append("file", uploadFile);
 
