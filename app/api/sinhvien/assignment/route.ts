@@ -63,7 +63,7 @@ export async function GET(request: NextRequest) {
         if (maBTs.length > 0) {
             const { data: nopBaiRows } = await supabase
                 .from('nopbai')
-                .select('mabaitap, manopbai, thoigiannop, trenop, diem, nhanxet')
+                .select('mabaitap, manopbai, thoigiannop, trenop, diem, nhanxet, filenop, noidungnop')
                 .eq('masv', sv.masv)
                 .in('mabaitap', maBTs);
 
