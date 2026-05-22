@@ -1,6 +1,7 @@
 // repositories/sinhvien/diemdanh.repo.ts
 import { createClient } from '@/lib/utils/supabase/server';
 import { cookies } from 'next/headers';
+import { logAuditAction } from '@/lib/utils/audit';
 
 async function getSupabase() {
     const cookieStore = await cookies();
@@ -378,4 +379,254 @@ export const diemdanhRepo = {
             return { valid: false, error: 'Token không hợp lệ' };
         }
     },
+
+    // ─── Đơn xin nghỉ phép ───────────────────────────────────────────────────
+
+    getLeaveRequests: async (masv: string) => {
+        const supabase = await getSupabase();
+        return await supabase
+            .from('donxinnghi')
+            .select(`
+                madon, masv, mabuoihoc, lydo, minhchung, trangthai, magvduyet, ghichugv, ngaytao, ngaycapnhat,
+                buoihoc (
+                    mabuoihoc, ngayhoc,
+                    lichhoc (
+                        malichhoc, tietbatdau, tietketthuc, maphong, thutrongtuan, maphancong,
+                        phancong (
+                            maphancong,
+                            monhoc:mamon ( mamon, tenmon ),
+                            giangvien:magv ( magv, hodem, ten )
+                        )
+                    )
+                )
+            `)
+            .eq('masv', masv)
+            .order('ngaytao', { ascending: false });
+    },
+
+    getStudentMonHoc: async (masv: string) => {
+        const supabase = await getSupabase();
+        return await supabase
+            .from('sinhvienmonhoc')
+            .select('maphancong')
+            .eq('masv', masv);
+    },
+
+    getPhanCongWithLichHoc: async (maphancongList: number[]) => {
+        const supabase = await getSupabase();
+        return await supabase
+            .from('phancong')
+            .select(`
+                maphancong,
+                monhoc:mamon ( mamon, tenmon, sotinchi ),
+                hocky:mahocky ( mahocky, tenhocky, danghieuluc ),
+                lichhoc ( malichhoc, thutrongtuan, tietbatdau, tietketthuc, maphong )
+            `)
+            .in('maphancong', maphancongList);
+    },
+
+    getLichHocById: async (malichhoc: number) => {
+        const supabase = await getSupabase();
+        return await supabase
+            .from('lichhoc')
+            .select('malichhoc, thutrongtuan, maphancong')
+            .eq('malichhoc', malichhoc)
+            .single();
+    },
+
+    findBuoiHoc: async (malichhoc: number, ngayhoc: string) => {
+        const supabase = await getSupabase();
+        return await supabase
+            .from('buoihoc')
+            .select('mabuoihoc')
+            .eq('malichhoc', malichhoc)
+            .eq('ngayhoc', ngayhoc)
+            .maybeSingle();
+    },
+
+    createBuoiHoc: async (malichhoc: number, ngayhoc: string) => {
+        const supabase = await getSupabase();
+        return await supabase
+            .from('buoihoc')
+            .insert([{ malichhoc, ngayhoc }])
+            .select('mabuoihoc')
+            .single();
+    },
+
+    checkExistingLeave: async (masv: string, mabuoihoc: number) => {
+        const supabase = await getSupabase();
+        return await supabase
+            .from('donxinnghi')
+            .select('madon')
+            .eq('masv', masv)
+            .eq('mabuoihoc', mabuoihoc)
+            .maybeSingle();
+    },
+
+    insertLeaveRequest: async (payload: { masv: string; mabuoihoc: number; lydo: string; minhchung: string | null }) => {
+        const supabase = await getSupabase();
+        return await supabase
+            .from('donxinnghi')
+            .insert([{
+                ...payload,
+                trangthai: 'ChoDuyet'
+            }])
+            .select()
+            .single();
+    },
+
+    // ─── Điểm danh Check-in ──────────────────────────────────────────────────
+
+    getBuoiHocWithLichHoc: async (mabuoihoc: number) => {
+        const supabase = await getSupabase();
+        return await supabase
+            .from('buoihoc')
+            .select('mabuoihoc, qr_secret, trangthai, lichhoc ( maphong, maphancong, thutrongtuan, tietbatdau )')
+            .eq('mabuoihoc', mabuoihoc)
+            .single();
+    },
+
+    getBuoiHoc: async (mabuoihoc: number) => {
+        const supabase = await getSupabase();
+        return await supabase
+            .from('buoihoc')
+            .select('mabuoihoc, ngayhoc, malichhoc')
+            .eq('mabuoihoc', mabuoihoc)
+            .single();
+    },
+
+    getLichHocForChecking: async (maphancongList: number[], thuTrongTuan: number) => {
+        const supabase = await getSupabase();
+        return await supabase
+            .from('lichhoc')
+            .select('malichhoc, maphancong, tietbatdau, tietketthuc')
+            .in('maphancong', maphancongList)
+            .eq('thutrongtuan', thuTrongTuan);
+    },
+
+    checkRegistration: async (masv: string, maphancong: number) => {
+        const supabase = await getSupabase();
+        return await supabase
+            .from('sinhvienmonhoc')
+            .select('masv')
+            .eq('masv', masv)
+            .eq('maphancong', maphancong)
+            .maybeSingle();
+    },
+
+    updateAttendanceRecord: async (madiemdanh: number, payload: any) => {
+        const supabase = await getSupabase();
+        return await supabase
+            .from('diemdanh')
+            .update(payload)
+            .eq('madiemdanh', madiemdanh)
+            .select()
+            .single();
+    },
+
+    insertAttendanceRecord: async (payload: any) => {
+        const supabase = await getSupabase();
+        return await supabase
+            .from('diemdanh')
+            .insert([payload])
+            .select()
+            .single();
+    },
+
+    getHocKyList: async () => {
+        const supabase = await getSupabase();
+        return await supabase
+            .from('hocky')
+            .select('mahocky, tenhocky, namhoc, ky, danghieuluc')
+            .order('namhoc', { ascending: false })
+            .order('ky', { ascending: false });
+    },
+
+    getRawAttendanceHistory: async (masv: string) => {
+        const supabase = await getSupabase();
+        return await supabase
+            .from('diemdanh')
+            .select(`
+              madiemdanh,
+              trangthai,
+              ghichu,
+              thoigiandiemdanh,
+              ngaytao,
+              buoihoc:mabuoihoc (
+                mabuoihoc,
+                ngayhoc,
+                trangthai,
+                lichhoc:malichhoc (
+                  malichhoc,
+                  tietbatdau,
+                  tietketthuc,
+                  maphong,
+                  phancong:maphancong (
+                    maphancong,
+                    mahocky,
+                    mamon,
+                    monhoc:mamon ( tenmon ),
+                    giangvien:magv ( hodem, ten )
+                  )
+                )
+              )
+            `)
+            .eq('masv', masv)
+            .order('ngaytao', { ascending: false });
+    },
+
+    getStudentMonHocDangHoc: async (masv: string) => {
+        const supabase = await getSupabase();
+        return await supabase
+            .from('sinhvienmonhoc')
+            .select(`
+              maphancong,
+              phancong:maphancong (
+                mahocky,
+                lichhoc ( malichhoc )
+              )
+            `)
+            .eq('masv', masv)
+            .eq('trangthai', 'Danghoc');
+    },
+
+    getActiveSession: async (lichHocIds: number[]) => {
+        const supabase = await getSupabase();
+        return await supabase
+            .from('buoihoc')
+            .select(`
+              mabuoihoc, ngayhoc, noidung,
+              lichhoc:malichhoc (
+                malichhoc, tietbatdau, tietketthuc, maphong,
+                phancong:maphancong (
+                  maphancong, mamon,
+                  monhoc:mamon ( tenmon ),
+                  giangvien:magv ( hodem, ten )
+                )
+              )
+            `)
+            .eq('trangthai', 'DangDiemdanh')
+            .in('malichhoc', lichHocIds)
+            .maybeSingle();
+    },
+
+    logAudit: async (
+        mataikhoan: string,
+        hanhdong: string,
+        tentable: string,
+        makhoachinh: string,
+        giatrimoi: any,
+        request: Request
+    ) => {
+        const supabase = await getSupabase();
+        await logAuditAction({
+            supabase,
+            mataikhoan,
+            hanhdong,
+            tentable,
+            makhoachinh,
+            giatrimoi,
+            request
+        });
+    }
 };

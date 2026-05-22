@@ -1,8 +1,6 @@
 // app/api/sinhvien/notifications/unread/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 import { verifyToken, extractBearer } from '@/lib/utils/jwt';
-import { createClient } from '@/lib/utils/supabase/server';
 import { notificationSVService } from '@/services/service/sinhvien/notification.service';
 
 // ─── GET /api/sinhvien/notifications/unread ───────────────────────────────────
@@ -15,18 +13,7 @@ export async function GET(request: NextRequest) {
         }
 
         const payload = await verifyToken(token);
-        const cookieStore = await cookies();
-        const supabase = createClient(cookieStore);
-
-        const { data: sv } = await supabase
-            .from('sinhvien')
-            .select('masv, malop')
-            .eq('mataikhoan', payload.mataikhoan)
-            .single();
-
-        if (!sv) return NextResponse.json({ success: true, count: 0 });
-
-        const count = await notificationSVService.getUnreadCount(sv.masv, sv.malop);
+        const count = await notificationSVService.getUnreadCount(payload.mataikhoan);
         return NextResponse.json({ success: true, count });
     } catch (error: any) {
         return NextResponse.json(

@@ -1,5 +1,6 @@
 // services/sinhvien/notification.service.ts
 import { notificationRepo } from '@/services/repositories/sinhvien/notification.repo';
+import { studentRepo } from '@/services/repositories/sinhvien/student.repo';
 
 const parseToVNTimeMs = (dateInput: string | Date) => {
     if (dateInput instanceof Date) {
@@ -19,10 +20,14 @@ export const notificationSVService = {
      * Lấy toàn bộ thông báo dành cho sinh viên.
      * Mỗi item có ngaytao; nếu ngaycapnhat khác ngaytao thì đã cập nhật.
      */
-    getAll: async (mataikhoan: string, malop: string) => {
-        if (!mataikhoan || !malop) throw new Error('Thiếu thông tin người dùng');
+    getAll: async (mataikhoan: string) => {
+        if (!mataikhoan) throw new Error('Thiếu thông tin người dùng');
 
-        const { data, error } = await notificationRepo.getNotificationsForStudent(mataikhoan, malop);
+        const { data: sv, error: svError } = await studentRepo.getBasicInfoByAccount(mataikhoan);
+        if (svError || !sv) throw new Error('Không tìm thấy thông tin sinh viên');
+        const { masv, malop } = sv;
+
+        const { data, error } = await notificationRepo.getNotificationsForStudent(masv, malop);
         if (error) throw new Error(error.message);
 
         const now = new Date();
@@ -48,7 +53,7 @@ export const notificationSVService = {
         // Đánh dấu "đã cập nhật" và "đã đọc" cho mỗi thông báo
         const result = filteredData.map((tb: any) => {
             const readRecord = Array.isArray(tb.thongbaodadoc)
-                ? tb.thongbaodadoc.find((r: any) => r.mataikhoan === mataikhoan)
+                ? tb.thongbaodadoc.find((r: any) => r.mataikhoan === masv)
                 : null;
 
             return {
@@ -67,10 +72,10 @@ export const notificationSVService = {
     /**
      * Đếm số thông báo chưa đọc (dùng cho badge)
      */
-    getUnreadCount: async (mataikhoan: string, malop: string) => {
-        if (!mataikhoan || !malop) return 0;
+    getUnreadCount: async (mataikhoan: string) => {
+        if (!mataikhoan) return 0;
         try {
-            const list = await notificationSVService.getAll(mataikhoan, malop);
+            const list = await notificationSVService.getAll(mataikhoan);
             return list.filter((tb: any) => !tb.dadoc).length;
         } catch (e) {
             return 0;
@@ -82,7 +87,10 @@ export const notificationSVService = {
      */
     markAsRead: async (mathongbao: number, mataikhoan: string) => {
         if (!mathongbao || !mataikhoan) throw new Error('Thiếu thông tin');
-        const { error } = await notificationRepo.markAsRead(mathongbao, mataikhoan);
+        const { data: sv, error: svError } = await studentRepo.getBasicInfoByAccount(mataikhoan);
+        if (svError || !sv) throw new Error('Không tìm thấy thông tin sinh viên');
+
+        const { error } = await notificationRepo.markAsRead(mathongbao, sv.masv);
         if (error) throw new Error(error.message);
         return { success: true };
     },
@@ -90,9 +98,12 @@ export const notificationSVService = {
     /**
      * Đánh dấu tất cả thông báo đã đọc
      */
-    markAllAsRead: async (mataikhoan: string, malop: string) => {
-        if (!mataikhoan || !malop) throw new Error('Thiếu thông tin người dùng');
-        const { error } = await notificationRepo.markAllAsRead(mataikhoan, malop);
+    markAllAsRead: async (mataikhoan: string) => {
+        if (!mataikhoan) throw new Error('Thiếu thông tin người dùng');
+        const { data: sv, error: svError } = await studentRepo.getBasicInfoByAccount(mataikhoan);
+        if (svError || !sv) throw new Error('Không tìm thấy thông tin sinh viên');
+
+        const { error } = await notificationRepo.markAllAsRead(sv.masv, sv.malop);
         if (error) throw new Error(error.message);
         return { success: true };
     },

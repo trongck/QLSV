@@ -1,38 +1,25 @@
 // app/api/sinhvien/notifications/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 import { verifyToken, extractBearer } from '@/lib/utils/jwt';
 import { notificationSVService } from '@/services/service/sinhvien/notification.service';
-import { createClient } from '@/lib/utils/supabase/server';
 
 /**
- * Helper: Lấy thông tin sinh viên đang đăng nhập từ JWT
+ * Helper: Lấy mã tài khoản đang đăng nhập từ JWT
  */
-async function getCurrentStudent(request: NextRequest) {
+async function getCurrentUserAccount(request: NextRequest) {
     const token = extractBearer(request.headers.get('authorization'));
     if (!token) throw new Error('Chưa đăng nhập');
 
     const payload = await verifyToken(token);
-    const cookieStore = await cookies();
-    const supabase = createClient(cookieStore);
-
-    // Lấy masv và malop từ bảng sinhvien
-    const { data: sv, error } = await supabase
-        .from('sinhvien')
-        .select('masv, malop')
-        .eq('mataikhoan', payload.mataikhoan)
-        .single();
-
-    if (error || !sv) throw new Error('Không tìm thấy thông tin sinh viên');
-    return sv as { masv: string; malop: string };
+    return payload.mataikhoan;
 }
 
 // ─── GET /api/sinhvien/notifications ─────────────────────────────────────────
 // Trả về danh sách thông báo + số chưa đọc
 export async function GET(request: NextRequest) {
     try {
-        const { masv, malop } = await getCurrentStudent(request);
-        const data = await notificationSVService.getAll(masv, malop);
+        const mataikhoan = await getCurrentUserAccount(request);
+        const data = await notificationSVService.getAll(mataikhoan);
         const unreadCount = data.filter((tb: any) => !tb.dadoc).length;
 
         return NextResponse.json({
@@ -54,11 +41,11 @@ export async function GET(request: NextRequest) {
 // Body: { all: true }           → đánh dấu tất cả đã đọc
 export async function PATCH(request: NextRequest) {
     try {
-        const { masv, malop } = await getCurrentStudent(request);
+        const mataikhoan = await getCurrentUserAccount(request);
         const body = await request.json();
 
         if (body.all === true) {
-            const result = await notificationSVService.markAllAsRead(masv, malop);
+            const result = await notificationSVService.markAllAsRead(mataikhoan);
             return NextResponse.json(result);
         }
 
@@ -69,7 +56,7 @@ export async function PATCH(request: NextRequest) {
             );
         }
 
-        const result = await notificationSVService.markAsRead(body.mathongbao, masv);
+        const result = await notificationSVService.markAsRead(body.mathongbao, mataikhoan);
         return NextResponse.json(result);
     } catch (error: any) {
         const isAuth = error.message.includes('đăng nhập') || error.message.includes('sinh viên');

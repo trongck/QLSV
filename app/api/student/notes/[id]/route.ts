@@ -1,26 +1,18 @@
-// app/api/sinhvien/notes/[id]/route.ts
+// app/api/student/notes/[id]/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 import { verifyToken, extractBearer } from '@/lib/utils/jwt';
-import { createClient } from '@/lib/utils/supabase/server';
+import { sinhVienService } from '@/services/service/sinhvien/student.service';
 import { nhatkyService } from '@/services/service/sinhvien/nhatky.service';
 
 async function getCurrentStudent(request: NextRequest) {
     const token = extractBearer(request.headers.get('authorization'));
     if (!token) throw new Error('Chưa đăng nhập');
     const payload = await verifyToken(token);
-    const cookieStore = await cookies();
-    const supabase = createClient(cookieStore);
-    const { data: sv, error } = await supabase
-        .from('sinhvien')
-        .select('masv')
-        .eq('mataikhoan', payload.mataikhoan)
-        .single();
-    if (error || !sv) throw new Error('Không tìm thấy thông tin sinh viên');
+    const sv = await sinhVienService.getBasicInfo(payload.mataikhoan);
     return sv;
 }
 
-// GET /api/sinhvien/notes/[id]
+// GET /api/student/notes/[id]
 export async function GET(
     request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
@@ -36,7 +28,7 @@ export async function GET(
     }
 }
 
-// PUT /api/sinhvien/notes/[id] — Auto-save
+// PUT /api/student/notes/[id] — Auto-save
 export async function PUT(
     request: NextRequest,
     { params }: { params: Promise<{ id: string }> }
@@ -61,7 +53,7 @@ export async function PUT(
     }
 }
 
-// DELETE /api/sinhvien/notes/[id]
+// DELETE /api/student/notes/[id]
 export async function DELETE(
     request: NextRequest,
     { params }: { params: Promise<{ id: string }> }

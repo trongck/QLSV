@@ -1,6 +1,7 @@
 // repositories/sinhvien/nhatky.repo.ts
 import { createClient } from '@/lib/utils/supabase/server';
 import { cookies } from 'next/headers';
+import { logAuditAction } from '@/lib/utils/audit';
 
 async function getSupabase() {
     const cookieStore = await cookies();
@@ -45,6 +46,30 @@ export const nhatkyRepo = {
         if (maphancong !== undefined) {
             query = query.eq('maphancong', maphancong);
         }
+        return await query;
+    },
+
+    getAllByStudentPaged: async (params: {
+        masv: string;
+        search?: string;
+        limit?: number;
+        offset?: number;
+    }) => {
+        const supabase = await getSupabase();
+        let query = supabase
+            .from('nhatky')
+            .select('*', { count: 'exact' })
+            .eq('masv', params.masv)
+            .order('ngaycapnhat', { ascending: false });
+
+        if (params.search) {
+            query = query.or(`tieude.ilike.%${params.search}%,noidung.ilike.%${params.search}%`);
+        }
+
+        if (params.limit !== undefined && params.offset !== undefined) {
+            query = query.range(params.offset, params.offset + params.limit - 1);
+        }
+
         return await query;
     },
 
@@ -106,4 +131,24 @@ export const nhatkyRepo = {
             .eq('manhatky', manhatky)
             .eq('masv', masv);
     },
+
+    logAudit: async (
+        mataikhoan: string,
+        hanhdong: string,
+        tentable: string,
+        makhoachinh: string,
+        giatrimoi: any,
+        request: Request
+    ) => {
+        const supabase = await getSupabase();
+        await logAuditAction({
+            supabase,
+            mataikhoan,
+            hanhdong,
+            tentable,
+            makhoachinh,
+            giatrimoi,
+            request
+        });
+    }
 };

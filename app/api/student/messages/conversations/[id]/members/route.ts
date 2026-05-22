@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import { createClient } from "@/lib/utils/supabase/server";
 import { verifyToken, extractBearer } from "@/lib/utils/jwt";
+import { messageService } from "@/services/service/sinhvien/message.service";
 
 async function requireAuth(request: Request) {
   const token = extractBearer(request.headers.get("authorization"));
@@ -20,55 +19,10 @@ export async function GET(
   const convId = Number(id);
   if (isNaN(convId)) return NextResponse.json({ error: "ID không hợp lệ" }, { status: 400 });
 
-  const supabase = createClient(await cookies());
-
-  // Lấy danh sách thành viên theo mataikhoan
-  const { data: memberRows, error } = await supabase
-    .from("thanhvientrochuyen")
-    .select(`
-      mataikhoan, 
-      vaitro, 
-      ngaythamgia, 
-      thoigianxemcuoi,
-      taikhoan (
-        email,
-        vaitro,
-        sinhvien (masv, hoten, anhdaidien, emailtruong),
-        giangvien (magv, hoten, anhdaidien, emailtruong),
-        admin (maadmin, hoten)
-      )
-    `)
-    .eq("macuoctrochuyen", convId);
-
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-
-  const result = (memberRows ?? []).map((m: any) => {
-    // Extract related nested profile
-    let profile: any = null;
-    const role = m.taikhoan?.vaitro;
-    if (role === 'SinhVien' && m.taikhoan?.sinhvien?.[0]) {
-        profile = m.taikhoan.sinhvien[0];
-    } else if (role === 'GiangVien' && m.taikhoan?.giangvien?.[0]) {
-        profile = m.taikhoan.giangvien[0];
-    } else if (role === 'Admin' && m.taikhoan?.admin?.[0]) {
-        profile = m.taikhoan.admin[0];
-    }
-
-    return {
-      mataikhoan: m.mataikhoan,
-      vaitro: m.vaitro, // Vai trò trong nhóm (VD: QuanTri, ThanhVien)
-      ngaythamgia: m.ngaythamgia,
-      thoigianxemcuoi: m.thoigianxemcuoi,
-      taikhoan: {
-         email: m.taikhoan?.email,
-         vaitro: m.taikhoan?.vaitro,
-         hoten: profile?.hoten,
-         anhdaidien: profile?.anhdaidien,
-         id_phu: profile?.masv || profile?.magv || profile?.maadmin, // optional ID context
-      },
-      isSelf: m.mataikhoan === payload.mataikhoan,
-    };
-  });
-
-  return NextResponse.json({ data: result });
+  try {
+    const result = await messageService.getConversationMembersDetail(convId, payload.mataikhoan);
+    return NextResponse.json({ data: result });
+  } catch (error: any) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
 }

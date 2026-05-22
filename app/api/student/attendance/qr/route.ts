@@ -2,23 +2,15 @@
 // GET  /api/sinhvien/attendance/qr?mabuoihoc=X — tạo QR token cho buổi học
 // POST /api/sinhvien/attendance/qr              — validate token (internal)
 import { NextRequest, NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 import { verifyToken, extractBearer } from '@/lib/utils/jwt';
-import { createClient } from '@/lib/utils/supabase/server';
-import { diemdanhRepo } from '@/services/repositories/sinhvien/diemdanh.repo';
+import { sinhVienService } from '@/services/service/sinhvien/student.service';
+import { diemdanhService } from '@/services/service/sinhvien/diemdanh.service';
 
 async function getCurrentStudent(request: NextRequest) {
     const token = extractBearer(request.headers.get('authorization'));
     if (!token) throw new Error('Chưa đăng nhập');
     const payload = await verifyToken(token);
-    const cookieStore = await cookies();
-    const supabase = createClient(cookieStore);
-    const { data: sv, error } = await supabase
-        .from('sinhvien')
-        .select('masv, malop, hodem, ten')
-        .eq('mataikhoan', payload.mataikhoan)
-        .single();
-    if (error || !sv) throw new Error('Không tìm thấy thông tin sinh viên');
+    const sv = await sinhVienService.getBasicInfo(payload.mataikhoan);
     return {
         ...sv,
         hoten: [sv.hodem, sv.ten].filter(Boolean).join(" ") || "Sinh viên"
@@ -51,23 +43,17 @@ export async function GET(request: NextRequest) {
             );
         }
 
-        // Kiểm tra buổi học tồn tại
-        const cookieStore = await cookies();
-        const supabase = createClient(cookieStore);
-        const { data: buoi, error } = await supabase
-            .from('buoihoc')
-            .select('mabuoihoc, ngayhoc, malichhoc')
-            .eq('mabuoihoc', mabuoihoc)
-            .single();
+        // Kiểm tra buổi học tồn tại qua service
+        const buoi = await diemdanhService.getBuoiHoc(mabuoihoc);
 
-        if (error || !buoi) {
+        if (!buoi) {
             return NextResponse.json(
                 { success: false, message: 'Không tìm thấy buổi học' },
                 { status: 404 }
             );
         }
 
-        const qrToken = diemdanhRepo.generateQRToken(mabuoihoc);
+        const qrToken = diemdanhService.generateQRToken(mabuoihoc);
         const expiresAt = new Date(Date.now() + 5 * 60 * 1000).toISOString();
 
         return NextResponse.json({
@@ -100,7 +86,7 @@ export async function POST(request: NextRequest) {
             return NextResponse.json({ success: false, message: 'Thiếu token' }, { status: 400 });
         }
 
-        const result = diemdanhRepo.validateQRToken(token);
+        const result = diemdanhService.validateQRToken(token);
         if (!result.valid) {
             return NextResponse.json({ success: false, message: result.error }, { status: 400 });
         }

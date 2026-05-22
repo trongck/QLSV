@@ -1,36 +1,27 @@
-// app/api/sinhvien/hocky/route.ts
+// app/api/student/hocky/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 import { verifyToken, extractBearer } from '@/lib/utils/jwt';
-import { createClient } from '@/lib/utils/supabase/server';
-import { scheduleRepo } from '@/services/repositories/sinhvien/schedule.repo';
+import { sinhVienService } from '@/services/service/sinhvien/student.service';
+import { scheduleService } from '@/services/service/sinhvien/schedule.service';
 
 async function getCurrentStudent(request: NextRequest) {
     const token = extractBearer(request.headers.get('authorization'));
     if (!token) throw new Error('Chưa đăng nhập');
     const payload = await verifyToken(token);
-    const cookieStore = await cookies();
-    const supabase = createClient(cookieStore);
-    const { data: sv, error } = await supabase
-        .from('sinhvien')
-        .select('masv, malop')
-        .eq('mataikhoan', payload.mataikhoan)
-        .single();
-    if (error || !sv) throw new Error('Không tìm thấy thông tin sinh viên');
+    const sv = await sinhVienService.getBasicInfo(payload.mataikhoan);
     return sv;
 }
 
 /**
- * GET /api/sinhvien/hocky
- * Trả danh sách học kỳ mà sinh viên có phân công (có môn học)
+ * GET /api/student/hocky
+ * Trả danh sách học kỳ
  */
 export async function GET(request: NextRequest) {
     try {
-        const sv = await getCurrentStudent(request);
-        const { data, error } = await scheduleRepo.getHocKyList(sv.masv);
-        if (error) throw new Error(error.message);
+        await getCurrentStudent(request);
+        const data = await scheduleService.getHocKyList();
 
-        return NextResponse.json({ success: true, data: data ?? [] });
+        return NextResponse.json({ success: true, data });
     } catch (error: any) {
         const status = error.message.includes('đăng nhập') ? 401 : 500;
         return NextResponse.json({ success: false, message: error.message }, { status });

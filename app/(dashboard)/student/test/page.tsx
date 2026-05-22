@@ -2,49 +2,32 @@
 
 import React, { useState, useEffect } from "react";
 import { Search, Filter, FileText, Clock, Calendar, Loader2, CheckCircle2 } from "lucide-react";
-import { apiFetch } from "@/services/service/auth/auth.service";
 import { useAuth } from "@/hooks/auth/useAuth";
 import { useRouter } from "next/navigation";
 import { VaiTro } from "@/types";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
+import { useStudentExams, Exam } from "@/hooks/sinhvien/useStudentExams";
 
 export default function ExamPage() {
   const { user, loading: authLoading } = useAuth();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("Tất cả");
-  const [exams, setExams] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+
+  const { exams, loading } = useStudentExams();
 
   // Route guard
   useEffect(() => {
     if (!authLoading && !user) router.replace("/login");
     if (!authLoading && user && user.vaitro !== VaiTro.SinhVien) router.replace("/login");
   }, [user, authLoading, router]);
-  const [selectedResult, setSelectedResult] = useState<any>(null);
 
-  const handleStartExam = (exam: any) => {
+  const [selectedResult, setSelectedResult] = useState<Exam | null>(null);
+
+  const handleStartExam = (exam: Exam) => {
     router.push(`/student/test/${exam.madethi}`);
   };
 
-  useEffect(() => {
-    async function loadExams() {
-      setLoading(true);
-      try {
-        const res = await apiFetch("/api/student/exam");
-        const json = await res.json();
-        if (json.success) {
-          setExams(json.data);
-        }
-      } catch (err) {
-        console.error("Failed to load exams:", err);
-      } finally {
-        setLoading(false);
-      }
-    }
-    loadExams();
-  }, []);
-
-  const getExamStatus = (exam: any) => {
+  const getExamStatus = (exam: Exam) => {
     const now = new Date();
     const start = new Date(exam.thoigianbatdau);
     const end = new Date(exam.thoigianketthuc);

@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import { createClient } from "@/lib/utils/supabase/server";
 import { verifyToken, extractBearer } from "@/lib/utils/jwt";
 import { VaiTro } from "@/types";
-import { logAuditAction } from "@/lib/utils/audit";
+import { sinhVienService } from "@/services/service/sinhvien/student.service";
+import { nhatkyService } from "@/services/service/sinhvien/nhatky.service";
 
 // ─── Auth helper ─────────────────────────────────────────────────────────────
 
@@ -19,7 +18,6 @@ async function requireStudent(request: Request) {
 }
 
 // ─── GET /api/student/diary/[id] ─────────────────────────────────────────────
-// Lấy chi tiết một nhật ký theo manhatky
 
 export async function GET(
   request: Request,
@@ -36,34 +34,17 @@ export async function GET(
     return NextResponse.json({ error: "ID không hợp lệ." }, { status: 400 });
   }
 
-  const supabase = createClient(await cookies());
-
-  const { data: svData } = await supabase
-    .from("sinhvien")
-    .select("masv")
-    .eq("mataikhoan", payload.mataikhoan)
-    .single();
-
-  if (!svData) {
-    return NextResponse.json({ error: "Không tìm thấy sinh viên." }, { status: 404 });
+  try {
+    const svData = await sinhVienService.getBasicInfo(payload.mataikhoan);
+    const data = await nhatkyService.getById(manhatky, svData.masv);
+    return NextResponse.json({ data });
+  } catch (err: any) {
+    const status = err.message.includes("Không tìm thấy") ? 404 : 500;
+    return NextResponse.json({ error: err.message }, { status });
   }
-
-  const { data, error } = await supabase
-    .from("nhatky")
-    .select("*")
-    .eq("manhatky", manhatky)
-    .eq("masv", svData.masv)
-    .single();
-
-  if (error || !data) {
-    return NextResponse.json({ error: "Không tìm thấy nhật ký." }, { status: 404 });
-  }
-
-  return NextResponse.json({ data });
 }
 
 // ─── PATCH /api/student/diary/[id] ───────────────────────────────────────────
-// Cập nhật nhật ký. Body JSON: { tieude?, noidung?, tamtrang? }
 
 export async function PATCH(
   request: Request,
@@ -85,72 +66,41 @@ export async function PATCH(
     return NextResponse.json({ error: "Body không hợp lệ." }, { status: 400 });
   }
 
-  const supabase = createClient(await cookies());
+  const dto: any = {};
+  if ("tieude" in body) dto.tieude = body.tieude?.trim() || null;
+  if ("noidung" in body) dto.noidung = body.noidung?.trim();
+  if ("tamtrang" in body) dto.tamtrang = body.tamtrang;
 
-  // ĐÃ KHỚP CỘT: Lấy thêm cột 'hodem, ten' từ bảng sinhvien dựa vào ảnh db của bạn
-  const { data: svData } = await supabase
-    .from("sinhvien")
-    .select("masv, hodem, ten")
-    .eq("mataikhoan", payload.mataikhoan)
-    .single();
-
-  if (!svData) {
-    return NextResponse.json({ error: "Không tìm thấy sinh viên." }, { status: 404 });
-  }
-
-  // Kiểm tra quyền sở hữu
-  const { data: existing } = await supabase
-    .from("nhatky")
-    .select("manhatky")
-    .eq("manhatky", manhatky)
-    .eq("masv", svData.masv)
-    .single();
-
-  if (!existing) {
-    return NextResponse.json({ error: "Không tìm thấy nhật ký hoặc bạn không có quyền." }, { status: 404 });
-  }
-
-  // Chỉ cho phép cập nhật các trường này
-  const updates: Record<string, unknown> = { ngaycapnhat: new Date().toISOString() };
-  if ("tieude" in body) updates.tieude = body.tieude?.trim() || null;
-  if ("noidung" in body) updates.noidung = body.noidung?.trim();
-  if ("tamtrang" in body) updates.tamtrang = body.tamtrang;
-
-  if (updates.noidung !== undefined && !updates.noidung) {
+  if (dto.noidung !== undefined && !dto.noidung) {
     return NextResponse.json({ error: "Nội dung không được để trống." }, { status: 400 });
   }
 
-  const { data, error } = await supabase
-    .from("nhatky")
-    .update(updates)
-    .eq("manhatky", manhatky)
-    .eq("masv", svData.masv)
-    .select()
-    .single();
+  try {
+    const svData = await sinhVienService.getBasicInfo(payload.mataikhoan);
+    const tenSinhVien = [svData.hodem, svData.ten].filter(Boolean).join(" ") || "Sinh viên";
 
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    // getById will check ownership and throw if not found/unauthorized
+    await nhatkyService.getById(manhatky, svData.masv);
+
+    const data = await nhatkyService.update(
+      manhatky,
+      svData.masv,
+      dto,
+      {
+        mataikhoan: payload.mataikhoan,
+        tenSinhVien,
+        request,
+      }
+    );
+
+    return NextResponse.json({ data });
+  } catch (err: any) {
+    const status = err.message.includes("Không tìm thấy") ? 404 : 500;
+    return NextResponse.json({ error: err.message }, { status });
   }
-
-  // ĐÃ KHỚP CỘT: Lấy tên trực tiếp từ dữ liệu DB vừa truy vấn (svData.hodem, svData.ten)
-  const tenSinhVien = [svData.hodem, svData.ten].filter(Boolean).join(" ") || "Sinh viên";
-
-  // Lưu nhật ký hệ thống kèm tên sinh viên đã đăng nhập chỉnh sửa
-  await logAuditAction({
-    supabase,
-    mataikhoan: payload.mataikhoan,
-    hanhdong: `Sinh viên [${tenSinhVien}] đã cập nhật nhật ký`,
-    tentable: "nhatky",
-    makhoachinh: String(manhatky),
-    giatrimoi: data,
-    request,
-  });
-
-  return NextResponse.json({ data });
 }
 
 // ─── DELETE /api/student/diary/[id] ──────────────────────────────────────────
-// Xoá nhật ký theo manhatky
 
 export async function DELETE(
   request: Request,
@@ -167,41 +117,26 @@ export async function DELETE(
     return NextResponse.json({ error: "ID không hợp lệ." }, { status: 400 });
   }
 
-  const supabase = createClient(await cookies());
+  try {
+    const svData = await sinhVienService.getBasicInfo(payload.mataikhoan);
+    const tenSinhVien = [svData.hodem, svData.ten].filter(Boolean).join(" ") || "Sinh viên";
 
-  // ĐÃ SỬA: Lấy thêm cột 'hodem, ten' để phục vụ việc ghi nhận log khi xóa
-  const { data: svData } = await supabase
-    .from("sinhvien")
-    .select("masv, hodem, ten")
-    .eq("mataikhoan", payload.mataikhoan)
-    .single();
+    // getById will check ownership
+    await nhatkyService.getById(manhatky, svData.masv);
 
-  if (!svData) {
-    return NextResponse.json({ error: "Không tìm thấy sinh viên." }, { status: 404 });
+    await nhatkyService.delete(
+      manhatky,
+      svData.masv,
+      {
+        mataikhoan: payload.mataikhoan,
+        tenSinhVien,
+        request,
+      }
+    );
+
+    return NextResponse.json({ success: true });
+  } catch (err: any) {
+    const status = err.message.includes("Không tìm thấy") ? 404 : 500;
+    return NextResponse.json({ error: err.message }, { status });
   }
-
-  const { error } = await supabase
-    .from("nhatky")
-    .delete()
-    .eq("manhatky", manhatky)
-    .eq("masv", svData.masv);
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-
-  // ĐÃ SỬA: Lấy tên sinh viên vừa thực hiện hành động xóa
-  const tenSinhVien = [svData.hodem, svData.ten].filter(Boolean).join(" ") || "Sinh viên";
-
-  // ĐÃ SỬA: Thay thế chuỗi hành động "DELETE" mặc định bằng chuỗi chứa thông tin sinh viên rõ ràng
-  await logAuditAction({
-    supabase,
-    mataikhoan: payload.mataikhoan,
-    hanhdong: `Sinh viên [${tenSinhVien}] đã xóa nhật ký`,
-    tentable: "nhatky",
-    makhoachinh: String(manhatky),
-    request,
-  });
-
-  return NextResponse.json({ success: true });
 }

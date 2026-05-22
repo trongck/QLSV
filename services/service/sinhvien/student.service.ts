@@ -1,702 +1,619 @@
-import { createClient } from "@/lib/utils/supabase/server";
-import { cookies } from "next/headers";
+// services/service/sinhvien/student.service.ts
+// Service Layer - chứa logic nghiệp vụ, gọi validate rồi gọi studentRepo.
+// KHÔNG truy cập trực tiếp Supabase/database tại đây.
+
+import { studentRepo, UpdateProfileDto } from '@/services/repositories/sinhvien/student.repo';
+import {
+    validateUpdateProfile,
+    validateSubmitAssignment,
+    validateFaceEmbedding,
+} from '@/lib/validation/sinhvien';
 
 export const sinhVienService = {
 
-  // ─── Thông tin cá nhân ───────────────────────────────────────────────────────
+    // ─── Hồ sơ cá nhân ───────────────────────────────────────────────────────
 
-  async getMyProfile(mataikhoan: string) {
-    const cookieStore = await cookies();
-    const supabase = createClient(cookieStore);
+    async getMyProfile(mataikhoan: string) {
+        const { data, error } = await studentRepo.getProfileByAccount(mataikhoan);
+        if (error) throw error;
+        if (!data) throw new Error('Không tìm thấy hồ sơ sinh viên');
 
-    const { data, error } = await supabase
-      .from("sinhvien")
-      .select(`
-        masv,
-        mataikhoan,
-        malop,
-        hodem,
-        ten,
-        ngaysinh,
-        gioitinh,
-        anhdaidien,
-        emailtruong,
-        trangthai,
-        quequan,
-        diachi,
-        sodienthoai,
-        emailcanhan,
-        tenphuhuynh,
-        sodienthoaiphuhuynh,
-        cccd,
-        ngaycapcccd,
-        noicapcccd,
-        dantoc,
-        tongiao,
-        face_embedding
-      `)
-      .eq("mataikhoan", mataikhoan)
-      .single();
+        const hoten = `${data.hodem || ''} ${data.ten || ''}`.trim() || 'Sinh viên';
+        return {
+            ...data,
+            hoten,
+            chitietsinhvien: {
+                quequan: data.quequan,
+                diachi: data.diachi,
+                sodienthoai: data.sodienthoai,
+                emailcanhan: data.emailcanhan,
+                tenphuhuynh: data.tenphuhuynh,
+                sodienthoaiphuhuynh: data.sodienthoaiphuhuynh,
+                cccd: data.cccd,
+                ngaycapcccd: data.ngaycapcccd,
+                noicapcccd: data.noicapcccd,
+                dantoc: data.dantoc,
+                tongiao: data.tongiao,
+            },
+            lop: {
+                tenlop: data.malop || '—',
+                nganh: 'Công nghệ thông tin',
+                khoahoc: 'K68',
+            },
+        };
+    },
 
-    if (error) throw error;
+    /** Cập nhật thông tin hồ sơ sinh viên */
+    async updateProfile(mataikhoan: string, body: Record<string, unknown>) {
+        // Validate trước
+        const vr = validateUpdateProfile(body);
+        if (!vr.valid) throw new Error(vr.error);
 
-    // Combine hodem and ten
-    const hoten = `${data.hodem || ""} ${data.ten || ""}`.trim() || "Sinh viên";
+        const dto: UpdateProfileDto = {};
 
-    return {
-      ...data,
-      hoten,
-      chitietsinhvien: {
-        quequan: data.quequan,
-        diachi: data.diachi,
-        sodienthoai: data.sodienthoai,
-        emailcanhan: data.emailcanhan,
-        tenphuhuynh: data.tenphuhuynh,
-        sodienthoaiphuhuynh: data.sodienthoaiphuhuynh,
-        cccd: data.cccd,
-        ngaycapcccd: data.ngaycapcccd,
-        noicapcccd: data.noicapcccd,
-        dantoc: data.dantoc,
-        tongiao: data.tongiao
-      },
-      lop: {
-        tenlop: data.malop || "—",
-        nganh: "Công nghệ thông tin",
-        khoahoc: "K68"
-      }
-    };
-  },
-
-  // ─── Tổng quan Dashboard ────────────────────────────────────────────────────
-
-  async getDashboardStats(masv: string) {
-    const cookieStore = await cookies();
-    const supabase = createClient(cookieStore);
-
-    // Truy vấn song song để tối ưu hiệu suất
-    const [
-      { data: svMonHoc },
-      { data: diemRows },
-      { data: diemDanh }
-    ] = await Promise.all([
-      supabase
-        .from("sinhvienmonhoc")
-        .select("maphancong")
-        .eq("masv", masv)
-        .eq("trangthai", "Danghoc"),
-      supabase
-        .from("diem")
-        .select("loaidiem, giatri, maphancong")
-        .eq("masv", masv)
-        .order("ngaytao", { ascending: false })
-        .limit(6),
-      supabase
-        .from("diemdanh")
-        .select("trangthai")
-        .eq("masv", masv)
-        .eq("trangthai", "Vangmat")
-    ]);
-
-    // Tính GPA từ điểm cuối kỳ
-    let diemTBHK: number | null = null;
-    if (diemRows && diemRows.length > 0) {
-      const cuoiky = diemRows.filter(d => d.loaidiem === "CuoiKy");
-      if (cuoiky.length > 0) {
-        diemTBHK = parseFloat(
-          (cuoiky.reduce((s, d) => s + d.giatri, 0) / cuoiky.length).toFixed(2)
-        );
-      }
-    }
-
-    // Lọc bài tập chưa nộp thuộc các môn SV đang học
-    const myAssignments = (svMonHoc ?? []).map(m => m.maphancong);
-    let soBaiTapConHan = 0;
-    if (myAssignments.length > 0) {
-      // 1. Lấy tất cả bài tập thuộc các môn học này
-      const { data: allBT } = await supabase
-        .from("baitap")
-        .select("mabaitap")
-        .in("maphancong", myAssignments);
-
-      if (allBT && allBT.length > 0) {
-        const maBTs = allBT.map(b => b.mabaitap);
-        
-        // 2. Lấy danh sách các bài tập mà sinh viên đã nộp
-        const { data: submittedBT } = await supabase
-          .from("nopbai")
-          .select("mabaitap")
-          .eq("masv", masv)
-          .in("mabaitap", maBTs);
-
-        const submittedIDs = new Set((submittedBT ?? []).map(s => s.mabaitap));
-
-        // 3. Đếm số bài tập chưa nộp
-        soBaiTapConHan = allBT.filter(b => !submittedIDs.has(b.mabaitap)).length;
-      }
-    }
-
-    return {
-      monHocCount: svMonHoc?.length ?? 0,
-      diemTBHK,
-      soBuoiVang: diemDanh?.length ?? 0,
-      soBaiTapConHan,
-      diemGanDay: diemRows ?? []
-    };
-  },
-
-  // ─── Lịch học hôm nay ───────────────────────────────────────────────────────
-
-  async getTodaySchedule(masv: string) {
-    const cookieStore = await cookies();
-    const supabase = createClient(cookieStore);
-
-    // Thứ trong tuần: JS getDay() → 0=CN, 1=T2... DB dùng 2=T2, 3=T3... 8=CN
-    const jsDay = new Date().getDay();
-    const dbDay = jsDay === 0 ? 8 : jsDay + 1;
-
-    const { data, error } = await supabase
-      .from("lichhocsinhvien")
-      .select("tenmon, phonghoc, tietbatdau, tietketthuc")
-      .eq("masv", masv)
-      .eq("thutrongtuan", dbDay)
-      .order("tietbatdau", { ascending: true });
-
-    if (error) throw error;
-    return data ?? [];
-  },
-
-  // ─── Lịch học đầy đủ cả tuần ───────────────────────────────────────────────
-
-  async getFullSchedule(masv: string) {
-    const cookieStore = await cookies();
-    const supabase = createClient(cookieStore);
-
-    // Lấy tất cả phân công mà SV đang học
-    const { data: svMonHoc } = await supabase
-      .from("sinhvienmonhoc")
-      .select("maphancong")
-      .eq("masv", masv)
-      .eq("trangthai", "Danghoc");
-
-    if (!svMonHoc || svMonHoc.length === 0) return [];
-
-    const maPCs = svMonHoc.map(m => m.maphancong);
-
-    // Lấy lịch học kèm thông tin phân công → môn học
-    const { data, error } = await supabase
-      .from("lichhoc")
-      .select(`
-        malichhoc,
-        maphancong,
-        thutrongtuan,
-        tietbatdau,
-        tietketthuc,
-        phonghoc,
-        loaiphong,
-        ghichu,
-        phancong (
-          mamon,
-          malop,
-          malophoc,
-          monhoc ( tenmon, sotinchi )
-        )
-      `)
-      .in("maphancong", maPCs)
-      .order("thutrongtuan", { ascending: true })
-      .order("tietbatdau", { ascending: true });
-
-    if (error) throw error;
-    return data ?? [];
-  },
-
-  // ─── Bảng điểm chi tiết ────────────────────────────────────────────────────
-
-  async getGrades(masv: string) {
-    const cookieStore = await cookies();
-    const supabase = createClient(cookieStore);
-
-    const { data, error } = await supabase
-      .from("diem")
-      .select(`
-        madiem,
-        loaidiem,
-        giatri,
-        heso,
-        ghichu,
-        ngaytao,
-        maphancong,
-        phancong (
-          mamon,
-          malophoc,
-          monhoc ( tenmon, sotinchi )
-        )
-      `)
-      .eq("masv", masv)
-      .order("ngaytao", { ascending: false });
-
-    if (error) throw error;
-    return data ?? [];
-  },
-
-  // ─── Điểm tổng kết theo môn ────────────────────────────────────────────────
-
-  async getGradeSummary(masv: string) {
-    const cookieStore = await cookies();
-    const supabase = createClient(cookieStore);
-
-    const { data, error } = await supabase
-      .from("diemtongket")
-      .select(`
-        maphancong,
-        diemtongket,
-        diemchu,
-        ketqua,
-        ngaycapnhat,
-        phancong (
-          mamon,
-          malophoc,
-          monhoc ( tenmon, sotinchi )
-        )
-      `)
-      .eq("masv", masv)
-      .order("ngaycapnhat", { ascending: false });
-
-    if (error) throw error;
-    return data ?? [];
-  },
-
-  // ─── Danh sách bài tập ─────────────────────────────────────────────────────
-
-  async getAssignments(masv: string) {
-    const cookieStore = await cookies();
-    const supabase = createClient(cookieStore);
-
-    // Lấy các phân công SV đang học
-    const { data: svMonHoc } = await supabase
-      .from("sinhvienmonhoc")
-      .select("maphancong")
-      .eq("masv", masv)
-      .eq("trangthai", "Danghoc");
-
-    if (!svMonHoc || svMonHoc.length === 0) return [];
-
-    const maPCs = svMonHoc.map(m => m.maphancong);
-
-    const { data, error } = await supabase
-      .from("baitap")
-      .select(`
-        mabaitap,
-        maphancong,
-        tieude,
-        mota,
-        filedinh,
-        hannop,
-        diemtoida,
-        loai,
-        ngaytao,
-        phancong (
-          mamon,
-          malophoc,
-          monhoc ( tenmon )
-        )
-      `)
-      .in("maphancong", maPCs)
-      .order("hannop", { ascending: true });
-
-    if (error) throw error;
-
-    // Lấy bài nộp của SV cho các bài tập này
-    const maBTs = (data ?? []).map(b => b.mabaitap);
-    let nopBaiMap: Record<number, any> = {};
-
-    if (maBTs.length > 0) {
-      const { data: nopBaiRows } = await supabase
-        .from("nopbai")
-        .select("mabaitap, manopbai, thoigiannop, trenop, diem, nhanxet")
-        .eq("masv", masv)
-        .in("mabaitap", maBTs);
-
-      if (nopBaiRows) {
-        for (const nb of nopBaiRows) {
-          nopBaiMap[nb.mabaitap] = nb;
+        if ('hoten' in body && body.hoten !== undefined && body.hoten !== null) {
+            const nameStr = String(body.hoten).trim();
+            const parts = nameStr.split(/\s+/);
+            dto.ten = parts.length > 1 ? parts[parts.length - 1] : (parts[0] ?? null);
+            dto.hodem = parts.length > 1 ? parts.slice(0, -1).join(' ') : null;
         }
-      }
-    }
 
-    // Gộp thông tin nộp bài vào từng bài tập
-    return (data ?? []).map(bt => ({
-      ...bt,
-      nopbai: nopBaiMap[bt.mabaitap] ?? null
-    }));
-  },
+        // Normalize giới tính
+        const gt = body.gioitinh as string | undefined;
+        if (gt !== undefined) {
+            if (gt === 'Nữ') dto.gioitinh = 'Nu';
+            else if (gt === 'Khác') dto.gioitinh = 'Khac';
+            else if (gt === 'Nam' || gt === 'Nu' || gt === 'Khac') dto.gioitinh = gt;
+            else dto.gioitinh = null;
+        }
 
-  // ─── Nộp bài tập ───────────────────────────────────────────────────────────
+        if ('ngaysinh' in body) dto.ngaysinh = (body.ngaysinh as string | null) ?? null;
+        if ('anhdaidien' in body) dto.anhdaidien = ((body.anhdaidien as string)?.trim()) || null;
+        if ('quequan' in body) dto.quequan = ((body.quequan as string)?.trim()) || null;
+        if ('diachi' in body) dto.diachi = ((body.diachi as string)?.trim()) || null;
+        if ('sodienthoai' in body) dto.sodienthoai = ((body.sodienthoai as string)?.trim()) || null;
+        if ('emailcanhan' in body) dto.emailcanhan = ((body.emailcanhan as string)?.trim()) || null;
+        if ('tenphuhuynh' in body) dto.tenphuhuynh = ((body.tenphuhuynh as string)?.trim()) || null;
+        if ('sodienthoaiphuhuynh' in body) dto.sodienthoaiphuhuynh = ((body.sodienthoaiphuhuynh as string)?.trim()) || null;
+        if ('cccd' in body) dto.cccd = ((body.cccd as string)?.trim()) || null;
+        if ('ngaycapcccd' in body) dto.ngaycapcccd = (body.ngaycapcccd as string | null) ?? null;
+        if ('noicapcccd' in body) dto.noicapcccd = ((body.noicapcccd as string)?.trim()) || null;
+        if ('dantoc' in body) dto.dantoc = ((body.dantoc as string)?.trim()) || null;
+        if ('tongiao' in body) dto.tongiao = ((body.tongiao as string)?.trim()) || null;
 
-  async submitAssignment(masv: string, mabaitap: number, noidungnop: string | null, filenop: string | null) {
-    const cookieStore = await cookies();
-    const supabase = createClient(cookieStore);
+        if ('face_embedding' in body && body.face_embedding !== undefined) {
+            const vfe = validateFaceEmbedding(body.face_embedding);
+            if (!vfe.valid) throw new Error(vfe.error);
+            dto.face_embedding = body.face_embedding as number[];
+        }
 
-    // Kiểm tra bài tập tồn tại và chưa hết hạn
-    const { data: baitap, error: btErr } = await supabase
-      .from("baitap")
-      .select("mabaitap, hannop")
-      .eq("mabaitap", mabaitap)
-      .single();
+        const { error } = await studentRepo.updateProfile(mataikhoan, dto);
+        if (error) throw error;
+        return { success: true };
+    },
 
-    if (btErr || !baitap) throw new Error("Bài tập không tồn tại.");
+    async getBasicInfo(mataikhoan: string) {
+        const { data: sv, error } = await studentRepo.getBasicInfoByAccount(mataikhoan);
+        if (error || !sv) throw new Error('Không tìm thấy sinh viên');
+        return sv;
+    },
 
-    const now = new Date();
-    const hannop = new Date(baitap.hannop);
-    const trenop = now > hannop;
+    // ─── Tổng quan Dashboard ──────────────────────────────────────────────────
 
-    // Kiểm tra đã nộp chưa
-    const { data: existing } = await supabase
-      .from("nopbai")
-      .select("manopbai")
-      .eq("mabaitap", mabaitap)
-      .eq("masv", masv)
-      .maybeSingle();
+    async getDashboardData(mataikhoan: string) {
+        const { data: sv, error } = await studentRepo.getBasicInfoByAccount(mataikhoan);
+        if (error || !sv) throw new Error('Không tìm thấy sinh viên');
 
-    if (existing) {
-      // Cập nhật bài nộp
-      const { error: updateErr } = await supabase
-        .from("nopbai")
-        .update({
-          noidungnop,
-          filenop,
-          thoigiannop: now.toISOString(),
-          trenop
-        })
-        .eq("manopbai", existing.manopbai);
+        const hoten = `${sv.hodem || ''} ${sv.ten || ''}`.trim() || 'Sinh viên';
 
-      if (updateErr) throw updateErr;
-      return { updated: true, trenop };
-    } else {
-      // Thêm mới
-      const { error: insertErr } = await supabase
-        .from("nopbai")
-        .insert({
-          mabaitap,
-          masv,
-          noidungnop,
-          filenop,
-          thoigiannop: now.toISOString(),
-          trenop
+        const [report, stats, lichHomNay, thongBao] = await Promise.all([
+            sinhVienService.getStudentGradesReport(mataikhoan, "all"),
+            sinhVienService.getDashboardStats(sv.masv),
+            sinhVienService.getTodaySchedule(sv.masv),
+            sinhVienService.getNotifications(sv.masv, sv.malop)
+        ]);
+
+        const gpaView = report.gpaView;
+        const diemGanDay = (report.grades ?? []).slice(0, 6).map((g: any) => {
+            const cc = g.diemThanhPhan.find((dt: any) => dt.loai === "ChuyenCan")?.giatri;
+            const gk = g.diemThanhPhan.find((dt: any) => dt.loai === "GiuaKy")?.giatri;
+            const ck = g.diemThanhPhan.find((dt: any) => dt.loai === "CuoiKy")?.giatri;
+            return {
+                tenmon: g.tenmon,
+                chuyencan: cc !== undefined && cc !== null ? cc : "—",
+                giuaky: gk !== undefined && gk !== null ? gk : "—",
+                cuoiky: ck !== undefined && ck !== null ? ck : "—",
+                tongket: g.diem10 !== null && g.diem10 !== undefined ? g.diem10 : "—"
+            };
         });
 
-      if (insertErr) throw insertErr;
-      return { updated: false, trenop };
-    }
-  },
+        return {
+            hoten,
+            masv: sv.masv,
+            monHocCount: stats.monHocCount,
+            gpa10_hocky_hientai: gpaView?.gpa10_hocky_hientai ?? 0,
+            gpa4_hocky_hientai: gpaView?.gpa4_hocky_hientai ?? 0,
+            gpa10_tich_luy: gpaView?.gpa10_tich_luy ?? 0,
+            gpa4_tich_luy: gpaView?.gpa4_tich_luy ?? 0,
+            xep_loai_hoc_luc: gpaView?.xep_loai_hoc_luc ?? null,
+            soBuoiVang: stats.soBuoiVang,
+            soBaiTapConHan: stats.soBaiTapConHan,
+            lichHocHomNay: lichHomNay,
+            thongBaoGanDay: (thongBao ?? []).slice(0, 5),
+            diemGanDay
+        };
+    },
 
-  // ─── Bài đã nộp ────────────────────────────────────────────────────────────
+    async getDashboardStats(masv: string) {
+        const [
+            { data: svMonHoc },
+            { data: diemRows },
+            { data: diemDanh },
+        ] = await Promise.all([
+            studentRepo.getMonHocDangHoc(masv),
+            studentRepo.getDiemGanDay(masv, 6),
+            studentRepo.getDemVangMat(masv),
+        ]);
 
-  async getMySubmissions(masv: string) {
-    const cookieStore = await cookies();
-    const supabase = createClient(cookieStore);
-
-    const { data, error } = await supabase
-      .from("nopbai")
-      .select(`
-        manopbai,
-        mabaitap,
-        noidungnop,
-        filenop,
-        thoigiannop,
-        trenop,
-        diem,
-        nhanxet,
-        thoigiancham,
-        baitap ( tieude, hannop, diemtoida )
-      `)
-      .eq("masv", masv)
-      .order("thoigiannop", { ascending: false });
-
-    if (error) throw error;
-    return data ?? [];
-  },
-
-  // ─── Cuộc trò chuyện ───────────────────────────────────────────────────────
-
-  async getConversations(masv: string) {
-    const cookieStore = await cookies();
-    const supabase = createClient(cookieStore);
-
-    // Lấy các cuộc trò chuyện mà SV tham gia
-    const { data: memberships } = await supabase
-      .from("thanhvientrochuyen")
-      .select("macuoctrochuyen, thoigianxemcuoi")
-      .eq("masv", masv);
-
-    if (!memberships || memberships.length === 0) return [];
-
-    const conversationIds = memberships.map(m => m.macuoctrochuyen);
-    const xemCuoiMap: Record<number, string | null> = {};
-    for (const m of memberships) {
-      xemCuoiMap[m.macuoctrochuyen] = m.thoigianxemcuoi;
-    }
-
-    const { data: conversations, error } = await supabase
-      .from("cuoctrochuyen")
-      .select("macuoctrochuyen, tieude, loai, ngaytao, maphancong")
-      .in("macuoctrochuyen", conversationIds)
-      .order("ngaytao", { ascending: false });
-
-    if (error) throw error;
-
-    // Lấy tin nhắn cuối cùng của mỗi cuộc trò chuyện
-    const result = [];
-    for (const conv of (conversations ?? [])) {
-      const { data: lastMsg } = await supabase
-        .from("tinnhan")
-        .select("noidung, ngaytao, masvgui, magvgui")
-        .eq("macuoctrochuyen", conv.macuoctrochuyen)
-        .order("ngaytao", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-
-      // Đếm tin chưa đọc
-      let chuaDoc = 0;
-      const xemCuoi = xemCuoiMap[conv.macuoctrochuyen];
-      if (xemCuoi) {
-        const { count } = await supabase
-          .from("tinnhan")
-          .select("matinnhan", { count: "exact", head: true })
-          .eq("macuoctrochuyen", conv.macuoctrochuyen)
-          .gt("ngaytao", xemCuoi);
-        chuaDoc = count ?? 0;
-      }
-
-      result.push({
-        ...conv,
-        tinNhanCuoi: lastMsg,
-        chuaDoc
-      });
-    }
-
-    return result;
-  },
-
-  // ─── Tin nhắn trong cuộc trò chuyện ─────────────────────────────────────────
-
-  async getMessages(masv: string, macuoctrochuyen: number) {
-    const cookieStore = await cookies();
-    const supabase = createClient(cookieStore);
-
-    // Xác minh SV thuộc cuộc trò chuyện này
-    const { data: member } = await supabase
-      .from("thanhvientrochuyen")
-      .select("masv")
-      .eq("macuoctrochuyen", macuoctrochuyen)
-      .eq("masv", masv)
-      .maybeSingle();
-
-    if (!member) throw new Error("Bạn không thuộc cuộc trò chuyện này.");
-
-    // Cập nhật thời gian xem cuối
-    await supabase
-      .from("thanhvientrochuyen")
-      .update({ thoigianxemcuoi: new Date().toISOString() })
-      .eq("macuoctrochuyen", macuoctrochuyen)
-      .eq("masv", masv);
-
-    const { data, error } = await supabase
-      .from("tinnhan")
-      .select(`
-        matinnhan,
-        noidung,
-        filedinh,
-        dachinh,
-        ngaytao,
-        masvgui,
-        magvgui
-      `)
-      .eq("macuoctrochuyen", macuoctrochuyen)
-      .order("ngaytao", { ascending: true })
-      .limit(100);
-
-    if (error) throw error;
-    return data ?? [];
-  },
-
-  // ─── Gửi tin nhắn ──────────────────────────────────────────────────────────
-
-  async sendMessage(masv: string, macuoctrochuyen: number, noidung: string, filedinh?: string | null) {
-    const cookieStore = await cookies();
-    const supabase = createClient(cookieStore);
-
-    // Xác minh SV thuộc cuộc trò chuyện này
-    const { data: member } = await supabase
-      .from("thanhvientrochuyen")
-      .select("masv")
-      .eq("macuoctrochuyen", macuoctrochuyen)
-      .eq("masv", masv)
-      .maybeSingle();
-
-    if (!member) throw new Error("Bạn không thuộc cuộc trò chuyện này.");
-
-    const { data, error } = await supabase
-      .from("tinnhan")
-      .insert({
-        macuoctrochuyen,
-        masvgui: masv,
-        noidung,
-        filedinh: filedinh ?? null,
-        dachinh: false
-      })
-      .select()
-      .single();
-
-    if (error) throw error;
-
-    // Cập nhật thời gian xem cuối cho người gửi
-    await supabase
-      .from("thanhvientrochuyen")
-      .update({ thoigianxemcuoi: new Date().toISOString() })
-      .eq("macuoctrochuyen", macuoctrochuyen)
-      .eq("masv", masv);
-
-    return data;
-  },
-
-  // ─── Thông báo ──────────────────────────────────────────────────────────────
-
-  async getNotifications(masv: string, malop: string | null) {
-    const cookieStore = await cookies();
-    const supabase = createClient(cookieStore);
-
-    // Lấy các phân công của SV
-    const { data: svMonHoc } = await supabase
-      .from("sinhvienmonhoc")
-      .select("maphancong")
-      .eq("masv", masv)
-      .eq("trangthai", "Danghoc");
-
-    const myAssignments = (svMonHoc ?? []).map(m => m.maphancong);
-
-    // Xây dựng điều kiện lọc
-    let conditions = [
-      "doituong.eq.Tatca",
-      `and(doituong.eq.SinhVien,or(malop.is.null,malop.eq.${malop || "NONE"}))`
-    ];
-
-    if (myAssignments.length > 0) {
-      conditions.push(`and(doituong.neq.GiangVien,maphancong.in.(${myAssignments.join(",")}))`);
-    }
-
-    const { data: thongBao, error } = await supabase
-      .from("thongbao")
-      .select(`
-        mathongbao,
-        tieude,
-        noidung,
-        loai,
-        doituong,
-        ghim,
-        ngaytao,
-        ngayhethan
-      `)
-      .or(conditions.join(","))
-      .order("ghim", { ascending: false })
-      .order("ngaytao", { ascending: false })
-      .limit(30);
-
-    if (error) throw error;
-
-    // Lấy trạng thái đã đọc
-    const mathongbaoIds = (thongBao ?? []).map(t => t.mathongbao);
-    let readMap: Record<number, boolean> = {};
-
-    if (mathongbaoIds.length > 0) {
-      const { data: readRows } = await supabase
-        .from("thongbaodadocsv")
-        .select("mathongbao, dadoc")
-        .eq("masv", masv)
-        .in("mathongbao", mathongbaoIds);
-
-      if (readRows) {
-        for (const r of readRows) {
-          readMap[r.mathongbao] = r.dadoc;
+        // Tính GPA từ điểm cuối kỳ
+        let diemTBHK: number | null = null;
+        if (diemRows && diemRows.length > 0) {
+            const cuoiky = diemRows.filter((d) => d.loaidiem === 'CuoiKy');
+            if (cuoiky.length > 0) {
+                diemTBHK = parseFloat(
+                    (cuoiky.reduce((s, d) => s + d.giatri, 0) / cuoiky.length).toFixed(2)
+                );
+            }
         }
-      }
-    }
 
-    return (thongBao ?? []).map(tb => ({
-      ...tb,
-      dadoc: readMap[tb.mathongbao] ?? false
-    }));
-  },
+        // Đếm bài tập chưa nộp
+        const myAssignments = (svMonHoc ?? []).map((m) => m.maphancong);
+        let soBaiTapConHan = 0;
+        if (myAssignments.length > 0) {
+            const { data: allBT } = await studentRepo.getBaiTapTheoMonHoc(myAssignments);
+            if (allBT && allBT.length > 0) {
+                const maBTs = allBT.map((b) => b.mabaitap);
+                const { data: submittedBT } = await studentRepo.getBaiDaNop(masv, maBTs);
+                const submittedIDs = new Set((submittedBT ?? []).map((s) => s.mabaitap));
+                soBaiTapConHan = allBT.filter((b) => !submittedIDs.has(b.mabaitap)).length;
+            }
+        }
 
-  // ─── Đánh dấu đã đọc thông báo ────────────────────────────────────────────
+        return {
+            monHocCount: svMonHoc?.length ?? 0,
+            diemTBHK,
+            soBuoiVang: diemDanh?.length ?? 0,
+            soBaiTapConHan,
+            diemGanDay: diemRows ?? [],
+        };
+    },
 
-  async markNotificationRead(masv: string, mathongbao: number) {
-    const cookieStore = await cookies();
-    const supabase = createClient(cookieStore);
+    // ─── Lịch học hôm nay ─────────────────────────────────────────────────────
 
-    // Check-then-insert/update
-    const { data: existing } = await supabase
-      .from("thongbaodadocsv")
-      .select("mathongbao")
-      .eq("masv", masv)
-      .eq("mathongbao", mathongbao)
-      .maybeSingle();
+    async getTodaySchedule(masv: string) {
+        const jsDay = new Date().getDay();
+        const dbDay = jsDay === 0 ? 8 : jsDay + 1;
+        const { data, error } = await studentRepo.getLichHocHomNay(masv, dbDay);
+        if (error) throw error;
+        return data ?? [];
+    },
 
-    if (existing) {
-      const { error } = await supabase
-        .from("thongbaodadocsv")
-        .update({ dadoc: true, thoigiandoc: new Date().toISOString() })
-        .eq("masv", masv)
-        .eq("mathongbao", mathongbao);
-      if (error) throw error;
-    } else {
-      const { error } = await supabase
-        .from("thongbaodadocsv")
-        .insert({
-          mathongbao,
-          masv,
-          dadoc: true,
-          thoigiandoc: new Date().toISOString()
+    // ─── Lịch học đầy đủ cả tuần ──────────────────────────────────────────────
+
+    async getFullSchedule(masv: string) {
+        const { data: svMonHoc } = await studentRepo.getMonHocDangHoc(masv);
+        if (!svMonHoc || svMonHoc.length === 0) return [];
+        const maPCs = svMonHoc.map((m) => m.maphancong);
+        const { data, error } = await studentRepo.getLichHocCaTuan(maPCs);
+        if (error) throw error;
+        return data ?? [];
+    },
+
+    // ─── Bảng điểm ────────────────────────────────────────────────────────────
+
+    async getGrades(masv: string) {
+        const { data, error } = await studentRepo.getDiemChiTiet(masv);
+        if (error) throw error;
+        return data ?? [];
+    },
+
+    async getGradeSummary(masv: string) {
+        const { data, error } = await studentRepo.getDiemTongKet(masv);
+        if (error) throw error;
+        return data ?? [];
+    },
+
+    async getStudentGradesReport(mataikhoan: string, mahockyParam: string | null) {
+        const isAll = !mahockyParam || mahockyParam === "all";
+
+        // 1. Lấy profile/masv
+        const { data: sv, error: svError } = await studentRepo.getBasicInfoByAccount(mataikhoan);
+        if (svError || !sv) throw new Error("Không tìm thấy sinh viên.");
+        const masv = sv.masv;
+
+        // 2. Fetch profile đầy đủ để lấy email, lớp (để tương thích hoàn toàn)
+        const { data: svFullData } = await studentRepo.getProfileByAccount(mataikhoan);
+        const hoten = svFullData
+            ? `${svFullData.hodem || ''} ${svFullData.ten || ''}`.trim() || 'Sinh viên'
+            : "Sinh Viên";
+        const emailtruong = svFullData?.emailtruong ?? "";
+        const malop = svFullData?.malop ?? "";
+        const tenlop = svFullData?.malop ?? "";
+
+        // 3. Tính toán điểm tổng kết
+        const { data: allDiemTongKet } = await studentRepo.getDiemTongKetRaw(masv);
+        const pcIds = (allDiemTongKet ?? []).map(dt => dt.maphancong);
+
+        let diemMoinhat: any[] = [];
+        if (pcIds.length > 0) {
+            const { data: allPhanCong } = await studentRepo.getPhanCongWithMonHocAndHocKy(pcIds);
+            const rawList = (allDiemTongKet ?? []).map(dt => {
+                const pc = (allPhanCong ?? []).find(p => p.maphancong === dt.maphancong);
+                if (!pc) return null;
+                return {
+                    mamon: pc.mamon,
+                    mahocky: pc.mahocky,
+                    sotinchi: (pc.monhoc as any)?.sotinchi ?? 0,
+                    diemtongket: dt.diemtongket !== null ? Number(dt.diemtongket) : null,
+                    ketqua: dt.ketqua,
+                    la_hocky_hientai: (pc.hocky as any)?.danghieuluc ?? false
+                };
+            }).filter(Boolean);
+
+            const mapMoinhat: Record<string, any> = {};
+            rawList.forEach(item => {
+                if (!item || item.diemtongket === null) return;
+                if (item.ketqua !== "Dat" && item.ketqua !== "KhongDat") return;
+
+                const existing = mapMoinhat[item.mamon];
+                if (!existing || item.mahocky > existing.mahocky) {
+                    mapMoinhat[item.mamon] = item;
+                }
+            });
+            diemMoinhat = Object.values(mapMoinhat);
+        }
+
+        const tinhDiemHe4 = (d: number) => {
+            if (d >= 9.5) return 4.0;
+            if (d >= 8.5) return 3.7;
+            if (d >= 7.8) return 3.3;
+            if (d >= 7.0) return 3.0;
+            if (d >= 6.3) return 2.5;
+            if (d >= 5.5) return 2.0;
+            if (d >= 4.8) return 1.5;
+            if (d >= 4.0) return 1.0;
+            return 0.0;
+        };
+
+        let gpa10_hocky_hientai = 0;
+        let gpa4_hocky_hientai = 0;
+        let sotinchi_hocky_hientai = 0;
+        let sotinchi_dat_hocky_hientai = 0;
+
+        let gpa10_tich_luy = 0;
+        let gpa4_tich_luy = 0;
+        let tong_sotinchi_da_hoc = 0;
+        let sotinchi_tich_luy_dat = 0;
+
+        const listKHT = diemMoinhat.filter(d => d.la_hocky_hientai);
+        if (listKHT.length > 0) {
+            let sumD10 = 0;
+            let sumD4 = 0;
+            let sumTC = 0;
+            listKHT.forEach(d => {
+                sumD10 += d.diemtongket * d.sotinchi;
+                sumD4 += tinhDiemHe4(d.diemtongket) * d.sotinchi;
+                sumTC += d.sotinchi;
+                if (d.ketqua === "Dat") {
+                    sotinchi_dat_hocky_hientai += d.sotinchi;
+                }
+            });
+            if (sumTC > 0) {
+                gpa10_hocky_hientai = sumD10 / sumTC;
+                gpa4_hocky_hientai = sumD4 / sumTC;
+                sotinchi_hocky_hientai = sumTC;
+            }
+        }
+
+        if (diemMoinhat.length > 0) {
+            let sumD10 = 0;
+            let sumD4 = 0;
+            let sumTC = 0;
+            diemMoinhat.forEach(d => {
+                sumD10 += d.diemtongket * d.sotinchi;
+                sumD4 += tinhDiemHe4(d.diemtongket) * d.sotinchi;
+                sumTC += d.sotinchi;
+                if (d.ketqua === "Dat") {
+                    sotinchi_tich_luy_dat += d.sotinchi;
+                }
+            });
+            if (sumTC > 0) {
+                gpa10_tich_luy = sumD10 / sumTC;
+                gpa4_tich_luy = sumD4 / sumTC;
+                tong_sotinchi_da_hoc = sumTC;
+            }
+        }
+
+        const getXepLoai10 = (gpa: number) => {
+            if (gpa >= 9.0) return "Xuất sắc";
+            if (gpa >= 8.0) return "Giỏi";
+            if (gpa >= 7.0) return "Khá";
+            if (gpa >= 5.0) return "Trung bình";
+            if (gpa >= 4.0) return "Yếu";
+            return "Kém";
+        };
+
+        const getXepLoai4 = (gpa: number) => {
+            if (gpa >= 3.6) return "Xuất sắc";
+            if (gpa >= 3.2) return "Giỏi";
+            if (gpa >= 2.5) return "Khá";
+            if (gpa >= 2.0) return "Trung bình";
+            if (gpa >= 1.0) return "Yếu";
+            return "Kém";
+        };
+
+        const xep_loai_hoc_luc = tong_sotinchi_da_hoc > 0 ? getXepLoai10(gpa10_tich_luy) : null;
+        const xep_loai_hoc_luc_he4 = tong_sotinchi_da_hoc > 0 ? getXepLoai4(gpa4_tich_luy) : null;
+
+        const gpaView = {
+            masv,
+            hoten,
+            emailtruong,
+            malop,
+            tenlop,
+            gpa10_hocky_hientai,
+            gpa4_hocky_hientai,
+            sotinchi_hocky_hientai,
+            sotinchi_dat_hocky_hientai,
+            gpa10_tich_luy,
+            gpa4_tich_luy,
+            tong_sotinchi_da_hoc,
+            sotinchi_tich_luy_dat,
+            xep_loai_hoc_luc,
+            xep_loai_hoc_luc_he4
+        };
+
+        // 4. Danh sách học kỳ
+        const { data: dsHocKy } = await studentRepo.getHocKyList();
+        const hocKyList = dsHocKy ?? [];
+        const mahocky = isAll ? null : Number(mahockyParam);
+        const hocKyHienTai = mahocky
+            ? (hocKyList.find((hk) => hk.mahocky === mahocky) ?? null)
+            : null;
+
+        // 5. Bảng điểm chi tiết
+        const { data: rawEnrolled } = await studentRepo.getMonHocDangHoc(masv);
+        const { data: rawTongKet } = await studentRepo.getDiemTongKetRaw(masv);
+
+        const tongKetMap: Record<number, any> = {};
+        const allMaphancong = new Set<number>();
+
+        (rawEnrolled ?? []).forEach((r) => allMaphancong.add(r.maphancong));
+        (rawTongKet ?? []).forEach((tk) => {
+            allMaphancong.add(tk.maphancong);
+            tongKetMap[tk.maphancong] = tk;
         });
-      if (error) throw error;
-    }
 
-    return true;
-  },
+        const maphancongList = Array.from(allMaphancong);
 
-  // ─── Lịch sử điểm danh ─────────────────────────────────────────────────────
+        if (maphancongList.length === 0) {
+            return {
+                hocKyList,
+                mahocky,
+                hocKy: hocKyHienTai,
+                grades: [],
+                gpaView: gpaView ?? null,
+            };
+        }
 
-  async getAttendanceHistory(masv: string) {
-    const cookieStore = await cookies();
-    const supabase = createClient(cookieStore);
+        const { data: phancongData } = await studentRepo.getPhanCongWithGiangVien(maphancongList);
+        let filteredPhancong = phancongData ?? [];
+        if (!isAll && mahocky) {
+            filteredPhancong = filteredPhancong.filter((pc) => pc.mahocky === mahocky);
+        }
 
-    const { data, error } = await supabase
-      .from("diemdanh")
-      .select(`
-        madiemdanh,
-        trangthai,
-        ghichu,
-        thoigiandiemdanh,
-        phuongthuc,
-        ngaytao,
-        buoihoc (
-          mabuoihoc,
-          ngayhoc,
-          noidung,
-          lichhoc (
-            phonghoc,
-            phancong (
-              mamon,
-              malophoc,
-              monhoc ( tenmon )
-            )
-          )
-        )
-      `)
-      .eq("masv", masv)
-      .order("ngaytao", { ascending: false })
-      .limit(100);
+        const filteredPcIds = filteredPhancong.map((pc) => pc.maphancong);
+        const { data: rawDiem } = filteredPcIds.length > 0
+            ? await studentRepo.getDiemThanhPhan(masv, filteredPcIds)
+            : { data: [] };
 
-    if (error) throw error;
-    return data ?? [];
-  }
+        const diemThanhPhanMap: Record<number, { loai: string; giatri: number; heso: number }[]> = {};
+        (rawDiem ?? []).forEach((d) => {
+            if (!diemThanhPhanMap[d.maphancong]) diemThanhPhanMap[d.maphancong] = [];
+            diemThanhPhanMap[d.maphancong].push({ loai: d.loaidiem, giatri: d.giatri, heso: d.heso });
+        });
+
+        const grades = filteredPhancong.map((pc: any, idx: number) => {
+            const mon = pc.monhoc;
+            const tk = tongKetMap[pc.maphancong] ?? null;
+            const diem10 = tk?.diemtongket !== null && tk?.diemtongket !== undefined
+                ? Number(tk.diemtongket) : null;
+            const diemChu = tk?.diemchu ?? null;
+            const ketQua = tk?.ketqua ?? null;
+
+            return {
+                stt: idx + 1,
+                mamon: pc.mamon ?? "---",
+                malophoc: pc.malophoc ?? "---",
+                mahocky: pc.mahocky,
+                tenmon: mon?.tenmon ?? "Chưa có tên môn",
+                sotinchi: mon?.sotinchi ?? 0,
+                giangvien: pc.giangvien
+                    ? [pc.giangvien.hodem, pc.giangvien.ten].filter(Boolean).join(" ") || "---"
+                    : "---",
+                diem10,
+                diemchu: diemChu,
+                ketqua: ketQua,
+                dat: ketQua === "Dat",
+                coDiem: diem10 !== null,
+                diemThanhPhan: diemThanhPhanMap[pc.maphancong] ?? [],
+            };
+        });
+
+        return {
+            hocKyList,
+            mahocky,
+            hocKy: hocKyHienTai,
+            grades,
+            gpaView: gpaView ?? null,
+        };
+    },
+
+    // ─── Bài tập & Nộp bài ────────────────────────────────────────────────────
+
+    async getAssignments(masv: string) {
+        const { data: svMonHoc } = await studentRepo.getMonHocDangHoc(masv);
+        if (!svMonHoc || svMonHoc.length === 0) return [];
+        const maPCs = svMonHoc.map((m) => m.maphancong);
+        const { data, error } = await studentRepo.getBaiTapDayDu(maPCs);
+        if (error) throw error;
+
+        // Lấy bài nộp của SV
+        const maBTs = (data ?? []).map((b) => b.mabaitap);
+        let nopBaiMap: Record<number, unknown> = {};
+        if (maBTs.length > 0) {
+            const { data: nopBaiRows } = await studentRepo.getNopBaiTheoMaBT(masv, maBTs);
+            if (nopBaiRows) {
+                for (const nb of nopBaiRows) nopBaiMap[nb.mabaitap] = nb;
+            }
+        }
+
+        return (data ?? []).map((bt: any) => {
+            const pc = bt.phancong;
+            if (pc && pc.giangvien) {
+                pc.giangvien = {
+                    ...pc.giangvien,
+                    hoten: [pc.giangvien.hodem, pc.giangvien.ten].filter(Boolean).join(" ") || "Giảng viên"
+                };
+            }
+            return {
+                ...bt,
+                phancong: pc,
+                nopbai: nopBaiMap[bt.mabaitap] ?? null
+            };
+        });
+    },
+
+    async submitAssignment(masv: string, mabaitap: number, noidungnop: string | null, filenop: string | null) {
+        // Validate
+        const vr = validateSubmitAssignment({ mabaitap, noidungnop, filenop });
+        if (!vr.valid) throw new Error(vr.error);
+
+        // Kiểm tra bài tập tồn tại
+        const { data: baitap, error: btErr } = await studentRepo.getBaiTapById(mabaitap);
+        if (btErr || !baitap) throw new Error('Bài tập không tồn tại.');
+
+        const now = new Date();
+        const hannop = new Date(baitap.hannop);
+        const trenop = now > hannop;
+
+        // Kiểm tra đã nộp chưa
+        const { data: existing } = await studentRepo.checkNopBai(masv, mabaitap);
+
+        if (existing) {
+            const { error } = await studentRepo.updateNopBai(existing.manopbai, {
+                noidungnop,
+                filenop,
+                thoigiannop: now.toISOString(),
+                trenop,
+            });
+            if (error) throw error;
+            return { updated: true, trenop };
+        } else {
+            const { error } = await studentRepo.insertNopBai({
+                mabaitap,
+                masv,
+                noidungnop,
+                filenop,
+                thoigiannop: now.toISOString(),
+                trenop,
+            });
+            if (error) throw error;
+            return { updated: false, trenop };
+        }
+    },
+
+    async getMySubmissions(masv: string) {
+        const { data, error } = await studentRepo.getMySubmissions(masv);
+        if (error) throw error;
+        return data ?? [];
+    },
+
+
+    // ─── Thông báo ─────────────────────────────────────────────────────────────
+
+    async getNotifications(masv: string, malop: string | null) {
+        const { data: svMonHoc } = await studentRepo.getMonHocDangHoc(masv);
+        const myAssignments = (svMonHoc ?? []).map((m) => m.maphancong);
+
+        const conditions = [
+            'doituong.eq.Tatca',
+            `and(doituong.eq.SinhVien,or(malop.is.null,malop.eq.${malop || 'NONE'}))`,
+        ];
+        if (myAssignments.length > 0) {
+            conditions.push(`and(doituong.neq.GiangVien,maphancong.in.(${myAssignments.join(',')}))`);
+        }
+
+        const { data: thongBao, error } = await studentRepo.getThongBao(conditions);
+        if (error) throw error;
+
+        const mathongbaoIds = (thongBao ?? []).map((t) => t.mathongbao);
+        let readMap: Record<number, boolean> = {};
+        if (mathongbaoIds.length > 0) {
+            const { data: readRows } = await studentRepo.getDaDocThongBao(masv, mathongbaoIds);
+            if (readRows) {
+                for (const r of readRows) readMap[r.mathongbao] = r.dadoc;
+            }
+        }
+
+        return (thongBao ?? []).map((tb) => ({ ...tb, dadoc: readMap[tb.mathongbao] ?? false }));
+    },
+
+    async markNotificationRead(masv: string, mathongbao: number) {
+        const now = new Date().toISOString();
+        const { data: existing } = await studentRepo.checkDaDoc(masv, mathongbao);
+        if (existing) {
+            const { error } = await studentRepo.updateDaDoc(masv, mathongbao, now);
+            if (error) throw error;
+        } else {
+            const { error } = await studentRepo.insertDaDoc(masv, mathongbao, now);
+            if (error) throw error;
+        }
+        return true;
+    },
+
+    // ─── Lịch sử điểm danh ────────────────────────────────────────────────────
+
+    async getAttendanceHistory(masv: string) {
+        const { data, error } = await studentRepo.getLichSuDiemDanh(masv);
+        if (error) throw error;
+        return data ?? [];
+    },
+
+    async getAssignmentsByAccount(mataikhoan: string) {
+        const { data: sv, error } = await studentRepo.getBasicInfoByAccount(mataikhoan);
+        if (error || !sv) throw new Error('Không tìm thấy sinh viên');
+        return this.getAssignments(sv.masv);
+    },
+
+    async uploadFile(file: File) {
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${Date.now()}_${Math.random().toString(36).substring(2)}.${fileExt}`;
+        const filePath = `messages/${fileName}`; // Keep matching path structure from original api route
+
+        const arrayBuffer = await file.arrayBuffer();
+        const buffer = new Uint8Array(arrayBuffer);
+
+        const { error: uploadError } = await studentRepo.uploadFile(filePath, buffer, file.type);
+        if (uploadError) throw new Error(uploadError.message);
+
+        const { data: urlData } = await studentRepo.getPublicUrl(filePath);
+
+        return {
+            url: urlData.publicUrl,
+            fileName: file.name,
+            fileSize: file.size,
+            fileType: file.type,
+        };
+    },
 };

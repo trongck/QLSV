@@ -1,26 +1,18 @@
-// app/api/sinhvien/notes/route.ts
+// app/api/student/notes/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 import { verifyToken, extractBearer } from '@/lib/utils/jwt';
-import { createClient } from '@/lib/utils/supabase/server';
+import { sinhVienService } from '@/services/service/sinhvien/student.service';
 import { nhatkyService } from '@/services/service/sinhvien/nhatky.service';
 
 async function getCurrentStudent(request: NextRequest) {
     const token = extractBearer(request.headers.get('authorization'));
     if (!token) throw new Error('Chưa đăng nhập');
     const payload = await verifyToken(token);
-    const cookieStore = await cookies();
-    const supabase = createClient(cookieStore);
-    const { data: sv, error } = await supabase
-        .from('sinhvien')
-        .select('masv, malop')
-        .eq('mataikhoan', payload.mataikhoan)
-        .single();
-    if (error || !sv) throw new Error('Không tìm thấy thông tin sinh viên');
+    const sv = await sinhVienService.getBasicInfo(payload.mataikhoan);
     return sv;
 }
 
-// GET /api/sinhvien/notes — Lấy danh sách nhật ký
+// GET /api/student/notes — Lấy danh sách nhật ký
 export async function GET(request: NextRequest) {
     try {
         const sv = await getCurrentStudent(request);
@@ -37,7 +29,7 @@ export async function GET(request: NextRequest) {
     }
 }
 
-// POST /api/sinhvien/notes — Tạo nhật ký mới
+// POST /api/student/notes — Tạo nhật ký mới
 export async function POST(request: NextRequest) {
     try {
         const sv = await getCurrentStudent(request);

@@ -127,7 +127,7 @@ body {
 
 /* ─── Card ───────────────────────────────────────────────────────────────────── */
 .card {
-  background: var(--color-card);
+  background-color: var(--color-card);
   border-radius: 16px;
   border: 1px solid var(--color-border);
   box-shadow: 0 2px 12px rgba(76, 38, 24, 0.06);

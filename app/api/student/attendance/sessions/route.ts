@@ -1,24 +1,16 @@
 // app/api/sinhvien/attendance/sessions/route.ts
 // GET /api/sinhvien/attendance/sessions — buổi học hôm nay + danh sách môn
 import { NextRequest, NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
 import { verifyToken, extractBearer } from '@/lib/utils/jwt';
-import { createClient } from '@/lib/utils/supabase/server';
-import { diemdanhRepo } from '@/services/repositories/sinhvien/diemdanh.repo';
-import { scheduleRepo } from '@/services/repositories/sinhvien/schedule.repo';
+import { sinhVienService } from '@/services/service/sinhvien/student.service';
+import { diemdanhService } from '@/services/service/sinhvien/diemdanh.service';
+import { scheduleService } from '@/services/service/sinhvien/schedule.service';
 
 async function getCurrentStudent(request: NextRequest) {
     const token = extractBearer(request.headers.get('authorization'));
     if (!token) throw new Error('Chưa đăng nhập');
     const payload = await verifyToken(token);
-    const cookieStore = await cookies();
-    const supabase = createClient(cookieStore);
-    const { data: sv, error } = await supabase
-        .from('sinhvien')
-        .select('masv, malop, hodem, ten')
-        .eq('mataikhoan', payload.mataikhoan)
-        .single();
-    if (error || !sv) throw new Error('Không tìm thấy thông tin sinh viên');
+    const sv = await sinhVienService.getBasicInfo(payload.mataikhoan);
     return {
         ...sv,
         hoten: [sv.hodem, sv.ten].filter(Boolean).join(" ") || "Sinh Viên"
@@ -36,11 +28,11 @@ export async function GET(request: NextRequest) {
     try {
         const sv = await getCurrentStudent(request);
 
-        // Lấy song song
-        const [todayResult, subjectResult, hockyResult] = await Promise.all([
-            diemdanhRepo.getTodaySessions(sv.masv),
-            diemdanhRepo.getSubjectList(sv.masv),
-            scheduleRepo.getHocKyList(sv.masv),
+        // Lấy song song — gọi qua Service thay vì Repo trực tiếp
+        const [todayData, subjectData, hockyData] = await Promise.all([
+            diemdanhService.getTodaySessions(sv.masv),
+            diemdanhService.getSubjectList(sv.masv),
+            scheduleService.getHocKyList(),
         ]);
 
         const TIET_TO_TIME: Record<number, string> = {
@@ -56,7 +48,7 @@ export async function GET(request: NextRequest) {
             13: '18:50', 14: '19:40', 15: '20:30',
         };
 
-        const todaySessions = (todayResult.data ?? []).map((s: any) => ({
+        const todaySessions = (todayData ?? []).map((s: any) => ({
             ...s,
             timeRange: `${TIET_TO_TIME[s.tietbatdau] ?? '?'} - ${TIET_END[s.tietketthuc] ?? '?'}`,
         }));
@@ -64,8 +56,8 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({
             success: true,
             today: todaySessions,
-            subjects: subjectResult.data ?? [],
-            hockyList: hockyResult.data ?? [],
+            subjects: subjectData ?? [],
+            hockyList: hockyData ?? [],
         });
 
     } catch (error: any) {

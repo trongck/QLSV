@@ -1,9 +1,8 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import { createClient } from "@/lib/utils/supabase/server";
 import { verifyToken, extractBearer } from "@/lib/utils/jwt";
 import { VaiTro } from "@/types";
-import { logAuditAction } from "@/lib/utils/audit";
+import { sinhVienService } from "@/services/service/sinhvien/student.service";
+import { nhatkyService } from "@/services/service/sinhvien/nhatky.service";
 
 // ─── Auth helper ─────────────────────────────────────────────────────────────
 
@@ -20,10 +19,6 @@ async function requireStudent(request: Request) {
 
 // ─── GET /api/student/diary ───────────────────────────────────────────────────
 // Trả về danh sách nhật ký của sinh viên đang đăng nhập.
-// Query params:
-//   search  - tìm theo tiêu đề / nội dung
-//   page    - trang (default 1)
-//   limit   - số bản ghi mỗi trang (default 20, max 50)
 
 export async function GET(request: Request) {
   const payload = await requireStudent(request);
@@ -37,58 +32,36 @@ export async function GET(request: Request) {
   const limit = Math.min(50, Math.max(1, Number(searchParams.get("limit") ?? 20)));
   const offset = (page - 1) * limit;
 
-  const supabase = createClient(await cookies());
+  try {
+    // Lấy masv theo tài khoản qua sinhVienService
+    const svData = await sinhVienService.getBasicInfo(payload.mataikhoan);
+    const { masv } = svData;
 
-  // Lấy masv theo tài khoản
-  const { data: svData, error: svError } = await supabase
-    .from("sinhvien")
-    .select("masv")
-    .eq("mataikhoan", payload.mataikhoan)
-    .single();
-
-  if (svError || !svData) {
-    return NextResponse.json(
-      { error: "Không tìm thấy thông tin sinh viên." },
-      { status: 404 }
-    );
-  }
-
-  const { masv } = svData;
-
-  // Query nhật ký của sinh viên này
-  let query = supabase
-    .from("nhatky")
-    .select("*", { count: "exact" })
-    .eq("masv", masv)
-    .order("ngaycapnhat", { ascending: false })
-    .range(offset, offset + limit - 1);
-
-  if (search) {
-    query = query.or(
-      `tieude.ilike.%${search}%,noidung.ilike.%${search}%`
-    );
-  }
-
-  const { data, error, count } = await query;
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-
-  return NextResponse.json({
-    data: data ?? [],
-    masv,
-    pagination: {
-      page,
+    const { data, count } = await nhatkyService.getPaged({
+      masv,
+      search,
       limit,
-      total: count ?? 0,
-      totalPages: Math.ceil((count ?? 0) / limit),
-    },
-  });
+      offset,
+    });
+
+    return NextResponse.json({
+      data,
+      masv,
+      pagination: {
+        page,
+        limit,
+        total: count,
+        totalPages: Math.ceil(count / limit),
+      },
+    });
+  } catch (err: any) {
+    const status = err.message.includes("Không tìm thấy") ? 404 : 500;
+    return NextResponse.json({ error: err.message }, { status });
+  }
 }
 
 // ─── POST /api/student/diary ──────────────────────────────────────────────────
-// Tạo nhật ký mới. Body JSON: { tieude?, noidung, tamtrang?, maphancong? }
+// Tạo nhật ký mới.
 
 export async function POST(request: Request) {
   const payload = await requireStudent(request);
@@ -103,53 +76,29 @@ export async function POST(request: Request) {
 
   const { tieude, noidung, tamtrang, maphancong } = body;
 
-  const supabase = createClient(await cookies());
+  try {
+    // Lấy thêm thông tin từ sinhVienService
+    const svData = await sinhVienService.getBasicInfo(payload.mataikhoan);
+    const tenSinhVien = [svData.hodem, svData.ten].filter(Boolean).join(" ") || "Sinh viên";
 
-  // ĐÃ CHỈNH SỬA: Lấy thêm cột 'hoten' từ bảng sinhvien để gắn vào log
-  const { data: svData, error: svError } = await supabase
-    .from("sinhvien")
-    .select("masv, hodem, ten")
-    .eq("mataikhoan", payload.mataikhoan)
-    .single();
+    const data = await nhatkyService.create(
+      svData.masv,
+      {
+        tieude: tieude?.trim() || null,
+        noidung: typeof noidung === "string" ? noidung.trim() : "",
+        tamtrang: tamtrang ?? null,
+        maphancong: maphancong ?? null,
+      },
+      {
+        mataikhoan: payload.mataikhoan,
+        tenSinhVien,
+        request,
+      }
+    );
 
-  if (svError || !svData) {
-    return NextResponse.json({ error: "Không tìm thấy thông tin sinh viên." }, { status: 404 });
+    return NextResponse.json({ data }, { status: 201 });
+  } catch (err: any) {
+    const status = err.message.includes("Không tìm thấy") ? 404 : 500;
+    return NextResponse.json({ error: err.message }, { status });
   }
-
-  const now = new Date().toISOString();
-
-  const { data, error } = await supabase
-    .from("nhatky")
-    .insert({
-      masv: svData.masv,
-      magv: null,
-      tieude: tieude?.trim() || null,
-      noidung: (typeof noidung === "string" ? noidung.trim() : ""),
-      tamtrang: tamtrang ?? null,
-      maphancong: maphancong ?? null,
-      ngaytao: now,
-      ngaycapnhat: now,
-    })
-    .select()
-    .single();
-
-  if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
-  }
-
-  // ĐÃ CHỈNH SỬA: Lấy tên sinh viên từ kết quả truy vấn db
-  const tenSinhVien = [svData.hodem, svData.ten].filter(Boolean).join(" ") || "Sinh viên";
-
-  // ĐÃ CHỈNH SỬA: Cập nhật nội dung hanhdong hiển thị rõ tên sinh viên thêm nhật ký
-  await logAuditAction({
-    supabase,
-    mataikhoan: payload.mataikhoan,
-    hanhdong: `Sinh viên [${tenSinhVien}] đã thêm nhật ký mới`,
-    tentable: "nhatky",
-    makhoachinh: String(data.manhatky),
-    giatrimoi: data,
-    request,
-  });
-
-  return NextResponse.json({ data }, { status: 201 });
 }

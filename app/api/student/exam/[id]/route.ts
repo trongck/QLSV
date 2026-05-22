@@ -1,8 +1,7 @@
 // app/api/sinhvien/exam/[id]/route.ts
 import { NextRequest, NextResponse } from 'next/server';
-import { examRepo } from '@/services/repositories/sinhvien/exam.repo';
-import { cookies } from 'next/headers';
-import { createClient } from '@/lib/utils/supabase/server';
+import { examService } from '@/services/service/sinhvien/exam.service';
+import { sinhVienService } from '@/services/service/sinhvien/student.service';
 import { verifyToken, extractBearer } from "@/lib/utils/jwt";
 
 export async function GET(
@@ -11,12 +10,7 @@ export async function GET(
 ) {
     try {
         const { id } = await params;
-        const { data, error } = await examRepo.getExamDetail(parseInt(id));
-
-        if (error) {
-            return NextResponse.json({ success: false, error: error.message }, { status: 500 });
-        }
-
+        const data = await examService.getExamDetail(parseInt(id));
         return NextResponse.json({ success: true, data });
     } catch (error: any) {
         return NextResponse.json({ success: false, error: error.message }, { status: 500 });
@@ -45,27 +39,13 @@ export async function POST(
         const body = await request.json();
         const { answers, cheatCount } = body;
 
-        const cookieStore = await cookies();
-        const supabase = createClient(cookieStore);
+        // Tìm masv từ mataikhoan qua sinhVienService
+        const sinhvien = await sinhVienService.getBasicInfo(payload.mataikhoan);
 
-        // Tìm masv từ mataikhoan
-        const { data: sinhvien } = await supabase
-            .from('sinhvien')
-            .select('masv')
-            .eq('mataikhoan', payload.mataikhoan)
-            .single();
-
-        if (!sinhvien) {
-            return NextResponse.json({ success: false, message: 'Student profile not found' }, { status: 404 });
-        }
-
-        const { data, error } = await examRepo.submitExam(sinhvien.masv, parseInt(id), answers, cheatCount);
-
-        if (error) {
-            return NextResponse.json({ success: false, error: error.message }, { status: 500 });
-        }
-
+        // Gọi examService
+        const data = await examService.submitExam(sinhvien.masv, parseInt(id), answers, cheatCount);
         return NextResponse.json({ success: true, data });
+
     } catch (error: any) {
         return NextResponse.json({ success: false, error: error.message }, { status: 500 });
     }
