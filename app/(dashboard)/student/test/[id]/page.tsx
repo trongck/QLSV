@@ -39,7 +39,7 @@ export default function ExamSessionPage() {
   const fetchExamDetail = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await apiFetch(`/api/sinhvien/exam/${id}`);
+      const res = await apiFetch(`/api/student/exam/${id}`);
       const json = await res.json();
       if (json.success) {
         setExam(json.data);
@@ -127,7 +127,7 @@ export default function ExamSessionPage() {
         cautraloituluan: q.loaicauhoi === 'TuLuan' ? answers[q.macauhoi] : null
       }));
 
-      const res = await apiFetch(`/api/sinhvien/exam/${id}`, {
+      const res = await apiFetch(`/api/student/exam/${id}`, {
         method: "POST",
         body: JSON.stringify({ answers: formattedAnswers, cheatCount })
       });

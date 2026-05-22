@@ -1,38 +1,40 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/utils/supabase/server";
-import { verifyToken, extractBearer } from "@/lib/utils/jwt";
-import { changePasswordService } from "@/services/service/auth/auth-server.service";
+import { getCurrentUserService, changePasswordService } from "@/services/service/auth/auth-server.service";
 
-export async function POST(request: Request) {
-  const token = extractBearer(request.headers.get("authorization"));
-  if (!token) {
-    return NextResponse.json({ error: "Chưa cung cấp token" }, { status: 401 });
-  }
-
-  let payload: any;
+export async function PUT(request: Request) {
   try {
-    payload = await verifyToken(token);
-  } catch (err: any) {
-    return NextResponse.json({ error: "Phiên đăng nhập hết hạn hoặc không hợp lệ" }, { status: 401 });
-  }
-
-  try {
-    const body = await request.json().catch(() => null);
-    const diachiip =
-      request.headers.get("x-forwarded-for")?.split(",")[0] ||
-      request.headers.get("x-real-ip") ||
-      "127.0.0.1";
-
+    const authHeader = request.headers.get("authorization");
     const cookieStore = await cookies();
     const supabase = createClient(cookieStore);
 
-    await changePasswordService(supabase, payload.mataikhoan, body, diachiip);
+    // 1. Xác thực người dùng hiện tại qua Session JWT
+    const userProfile = await getCurrentUserService(supabase, authHeader);
+    if (!userProfile?.mataikhoan) {
+      return NextResponse.json({ error: "Bạn chưa đăng nhập hoặc phiên đã hết hạn." }, { status: 401 });
+    }
 
-    return NextResponse.json({ success: true, message: "Thay đổi mật khẩu thành công!" });
+    // 2. Đọc mật khẩu cũ và mật khẩu mới
+    const body = await request.json();
+    const { oldPassword, newPassword } = body;
+
+    // Trích xuất địa chỉ IP người dùng
+    const diachiip = request.headers.get("x-forwarded-for") || "127.0.0.1";
+
+    // 3. Gọi tầng nghiệp vụ để xử lý thay đổi mật khẩu
+    const result = await changePasswordService(
+      supabase,
+      userProfile.mataikhoan,
+      oldPassword,
+      newPassword,
+      diachiip
+    );
+
+    return NextResponse.json(result);
   } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : "Lỗi máy chủ nội bộ.";
-    console.error("[change-password] Unhandled error:", message);
-    return NextResponse.json({ error: message }, { status: 400 });
+    const message = error instanceof Error ? error.message : "Lỗi hệ thống khi thay đổi mật khẩu.";
+    const status = message.includes("chính xác") || message.includes("điền đầy đủ") ? 400 : 500;
+    return NextResponse.json({ error: message }, { status });
   }
 }

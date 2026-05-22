@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { verifyToken, extractBearer } from "@/lib/utils/jwt";
 import { VaiTro } from "@/types";
-import { sinhVienService } from "@/services/student.service";
+import { sinhVienService } from "@/services/service/sinhvien/student.service";
 
 // GET /api/sinhvien/tasks — Danh sách bài tập (kèm trạng thái nộp)
 // POST /api/sinhvien/tasks — Nộp bài tập

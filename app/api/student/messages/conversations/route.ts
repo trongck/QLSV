@@ -59,7 +59,13 @@ export async function GET(request: Request) {
         mataikhoan,
         vaitro,
         thoigianxemcuoi,
-        taikhoan:mataikhoan ( mataikhoan, email, vaitro )
+        taikhoan:mataikhoan (
+          mataikhoan,
+          email,
+          vaitro,
+          sinhvien (hodem, ten, emailtruong, anhdaidien),
+          giangvien (hodem, ten, emailtruong, anhdaidien)
+        )
       ),
       tinnhan (
         matinnhan,
@@ -94,7 +100,29 @@ export async function GET(request: Request) {
       ? messages.filter((m) => new Date(m.ngaytao) > new Date(viewTime)).length
       : messages.length;
 
-    const members: any[] = conv.thanhvientrochuyen ?? [];
+    const members: any[] = (conv.thanhvientrochuyen ?? []).map((tv: any) => {
+      const tk = tv.taikhoan;
+      if (tk) {
+        const gv = Array.isArray(tk.giangvien) ? tk.giangvien[0] : tk.giangvien;
+        if (gv) {
+          tv.giangvien = {
+            ...gv,
+            hoten: [gv.hodem, gv.ten].filter(Boolean).join(" ") || "Giảng viên",
+            emailtruong: gv.emailtruong || tk.email
+          };
+        }
+        const sv = Array.isArray(tk.sinhvien) ? tk.sinhvien[0] : tk.sinhvien;
+        if (sv) {
+          tv.sinhvien = {
+            ...sv,
+            hoten: [sv.hodem, sv.ten].filter(Boolean).join(" ") || "Sinh viên",
+            emailtruong: sv.emailtruong || tk.email
+          };
+        }
+      }
+      return tv;
+    });
+
     const otherMembers = members.filter((m) => m.mataikhoan !== payload.mataikhoan);
 
     return {

@@ -4,6 +4,7 @@ import { createClient } from "@/lib/utils/supabase/server";
 import { verifyToken, extractBearer } from "@/lib/utils/jwt";
 import { VaiTro, TrangThaiDiemDanh, TrangThaiBuoiHoc } from "@/types";
 import { logAuditAction } from "@/lib/utils/audit";
+import { diemdanhRepo } from "@/services/repositories/sinhvien/diemdanh.repo";
 
 // ─── Tiết → giờ ──────────────────────────────────────────────────────────────
 
@@ -32,6 +33,7 @@ async function requireStudent(request: Request) {
 
 // ─── GET /api/student/attendance ─────────────────────────────────────────────
 // Query params:
+//   mode     - "stats" | "history" (optional, from sinhvien dashboard)
 //   mahocky  - ID học kỳ (optional, default: học kỳ hiệu lực)
 //   filter   - "month" | "semester" (optional, default: "semester")
 
@@ -42,6 +44,105 @@ export async function GET(request: Request) {
   }
 
   const { searchParams } = new URL(request.url);
+  const mode = searchParams.get("mode");
+
+  // ─── BRANCH: Mode "stats" or "history" (sinhvien logic) ───────────────────
+  if (mode === "stats" || mode === "history") {
+    const supabase = createClient(await cookies());
+    const { data: sv, error: svError } = await supabase
+      .from("sinhvien")
+      .select("masv, malop, hodem, ten")
+      .eq("mataikhoan", payload.mataikhoan)
+      .single();
+
+    if (svError || !sv) {
+      return NextResponse.json(
+        { error: "Không tìm thấy thông tin sinh viên" },
+        { status: 404 }
+      );
+    }
+
+    const masv = sv.masv;
+    const mahocky = searchParams.get("mahocky") ? parseInt(searchParams.get("mahocky")!) : undefined;
+
+    if (mode === "stats") {
+      try {
+        const { data, error } = await diemdanhRepo.getStatsBySubject(masv, mahocky);
+        if (error) {
+          console.warn("[attendance/stats]", error.message);
+          return NextResponse.json({ success: true, mode: "stats", data: [] });
+        }
+        return NextResponse.json({ success: true, mode: "stats", data });
+      } catch (e: any) {
+        console.warn("[attendance/stats] caught:", e.message);
+        return NextResponse.json({ success: true, mode: "stats", data: [] });
+      }
+    }
+
+    // mode === "history"
+    const maphancong = searchParams.get("maphancong") ? parseInt(searchParams.get("maphancong")!) : undefined;
+    const month = searchParams.get("month") ? parseInt(searchParams.get("month")!) : undefined;
+    const year = searchParams.get("year") ? parseInt(searchParams.get("year")!) : undefined;
+    const limit = searchParams.get("limit") ? parseInt(searchParams.get("limit")!) : 50;
+
+    let data: any[] = [], error: any = null;
+    try {
+      const result = await diemdanhRepo.getHistory(masv, {
+        mahocky, maphancong, month, year, limit,
+      });
+      data = result.data ?? [];
+      error = result.error;
+    } catch (e: any) {
+      console.warn("[attendance/history] caught:", e.message);
+      data = [];
+    }
+    if (error) {
+      console.warn("[attendance/history] error:", error.message);
+      data = [];
+    }
+
+    const statusMapping: Record<string, string> = {
+      'Comat': 'co_mat',
+      'Dimuon': 'muon',
+      'Cophep': 'vang_co_phep',
+      'Vangmat': 'vang_khong_phep'
+    };
+
+    const methodMapping: Record<string, string> = {
+      'QR': 'qr',
+      'Face': 'khuon_mat',
+      'Manual': 'thu_cong'
+    };
+
+    const enriched = (data ?? []).map((dd: any) => {
+      const lh = dd.buoihoc?.lichhoc;
+      const pc = lh?.phancong;
+      const ngay = new Date(dd.thoigiandiemdanh ?? dd.thoigian);
+      return {
+        madiemdanh: dd.madiemdanh,
+        thoigian: dd.thoigiandiemdanh ?? dd.thoigian,
+        trangthai: statusMapping[dd.trangthai] ?? dd.trangthai,
+        phuongthuc: methodMapping[dd.phuongthuc] ?? dd.phuongthuc,
+        ghichu: dd.ghichu,
+        ngayhoc: dd.buoihoc?.ngayhoc ?? null,
+        day: String(ngay.getDate()).padStart(2, '0'),
+        month: `T${String(ngay.getMonth() + 1).padStart(2, '0')}`,
+        timeStr: ngay.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+        monhoc: pc?.monhoc ?? null,
+        phong: lh?.maphong ?? null,
+        giangvien: pc?.giangvien ? {
+          ...pc.giangvien,
+          hoten: [pc.giangvien.hodem, pc.giangvien.ten].filter(Boolean).join(" ") || "Chưa rõ"
+        } : null,
+        hocky: pc?.hocky ?? null,
+        maphancong: lh?.maphancong ?? null,
+      };
+    });
+
+    return NextResponse.json({ success: true, mode: "history", data: enriched });
+  }
+
+  // ─── BRANCH: Legacy/Original student logic ────────────────────────────────
   const mahockyParam = searchParams.get("mahocky");
 
   const supabase = createClient(await cookies());

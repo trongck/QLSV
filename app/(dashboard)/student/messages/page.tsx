@@ -123,7 +123,7 @@ export default function MessagesPage() {
         const token = tokenStorage.getAccessToken() || '';
         const formData = new FormData();
         formData.append('file', pendingFile.file);
-        const res = await fetch('/api/sinhvien/upload', {
+        const res = await fetch('/api/student/upload', {
           method: 'POST',
           headers: { Authorization: `Bearer ${token}` },
           body: formData,

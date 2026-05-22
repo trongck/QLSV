@@ -1,10 +1,10 @@
 import { NextResponse } from "next/server";
 import { verifyToken, extractBearer } from "@/lib/utils/jwt";
 import { VaiTro } from "@/types";
-import { sinhVienService } from "@/services/student.service";
+import { sinhVienService } from "@/services/service/sinhvien/student.service";
 
-// GET /api/sinhvien/grades
-// Query params: ?summary=true → trả về điểm tổng kết. Mặc định: điểm chi tiết.
+// GET /api/sinhvien/dashboard
+// Trả về thống kê tổng quan, lịch học hôm nay, thông báo gần đây, điểm gần đây.
 
 export async function GET(request: Request) {
   const token = extractBearer(request.headers.get("authorization"));
@@ -18,6 +18,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Không có quyền truy cập" }, { status: 403 });
     }
 
+    // Resolve masv từ mataikhoan
     const { createClient } = await import("@/lib/utils/supabase/server");
     const { cookies } = await import("next/headers");
     const cookieStore = await cookies();
@@ -25,7 +26,7 @@ export async function GET(request: Request) {
 
     const { data: sv } = await supabase
       .from("sinhvien")
-      .select("masv")
+      .select("masv, hoten, malop")
       .eq("mataikhoan", payload.mataikhoan)
       .single();
 
@@ -33,26 +34,25 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Không tìm thấy sinh viên" }, { status: 404 });
     }
 
-    const { searchParams } = new URL(request.url);
-    const summary = searchParams.get("summary");
-
-    if (summary === "true") {
-      const data = await sinhVienService.getGradeSummary(sv.masv);
-      return NextResponse.json({ success: true, data });
-    }
-
-    // Chi tiết điểm + tổng kết đi kèm
-    const [grades, gradeSummary] = await Promise.all([
-      sinhVienService.getGrades(sv.masv),
-      sinhVienService.getGradeSummary(sv.masv)
+    // Truy vấn song song: thống kê + lịch hôm nay + thông báo
+    const [stats, lichHomNay, thongBao] = await Promise.all([
+      sinhVienService.getDashboardStats(sv.masv),
+      sinhVienService.getTodaySchedule(sv.masv),
+      sinhVienService.getNotifications(sv.masv, sv.malop)
     ]);
 
     return NextResponse.json({
       success: true,
-      data: { chiTiet: grades, tongKet: gradeSummary }
+      data: {
+        hoten: sv.hoten,
+        masv: sv.masv,
+        ...stats,
+        lichHocHomNay: lichHomNay,
+        thongBaoGanDay: (thongBao ?? []).slice(0, 5)
+      }
     });
   } catch (err: any) {
-    console.error("Lỗi GET /api/sinhvien/grades:", err.message);
+    console.error("Lỗi GET /api/sinhvien/dashboard:", err.message);
     return NextResponse.json(
       { error: "Phiên đăng nhập hết hạn hoặc không hợp lệ" },
       { status: 401 }

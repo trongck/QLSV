@@ -67,7 +67,7 @@ export default function AttendancePage() {
       if (f.mahocky) params.set("mahocky", String(f.mahocky));
       if (f.maphancong) params.set("maphancong", String(f.maphancong));
 
-      const res = await apiFetch(`/api/sinhvien/attendance?${params}`);
+      const res = await apiFetch(`/api/student/attendance?${params}`);
       const json = await res.json();
       if (json.success) setLogs(json.data ?? []);
     } catch { setLogs([]); }
@@ -76,7 +76,7 @@ export default function AttendancePage() {
 
   const fetchStats = useCallback(async () => {
     try {
-      const res = await apiFetch("/api/sinhvien/attendance?mode=stats");
+      const res = await apiFetch("/api/student/attendance?mode=stats");
       const json = await res.json();
       if (json.success) setStats(json.data ?? []);
     } catch { setStats([]); }
