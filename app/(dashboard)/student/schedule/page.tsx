@@ -16,12 +16,6 @@ import {
   LayoutGrid,
   List,
   Loader2,
-  Map as MapIcon,
-  X,
-  Plus,
-  Minus,
-  Maximize2,
-  Move,
 } from "lucide-react";
 import { useAuth } from "@/hooks/auth/useAuth";
 import { useRouter } from "next/navigation";
@@ -153,41 +147,6 @@ export default function SchedulePage() {
     if (!authLoading && user && user.vaitro !== VaiTro.SinhVien) router.replace("/login");
   }, [user, authLoading, router]);
   const [selectedItem, setSelectedItem] = useState<LichHoc | null>(null);
-  const [showMap, setShowMap] = useState(false);
-
-  // State cho Zoom & Pan (giữ lại nếu cần cho các tính năng khác, nhưng modal map sẽ đơn giản hơn)
-  const [zoom, setZoom] = useState(1);
-  const [offset, setOffset] = useState({ x: 0, y: 0 });
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-
-  const handleZoomIn = () => setZoom(z => Math.min(z + 0.5, 5));
-  const handleZoomOut = () => setZoom(z => Math.max(z - 0.5, 1));
-  const handleResetZoom = () => {
-    setZoom(1);
-    setOffset({ x: 0, y: 0 });
-  };
-
-  const handleMouseDown = (e: React.MouseEvent) => {
-    if (zoom <= 1) return;
-    setIsDragging(true);
-    setDragStart({ x: e.clientX - offset.x, y: e.clientY - offset.y });
-  };
-
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isDragging) return;
-    setOffset({
-      x: e.clientX - dragStart.x,
-      y: e.clientY - dragStart.y
-    });
-  };
-
-  const handleMouseUp = () => setIsDragging(false);
-
-  const handleWheel = (e: React.WheelEvent) => {
-    const delta = e.deltaY > 0 ? -0.2 : 0.2;
-    setZoom(z => Math.max(1, Math.min(z + delta, 5)));
-  };
 
   // Lấy danh sách học kỳ
   useEffect(() => {
@@ -317,14 +276,7 @@ export default function SchedulePage() {
               </div>
             )}
 
-            {viewMode === "week" && (
-              <button
-                onClick={() => setShowMap(true)}
-                className="px-4 py-2 bg-white text-red-600 rounded-xl border border-red-100 text-sm font-bold shadow-sm hover:bg-red-50 transition flex items-center gap-1.5"
-              >
-                <MapIcon size={14} /> Xem bản đồ
-              </button>
-            )}
+
           </div>
         </div>
 
@@ -666,69 +618,7 @@ export default function SchedulePage() {
             )}
           </div>
         )}
-        {/* ── MODAL BẢN ĐỒ ── */}
-        {showMap && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-8 animate-fadeIn">
-            <div
-              className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-              onClick={() => setShowMap(false)}
-            />
-            <div className="relative bg-white w-full max-w-6xl h-[80vh] rounded-3xl shadow-2xl overflow-hidden flex flex-col animate-scaleUp border border-white/20">
-              {/* Header Modal */}
-              <div className="p-5 border-b border-gray-100 flex justify-between items-center bg-white/80 backdrop-blur-md sticky top-0 z-10">
-                <div className="flex items-center gap-3">
-                  <div className="p-2.5 bg-red-50 rounded-xl text-red-500">
-                    <MapIcon size={20} />
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-gray-800 text-lg">Bản đồ Học viện Nông nghiệp</h3>
-                    <p className="text-xs text-gray-400">Khuôn viên Trâu Quỳ, Gia Lâm, Hà Nội</p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setShowMap(false)}
-                  className="p-2 hover:bg-gray-100 rounded-full text-gray-400 transition hover:text-gray-600"
-                >
-                  <X size={20} />
-                </button>
-              </div>
 
-              {/* Map Content */}
-              <div className="flex-1 relative bg-gray-50 overflow-hidden">
-                <iframe
-                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d1862.383134907954!2d105.9318!3d21.0016!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3135a96d36e2f171%3A0x6b6379893d7c50!2zSOG7jWMgdmnhu4duIE7DtG5nIG5naGnhu4dwIFZp4buHdCBOYW0!5e0!3m2!1svi!2s!4v1715851253456!5m2!1svi!2s"
-                  width="100%"
-                  height="100%"
-                  style={{ border: 0 }}
-                  allowFullScreen
-                  loading="lazy"
-                  referrerPolicy="no-referrer-when-downgrade"
-                  className="w-full h-full"
-                />
-
-                {/* Overlay Info */}
-                <div className="absolute bottom-6 left-6 right-6 flex justify-between items-end pointer-events-none">
-                  <div className="bg-white/90 backdrop-blur shadow-lg border border-gray-100 p-4 rounded-2xl pointer-events-auto max-w-[280px]">
-                    <p className="text-xs font-bold text-gray-800 mb-1">Bản đồ Học viện</p>
-                    <p className="text-[10px] text-gray-500 leading-relaxed">
-                      Sử dụng phím Ctrl + Kéo chuột để thay đổi góc nhìn 3D trên bản đồ.
-                    </p>
-                  </div>
-                  <div className="flex gap-2 pointer-events-auto">
-                    <a
-                      href="https://map.vnua.edu.vn/"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="px-4 py-2 bg-white text-gray-700 text-xs font-bold rounded-xl shadow-lg border border-gray-100 hover:bg-gray-50 transition flex items-center gap-2"
-                    >
-                      Xem map.vnua.edu.vn
-                    </a>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </DashboardShell>
   );
