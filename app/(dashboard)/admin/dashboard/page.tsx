@@ -6,6 +6,8 @@ import { useAuth } from "@/hooks/auth/useAuth";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { AdminModal } from "@/components/admin/Adminmodal";
 import { ProfileDetailModal } from "@/components/admin/ProfileDetailModal";
+import { AdminProfileModal } from "@/components/admin/AdminProfileModal";
+import { ChangePasswordModal } from "@/components/dashboard/ChangePasswordModal";
 import { useAdminStats, type AdminStats } from "@/hooks/admin/useAdminStats";
 import { VaiTro, TrangThaiSinhVien, LoaiPhongHoc } from "@/types";
 
@@ -70,7 +72,7 @@ function StatCard({
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function AdminDashboard() {
-  const { user, loading } = useAuth();
+  const { user, loading, logout } = useAuth();
   const { getStats, searchStats, getDetail } = useAdminStats();
   const router = useRouter();
   const [data, setData] = useState<AdminData | null>(null);
@@ -87,6 +89,13 @@ export default function AdminDashboard() {
   const [selectedDetail, setSelectedDetail] = useState<any>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
+
+  // Profile, Notification & Logout Dropdown States
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+  const [isAdminProfileOpen, setIsAdminProfileOpen] = useState(false);
+  const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   // Route guard
   useEffect(() => {
@@ -176,9 +185,98 @@ export default function AdminDashboard() {
 
   if (loading || !user) return null;
 
+  const handleLogoutConfirm = () => {
+    logout();
+    router.push("/login");
+  };
+
   return (
     <DashboardShell pageTitle="Quản trị hệ thống">
       <div className="animate-fadeInUp flex flex-col gap-6">
+        
+        {/* Topbar: Greeting on left, Notifications + Profile Dropdown on right */}
+        <div className="flex justify-between items-center mb-1 max-sm:flex-col max-sm:items-start max-sm:gap-4">
+          <div>
+            <h1 className="text-2xl font-extrabold text-[#2D1B14] m-0">
+              Chào, {user.hoten?.split(" ").pop()} 👋
+            </h1>
+            <p className="text-xs text-[#8B6F5F] m-[4px_0_0_0]">
+              {new Date().toLocaleDateString("vi-VN", {
+                weekday: "long",
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric",
+              })}
+            </p>
+          </div>
+
+          {/* CỤM AVATAR NẰM NGANG HÀNG VỚI XIN CHÀO */}
+          <div className="flex items-center gap-4 relative">
+            
+            {/* CỤM PROFILE AVATAR VÀ POPUP CHỨC NĂNG */}
+            <div className="relative">
+              <div 
+                className="flex items-center gap-2.5 cursor-pointer hover:opacity-90 transition-opacity p-1.5 hover:bg-[#FFF2EB]/60 rounded-xl border border-transparent hover:border-[#EAD9CB]"
+                onClick={() => {
+                  setIsProfileOpen(!isProfileOpen);
+                }}
+              >
+                <div className="w-[34px] h-[34px] rounded-full bg-[#FFF2EB] text-[#8B6F5F] flex items-center justify-center shrink-0 border border-[#EAD9CB] font-bold">
+                  {user.hoten?.charAt(0) || "A"}
+                </div>
+
+                <div className="flex flex-col text-left max-sm:hidden">
+                  <span className="text-[13px] font-bold text-[#2D1B14]">{user?.hoten || "—"}</span>
+                  <span className="text-[10px] text-[#8B6F5F]">Quản trị viên</span>
+                </div>
+                <svg className="w-3 h-3 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                </svg>
+              </div>
+
+              {isProfileOpen && (
+                <div className="absolute top-[48px] right-0 w-[220px] bg-white border border-[#EAD9CB] rounded-xl shadow-xl p-2 z-50 flex flex-col animate-scaleUp">
+                  {/* Nút Thông tin cá nhân */}
+                  <button 
+                    className="w-full text-left px-3 py-2 text-xs text-gray-700 hover:bg-[#FAF6F2] rounded-lg transition-colors font-semibold"
+                    onClick={() => {
+                      setIsAdminProfileOpen(true);
+                      setIsProfileOpen(false);
+                    }}
+                  >
+                    Thông tin cá nhân
+                  </button>
+
+                  {/* Nút Thay đổi mật khẩu */}
+                  <button 
+                    className="w-full text-left px-3 py-2 text-xs text-gray-700 hover:bg-[#FAF6F2] rounded-lg transition-colors font-semibold"
+                    onClick={() => {
+                      setIsChangePasswordOpen(true);
+                      setIsProfileOpen(false);
+                    }}
+                  >
+                    Thay đổi mật khẩu
+                  </button>
+
+                  <hr className="border-[#FAF6F2] my-1.5" />
+
+                  {/* Nút Đăng xuất */}
+                  <button 
+                    className="w-full text-left px-3 py-2 text-xs text-red-500 font-bold hover:bg-red-50 rounded-lg transition-colors"
+                    onClick={() => {
+                      setShowLogoutConfirm(true);
+                      setIsProfileOpen(false);
+                    }}
+                  >
+                    Đăng xuất
+                  </button>
+                </div>
+              )}
+            </div>
+
+          </div>
+        </div>
+
         {/* Header with Integrated Professional Global Search */}
         <div className="flex items-center justify-between flex-wrap gap-4 bg-gradient-to-br from-[#FEFAE3] to-[#FFF0CD] p-5 rounded-2xl border border-[#FFDBB6] max-sm:flex-col max-sm:items-stretch">
           <div>
@@ -780,6 +878,42 @@ export default function AdminDashboard() {
         loading={detailLoading}
         onClose={() => setShowDetailModal(false)}
       />
+
+      {/* Admin Profile Modal */}
+      <AdminProfileModal
+        isOpen={isAdminProfileOpen}
+        onClose={() => setIsAdminProfileOpen(false)}
+      />
+
+      {/* Change Password Modal */}
+      <ChangePasswordModal
+        isOpen={isChangePasswordOpen}
+        onClose={() => setIsChangePasswordOpen(false)}
+      />
+
+      {/* Custom Logout Confirmation Pop-up */}
+      {showLogoutConfirm && (
+        <div className="fixed inset-0 bg-[#2D1B14]/40 backdrop-blur-[4px] z-[99999] flex items-center justify-center p-4 animate-fadeIn">
+          <div className="bg-white rounded-2xl w-full max-w-sm overflow-hidden flex flex-col shadow-[0_20px_50px_rgba(76,38,24,0.15)] border border-[#EAD9CB] p-6 text-center animate-scaleUp">
+            <h3 className="text-base font-bold text-[#2D1B14] mb-2 mt-2">Bạn có chắc chắn muốn đăng xuất?</h3>
+            <p className="text-xs text-[#8B6F5F] mb-6">Phiên làm việc hiện tại của bạn trên thiết bị này sẽ được kết thúc.</p>
+            <div className="flex gap-3 justify-center">
+              <button
+                onClick={() => setShowLogoutConfirm(false)}
+                className="flex-1 py-2.5 text-xs border border-[#EAD9CB] text-[#6B4F3F] hover:bg-[#FAF6F2] rounded-xl font-bold transition-all"
+              >
+                Hủy bỏ
+              </button>
+              <button
+                onClick={handleLogoutConfirm}
+                className="flex-1 py-2.5 text-xs bg-[#C25450] hover:bg-[#A9433F] text-white font-bold rounded-xl shadow-md shadow-[#C25450]/20 hover:scale-95 transition-all"
+              >
+                Đăng xuất
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </DashboardShell>
   );
 }

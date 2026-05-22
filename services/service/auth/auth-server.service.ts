@@ -372,3 +372,66 @@ export async function getResetPasswordLogsService(supabase: SupabaseClient) {
   if (error) throw new Error(error.message);
   return data;
 }
+
+export async function changePasswordService(
+  supabase: SupabaseClient,
+  mataikhoan: string,
+  oldMatKhau: string,
+  newMatKhau: string,
+  diachiip: string | null
+) {
+  if (!mataikhoan || !oldMatKhau?.trim() || !newMatKhau?.trim()) {
+    throw new Error("Vui lòng điền đầy đủ thông tin mật khẩu cũ và mới.");
+  }
+
+  // 1. Lấy thông tin tài khoản bao gồm mật khẩu băm hiện tại
+  const { data: taikhoan, error: tkError } = await repo.getAccountByEmailOrIdRepo(supabase, mataikhoan);
+  if (tkError || !taikhoan) {
+    throw new Error("Không tìm thấy tài khoản.");
+  }
+
+  // 2. Xác thực mật khẩu cũ bằng hàm RPC verify_password
+  const { data: isMatch, error: verifyError } = await supabase.rpc("verify_password", {
+    input_password: oldMatKhau,
+    hashed_password: taikhoan.matkhau,
+  });
+
+  if (verifyError) {
+    console.error("[change-password] RPC verify_password error:", verifyError.message);
+    throw new Error("Lỗi xác minh mật khẩu cũ trên máy chủ.");
+  }
+
+  if (!isMatch) {
+    throw new Error("Mật khẩu cũ không chính xác.");
+  }
+
+  // 3. Mã hóa mật khẩu mới bằng hàm RPC hash_password
+  const { data: hashed, error: hashErr } = await supabase.rpc("hash_password", {
+    password: newMatKhau,
+  });
+
+  if (hashErr || !hashed) {
+    console.error("[change-password] RPC hash_password error:", hashErr?.message);
+    throw new Error("Lỗi mã hóa mật khẩu mới trên máy chủ.");
+  }
+
+  // 4. Cập nhật mật khẩu băm mới vào cơ sở dữ liệu
+  const { error: updateErr } = await repo.updateAccountPasswordRepo(supabase, mataikhoan, hashed);
+  if (updateErr) {
+    console.error("[change-password] updateAccountPasswordRepo error:", updateErr.message);
+    throw new Error("Không thể cập nhật mật khẩu mới vào cơ sở dữ liệu.");
+  }
+
+  // 5. Ghi nhật ký hành động thay đổi mật khẩu
+  await repo.logSystemActionRepo(supabase, {
+    mataikhoan,
+    hanhdong: "Thay đổi mật khẩu tài khoản",
+    tentable: "taikhoan",
+    makhoachinh: mataikhoan,
+    giatricu: null,
+    giatrimoi: null,
+    diachiip: diachiip || "127.0.0.1",
+  });
+
+  return { success: true };
+}
