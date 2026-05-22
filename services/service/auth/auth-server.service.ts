@@ -372,3 +372,68 @@ export async function getResetPasswordLogsService(supabase: SupabaseClient) {
   if (error) throw new Error(error.message);
   return data;
 }
+
+export async function changePasswordService(
+  supabase: SupabaseClient,
+  mataikhoan: string,
+  body: any,
+  diachiip: string
+) {
+  const { oldPassword, newPassword } = body || {};
+
+  if (!oldPassword?.trim() || !newPassword?.trim()) {
+    throw new Error("Vui lòng nhập đầy đủ mật khẩu cũ và mới.");
+  }
+
+  // 1. Lấy thông tin tài khoản để lấy mật khẩu đã băm
+  const { data: taikhoan, error: tkError } = await repo.getAccountByEmailOrIdRepo(supabase, mataikhoan);
+  if (tkError || !taikhoan) {
+    throw new Error("Không tìm thấy tài khoản người dùng.");
+  }
+
+  // 2. Xác thực mật khẩu cũ
+  const { data: isMatch, error: verifyError } = await supabase.rpc("verify_password", {
+    input_password: oldPassword.trim(),
+    hashed_password: taikhoan.matkhau,
+  });
+
+  if (verifyError) {
+    console.error("[change-password] verify_password RPC error:", verifyError.message);
+    throw new Error("Lỗi xác thực mật khẩu cũ.");
+  }
+
+  if (!isMatch) {
+    throw new Error("Mật khẩu cũ không chính xác.");
+  }
+
+  // 3. Mã hóa mật khẩu mới
+  const { data: hashed, error: hashErr } = await supabase.rpc("hash_password", {
+    password: newPassword.trim(),
+  });
+
+  if (hashErr || !hashed) {
+    console.error("[change-password] RPC Hash Error:", hashErr?.message);
+    throw new Error("Lỗi mã hóa mật khẩu mới.");
+  }
+
+  // 4. Cập nhật mật khẩu mới
+  const { error: updateErr } = await repo.updateAccountPasswordRepo(supabase, mataikhoan, hashed);
+  if (updateErr) {
+    console.error("[change-password] Update password error:", updateErr.message);
+    throw new Error("Lỗi cập nhật mật khẩu mới vào cơ sở dữ liệu.");
+  }
+
+  // 5. Ghi nhật ký hệ thống
+  await repo.logSystemActionRepo(supabase, {
+    mataikhoan,
+    hanhdong: "Thay đổi mật khẩu",
+    tentable: "taikhoan",
+    makhoachinh: mataikhoan,
+    giatricu: null,
+    giatrimoi: null,
+    diachiip,
+  });
+
+  return { success: true };
+}
+

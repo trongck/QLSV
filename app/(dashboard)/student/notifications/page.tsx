@@ -93,6 +93,25 @@ export default function StudentNotificationsPage() {
     fetchNotifications();
   }, [fetchNotifications]);
 
+  // Tự động mở thông báo khi được điều hướng từ Quả chuông Dashboard
+  useEffect(() => {
+    if (notifications.length > 0) {
+      const params = new URLSearchParams(window.location.search);
+      const selectId = params.get("id");
+      if (selectId) {
+        const target = notifications.find((n) => n.mathongbao === Number(selectId));
+        if (target) {
+          setSelectedNotification(target);
+          if (!target.dadoc) {
+            markAsRead(target.mathongbao);
+          }
+          // Xóa query param để khi reload không bị mở lại
+          window.history.replaceState(null, "", window.location.pathname);
+        }
+      }
+    }
+  }, [notifications]);
+
   // ── Đánh dấu 1 thông báo đã đọc ────────────────────────────────────────────
   const markAsRead = async (mathongbao: number) => {
     await apiFetch("/api/sinhvien/notifications", {

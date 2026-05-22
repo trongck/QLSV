@@ -106,6 +106,22 @@ export function NotificationList() {
     fetchNotifications();
   }, [search, filterType]);
 
+  // Tự động mở thông báo khi được chuyển tiếp từ Quả chuông trên Dashboard Giảng viên
+  useEffect(() => {
+    if (notifications.length > 0) {
+      const params = new URLSearchParams(window.location.search);
+      const selectId = params.get("id");
+      if (selectId) {
+        const target = notifications.find((n) => n.mathongbao === Number(selectId));
+        if (target) {
+          handleSelectNote(target);
+          // Xóa query param để khi reload không bị mở lại
+          window.history.replaceState(null, "", window.location.pathname);
+        }
+      }
+    }
+  }, [notifications]);
+
   useEffect(() => {
     // Fetch classes taught by the teacher to populate target class select
     apiFetch("/api/giangvien/classes")

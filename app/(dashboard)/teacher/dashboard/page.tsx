@@ -7,6 +7,8 @@ import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { VaiTro } from "@/types";
 import { apiFetch } from "@/services/service/auth/auth.service";
 import { ProfileModal } from "@/components/teacher/ProfileModal"; // <-- Hãy đảm bảo đường dẫn này đúng trong dự án của bạn
+import { ChangePasswordModal } from "./changepass";
+import { parseNotificationContent } from "@/components/admin/NotificationForms";
 import styles from "./teacher-dashboard.module.css";
 
 interface ClassSummary {
@@ -54,12 +56,49 @@ export default function TeacherDashboard() {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false); // State mở ProfileModal
+  const [isChangePassOpen, setIsChangePassOpen] = useState(false); // State mở ChangePasswordModal
+  const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false); // State mở custom logout confirm
+  const [bellNotifications, setBellNotifications] = useState<any[]>([]);
+  const [unreadBellCount, setUnreadBellCount] = useState(0);
 
   const handleLogout = () => {
-    if (confirm("Bạn có chắc chắn muốn đăng xuất không?")) {
-      localStorage.removeItem("token");
-      sessionStorage.clear();
-      window.location.href = "/login";
+    setIsLogoutConfirmOpen(true);
+    setIsProfileOpen(false);
+  };
+
+  useEffect(() => {
+    async function loadNotifications() {
+      try {
+        const res = await apiFetch("/api/giangvien/notifications?limit=5");
+        const json = await res.json();
+        if (json.success && json.data) {
+          setBellNotifications(json.data.slice(0, 5));
+          const unread = json.data.filter((tb: any) => !tb.dadoc).length;
+          setUnreadBellCount(unread);
+        }
+      } catch (err) {
+        console.error("Failed to load lecturer bell notifications:", err);
+      }
+    }
+    if (user) {
+      loadNotifications();
+    }
+  }, [user]);
+
+  const handleMarkAllRead = async () => {
+    try {
+      const res = await apiFetch("/api/giangvien/notifications", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ all: true })
+      });
+      const json = await res.json();
+      if (json.success) {
+        setBellNotifications(prev => prev.map(n => ({ ...n, dadoc: true })));
+        setUnreadBellCount(0);
+      }
+    } catch (err) {
+      console.error(err);
     }
   };
 
@@ -129,31 +168,78 @@ export default function TeacherDashboard() {
             
             {/* 1. CỤM NÚT CHUÔNG VÀ POPUP THÔNG BÁO */}
             <div className="relative">
-              <div 
-                className="relative cursor-pointer p-1.5 hover:bg-gray-100 rounded-full transition-colors"
+              <button 
+                type="button"
                 onClick={() => {
                   setIsNotificationOpen(!isNotificationOpen);
                   setIsProfileOpen(false);
                 }}
+                className="w-10 h-10 rounded-full bg-white hover:bg-gray-50 border border-gray-100 flex items-center justify-center relative cursor-pointer transition-colors shadow-sm animate-none"
+                style={{ border: "1px solid #ead9cb" }}
               >
                 <svg className="w-[22px] h-[22px] text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                 </svg>
-                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full border border-white"></span>
-              </div>
+                {unreadBellCount > 0 && (
+                  <span className="absolute top-2 right-2.5 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
+                )}
+              </button>
 
               {isNotificationOpen && (
-                <div className="absolute top-[45px] right-0 w-[300px] bg-white border border-gray-200 rounded-xl shadow-lg z-50 overflow-hidden">
-                  <div className="p-3 font-semibold bg-gray-50 border-b border-gray-200 text-gray-800 text-sm">Thông báo mới nhất</div>
-                  <div className="max-h-[240px] overflow-y-auto">
-                    <div className="p-3 border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                      <p className="text-xs text-gray-700 m-0">🔔 Hệ thống đã cập nhật lịch giảng dạy học kỳ mới.</p>
-                      <span className="text-[10px] text-gray-400">10 phút trước</span>
-                    </div>
-                    <div className="p-3 border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                      <p className="text-xs text-gray-700 m-0">📝 Bạn có một danh sách điểm thi cần phê duyệt.</p>
-                      <span className="text-[10px] text-gray-400">1 giờ trước</span>
-                    </div>
+                <div className="absolute top-[48px] right-0 w-[300px] bg-white border border-gray-200 rounded-xl shadow-xl z-50 overflow-hidden">
+                  <div className="p-3 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
+                    <span className="text-xs font-bold text-gray-800">Thông báo của bạn</span>
+                    {unreadBellCount > 0 && (
+                      <span 
+                        onClick={handleMarkAllRead}
+                        className="text-[10px] text-emerald-600 font-semibold cursor-pointer hover:underline"
+                      >
+                        Đánh dấu đã đọc
+                      </span>
+                    )}
+                  </div>
+                  <div className="max-h-[280px] overflow-y-auto">
+                    {bellNotifications.length === 0 ? (
+                      <div className="p-4 text-center text-xs text-gray-500">
+                        Không có thông báo nào
+                      </div>
+                    ) : (
+                      bellNotifications.map((notif: any) => {
+                        const parsed = parseNotificationContent(notif.noidung || "");
+                        return (
+                          <div 
+                            key={notif.mathongbao}
+                            onClick={() => {
+                              router.push(`/teacher/notification?id=${notif.mathongbao}`);
+                            }}
+                            className={`p-3 border-b border-gray-100 hover:bg-gray-50 transition-colors cursor-pointer flex flex-col gap-1 ${!notif.dadoc ? 'bg-orange-50/40' : ''}`}
+                          >
+                            <p className={`text-xs text-gray-700 m-0 ${!notif.dadoc ? 'font-semibold text-[#C25450]' : ''}`}>
+                              {notif.tieude}
+                            </p>
+                            <p className="text-[10px] text-gray-500 m-0 line-clamp-1">
+                              {parsed.text}
+                            </p>
+                            <span className="text-[9px] text-gray-400">
+                              {new Date(notif.ngaytao).toLocaleDateString("vi-VN", {
+                                hour: "2-digit",
+                                minute: "2-digit",
+                                day: "2-digit",
+                                month: "2-digit"
+                              })}
+                            </span>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+                  <div className="p-2 bg-gray-50 border-t border-gray-100 text-center">
+                    <span 
+                      onClick={() => router.push("/teacher/notification")}
+                      className="text-xs text-[#C25450] font-semibold cursor-pointer hover:underline"
+                    >
+                      Xem tất cả thông báo
+                    </span>
                   </div>
                 </div>
               )}
@@ -195,19 +281,18 @@ export default function TeacherDashboard() {
         setIsProfileOpen(false);
       }}
     >
-      <span className="text-sm">👤</span> Thông tin cá nhân
+      Thông tin cá nhân
     </button>
 
     {/* 3. Nút Thay đổi mật khẩu */}
     <button 
       className="w-full text-left px-3 py-2 text-xs text-gray-700 hover:bg-gray-100 rounded-lg transition-colors flex items-center gap-2"
       onClick={() => {
-        // Sau này khi có modal đổi mật khẩu, bạn chỉ cần gọi state mở modal ở đây
-        alert("Chức năng Thay đổi mật khẩu đang được triển khai!");
+        setIsChangePassOpen(true);
         setIsProfileOpen(false);
       }}
     >
-      <span className="text-sm">🔑</span> Thay đổi mật khẩu
+      Thay đổi mật khẩu
     </button>
 
     <hr className="border-gray-100 my-1.5" />
@@ -217,7 +302,7 @@ export default function TeacherDashboard() {
       className="w-full text-left px-3 py-2 text-xs text-red-500 font-medium hover:bg-red-50 rounded-lg transition-colors flex items-center gap-2"
       onClick={handleLogout}
     >
-      <span className="text-sm">🚪</span> Đăng xuất
+      Đăng xuất
     </button>
   </div>
 )}
@@ -347,6 +432,40 @@ export default function TeacherDashboard() {
 
       {/* 👇 GỌI MODAL PROFILE TẠI ĐÂY ĐỂ ĐỒNG BỘ VỚI STATE TRONG FILE */}
       <ProfileModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+      {/* 👇 GỌI MODAL THAY ĐỔI MẬT KHẨU */}
+      <ChangePasswordModal isOpen={isChangePassOpen} onClose={() => setIsChangePassOpen(false)} />
+
+      {/* 👇 HỘP XÁC NHẬN ĐĂNG XUẤT ĐẸP ĐẼ */}
+      {isLogoutConfirmOpen && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-[1px] z-[999] flex items-center justify-center p-4 animate-fadeIn">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden border border-gray-100 p-5 animate-fadeInUp flex flex-col gap-4">
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm font-bold text-gray-800 m-0">Xác nhận đăng xuất</h3>
+            </div>
+            <p className="text-xs text-gray-600 m-0">Bạn có chắc chắn muốn đăng xuất khỏi hệ thống không?</p>
+            <div className="flex justify-end gap-2 mt-1">
+              <button 
+                type="button" 
+                onClick={() => setIsLogoutConfirmOpen(false)}
+                className="px-4 py-2 text-xs border border-gray-200 text-gray-600 hover:bg-gray-50 rounded-lg font-medium transition-colors cursor-pointer"
+              >
+                Hủy
+              </button>
+              <button 
+                type="button" 
+                onClick={() => {
+                  localStorage.removeItem("token");
+                  sessionStorage.clear();
+                  window.location.href = "/login";
+                }}
+                className="px-4 py-2 text-xs bg-red-500 hover:bg-red-600 text-white font-semibold rounded-lg shadow-sm transition-colors cursor-pointer"
+              >
+                Đăng xuất
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </DashboardShell>
   );
 }

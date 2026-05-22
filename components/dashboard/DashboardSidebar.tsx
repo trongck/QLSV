@@ -105,44 +105,7 @@ export function DashboardSidebar({ onProfileClick }: { onProfileClick?: () => vo
         ))}
       </ul>
 
-      {/* User info + logout */}
-      <div className="p-[12px_6px_4px] border-t border-[#EAD9CB] mt-3 flex items-center gap-2">
-        <div 
-          className={`flex items-center gap-2 flex-1 min-w-0 ${onProfileClick ? "cursor-pointer hover:opacity-85 transition-opacity" : ""}`}
-          onClick={onProfileClick}
-          title={onProfileClick ? "Xem hồ sơ cá nhân" : undefined}
-        >
-          <div className="w-[34px] h-[34px] rounded-full bg-primary text-white text-[13px] font-bold flex items-center justify-center shrink-0" aria-hidden>
-            {user?.hoten?.charAt(0) ?? "?"}
-          </div>
-          <div className="flex flex-col min-w-0">
-            <span className="text-[13px] font-semibold text-[#2D1B14] whitespace-nowrap overflow-hidden text-ellipsis">{user?.hoten ?? "—"}</span>
-            <span className="text-[11px] text-[#8B6F5F]">{roleLabel}</span>
-          </div>
-        </div>
-        <button
-          className="bg-none border-none cursor-pointer p-1.5 text-[#8B6F5F] rounded-lg flex items-center transition-all duration-150 hover:bg-[#FEE2E2] hover:text-[#C25450] shrink-0"
-          onClick={() => logout()}
-          aria-label="Đăng xuất"
-          title="Đăng xuất"
-        >
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            aria-hidden
-          >
-            <path
-              d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-        </button>
-      </div>
+
     </>
   );
 }
