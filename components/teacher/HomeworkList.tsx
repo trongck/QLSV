@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import styles from "@/app/(dashboard)/teacher/dashboard/teacher-dashboard.module.css";
+
 import { useRouter } from "next/navigation";
 import { apiFetch } from "@/services/service/auth/auth.service";
 

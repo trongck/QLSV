@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import * as repo from "@/services/repositories/giang vien/teacher-messages.repo";
-import styles from "@/app/(dashboard)/teacher/dashboard/teacher-dashboard.module.css";
+
 
 export function ChatView() {
   const [conversations, setConversations] = useState<repo.ConversationRow[]>([]);
@@ -333,11 +333,12 @@ export function ChatView() {
                   <div
                     key={user.id}
                     onClick={() => handleSelectUser(user)}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = "#FFF8F5")}
+                    onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
                     style={{
                       display: "flex", alignItems: "center", gap: "10px", padding: "10px",
                       borderBottom: "1px solid #FDF8F5", cursor: "pointer", fontSize: "12.5px"
                     }}
-                    className={styles.searchItemHover}
                   >
                     <div style={{
                       width: "30px", height: "30px", borderRadius: "50%", background: "#EAD9CB",

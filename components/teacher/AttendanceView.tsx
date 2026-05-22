@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { apiFetch } from "@/services/service/auth/auth.service";
-import styles from "@/app/(dashboard)/teacher/dashboard/teacher-dashboard.module.css";
+
 import { FaceAttendanceModal } from "./FaceAttendanceModal";
 
 type SubTab = "list" | "qrcode" | "leave_requests";
@@ -308,8 +308,7 @@ export function AttendanceView() {
           {!selectedBH && selectedPC && (
             <button 
               onClick={handleCreateSession}
-              className={styles.primaryBtn} 
-              style={{ background: "linear-gradient(90deg, #F2A8A8 0%, #FFB4B4 100%)", padding: "10px 20px" }}
+              style={{ background: "linear-gradient(90deg, #F2A8A8 0%, #FFB4B4 100%)", padding: "10px 20px", border: "none", borderRadius: "8px", color: "white", fontSize: "13.5px", fontWeight: "600", cursor: "pointer" }}
             >
               ➕ Tạo ca điểm danh ngày này
             </button>
@@ -524,8 +523,7 @@ export function AttendanceView() {
                     <p style={{ margin: 0, fontSize: "14px", fontWeight: "600" }}>Buổi học này chưa được tạo mã QR điểm danh.</p>
                     <button 
                       onClick={handleRefreshQR}
-                      className={styles.primaryBtn}
-                      style={{ background: "linear-gradient(90deg, #F2A8A8 0%, #FFB4B4 100%)", padding: "8px 20px" }}
+                      style={{ background: "linear-gradient(90deg, #F2A8A8 0%, #FFB4B4 100%)", padding: "8px 20px", border: "none", borderRadius: "8px", color: "white", fontSize: "13.5px", fontWeight: "600", cursor: "pointer" }}
                     >
                       ⚡ Tạo Mã QR điểm danh
                     </button>

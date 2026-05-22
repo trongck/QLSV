@@ -97,7 +97,8 @@ export default function StudentDashboard() {
   useEffect(() => {
     async function loadNotifications() {
       try {
-        const res = await apiFetch("/api/sinhvien/notifications");
+        const res = await apiFetch("/api/student/notifications");
+        if (!res.ok || !res.headers.get("content-type")?.includes("application/json")) return;
         const json = await res.json();
         if (json.success && json.data) {
           // Lấy tối đa 5 thông báo mới nhất
@@ -115,11 +116,12 @@ export default function StudentDashboard() {
 
   const handleMarkAllRead = async () => {
     try {
-      const res = await apiFetch("/api/sinhvien/notifications", {
+      const res = await apiFetch("/api/student/notifications", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ all: true })
       });
+      if (!res.ok || !res.headers.get("content-type")?.includes("application/json")) return;
       const json = await res.json();
       if (json.success) {
         setBellNotifications(prev => prev.map(n => ({ ...n, dadoc: true })));
@@ -155,7 +157,7 @@ export default function StudentDashboard() {
             .select("maphancong")
             .eq("masv", masv)
             .eq("trangthai", "Danghoc"),
-          apiFetch("/api/student/grades?mahocky=all").then(r => r.json()).catch(() => null),
+          apiFetch("/api/student/grades?mahocky=all").then(r => r.headers.get("content-type")?.includes("application/json") ? r.json() : null).catch(() => null),
         ]);
 
         const gpaView = gpaResponse?.gpaView;
