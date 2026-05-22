@@ -24,7 +24,7 @@ export default function ExamResultDetailPage() {
   const fetchResultDetail = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await apiFetch(`/api/sinhvien/exam/${id}/result`);
+      const res = await apiFetch(`/api/student/exam/${id}/result`);
       const json = await res.json();
       if (json.success) {
         setResultData(json.data);

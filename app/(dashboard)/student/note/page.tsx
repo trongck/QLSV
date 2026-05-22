@@ -92,7 +92,7 @@ export default function StudentNotePage() {
   const fetchNotes = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await apiFetch("/api/sinhvien/notes");
+      const res = await apiFetch("/api/student/notes");
       const json = await res.json();
       if (json.success) {
         setNotes(json.data);
@@ -129,7 +129,7 @@ export default function StudentNotePage() {
     autoSaveTimer.current = setTimeout(async () => {
       if (!selectedId) return;
       try {
-        const res = await apiFetch(`/api/sinhvien/notes/${selectedId}`, {
+        const res = await apiFetch(`/api/student/notes/${selectedId}`, {
           method: "PUT",
           body: JSON.stringify({ [field]: value }),
         });
@@ -155,7 +155,7 @@ export default function StudentNotePage() {
   // ── Thêm nhật ký mới ─────────────────────────────────────────────────────────
   const addNewNote = async (result: CreateNoteResult) => {
     try {
-      const res = await apiFetch("/api/sinhvien/notes", {
+      const res = await apiFetch("/api/student/notes", {
         method: "POST",
         body: JSON.stringify({
           tieude: result.tieude,
@@ -179,7 +179,7 @@ export default function StudentNotePage() {
   const deleteNote = async (manhatky: number) => {
     if (!confirm("Bạn có chắc muốn xoá nhật ký này?")) return;
     try {
-      await apiFetch(`/api/sinhvien/notes/${manhatky}`, { method: "DELETE" });
+      await apiFetch(`/api/student/notes/${manhatky}`, { method: "DELETE" });
       const remaining = notes.filter((n) => n.manhatky !== manhatky);
       setNotes(remaining);
       if (selectedId === manhatky) {

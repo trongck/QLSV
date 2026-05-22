@@ -82,7 +82,7 @@ export function StudentProfileModal({ isOpen, onClose }: ProfileModalProps) {
       setSuccessMsg("");
       setIsEditing(false);
       try {
-        const res = await apiFetch("/api/sinhvien/profile");
+        const res = await apiFetch("/api/student/profile");
         const json = await res.json();
         if (json.success && json.data) {
           const p = json.data as ProfileData;
@@ -120,7 +120,7 @@ export function StudentProfileModal({ isOpen, onClose }: ProfileModalProps) {
     setError("");
     setSuccessMsg("");
     try {
-      const res = await apiFetch("/api/sinhvien/profile", {
+      const res = await apiFetch("/api/student/profile", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -656,7 +656,7 @@ export function StudentProfileModal({ isOpen, onClose }: ProfileModalProps) {
           // Re-fetch profile to update face_embedding status
           const fetchProfile = async () => {
             try {
-              const res = await apiFetch("/api/sinhvien/profile");
+              const res = await apiFetch("/api/student/profile");
               const json = await res.json();
               if (json.success && json.data) {
                 setData(json.data as ProfileData);

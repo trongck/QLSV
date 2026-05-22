@@ -46,12 +46,11 @@ export function useMessages(currentMataikhoan: string) {
   const fetchChatRooms = useCallback(async () => {
     setIsLoading(true);
     try {
-      const res = await apiFetch("/api/sinhvien/chat-rooms");
+      const res = await apiFetch("/api/student/messages/conversations");
       const json = await res.json();
-      if (json.success && Array.isArray(json.data)) {
-        const mapped = json.data.map((item: any) => {
-          const room = item.cuoctrochuyen;
-          const otherMember = room.thanhvientrochuyen?.find((m: any) => m.mataikhoan !== currentMataikhoan);
+      if (json && Array.isArray(json.data)) {
+        const mapped = json.data.map((room: any) => {
+          const otherMember = room.otherMembers?.[0];
 
           let name = room.tieude;
           let role = "Thành viên";
@@ -75,7 +74,7 @@ export function useMessages(currentMataikhoan: string) {
           const startDateStr = room.ngaytao ? new Date(room.ngaytao).toLocaleDateString("vi-VN") : "";
 
           let previewText = "Bắt đầu cuộc trò chuyện...";
-          let previewTime = new Date(room.ngaytao).toLocaleTimeString("vi-VN", { hour: '2-digit', minute: '2-digit' });
+          let previewTime = room.ngaytao ? new Date(room.ngaytao).toLocaleTimeString("vi-VN", { hour: '2-digit', minute: '2-digit' }) : "";
 
           if (room.lastMsg) {
             previewText = room.lastMsg.noidung;
@@ -83,12 +82,12 @@ export function useMessages(currentMataikhoan: string) {
           }
 
           return {
-            id: item.macuoctrochuyen,
+            id: room.macuoctrochuyen,
             name,
             avatar: name !== "Phòng chat" ? "👤" : "👥",
             time: previewTime,
             lastMsg: previewText,
-            unread: 0,
+            unread: room.unread ?? 0,
             role,
             email,
             startDate: startDateStr,
@@ -106,12 +105,11 @@ export function useMessages(currentMataikhoan: string) {
   // Polling for chat rooms (silent, no loading state)
   const pollChatRooms = useCallback(async () => {
     try {
-      const res = await apiFetch("/api/sinhvien/chat-rooms");
+      const res = await apiFetch("/api/student/messages/conversations");
       const json = await res.json();
-      if (json.success && Array.isArray(json.data)) {
-        const mapped = json.data.map((item: any) => {
-          const room = item.cuoctrochuyen;
-          const otherMember = room.thanhvientrochuyen?.find((m: any) => m.mataikhoan !== currentMataikhoan);
+      if (json && Array.isArray(json.data)) {
+        const mapped = json.data.map((room: any) => {
+          const otherMember = room.otherMembers?.[0];
 
           let name = room.tieude;
           let role = "Thành viên";
@@ -134,7 +132,7 @@ export function useMessages(currentMataikhoan: string) {
           const startDateStr = room.ngaytao ? new Date(room.ngaytao).toLocaleDateString("vi-VN") : "";
 
           let previewText = "Bắt đầu cuộc trò chuyện...";
-          let previewTime = new Date(room.ngaytao).toLocaleTimeString("vi-VN", { hour: '2-digit', minute: '2-digit' });
+          let previewTime = room.ngaytao ? new Date(room.ngaytao).toLocaleTimeString("vi-VN", { hour: '2-digit', minute: '2-digit' }) : "";
 
           if (room.lastMsg) {
             previewText = room.lastMsg.noidung;
@@ -142,12 +140,12 @@ export function useMessages(currentMataikhoan: string) {
           }
 
           return {
-            id: item.macuoctrochuyen,
+            id: room.macuoctrochuyen,
             name,
             avatar: name !== "Phòng chat" ? "👤" : "👥",
             time: previewTime,
             lastMsg: previewText,
-            unread: 0,
+            unread: room.unread ?? 0,
             role,
             email,
             startDate: startDateStr,
@@ -164,7 +162,7 @@ export function useMessages(currentMataikhoan: string) {
   const fetchMessages = useCallback(async (roomId: number) => {
     setIsLoading(true);
     try {
-      const res = await apiFetch(`/api/sinhvien/messages?roomId=${roomId}`);
+      const res = await apiFetch(`/api/student/messages?roomId=${roomId}`);
       const json = await res.json();
       if (json.success && Array.isArray(json.data)) {
 
@@ -220,7 +218,7 @@ export function useMessages(currentMataikhoan: string) {
   // Polling for messages (silent)
   const pollMessages = useCallback(async (roomId: number) => {
     try {
-      const res = await apiFetch(`/api/sinhvien/messages?roomId=${roomId}`);
+      const res = await apiFetch(`/api/student/messages?roomId=${roomId}`);
       const json = await res.json();
       if (json.success && Array.isArray(json.data)) {
         const mapped = json.data.map((msg: any) => ({
@@ -247,7 +245,7 @@ export function useMessages(currentMataikhoan: string) {
 
   const sendMessage = useCallback(async (roomId: number, userId: string, content: string, filedinh?: string) => {
     try {
-      const res = await apiFetch("/api/sinhvien/messages", {
+      const res = await apiFetch("/api/student/messages", {
         method: "POST",
         body: JSON.stringify({
           macuoctrochuyen: roomId,
@@ -305,7 +303,7 @@ export function useMessages(currentMataikhoan: string) {
 
   const deleteChatRoom = useCallback(async (roomId: number) => {
     try {
-      const res = await apiFetch(`/api/sinhvien/chat-rooms?roomId=${roomId}`, {
+      const res = await apiFetch(`/api/student/messages/conversations/${roomId}`, {
         method: "DELETE",
       });
       const json = await res.json();

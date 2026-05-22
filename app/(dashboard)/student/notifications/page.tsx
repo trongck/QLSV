@@ -78,7 +78,7 @@ export default function StudentNotificationsPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await apiFetch("/api/sinhvien/notifications");
+      const res = await apiFetch("/api/student/notifications");
       const json = await res.json();
       if (!json.success) throw new Error(json.message);
       setNotifications(json.data);
@@ -95,7 +95,7 @@ export default function StudentNotificationsPage() {
 
   // ── Đánh dấu 1 thông báo đã đọc ────────────────────────────────────────────
   const markAsRead = async (mathongbao: number) => {
-    await apiFetch("/api/sinhvien/notifications", {
+    await apiFetch("/api/student/notifications", {
       method: "PATCH",
       body: JSON.stringify({ mathongbao }),
     });
@@ -108,7 +108,7 @@ export default function StudentNotificationsPage() {
 
   // ── Đánh dấu tất cả đã đọc ──────────────────────────────────────────────────
   const markAllAsRead = async () => {
-    await apiFetch("/api/sinhvien/notifications", {
+    await apiFetch("/api/student/notifications", {
       method: "PATCH",
       body: JSON.stringify({ all: true }),
     });

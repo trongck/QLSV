@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import { createClient } from "@/lib/utils/supabase/server";
 import { verifyToken, extractBearer } from "@/lib/utils/jwt";
 import { VaiTro } from "@/types";
-import { sinhVienService } from "@/services/student.service";
+import { sinhVienService } from "@/services/service/sinhvien/student.service";
 
 /** Validate gioitinh theo đúng CHECK constraint của DB */
 function normalizeGioiTinh(val: string | undefined): "Nam" | "Nu" | "Khac" | null {

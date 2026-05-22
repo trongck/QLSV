@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import { createClient } from "@/lib/utils/supabase/server";
 import { verifyToken, extractBearer } from "@/lib/utils/jwt";
 import { VaiTro } from "@/types";
+import { scheduleRepo, tietToTimeRange } from "@/services/repositories/sinhvien/schedule.repo";
 
 // ─── Auth helper ─────────────────────────────────────────────────────────────
 
@@ -51,6 +52,7 @@ const COLORS = [
 
 // ─── GET /api/student/schedule ────────────────────────────────────────────────
 // Query params:
+//   mode      - "week" | "semester" (optional, from sinhvien dashboard)
 //   view      - "week" | "semester" (default: "week")
 //   mahocky   - ID học kỳ (optional, default: học kỳ hiện tại)
 
@@ -61,6 +63,104 @@ export async function GET(request: Request) {
   }
 
   const { searchParams } = new URL(request.url);
+  const mode = searchParams.get("mode");
+
+  // ─── BRANCH: Mode "week" or "semester" (sinhvien logic) ──────────────────
+  if (mode === "week" || mode === "semester") {
+    try {
+      const cookieStore = await cookies();
+      const supabase = createClient(cookieStore);
+      const { data: sv, error: svError } = await supabase
+        .from('sinhvien')
+        .select('masv, malop, hodem, ten')
+        .eq('mataikhoan', payload.mataikhoan)
+        .single();
+      if (svError || !sv) {
+        return NextResponse.json({ error: 'Không tìm thấy thông tin sinh viên' }, { status: 404 });
+      }
+      
+      const masv = sv.masv;
+      const mahockyParam = searchParams.get('mahocky');
+      const mahocky = mahockyParam ? parseInt(mahockyParam) : undefined;
+
+      const thuLabel = (thu: number): string => {
+        const map: Record<number, string> = {
+          2: 'Thứ 2', 3: 'Thứ 3', 4: 'Thứ 4',
+          5: 'Thứ 5', 6: 'Thứ 6', 7: 'Thứ 7', 8: 'Chủ nhật',
+        };
+        return map[thu] ?? `Thứ ${thu}`;
+      };
+
+      if (mode === 'semester') {
+        let targetMahocky = mahocky;
+        if (!targetMahocky) {
+          const { data: hk } = await scheduleRepo.getCurrentHocKy();
+          targetMahocky = hk?.mahocky;
+        }
+        if (!targetMahocky) {
+          return NextResponse.json({ success: false, message: 'Không tìm thấy học kỳ hiệu lực' }, { status: 404 });
+        }
+
+        const { data, error } = await scheduleRepo.getSemesterSchedule(masv, targetMahocky);
+        if (error) throw new Error(error.message);
+
+        const enriched = (data ?? []).map((pc: any) => {
+          if (pc.giangvien) {
+            pc.giangvien = {
+              ...pc.giangvien,
+              hoten: [pc.giangvien.hodem, pc.giangvien.ten].filter(Boolean).join(" ") || "Giảng viên"
+            };
+          }
+          return {
+            ...pc,
+            lichhoc: (pc.lichhoc ?? []).map((lh: any) => ({
+              ...lh,
+              timeRange: tietToTimeRange(lh.tietbatdau, lh.tietketthuc),
+              thuLabel: thuLabel(lh.thutrongtuan),
+            })).sort((a: any, b: any) => a.thutrongtuan - b.thutrongtuan || a.tietbatdau - b.tietbatdau),
+          };
+        });
+
+        return NextResponse.json({
+          success: true,
+          mode: 'semester',
+          mahocky: targetMahocky,
+          data: enriched,
+        });
+      } else {
+        // mode === 'week'
+        const { data, error } = await scheduleRepo.getWeekSchedule(masv, mahocky);
+        if (error) throw new Error(error.message);
+
+        const enriched = (data ?? []).map((lh: any) => {
+          const pc = lh.phancong;
+          if (pc && pc.giangvien) {
+            pc.giangvien = {
+              ...pc.giangvien,
+              hoten: [pc.giangvien.hodem, pc.giangvien.ten].filter(Boolean).join(" ") || "Giảng viên"
+            };
+          }
+          return {
+            ...lh,
+            phancong: pc,
+            timeRange: tietToTimeRange(lh.tietbatdau, lh.tietketthuc),
+            thuLabel: thuLabel(lh.thutrongtuan),
+          };
+        });
+
+        return NextResponse.json({
+          success: true,
+          mode: 'week',
+          data: enriched,
+        });
+      }
+    } catch (error: any) {
+      const status = error.message?.includes('đăng nhập') ? 401 : 500;
+      return NextResponse.json({ success: false, message: error.message }, { status });
+    }
+  }
+
+  // ─── BRANCH: Legacy/Original student logic ────────────────────────────────
   const view     = (searchParams.get("view") ?? "week") as "week" | "semester";
   const mahockyParam = searchParams.get("mahocky");
 

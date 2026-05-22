@@ -23,7 +23,7 @@ function useSubjects() {
   useEffect(() => {
     const run = async () => {
       try {
-        const res = await apiFetch("/api/sinhvien/attendance/sessions");
+        const res = await apiFetch("/api/student/attendance/sessions");
         const json = await res.json();
         if (json.success) {
           const list: Subject[] = (json.subjects ?? []).map((s: any) => ({
@@ -167,7 +167,7 @@ function QRModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () =>
     }
 
     try {
-      const res = await apiFetch("/api/sinhvien/attendance/checkin", {
+      const res = await apiFetch("/api/student/attendance/checkin", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -374,7 +374,7 @@ function FaceModal({
     setMessage("Nhận diện thành công! 🎉");
 
     try {
-      await apiFetch("/api/sinhvien/attendance/checkin", {
+      await apiFetch("/api/student/attendance/checkin", {
         method: "POST",
         body: JSON.stringify({ method: "khuon_mat" }),
       });
@@ -562,7 +562,7 @@ function LeaveRequestModal({ onClose }: { onClose: () => void }) {
   const loadData = useCallback(async () => {
     setLoadingData(true);
     try {
-      const res = await apiFetch("/api/sinhvien/attendance/leave");
+      const res = await apiFetch("/api/student/attendance/leave");
       const json = await res.json();
       if (json.success) {
         setSubjects(json.subjects ?? []);
@@ -628,7 +628,7 @@ function LeaveRequestModal({ onClose }: { onClose: () => void }) {
     setSubmitting(true);
     setMessage(null);
     try {
-      const res = await apiFetch("/api/sinhvien/attendance/leave", {
+      const res = await apiFetch("/api/student/attendance/leave", {
         method: "POST",
         body: JSON.stringify({
           malichhoc: schedule.malichhoc,

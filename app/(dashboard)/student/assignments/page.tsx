@@ -130,7 +130,7 @@ export default function AssignmentPage() {
   const fetchAssignments = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await apiFetch("/api/sinhvien/assignment");
+      const res = await apiFetch("/api/student/assignment");
       const json = await res.json();
       if (json.success) {
         setAssignments(json.data);
@@ -168,7 +168,7 @@ export default function AssignmentPage() {
         const token = tokenStorage.getAccessToken() || '';
         const formData = new FormData();
         formData.append('file', submitFile);
-        const upRes = await fetch('/api/sinhvien/upload', {
+        const upRes = await fetch('/api/student/upload', {
           method: 'POST',
           headers: { Authorization: `Bearer ${token}` },
           body: formData,
@@ -178,7 +178,7 @@ export default function AssignmentPage() {
         filenop = `${upJson.url}?name=${encodeURIComponent(upJson.fileName)}`;
       }
 
-      const res = await apiFetch('/api/sinhvien/tasks', {
+      const res = await apiFetch('/api/student/tasks', {
         method: 'POST',
         body: JSON.stringify({
           mabaitap: submitTarget.mabaitap,

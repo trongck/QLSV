@@ -153,7 +153,7 @@ export function FaceRegistrationModal({ isOpen, onClose, onSuccess }: FaceRegist
       const bestVector = Array.from(newCaptures[bestIndex]);
 
       // Call API
-      const res = await apiFetch("/api/sinhvien/profile", {
+      const res = await apiFetch("/api/student/profile", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ face_embedding: bestVector }),

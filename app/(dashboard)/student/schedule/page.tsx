@@ -150,7 +150,7 @@ export default function SchedulePage() {
 
   // Lấy danh sách học kỳ
   useEffect(() => {
-    apiFetch("/api/sinhvien/hocky")
+    apiFetch("/api/student/hocky")
       .then((r) => r.json())
       .then((json) => {
         if (json.success && Array.isArray(json.data)) {
@@ -169,7 +169,7 @@ export default function SchedulePage() {
     setSelectedItem(null);
     try {
       const params = mahocky ? `?mode=week&mahocky=${mahocky}` : "?mode=week";
-      const res = await apiFetch(`/api/sinhvien/schedule${params}`);
+      const res = await apiFetch(`/api/student/schedule${params}`);
       const json = await res.json();
       if (json.success) setWeekData(json.data ?? []);
     } catch { }
@@ -181,7 +181,7 @@ export default function SchedulePage() {
     setLoading(true);
     setSelectedItem(null);
     try {
-      const res = await apiFetch(`/api/sinhvien/schedule?mode=semester&mahocky=${mahocky}`);
+      const res = await apiFetch(`/api/student/schedule?mode=semester&mahocky=${mahocky}`);
       const json = await res.json();
       if (json.success) setSemesterData(json.data ?? []);
     } catch { }

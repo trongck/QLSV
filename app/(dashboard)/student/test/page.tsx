@@ -30,7 +30,7 @@ export default function ExamPage() {
     async function loadExams() {
       setLoading(true);
       try {
-        const res = await apiFetch("/api/sinhvien/exam");
+        const res = await apiFetch("/api/student/exam");
         const json = await res.json();
         if (json.success) {
           setExams(json.data);
