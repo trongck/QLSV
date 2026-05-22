@@ -431,7 +431,7 @@ export const giangVienService = {
       .from("sinhvienmonhoc")
       .select(`
         masv,
-        sinhvien ( hodem, ten )
+        sinhvien ( hodem, ten, face_embedding )
       `)
       .eq("maphancong", maphancong)
       .eq("trangthai", "Danghoc");
@@ -476,7 +476,8 @@ export const giangVienService = {
         status,
         type,
         time: dd?.thoigiandiemdanh ? new Date(dd.thoigiandiemdanh).toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" }) : "--",
-        note: dd?.ghichu ?? "-"
+        note: dd?.ghichu ?? "-",
+        face_embedding: sv?.face_embedding || null
       };
     });
   },

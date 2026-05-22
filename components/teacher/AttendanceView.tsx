@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { apiFetch } from "@/services/service/auth/auth.service";
 import styles from "@/app/(dashboard)/teacher/dashboard/teacher-dashboard.module.css";
+import { FaceAttendanceModal } from "./FaceAttendanceModal";
 
 type SubTab = "list" | "qrcode" | "leave_requests";
 
@@ -42,10 +43,12 @@ interface StudentAttendance {
   type: string;
   time: string;
   note: string;
+  face_embedding?: number[] | null;
 }
 
 export function AttendanceView() {
   const [subTab, setSubTab] = useState<SubTab>("list");
+  const [isFaceModalOpen, setIsFaceModalOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [classes, setClasses] = useState<LopItem[]>([]);
   const [allSessions, setAllSessions] = useState<BuoiHocItem[]>([]);
@@ -402,6 +405,27 @@ export function AttendanceView() {
               )}
             </button>
           </div>
+          {subTab === "list" && selectedBH && (
+            <button
+              onClick={() => setIsFaceModalOpen(true)}
+              style={{
+                padding: "8px 16px",
+                borderRadius: "8px",
+                border: "none",
+                background: "linear-gradient(90deg, #F2A8A8 0%, #FFB4B4 100%)",
+                color: "#2D1B14",
+                fontSize: "13px",
+                fontWeight: "bold",
+                cursor: "pointer",
+                boxShadow: "0 4px 12px rgba(242, 168, 168, 0.3)",
+                display: "flex",
+                alignItems: "center",
+                gap: "6px"
+              }}
+            >
+              📷 Điểm danh khuôn mặt
+            </button>
+          )}
         </div>
 
         {/* ================= VIEW 1: ACTIVE STUDENT CHECKLIST ================= */}
@@ -648,6 +672,16 @@ export function AttendanceView() {
         )}
 
       </section>
+
+      {/* Face Attendance Modal */}
+      <FaceAttendanceModal
+        isOpen={isFaceModalOpen}
+        onClose={() => setIsFaceModalOpen(false)}
+        roster={roster}
+        onMarkPresent={async (mssv) => {
+          await handleStatusChange(mssv, "Có mặt");
+        }}
+      />
     </div>
   );
 }
