@@ -4,8 +4,12 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/auth/useAuth";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
-import { AttendanceView } from "@/components/teacher/AttendanceView";
-import styles from "../dashboard/teacher-dashboard.module.css";
+import dynamic from "next/dynamic";
+
+const AttendanceView = dynamic(
+  () => import("@/components/teacher/AttendanceView").then((mod) => mod.AttendanceView),
+  { ssr: false }
+);
 
 export default function TeacherAttendance() {
   const { user, loading: authLoading } = useAuth();
@@ -22,7 +26,7 @@ export default function TeacherAttendance() {
 
   if (authLoading || loading) {
     return (
-      <div style={{ padding: "24px", textAlign: "center", color: "#6B4F43", fontWeight: "bold" }}>
+      <div className="p-6 text-center text-fg-muted font-bold">
         Đang tải...
       </div>
     );
@@ -30,7 +34,7 @@ export default function TeacherAttendance() {
 
   return (
     <DashboardShell pageTitle="Điểm danh">
-      <div className={styles.page}>
+      <div className="flex flex-col gap-5">
         <AttendanceView />
       </div>
     </DashboardShell>

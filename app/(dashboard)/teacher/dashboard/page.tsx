@@ -9,7 +9,6 @@ import { apiFetch } from "@/services/service/auth/auth.service";
 import { ProfileModal } from "@/components/teacher/ProfileModal"; // <-- Hãy đảm bảo đường dẫn này đúng trong dự án của bạn
 import { ChangePasswordModal } from "./changepass";
 import { parseNotificationContent } from "@/components/admin/NotificationForms";
-import styles from "./teacher-dashboard.module.css";
 
 interface ClassSummary {
   maphancong: number;
@@ -38,10 +37,10 @@ function StatCard({
   sub?: string;
 }) {
   return (
-    <div className={`card ${styles.statCard}`}>
-      <span className={styles.statLabel}>{label}</span>
-      <span className={styles.statValue}>{value}</span>
-      {sub && <span className={styles.statSub}>{sub}</span>}
+    <div className="card p-[18px_20px] flex flex-col gap-1.5">
+      <span className="text-[12px] font-semibold text-fg-subtle uppercase tracking-wider">{label}</span>
+      <span className="text-3xl font-bold text-fg leading-none">{value}</span>
+      {sub && <span className="text-[12px] text-fg-subtle">{sub}</span>}
     </div>
   );
 }
@@ -145,15 +144,15 @@ export default function TeacherDashboard() {
 
   return (
     <DashboardShell pageTitle="Tổng quan">
-      <div className={`animate-fadeInUp ${styles.page}`}>
+      <div className="animate-fadeInUp flex flex-col gap-5">
         
         {/* ĐÂY LÀ PHẦN THAY THẾ: Lời chào nằm bên trái --- Cụm Avatar + Chuông nằm bên phải thay thế cho badge cũ */}
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className={styles.greeting} style={{ margin: 0 }}>
+            <h1 className="text-[22px] font-bold text-fg m-0 mb-1">
               Chào, {user.hoten?.split(" ").pop()} 👋
             </h1>
-            <p className={styles.date} style={{ margin: '4px 0 0 0' }}>
+            <p className="text-[13px] text-fg-subtle m-0 capitalize">
               {new Date().toLocaleDateString("vi-VN", {
                 weekday: "long",
                 day: "2-digit",
@@ -312,7 +311,7 @@ export default function TeacherDashboard() {
         </div>
 
         {/* Stats Grid */}
-        <div className={styles.statsGrid}>
+        <div className="grid grid-cols-3 gap-3.5 max-lg:grid-cols-2 max-sm:grid-cols-1 max-sm:gap-2.5">
           <StatCard
             label="Lớp đang dạy"
             value={fetching ? "…" : (data?.totalClasses ?? 0)}
@@ -332,17 +331,17 @@ export default function TeacherDashboard() {
 
         {/* Classes table */}
         <section className="card" aria-labelledby="classes-table">
-          <div className={styles.cardHeader}>
-            <h2 id="classes-table" className={styles.sectionTitle}>
+          <div className="p-[16px_20px_12px] border-b border-border">
+            <h2 id="classes-table" className="text-sm font-bold text-fg m-0">
               Lớp học đang phụ trách
             </h2>
           </div>
           {fetching ? (
-            <p className={styles.emptyText}>Đang tải…</p>
+            <p className="p-5 text-[13px] text-fg-subtle text-center m-0">Đang tải…</p>
           ) : !data?.classSummaries.length ? (
-            <p className={styles.emptyText}>Không có lớp nào đang hoạt động.</p>
+            <p className="p-5 text-[13px] text-fg-subtle text-center m-0">Không có lớp nào đang hoạt động.</p>
           ) : (
-            <div className={styles.tableWrap}>
+            <div className="overflow-x-auto">
               <table className="data-table" aria-label="Danh sách lớp">
                 <thead>
                   <tr>
@@ -358,18 +357,13 @@ export default function TeacherDashboard() {
                   {data.classSummaries.map((c) => (
                     <tr key={c.maphancong}>
                       <td>
-                        <strong style={{ color: "#2D1B14" }}>{c.tenmon}</strong>
+                        <strong className="text-fg font-bold">{c.tenmon}</strong>
                       </td>
                       <td>{c.tenlop}</td>
                       <td>{c.siso}</td>
                       <td>
                         {c.diemtb !== null ? (
-                          <span
-                            style={{
-                              color: c.diemtb >= 5 ? "#065F46" : "#991B1B",
-                              fontWeight: 600,
-                            }}
-                          >
+                          <span className={`font-semibold ${c.diemtb >= 5 ? "text-[#065F46]" : "text-[#991B1B]"}`}>
                             {c.diemtb.toFixed(1)}
                           </span>
                         ) : (
@@ -389,8 +383,7 @@ export default function TeacherDashboard() {
                       </td>
                       <td>
                         <button
-                          className="btn-secondary"
-                          style={{ fontSize: "12px", padding: "4px 12px" }}
+                          className="btn-secondary text-[12px] py-1 px-3"
                         >
                           Chi tiết
                         </button>
@@ -405,23 +398,23 @@ export default function TeacherDashboard() {
 
         {/* Thông báo */}
         <section className="card" aria-labelledby="my-notifications">
-          <div className={styles.cardHeader}>
-            <h2 id="my-notifications" className={styles.sectionTitle}>
+          <div className="p-[16px_20px_12px] border-b border-border">
+            <h2 id="my-notifications" className="text-sm font-bold text-fg m-0">
               Thông báo đã gửi
             </h2>
           </div>
           {fetching ? (
-            <p className={styles.emptyText}>Đang tải…</p>
+            <p className="p-5 text-[13px] text-fg-subtle text-center m-0">Đang tải…</p>
           ) : !data?.thongBao.length ? (
-            <p className={styles.emptyText}>Chưa có thông báo nào.</p>
+            <p className="p-5 text-[13px] text-fg-subtle text-center m-0">Chưa có thông báo nào.</p>
           ) : (
-            <ul className={styles.notifList} role="list">
+            <ul className="list-none p-0 px-4 m-0 flex flex-col" role="list">
               {data.thongBao.map((tb, i) => (
-                <li key={i} className={styles.notifItem}>
-                  <div className={styles.notifDot} aria-hidden />
+                <li key={i} className="flex items-start gap-3 p-[12px_4px] border-b border-border last:border-b-0">
+                  <div className="w-2 h-2 rounded-full bg-blue-500 shrink-0 mt-1.5" aria-hidden />
                   <div>
-                    <p className={styles.notifTitle}>{tb.tieude}</p>
-                    <p className={styles.notifMeta}>{tb.ngaytao}</p>
+                    <p className="text-[13px] font-semibold text-fg m-0 mb-1">{tb.tieude}</p>
+                    <p className="text-[11px] text-fg-subtle m-0">{tb.ngaytao}</p>
                   </div>
                 </li>
               ))}

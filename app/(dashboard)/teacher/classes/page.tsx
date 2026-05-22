@@ -1,11 +1,8 @@
-"use client";
-
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/auth/useAuth";
 import { apiFetch } from "@/services/service/auth/auth.service";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
-import styles from "../dashboard/teacher-dashboard.module.css";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -82,7 +79,7 @@ function tietToTime(tiet: number): string {
 }
 
 const LOAI_COLOR: Record<string, string> = {
-  File: "#2D9CDB", Video: "#9B51E0", Link: "#F2994A", Slide: "#EB5757",
+  File: "bg-[#2D9CDB]", Video: "bg-[#9B51E0]", Link: "bg-[#F2994A]", Slide: "bg-[#EB5757]",
 };
 
 const LOAI_EXT: Record<string, string> = {
@@ -118,7 +115,7 @@ export default function TeacherClasses() {
 
   if (authLoading || pageLoading) {
     return (
-      <div style={{ padding: "24px", textAlign: "center", color: "#6B4F43", fontWeight: "bold" }}>
+      <div className="p-6 text-center text-fg-muted font-bold">
         Đang tải...
       </div>
     );
@@ -134,10 +131,10 @@ export default function TeacherClasses() {
 
   return (
     <DashboardShell pageTitle="Lớp học">
-      <div className={styles.page}>
+      <div className="flex flex-col gap-5">
 
         {/* Sub-tabs */}
-        <div style={{ display: "flex", borderBottom: "1.5px solid #F0E1D9", marginBottom: "20px", gap: "25px" }}>
+        <div className="flex border-b border-[#F0E1D9] mb-5 gap-6">
           {[
             { key: "classes",   label: "Lớp học phần" },
             { key: "schedule",  label: "Lịch dạy học" },
@@ -146,13 +143,7 @@ export default function TeacherClasses() {
             <button
               key={item.key}
               onClick={() => setTab(item.key as SubTab)}
-              style={{
-                background: "none", border: "none", padding: "10px 5px",
-                fontSize: "15px", fontWeight: tab === item.key ? "700" : "500",
-                color: tab === item.key ? "#6B4F43" : "#8B6F5F",
-                borderBottom: tab === item.key ? "3px solid #F2A8A8" : "3px solid transparent",
-                cursor: "pointer", transition: "all 0.2s",
-              }}
+              className={`bg-transparent border-none py-2.5 px-1.5 text-[15px] cursor-pointer transition-all duration-200 ${tab === item.key ? "font-bold text-fg border-b-3 border-primary" : "font-medium text-fg-subtle border-b-3 border-transparent"}`}
             >
               {item.label}
             </button>
@@ -161,24 +152,24 @@ export default function TeacherClasses() {
 
         {/* ═══ TAB: LỚP HỌC PHẦN ═══════════════════════════════════════════ */}
         {tab === "classes" && (
-          <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div className="flex flex-col gap-5">
+            <div className="flex justify-between items-center">
               <div>
-                <h2 style={{ fontSize: "20px", fontWeight: "700", color: "#6B4F43", margin: 0 }}>
+                <h2 className="text-[20px] font-bold text-fg-muted m-0">
                   Lớp học đang giảng dạy
                 </h2>
-                <p style={{ fontSize: "13px", color: "#8B6F5F", margin: "4px 0 0" }}>
+                <p className="text-[13px] text-fg-subtle mt-1 mb-0">
                   Các học phần được phân công trong học kỳ hiện tại
                 </p>
               </div>
             </div>
 
             {!data?.dsLop?.length ? (
-              <p style={{ textAlign: "center", color: "#8B6F5F", padding: "40px" }}>
+              <p className="text-center text-fg-subtle p-10 m-0">
                 Chưa có lớp học nào được phân công
               </p>
             ) : (
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "20px" }}>
+              <div className="grid grid-cols-3 gap-5 max-xl:grid-cols-2 max-sm:grid-cols-1">
                 {data.dsLop.map((c) => {
                   // Lịch đại diện: lấy buổi đầu tiên
                   const l0 = c.lich[0];
@@ -186,37 +177,35 @@ export default function TeacherClasses() {
                     ? `${THU_LABEL[l0.thutrongtuan]} (Tiết ${l0.tietbatdau}–${l0.tietketthuc})${l0.phonghoc ? ` | Phòng ${l0.phonghoc}` : ""}`
                     : "Chưa xếp lịch";
                   return (
-                    <div key={c.maphancong} className="card"
-                      style={{ padding: "20px", display: "flex", flexDirection: "column", gap: "12px", border: "1px solid #F0E1D9" }}
-                    >
-                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                        <span style={{ fontSize: "11px", background: "#FFEAEA", color: "#EB5757", padding: "4px 8px", borderRadius: "4px", fontWeight: "bold" }}>
+                    <div key={c.maphancong} className="card p-5 flex flex-col gap-3.5 border border-[#F0E1D9]">
+                      <div className="flex justify-between items-center">
+                        <span className="text-[11px] bg-[#FFEAEA] text-red-500 py-1 px-2 rounded font-bold">
                           {c.malophoc}
                         </span>
-                        <span style={{ fontSize: "12px", color: "#8B6F5F" }}>
+                        <span className="text-[12px] text-fg-subtle">
                           {c.soSinhVien} sinh viên
                         </span>
                       </div>
                       <div>
-                        <h3 style={{ margin: "4px 0", fontSize: "16px", color: "#2D1B14", fontWeight: "bold" }}>
+                        <h3 className="my-1 text-base text-fg font-bold">
                           {c.tenmon}
                         </h3>
-                        <p style={{ margin: 0, fontSize: "13px", color: "#8B6F5F" }}>
+                        <p className="m-0 text-[13px] text-fg-subtle">
                           {c.tenlop} &bull; {c.sotinchi} tín chỉ
                         </p>
                       </div>
-                      <div style={{ fontSize: "12px", color: "#8B6F5F", borderTop: "1px dashed #F0E1D9", paddingTop: "10px" }}>
+                      <div className="text-[12px] text-fg-subtle border-t border-dashed border-[#F0E1D9] pt-2.5">
                         <b>Lịch:</b> {scheduleStr}
                       </div>
-                      <div style={{ display: "flex", gap: "10px" }}>
+                      <div className="flex gap-2.5">
                         <button
-                          style={{ flex: 1, padding: "8px", fontSize: "12px", borderRadius: "6px", border: "1px solid #EAD9CB", background: "white", color: "#6B4F43", cursor: "pointer" }}
+                          className="flex-1 py-2 text-[12px] rounded-lg border border-[#EAD9CB] bg-white text-fg-muted font-semibold hover:bg-gray-50 transition-colors cursor-pointer"
                           onClick={() => router.push("/teacher/students")}
                         >
                           Sinh viên
                         </button>
                         <button
-                          style={{ flex: 1, padding: "8px", fontSize: "12px", borderRadius: "6px", border: "none", background: "linear-gradient(90deg, #F2A8A8 0%, #FFB4B4 100%)", color: "white", cursor: "pointer", fontWeight: "600" }}
+                          className="flex-1 py-2 text-[12px] rounded-lg border-none bg-linear-to-r from-[#F2A8A8] to-[#FFB4B4] text-white font-bold hover:opacity-95 transition-opacity cursor-pointer"
                           onClick={() => setTab("materials")}
                         >
                           Bài giảng
@@ -232,33 +221,29 @@ export default function TeacherClasses() {
 
         {/* ═══ TAB: LỊCH DẠY HỌC ══════════════════════════════════════════ */}
         {tab === "schedule" && (
-          <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+          <div className="flex flex-col gap-5">
 
             {/* Lịch theo thứ trong tuần */}
-            <section className="card" style={{ padding: "20px", border: "1px solid #F0E1D9" }}>
-              <h3 style={{ fontSize: "16px", marginBottom: "20px", color: "#6B4F43", fontWeight: "bold" }}>
+            <section className="card p-5 border border-[#F0E1D9]">
+              <h3 className="text-base mb-5 text-fg-muted font-bold m-0">
                 Lịch dạy theo thứ
               </h3>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", borderTop: "1px solid #F0E1D9" }}>
+              <div className="grid grid-cols-7 border-t border-[#F0E1D9]">
                 {[2, 3, 4, 5, 6, 7, 8].map((thu, i) => {
                   const list = lichTheoThu[thu] ?? [];
                   const isToday = thu === thuHomNay;
                   return (
-                    <div key={thu} style={{
-                      padding: "15px", textAlign: "center",
-                      borderRight: i < 6 ? "1px solid #F0E1D9" : "none",
-                      background: isToday ? "#FDF3F3" : "transparent",
-                    }}>
-                      <div style={{ fontSize: "13px", fontWeight: isToday ? "800" : "bold", color: isToday ? "#EB5757" : "#2D1B14" }}>
+                    <div key={thu} className={`p-3.5 text-center ${i < 6 ? "border-r border-[#F0E1D9]" : ""} ${isToday ? "bg-[#FDF3F3]" : "bg-transparent"}`}>
+                      <div className={`text-[13px] ${isToday ? "font-extrabold text-red-500" : "font-bold text-fg"}`}>
                         {THU_SHORT[thu]}
                       </div>
-                      <div style={{ marginTop: "10px", display: "flex", flexDirection: "column", gap: "6px" }}>
+                      <div className="mt-2.5 flex flex-col gap-1.5">
                         {list.length === 0 ? (
-                          <span style={{ fontSize: "11px", color: "#ccc" }}>—</span>
+                          <span className="text-[11px] text-gray-300">—</span>
                         ) : list.map((l) => (
-                          <div key={l.malichhoc} style={{ fontSize: "11px", background: "#FFEAEA", borderRadius: "6px", padding: "4px 6px", color: "#EB5757", fontWeight: "600" }}>
+                          <div key={l.malichhoc} className="text-[11px] bg-[#FFEAEA] rounded-lg p-1.5 text-red-500 font-semibold">
                             {l.phancong?.monhoc?.tenmon ?? "—"}
-                            <div style={{ color: "#8B6F5F", fontWeight: "400" }}>
+                            <div className="text-fg-subtle font-normal mt-0.5">
                               T{l.tietbatdau}–T{l.tietketthuc}
                               {l.phonghoc ? ` | ${l.phonghoc}` : ""}
                             </div>
@@ -272,29 +257,25 @@ export default function TeacherClasses() {
             </section>
 
             {/* Chi tiết lịch hôm nay */}
-            <section className="card" style={{ padding: "20px", border: "1px solid #F0E1D9" }}>
-              <h3 style={{ fontSize: "16px", color: "#6B4F43", marginBottom: "16px", fontWeight: "bold" }}>
+            <section className="card p-5 border border-[#F0E1D9]">
+              <h3 className="text-base text-fg-muted mb-4 font-bold m-0">
                 Lịch dạy hôm nay — {THU_LABEL[thuHomNay]}
               </h3>
               {!(lichTheoThu[thuHomNay]?.length) ? (
-                <p style={{ color: "#8B6F5F", fontSize: "13px" }}>Không có lịch dạy hôm nay</p>
+                <p className="text-fg-subtle text-[13px] m-0">Không có lịch dạy hôm nay</p>
               ) : (
-                <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                <div className="flex flex-col gap-3">
                   {lichTheoThu[thuHomNay].map((l) => (
-                    <div key={l.malichhoc} style={{
-                      display: "flex", alignItems: "center", justifyContent: "space-between",
-                      padding: "15px", borderRadius: "12px", borderLeft: "5px solid #F2A8A8",
-                      background: "#FFF", boxShadow: "0 2px 5px rgba(0,0,0,0.03)", border: "1px solid #F0E1D9",
-                    }}>
-                      <div style={{ display: "flex", gap: "20px", alignItems: "center" }}>
-                        <span style={{ fontSize: "14px", fontWeight: "700", color: "#F2A8A8", width: "120px" }}>
+                    <div key={l.malichhoc} className="flex items-center justify-between p-3.5 rounded-xl border-l-[5px] border-l-[#F2A8A8] bg-white shadow-xs border border-[#F0E1D9]">
+                      <div className="flex gap-5 items-center">
+                        <span className="text-[14px] font-bold text-[#F2A8A8] w-[120px]">
                           Tiết {l.tietbatdau}–{l.tietketthuc}
                         </span>
                         <div>
-                          <div style={{ fontWeight: "700", fontSize: "15px" }}>
+                          <div className="font-bold text-[15px] text-fg">
                             {l.phancong?.monhoc?.tenmon ?? "—"}
                           </div>
-                          <div style={{ fontSize: "12px", color: "#8B6F5F" }}>
+                          <div className="text-[12px] text-fg-subtle mt-0.5">
                             {l.phancong?.lop?.tenlop ?? ""}{l.phonghoc ? ` | Phòng ${l.phonghoc}` : ""}
                           </div>
                         </div>
@@ -309,49 +290,47 @@ export default function TeacherClasses() {
 
         {/* ═══ TAB: KHO BÀI GIẢNG ════════════════════════════════════════ */}
         {tab === "materials" && (
-          <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div className="flex flex-col gap-5">
+            <div className="flex justify-between items-center">
               <div>
-                <h2 style={{ fontSize: "20px", fontWeight: "700", color: "#6B4F43", margin: 0 }}>
+                <h2 className="text-[20px] font-bold text-fg-muted m-0">
                   Kho bài giảng & Học liệu
                 </h2>
-                <p style={{ fontSize: "13px", color: "#8B6F5F", margin: "4px 0 0" }}>
+                <p className="text-[13px] text-fg-subtle mt-1 mb-0">
                   Tài liệu từ tất cả lớp học phần đang giảng dạy
                 </p>
               </div>
             </div>
 
             {!data?.dsTaiLieu?.length ? (
-              <p style={{ textAlign: "center", color: "#8B6F5F", padding: "40px" }}>
+              <p className="text-center text-fg-subtle p-10 m-0">
                 Chưa có tài liệu nào được tải lên
               </p>
             ) : (
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: "15px" }}>
+              <div className="grid grid-cols-5 gap-3.5 max-xl:grid-cols-3 max-md:grid-cols-2 max-sm:grid-cols-1">
                 {data.dsTaiLieu.map((f) => {
-                  const color = LOAI_COLOR[f.loai] ?? "#8B6F5F";
+                  const color = LOAI_COLOR[f.loai] ?? "bg-[#8B6F5F]";
                   const ext = LOAI_EXT[f.loai] ?? f.loai;
                   return (
-                    <div key={f.matailieu} className="card"
-                      style={{ padding: "15px", border: "1px solid #F0E1D9", cursor: "pointer", display: "flex", flexDirection: "column", gap: "10px" }}
-                    >
-                      <div style={{ width: "40px", height: "50px", background: color, borderRadius: "4px", display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontWeight: "bold", fontSize: "10px" }}>
+                    <div key={f.matailieu} className="card p-3.5 border border-[#F0E1D9] flex flex-col gap-2.5">
+                      <div className={`w-10 h-[50px] ${color} rounded flex items-center justify-center color-white text-white font-bold text-[10px]`}>
                         {ext}
                       </div>
-                      <h4 style={{ fontSize: "13px", color: "#6B4F43", margin: 0, fontWeight: "bold", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                      <h4 className="text-[13px] text-fg-muted m-0 font-bold overflow-hidden text-ellipsis whitespace-nowrap">
                         {f.tieude}
                       </h4>
-                      <div style={{ fontSize: "11px", color: "#8B6F5F" }}>
+                      <div className="text-[11px] text-fg-subtle">
                         {f.phancong?.monhoc?.tenmon ?? ""} &bull; {fmtDate(f.ngaytao)}
                       </div>
-                      <div style={{ fontSize: "11px", color: "#8B6F5F" }}>
+                      <div className="text-[11px] text-fg-subtle">
                         {f.luotxem} lượt xem{f.dungluong ? ` | ${Math.round(f.dungluong / 1024)} KB` : ""}
                       </div>
-                      <div style={{ display: "flex", gap: "8px" }}>
+                      <div className="flex gap-2">
                         <a
                           href={f.duongdan}
                           target="_blank"
                           rel="noopener noreferrer"
-                          style={{ flex: 1, padding: "6px", fontSize: "11px", borderRadius: "6px", border: "1px solid #EAD9CB", background: "#FFF", color: "#6B4F43", cursor: "pointer", textAlign: "center", textDecoration: "none" }}
+                          className="flex-1 py-1.5 text-[11px] rounded-lg border border-[#EAD9CB] bg-white text-fg-muted text-center no-underline font-semibold hover:bg-gray-50 transition-colors cursor-pointer"
                         >
                           Xem
                         </a>
@@ -359,7 +338,7 @@ export default function TeacherClasses() {
                           <a
                             href={f.duongdan}
                             download
-                            style={{ flex: 1, padding: "6px", fontSize: "11px", borderRadius: "6px", border: "none", background: "linear-gradient(90deg, #F2A8A8 0%, #FFB4B4 100%)", color: "white", cursor: "pointer", textAlign: "center", textDecoration: "none", fontWeight: "600" }}
+                            className="flex-1 py-1.5 text-[11px] rounded-lg border-none bg-linear-to-r from-[#F2A8A8] to-[#FFB4B4] text-white text-center no-underline font-bold hover:opacity-95 transition-opacity cursor-pointer"
                           >
                             Tải
                           </a>

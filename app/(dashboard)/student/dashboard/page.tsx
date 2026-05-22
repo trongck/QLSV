@@ -8,10 +8,14 @@ import { createClient } from "@/lib/utils/supabase/client";
 import { VaiTro } from "@/types";
 import { getVietnamTimeISO } from "@/lib/utils/date";
 import { apiFetch } from "@/services/service/auth/auth.service";
-import { StudentProfileModal } from "@/components/student/ProfileModal";
-import { ChangePasswordModal } from "../../teacher/dashboard/changepass";
 import { parseNotificationContent } from "@/components/admin/NotificationForms";
-import styles from "./student-dashboard.module.css";
+import { ChangePasswordModal } from "../../teacher/dashboard/changepass";
+import dynamic from "next/dynamic";
+
+const StudentProfileModal = dynamic(
+  () => import("@/components/student/ProfileModal").then((mod) => mod.StudentProfileModal),
+  { ssr: false }
+);
 
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -58,11 +62,11 @@ function StatCard({
 }) {
   return (
     <div
-      className={`card ${styles.statCard} ${accent ? styles.statAccent : ""}`}
+      className={`card p-[18px_20px] flex flex-col gap-1.5 ${accent ? "bg-linear-to-br from-primary to-[#a8443f] border-transparent text-white" : ""}`}
     >
-      <span className={styles.statLabel}>{label}</span>
-      <span className={styles.statValue}>{value}</span>
-      {sub && <span className={styles.statSub}>{sub}</span>}
+      <span className={`text-[12px] font-semibold uppercase tracking-wider ${accent ? "text-white/80" : "text-fg-subtle"}`}>{label}</span>
+      <span className={`text-3xl font-bold leading-none ${accent ? "text-white" : "text-fg"}`}>{value}</span>
+      {sub && <span className={`text-[12px] ${accent ? "text-white/80" : "text-fg-subtle"}`}>{sub}</span>}
     </div>
   );
 }
@@ -290,14 +294,14 @@ export default function StudentDashboard() {
 
   return (
     <DashboardShell pageTitle="Tổng quan">
-      <div className={`animate-fadeInUp ${styles.page}`}>
+      <div className="animate-fadeInUp flex flex-col gap-5">
         {/* Header */}
-        <div className={styles.header}>
+        <div className="flex items-start justify-between flex-wrap gap-3">
           <div>
-            <h1 className={styles.greeting}>
+            <h1 className="text-[22px] font-bold text-fg m-0 mb-1">
               Chào, {user.hoten?.split(" ").pop()} 👋
             </h1>
-            <p className={styles.date}>{today}</p>
+            <p className="text-[13px] text-fg-subtle m-0 capitalize">{today}</p>
           </div>
 
           {/* CỤM CHUÔNG THÔNG BÁO VÀ AVATAR NẰM NGANG HÀNG VỚI XIN CHÀO */}
@@ -451,7 +455,7 @@ export default function StudentDashboard() {
         </div>
 
         {/* Stats */}
-        <div className={styles.statsGrid}>
+        <div className="grid grid-cols-5 gap-3.5 max-xl:grid-cols-3 max-lg:grid-cols-2 max-sm:grid-cols-2 max-sm:gap-2.5">
           <StatCard
             label="Môn đang học"
             value={fetching ? "…" : (data?.monHocCount ?? 0)}
@@ -481,30 +485,30 @@ export default function StudentDashboard() {
         </div>
 
         {/* Two-col grid */}
-        <div className={styles.twoCol}>
+        <div className="grid grid-cols-2 gap-3.5 max-lg:grid-cols-1">
           {/* Lịch hôm nay */}
           <section className="card" aria-labelledby="schedule-today">
-            <div className={styles.cardHeader}>
-              <h2 id="schedule-today" className={styles.sectionTitle}>
+            <div className="p-[16px_20px_12px] border-b border-border">
+              <h2 id="schedule-today" className="text-sm font-bold text-fg m-0">
                 Lịch học hôm nay
               </h2>
             </div>
             {fetching ? (
-              <p className={styles.emptyText}>Đang tải…</p>
+              <p className="p-5 text-[13px] text-fg-subtle text-center m-0">Đang tải…</p>
             ) : !data?.lichHocHomNay.length ? (
-              <p className={styles.emptyText}>Hôm nay không có tiết học 🎉</p>
+              <p className="p-5 text-[13px] text-fg-subtle text-center m-0">Hôm nay không có tiết học 🎉</p>
             ) : (
-              <ul className={styles.scheduleList} role="list">
+              <ul className="list-none p-[12px_16px] m-0 flex flex-col gap-2.5" role="list">
                 {data.lichHocHomNay.map((item, i) => (
-                  <li key={i} className={styles.scheduleItem}>
-                    <div className={styles.scheduleTime}>
+                  <li key={i} className="flex items-center gap-3 p-[10px_12px] rounded-xl bg-[#fff8f5] border border-border">
+                    <div className="flex items-center gap-1 text-xs font-semibold text-primary shrink-0 min-w-[64px]">
                       <span>T{item.tietbatdau}</span>
-                      <span className={styles.scheduleTimeSep}>—</span>
+                      <span className="text-border">—</span>
                       <span>T{item.tietketthuc}</span>
                     </div>
-                    <div className={styles.scheduleInfo}>
-                      <span className={styles.scheduleName}>{item.tenmon}</span>
-                      <span className={styles.scheduleRoom}>
+                    <div className="flex flex-col gap-0.5 min-w-0">
+                      <span className="text-[13px] font-semibold text-fg truncate">{item.tenmon}</span>
+                      <span className="text-[11px] text-fg-subtle">
                         {item.phonghoc ?? "—"}
                       </span>
                     </div>
@@ -516,65 +520,54 @@ export default function StudentDashboard() {
 
           {/* Điểm gần đây */}
           <section className="card" aria-labelledby="recent-grades">
-            <div className={styles.cardHeader}>
-              <h2 id="recent-grades" className={styles.sectionTitle}>
+            <div className="p-[16px_20px_12px] border-b border-border">
+              <h2 id="recent-grades" className="text-sm font-bold text-fg m-0">
                 Điểm gần đây
               </h2>
             </div>
             {fetching ? (
-              <p className={styles.emptyText}>Đang tải…</p>
+              <p className="p-5 text-[13px] text-fg-subtle text-center m-0">Đang tải…</p>
             ) : !data?.diemGanDay.length ? (
-              <p className={styles.emptyText}>Chưa có điểm nào được công bố.</p>
+              <p className="p-5 text-[13px] text-fg-subtle text-center m-0">Chưa có điểm nào được công bố.</p>
             ) : (
-              <div style={{ overflowX: "auto" }}>
+              <div className="overflow-x-auto">
               <table className="data-table" aria-label="Bảng điểm gần đây">
                 <thead>
-                  <tr style={{ background: "#fff8f5" }}>
-                    <th style={{ padding: "10px 14px", textTransform: "uppercase", fontSize: 10, letterSpacing: "0.06em", color: "#8b6f5f" }}>Môn học</th>
-                    <th style={{ padding: "10px 14px", textAlign: "center", textTransform: "uppercase", fontSize: 10, letterSpacing: "0.06em", color: "#8b6f5f" }}>Chuyên cần</th>
-                    <th style={{ padding: "10px 14px", textAlign: "center", textTransform: "uppercase", fontSize: 10, letterSpacing: "0.06em", color: "#8b6f5f" }}>Giữa kỳ</th>
-                    <th style={{ padding: "10px 14px", textAlign: "center", textTransform: "uppercase", fontSize: 10, letterSpacing: "0.06em", color: "#8b6f5f" }}>Cuối kỳ</th>
-                    <th style={{ padding: "10px 14px", textAlign: "center", textTransform: "uppercase", fontSize: 10, letterSpacing: "0.06em", color: "#8b6f5f" }}>Tổng kết</th>
+                  <tr className="bg-[#fff8f5]">
+                    <th className="p-[10px_14px] uppercase text-[10px] tracking-wider text-fg-subtle">Môn học</th>
+                    <th className="p-[10px_14px] text-center uppercase text-[10px] tracking-wider text-fg-subtle">Chuyên cần</th>
+                    <th className="p-[10px_14px] text-center uppercase text-[10px] tracking-wider text-fg-subtle">Giữa kỳ</th>
+                    <th className="p-[10px_14px] text-center uppercase text-[10px] tracking-wider text-fg-subtle">Cuối kỳ</th>
+                    <th className="p-[10px_14px] text-center uppercase text-[10px] tracking-wider text-fg-subtle">Tổng kết</th>
                   </tr>
                 </thead>
                 <tbody>
                   {data.diemGanDay.map((d, i) => (
-                    <tr key={i} style={{ background: i % 2 === 0 ? "#fff" : "#fffaf8" }}>
-                      <td style={{ padding: "12px 14px", fontWeight: 700, color: "#2d1b14" }}>{d.tenmon}</td>
-                      <td style={{ padding: "12px 14px", textAlign: "center", fontWeight: 600, color: d.chuyencan === "—" ? "#9ca3af" : "#2d1b14" }}>
+                    <tr key={i} className={i % 2 === 0 ? "bg-white" : "bg-[#fffaf8]"}>
+                      <td className="p-[12px_14px] font-bold text-fg">{d.tenmon}</td>
+                      <td className={`p-[12px_14px] text-center font-semibold ${d.chuyencan === "—" ? "text-gray-400" : "text-fg"}`}>
                         {d.chuyencan}
                       </td>
-                      <td style={{ padding: "12px 14px", textAlign: "center", fontWeight: 600, color: d.giuaky === "—" ? "#9ca3af" : "#2d1b14" }}>
+                      <td className={`p-[12px_14px] text-center font-semibold ${d.giuaky === "—" ? "text-gray-400" : "text-fg"}`}>
                         {d.giuaky}
                       </td>
-                      <td style={{ padding: "12px 14px", textAlign: "center", fontWeight: 600, color: d.cuoiky === "—" ? "#9ca3af" : "#2d1b14" }}>
+                      <td className={`p-[12px_14px] text-center font-semibold ${d.cuoiky === "—" ? "text-gray-400" : "text-fg"}`}>
                         {d.cuoiky}
                       </td>
-                      <td style={{ padding: "12px 14px", textAlign: "center" }}>
+                      <td className="p-[12px_14px] text-center">
                         {d.tongket !== "—" ? (
-                          <div style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
-                            <strong style={{
-                              color: Number(d.tongket) >= 4.0 ? "#065f46" : "#991b1b",
-                              fontSize: 14,
-                            }}>
+                          <div className="inline-flex items-center gap-1.5">
+                            <strong className={`text-sm ${Number(d.tongket) >= 4.0 ? "text-[#065f46]" : "text-[#991b1b]"}`}>
                               {d.tongket}
                             </strong>
                             {d.diemchu && (
-                              <span style={{
-                                fontSize: 10,
-                                fontWeight: 800,
-                                background: "#f5ede8",
-                                color: "#c25450",
-                                padding: "2px 6px",
-                                borderRadius: 12,
-                                border: "1px solid #ead9cb"
-                              }}>
+                              <span className="text-[10px] font-extrabold bg-[#f5ede8] text-primary p-[2px_6px] rounded-full border border-border">
                                 {d.diemchu}
                               </span>
                             )}
                           </div>
                         ) : (
-                          <span style={{ color: "#d1d5db", fontStyle: "italic" }}>Chưa có</span>
+                          <span className="text-gray-300 italic">Chưa có</span>
                         )}
                       </td>
                     </tr>
@@ -588,23 +581,23 @@ export default function StudentDashboard() {
 
         {/* Thông báo */}
         <section className="card" aria-labelledby="notifications">
-          <div className={styles.cardHeader}>
-            <h2 id="notifications" className={styles.sectionTitle}>
+          <div className="p-[16px_20px_12px] border-b border-border">
+            <h2 id="notifications" className="text-sm font-bold text-fg m-0">
               Thông báo gần đây
             </h2>
           </div>
           {fetching ? (
-            <p className={styles.emptyText}>Đang tải…</p>
+            <p className="p-5 text-[13px] text-fg-subtle text-center m-0">Đang tải…</p>
           ) : !data?.thongBaoGanDay.length ? (
-            <p className={styles.emptyText}>Không có thông báo mới.</p>
+            <p className="p-5 text-[13px] text-fg-subtle text-center m-0">Không có thông báo mới.</p>
           ) : (
-            <ul className={styles.notifList} role="list">
+            <ul className="list-none p-[12px_16px] m-0 flex flex-col" role="list">
               {data.thongBaoGanDay.map((tb, i) => (
-                <li key={i} className={styles.notifItem}>
-                  <div className={styles.notifDot} aria-hidden />
-                  <div className={styles.notifContent}>
-                    <span className={styles.notifTitle}>{tb.tieude}</span>
-                    <span className={styles.notifMeta}>
+                <li key={i} className="flex items-start gap-3 p-[12px_4px] border-b border-border last:border-b-0">
+                  <div className="w-2 h-2 rounded-full bg-primary shrink-0 mt-1.5" aria-hidden />
+                  <div className="flex flex-col gap-0.5">
+                    <span className="text-[13px] font-semibold text-fg">{tb.tieude}</span>
+                    <span className="text-[11px] text-fg-subtle">
                       {tb.ngaytao} · {tb.loai}
                     </span>
                   </div>

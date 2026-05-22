@@ -59,10 +59,10 @@ function StatCard({
     <div
       className={`p-[24px_20px] flex flex-col-reverse gap-2 rounded-2xl border border-[#FFDBB6] shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-md ${gradient}`}
     >
-      <span className="text-4xl font-extrabold text-[#2D1B14] leading-none">
+      <span className="text-4xl font-extrabold text-fg leading-none">
         {value}
       </span>
-      <span className="text-[11px] font-bold text-[#6B4F3F] uppercase tracking-wider">
+      <span className="text-[11px] font-bold text-fg-muted uppercase tracking-wider">
         {label}
       </span>
     </div>
@@ -197,10 +197,10 @@ export default function AdminDashboard() {
         {/* Topbar: Greeting on left, Notifications + Profile Dropdown on right */}
         <div className="flex justify-between items-center mb-1 max-sm:flex-col max-sm:items-start max-sm:gap-4">
           <div>
-            <h1 className="text-2xl font-extrabold text-[#2D1B14] m-0">
+            <h1 className="text-2xl font-extrabold text-fg m-0">
               Chào, {user.hoten?.split(" ").pop()} 👋
             </h1>
-            <p className="text-xs text-[#8B6F5F] m-[4px_0_0_0]">
+            <p className="text-xs text-fg-subtle m-[4px_0_0_0]">
               {new Date().toLocaleDateString("vi-VN", {
                 weekday: "long",
                 day: "2-digit",
@@ -216,18 +216,18 @@ export default function AdminDashboard() {
             {/* CỤM PROFILE AVATAR VÀ POPUP CHỨC NĂNG */}
             <div className="relative">
               <div 
-                className="flex items-center gap-2.5 cursor-pointer hover:opacity-90 transition-opacity p-1.5 hover:bg-[#FFF2EB]/60 rounded-xl border border-transparent hover:border-[#EAD9CB]"
+                className="flex items-center gap-2.5 cursor-pointer hover:opacity-90 transition-opacity p-1.5 hover:bg-page-bg/60 rounded-xl border border-transparent hover:border-border"
                 onClick={() => {
                   setIsProfileOpen(!isProfileOpen);
                 }}
               >
-                <div className="w-[34px] h-[34px] rounded-full bg-[#FFF2EB] text-[#8B6F5F] flex items-center justify-center shrink-0 border border-[#EAD9CB] font-bold">
+                <div className="w-[34px] h-[34px] rounded-full bg-page-bg text-fg-subtle flex items-center justify-center shrink-0 border border-border font-bold">
                   {user.hoten?.charAt(0) || "A"}
                 </div>
 
                 <div className="flex flex-col text-left max-sm:hidden">
-                  <span className="text-[13px] font-bold text-[#2D1B14]">{user?.hoten || "—"}</span>
-                  <span className="text-[10px] text-[#8B6F5F]">Quản trị viên</span>
+                  <span className="text-[13px] font-bold text-fg">{user?.hoten || "—"}</span>
+                  <span className="text-[10px] text-fg-subtle">Quản trị viên</span>
                 </div>
                 <svg className="w-3 h-3 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
@@ -235,7 +235,7 @@ export default function AdminDashboard() {
               </div>
 
               {isProfileOpen && (
-                <div className="absolute top-[48px] right-0 w-[220px] bg-white border border-[#EAD9CB] rounded-xl shadow-xl p-2 z-50 flex flex-col animate-scaleUp">
+                <div className="absolute top-[48px] right-0 w-[220px] bg-white border border-border rounded-xl shadow-xl p-2 z-50 flex flex-col animate-scaleUp">
                   {/* Nút Thông tin cá nhân */}
                   <button 
                     className="w-full text-left px-3 py-2 text-xs text-gray-700 hover:bg-[#FAF6F2] rounded-lg transition-colors font-semibold"
@@ -278,12 +278,12 @@ export default function AdminDashboard() {
         </div>
 
         {/* Header with Integrated Professional Global Search */}
-        <div className="flex items-center justify-between flex-wrap gap-4 bg-gradient-to-br from-[#FEFAE3] to-[#FFF0CD] p-5 rounded-2xl border border-[#FFDBB6] max-sm:flex-col max-sm:items-stretch">
+        <div className="flex items-center justify-between flex-wrap gap-4 bg-linear-to-br from-[#FEFAE3] to-[#FFF0CD] p-5 rounded-2xl border border-[#FFDBB6] max-sm:flex-col max-sm:items-stretch">
           <div>
-            <h1 className="text-2xl font-extrabold text-[#2D1B14] m-0 mb-1">
+            <h1 className="text-2xl font-extrabold text-fg m-0 mb-1">
               Tổng quan hệ thống
             </h1>
-            <p className="text-[13px] text-[#8B6F5F] m-0 font-medium capitalize">
+            <p className="text-[13px] text-fg-subtle m-0 font-medium capitalize">
               {new Date().toLocaleDateString("vi-VN", {
                 weekday: "long",
                 day: "2-digit",
@@ -296,7 +296,7 @@ export default function AdminDashboard() {
           <div className="flex-1 min-w-[280px] max-w-[500px] max-sm:max-w-full">
             <div className="relative flex items-center">
               <svg
-                className="absolute left-4 text-[#8B6F5F] pointer-events-none"
+                className="absolute left-4 text-fg-subtle pointer-events-none"
                 width="18"
                 height="18"
                 viewBox="0 0 24 24"
@@ -311,14 +311,14 @@ export default function AdminDashboard() {
               </svg>
               <input
                 type="text"
-                className="w-full h-11 pl-11 pr-10 border-2 border-[#FFDBB6] rounded-full bg-white text-sm font-medium text-[#2D1B14] outline-none transition-all duration-200 shadow-[0_2px_8px_rgba(76,38,24,0.04)] focus:border-primary focus:shadow-[0_0_0_3px_rgba(194,84,80,0.15)]"
+                className="w-full h-11 pl-11 pr-10 border-2 border-[#FFDBB6] rounded-full bg-white text-sm font-medium text-fg outline-none transition-all duration-200 shadow-[0_2px_8px_rgba(76,38,24,0.04)] focus:border-primary focus:shadow-[0_0_0_3px_rgba(194,84,80,0.15)]"
                 placeholder="Tìm sinh viên, lớp, môn, giảng viên..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
               {search && (
                 <button
-                  className="absolute right-3 border-none bg-transparent text-[#8B6F5F] text-base cursor-pointer p-1 flex items-center justify-center rounded-full transition-colors duration-150 hover:bg-[#8B6F5F]/10 hover:text-[#2D1B14]"
+                  className="absolute right-3 border-none bg-transparent text-fg-subtle text-base cursor-pointer p-1 flex items-center justify-center rounded-full transition-colors duration-150 hover:bg-fg-subtle/10 hover:text-fg"
                   onClick={() => setSearch("")}
                   title="Xóa tìm kiếm"
                 >
@@ -335,7 +335,7 @@ export default function AdminDashboard() {
         {search.trim() && (
           <div className="flex flex-col gap-4 bg-white border border-[#FFDBB6] rounded-2xl p-5 shadow-lg">
             {searchLoading ? (
-              <p className="p-8 text-sm text-[#8B6F5F] text-center m-0 font-medium">
+              <p className="p-8 text-sm text-fg-subtle text-center m-0 font-medium">
                 Đang tìm kiếm thông tin trên hệ thống...
               </p>
             ) : !searchResults ||
@@ -343,7 +343,7 @@ export default function AdminDashboard() {
                 !searchResults.giangvien.length &&
                 !searchResults.lop.length &&
                 !searchResults.monhoc.length) ? (
-              <p className="p-8 text-sm text-[#8B6F5F] text-center m-0 font-medium">
+              <p className="p-8 text-sm text-fg-subtle text-center m-0 font-medium">
                 Không tìm thấy kết quả phù hợp cho "{search}".
               </p>
             ) : (
@@ -351,7 +351,7 @@ export default function AdminDashboard() {
                 {/* Students Match */}
                 {!!searchResults.sinhvien.length && (
                   <div>
-                    <h3 className="text-sm font-bold text-[#2D1B14] m-0 mb-3 pb-1.5 border-b-2 border-[#FFDBB6] flex items-center gap-2">
+                    <h3 className="text-sm font-bold text-fg m-0 mb-3 pb-1.5 border-b-2 border-[#FFDBB6] flex items-center gap-2">
                       <svg
                         width="15"
                         height="15"
@@ -374,17 +374,16 @@ export default function AdminDashboard() {
                           className="flex items-center justify-between p-3 rounded-xl bg-[#FEFAE3] border border-[#FFDBB6] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm hover:bg-[#FFF0CD]"
                         >
                           <div className="flex flex-col gap-0.5">
-                            <span className="text-sm font-semibold text-[#2D1B14]">
+                            <span className="text-sm font-semibold text-fg">
                               {sv.hoten}
                             </span>
-                            <span className="text-xs text-[#8B6F5F]">
+                            <span className="text-xs text-fg-subtle">
                               MSSV: <code>{sv.masv}</code> • Lớp:{" "}
                               {sv.lop?.tenlop ?? "—"}
                             </span>
                           </div>
                           <button
-                            className="btn-secondary"
-                            style={{ fontSize: "12px", padding: "4px 10px" }}
+                            className="btn-secondary text-[12px] py-1 px-2.5"
                             onClick={() => handleViewDetail("sv", sv.masv)}
                           >
                             Xem chi tiết
@@ -397,8 +396,8 @@ export default function AdminDashboard() {
 
                 {/* Lecturers Match */}
                 {!!searchResults.giangvien.length && (
-                  <div style={{ marginTop: "12px" }}>
-                    <h3 className="text-sm font-bold text-[#2D1B14] m-0 mb-3 pb-1.5 border-b-2 border-[#FFDBB6] flex items-center gap-2">
+                  <div className="mt-3">
+                    <h3 className="text-sm font-bold text-fg m-0 mb-3 pb-1.5 border-b-2 border-[#FFDBB6] flex items-center gap-2">
                       <svg
                         width="15"
                         height="15"
@@ -428,17 +427,16 @@ export default function AdminDashboard() {
                           className="flex items-center justify-between p-3 rounded-xl bg-[#FEFAE3] border border-[#FFDBB6] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm hover:bg-[#FFF0CD]"
                         >
                           <div className="flex flex-col gap-0.5">
-                            <span className="text-sm font-semibold text-[#2D1B14]">
+                            <span className="text-sm font-semibold text-fg">
                               {gv.hoten}
                             </span>
-                            <span className="text-xs text-[#8B6F5F]">
+                            <span className="text-xs text-fg-subtle">
                               Mã GV: <code>{gv.magv}</code> • Khoa:{" "}
                               {gv.khoa?.tenkhoa ?? "—"}
                             </span>
                           </div>
                           <button
-                            className="btn-secondary"
-                            style={{ fontSize: "12px", padding: "4px 10px" }}
+                            className="btn-secondary text-[12px] py-1 px-2.5"
                             onClick={() => handleViewDetail("gv", gv.magv)}
                           >
                             Xem chi tiết
@@ -451,8 +449,8 @@ export default function AdminDashboard() {
 
                 {/* Classes Match */}
                 {!!searchResults.lop.length && (
-                  <div style={{ marginTop: "12px" }}>
-                    <h3 className="text-sm font-bold text-[#2D1B14] m-0 mb-3 pb-1.5 border-b-2 border-[#FFDBB6] flex items-center gap-2">
+                  <div className="mt-3">
+                    <h3 className="text-sm font-bold text-fg m-0 mb-3 pb-1.5 border-b-2 border-[#FFDBB6] flex items-center gap-2">
                       <svg
                         width="15"
                         height="15"
@@ -472,10 +470,10 @@ export default function AdminDashboard() {
                           className="flex items-center justify-between p-3 rounded-xl bg-[#FEFAE3] border border-[#FFDBB6] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm hover:bg-[#FFF0CD]"
                         >
                           <div className="flex flex-col gap-0.5">
-                            <span className="text-sm font-semibold text-[#2D1B14]">
+                            <span className="text-sm font-semibold text-fg">
                               {lp.tenlop}
                             </span>
-                            <span className="text-xs text-[#8B6F5F]">
+                            <span className="text-xs text-fg-subtle">
                               Mã lớp: <code>{lp.malop}</code> • Sĩ số: {lp.siso}{" "}
                               • Khoa: {lp.khoa?.tenkhoa ?? "—"}
                             </span>
@@ -488,8 +486,8 @@ export default function AdminDashboard() {
 
                 {/* Subjects Match */}
                 {!!searchResults.monhoc.length && (
-                  <div style={{ marginTop: "12px" }}>
-                    <h3 className="text-sm font-bold text-[#2D1B14] m-0 mb-3 pb-1.5 border-b-2 border-[#FFDBB6] flex items-center gap-2">
+                  <div className="mt-3">
+                    <h3 className="text-sm font-bold text-fg m-0 mb-3 pb-1.5 border-b-2 border-[#FFDBB6] flex items-center gap-2">
                       <svg
                         width="15"
                         height="15"
@@ -510,10 +508,10 @@ export default function AdminDashboard() {
                           className="flex items-center justify-between p-3 rounded-xl bg-[#FEFAE3] border border-[#FFDBB6] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-sm hover:bg-[#FFF0CD]"
                         >
                           <div className="flex flex-col gap-0.5">
-                            <span className="text-sm font-semibold text-[#2D1B14]">
+                            <span className="text-sm font-semibold text-fg">
                               {mh.tenmon}
                             </span>
-                            <span className="text-xs text-[#8B6F5F]">
+                            <span className="text-xs text-fg-subtle">
                               Mã môn: <code>{mh.mamon}</code> • Tín chỉ:{" "}
                               {mh.sotinchi} • Khoa: {mh.khoa?.tenkhoa ?? "—"}
                             </span>
@@ -562,7 +560,7 @@ export default function AdminDashboard() {
               key={tab}
               role="tab"
               aria-selected={activeTab === tab}
-              className={`p-[10px_24px] border-none rounded-lg text-sm font-semibold cursor-pointer transition-all duration-150 max-sm:flex-1 max-sm:text-center max-sm:p-[10px_12px] ${activeTab === tab ? "bg-primary text-white font-bold shadow-[0_2px_8px_rgba(194,84,80,0.25)]" : "bg-transparent text-[#6B4F3F] hover:bg-[#C25450]/8"}`}
+              className={`p-[10px_24px] border-none rounded-lg text-sm font-semibold cursor-pointer transition-all duration-150 max-sm:flex-1 max-sm:text-center max-sm:p-[10px_12px] ${activeTab === tab ? "bg-primary text-white font-bold shadow-[0_2px_8px_rgba(194,84,80,0.25)]" : "bg-transparent text-fg-muted hover:bg-primary/8"}`}
               onClick={() => setActiveTab(tab)}
             >
               {tab === "sv" ? "Sinh viên gần đây" : "Giảng viên gần đây"}
@@ -577,12 +575,12 @@ export default function AdminDashboard() {
           }
         >
           {fetching ? (
-            <p className="p-8 text-sm text-[#8B6F5F] text-center m-0 font-medium">
+            <p className="p-8 text-sm text-fg-subtle text-center m-0 font-medium">
               Đang tải…
             </p>
           ) : activeTab === "sv" ? (
             !data?.recentSV.length ? (
-              <p className="p-8 text-sm text-[#8B6F5F] text-center m-0 font-medium">
+              <p className="p-8 text-sm text-fg-subtle text-center m-0 font-medium">
                 Chưa có sinh viên.
               </p>
             ) : (
@@ -601,10 +599,10 @@ export default function AdminDashboard() {
                     {data!.recentSV.map((sv) => (
                       <tr key={sv.masv}>
                         <td>
-                          <code style={{ fontSize: "12px" }}>{sv.masv}</code>
+                          <code className="text-xs">{sv.masv}</code>
                         </td>
                         <td>
-                          <strong style={{ color: "#2D1B14" }}>
+                          <strong className="text-fg font-bold">
                             {sv.hoten}
                           </strong>
                         </td>
@@ -618,8 +616,7 @@ export default function AdminDashboard() {
                         </td>
                         <td>
                           <button
-                            className="btn-secondary"
-                            style={{ fontSize: "12px", padding: "4px 12px" }}
+                            className="btn-secondary text-[12px] py-1 px-3"
                             onClick={() => handleViewDetail("sv", sv.masv)}
                           >
                             Xem chi tiết
@@ -632,7 +629,7 @@ export default function AdminDashboard() {
               </div>
             )
           ) : !data?.recentGV.length ? (
-            <p className="p-8 text-sm text-[#8B6F5F] text-center m-0 font-medium">
+            <p className="p-8 text-sm text-fg-subtle text-center m-0 font-medium">
               Chưa có giảng viên.
             </p>
           ) : (
@@ -651,10 +648,10 @@ export default function AdminDashboard() {
                   {data!.recentGV.map((gv) => (
                     <tr key={gv.magv}>
                       <td>
-                        <code style={{ fontSize: "12px" }}>{gv.magv}</code>
+                        <code className="text-xs">{gv.magv}</code>
                       </td>
                       <td>
-                        <strong style={{ color: "#2D1B14" }}>{gv.hoten}</strong>
+                        <strong className="text-fg font-bold">{gv.hoten}</strong>
                       </td>
                       <td>{gv.tenkhoa}</td>
                       <td>
@@ -666,8 +663,7 @@ export default function AdminDashboard() {
                       </td>
                       <td>
                         <button
-                          className="btn-secondary"
-                          style={{ fontSize: "12px", padding: "4px 12px" }}
+                          className="btn-secondary text-[12px] py-1 px-3"
                           onClick={() => handleViewDetail("gv", gv.magv)}
                         >
                           Xem chi tiết
@@ -691,17 +687,18 @@ export default function AdminDashboard() {
                 height="20"
                 viewBox="0 0 24 24"
                 fill="none"
-                stroke="#C25450"
+                stroke="currentColor"
                 strokeWidth="2.5"
+                className="text-primary"
               >
                 <circle cx="12" cy="12" r="10"></circle>
                 <polyline points="12 6 12 12 16 14"></polyline>
               </svg>
               <div>
-                <h2 className="text-lg font-bold text-[#2D1B14] m-0">
+                <h2 className="text-lg font-bold text-fg m-0">
                   Lịch học hôm nay
                 </h2>
-                <p className="text-xs text-[#8B6F5F] m-0">
+                <p className="text-xs text-fg-subtle m-0">
                   Danh sách giảng dạy và học tập trong ngày
                 </p>
               </div>
@@ -709,11 +706,11 @@ export default function AdminDashboard() {
 
             <div className="card max-h-[480px] overflow-y-auto pr-1.5">
               {fetching ? (
-                <p className="p-8 text-sm text-[#8B6F5F] text-center m-0 font-medium">
+                <p className="p-8 text-sm text-fg-subtle text-center m-0 font-medium">
                   Đang tải lịch học…
                 </p>
               ) : !data?.todaySchedules?.length ? (
-                <p className="p-8 text-sm text-[#8B6F5F] text-center m-0 font-medium">
+                <p className="p-8 text-sm text-fg-subtle text-center m-0 font-medium">
                   Hôm nay hệ thống không có lịch học nào.
                 </p>
               ) : (
@@ -724,7 +721,7 @@ export default function AdminDashboard() {
                       className="flex gap-4 p-4 bg-white border border-[#FFDBB6] rounded-xl transition-all duration-250 hover:translate-x-1 hover:border-primary hover:shadow-md"
                     >
                       <div className="flex flex-col items-center justify-center bg-[#FEFAE3] border border-[#FFDBB6] rounded-xl p-2 min-w-[68px] text-center">
-                        <span className="text-[11px] font-bold text-[#6B4F3F] uppercase">
+                        <span className="text-[11px] font-bold text-fg-muted uppercase">
                           Tiết
                         </span>
                         <span className="text-base font-extrabold text-primary mt-0.5">
@@ -732,10 +729,10 @@ export default function AdminDashboard() {
                         </span>
                       </div>
                       <div className="flex flex-col flex-1">
-                        <h3 className="text-sm font-bold text-[#2D1B14] mb-1">
+                        <h3 className="text-sm font-bold text-fg mb-1">
                           {schedule.monhoc}
                         </h3>
-                        <div className="text-xs font-medium text-[#6B4F3F] mb-1.5 flex items-center gap-1">
+                        <div className="text-xs font-medium text-fg-muted mb-1.5 flex items-center gap-1">
                           <svg
                             width="12"
                             height="12"
@@ -769,22 +766,12 @@ export default function AdminDashboard() {
                                   : "Trực tuyến"}
                             </span>
                           )}
-                          <span
-                            className="badge badge-peach"
-                            style={{ opacity: 0.75, fontSize: "10px" }}
-                          >
+                          <span className="badge badge-peach opacity-75 text-[10px]">
                             {schedule.hocky}
                           </span>
                         </div>
                         {schedule.ghichu && (
-                          <p
-                            style={{
-                              margin: "6px 0 0 0",
-                              fontSize: "11px",
-                              color: "#8B6F5F",
-                              fontStyle: "italic",
-                            }}
-                          >
+                          <p className="mt-1.5 text-[11px] text-fg-subtle italic">
                             * Ghi chú: {schedule.ghichu}
                           </p>
                         )}
@@ -804,8 +791,9 @@ export default function AdminDashboard() {
                 height="20"
                 viewBox="0 0 24 24"
                 fill="none"
-                stroke="#C25450"
+                stroke="currentColor"
                 strokeWidth="2.5"
+                className="text-primary"
               >
                 <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
                 <polyline points="14 2 14 8 20 8" />
@@ -814,10 +802,10 @@ export default function AdminDashboard() {
                 <polyline points="10 9 9 9 8 9" />
               </svg>
               <div>
-                <h2 className="text-lg font-bold text-[#2D1B14] m-0">
+                <h2 className="text-lg font-bold text-fg m-0">
                   Nhật ký hệ thống
                 </h2>
-                <p className="text-xs text-[#8B6F5F] m-0">
+                <p className="text-xs text-fg-subtle m-0">
                   Giám sát lịch sử hoạt động thời gian thực
                 </p>
               </div>
@@ -825,11 +813,11 @@ export default function AdminDashboard() {
 
             <div className="card max-h-[480px] overflow-y-auto pr-1.5">
               {fetching ? (
-                <p className="p-8 text-sm text-[#8B6F5F] text-center m-0 font-medium">
+                <p className="p-8 text-sm text-fg-subtle text-center m-0 font-medium">
                   Đang tải lịch sử nhật ký…
                 </p>
               ) : !data?.auditLogs?.length ? (
-                <p className="p-8 text-sm text-[#8B6F5F] text-center m-0 font-medium">
+                <p className="p-8 text-sm text-fg-subtle text-center m-0 font-medium">
                   Chưa có ghi chép lịch sử hoạt động nào.
                 </p>
               ) : (
@@ -841,11 +829,11 @@ export default function AdminDashboard() {
                     >
                       <div className="w-2 h-2 rounded-full bg-primary mt-1.5 shrink-0" />
                       <div className="flex-1">
-                        <p className="text-[#2D1B14] font-semibold m-0 mb-1 leading-normal">
+                        <p className="text-fg font-semibold m-0 mb-1 leading-normal">
                           {log.hanhdong}
                         </p>
-                        <div className="flex justify-between items-center text-[11px] text-[#8B6F5F]">
-                          <span className="font-medium text-[#6B4F3F]">
+                        <div className="flex justify-between items-center text-[11px] text-fg-subtle">
+                          <span className="font-medium text-fg-muted">
                             👤{" "}
                             {log.taikhoan
                               ? `${log.taikhoan.email} (${log.taikhoan.vaitro === "Admin" ? "Quản trị" : log.taikhoan.vaitro === "GiangVien" ? "Giảng viên" : "Sinh viên"})`
@@ -893,20 +881,20 @@ export default function AdminDashboard() {
 
       {/* Custom Logout Confirmation Pop-up */}
       {showLogoutConfirm && (
-        <div className="fixed inset-0 bg-[#2D1B14]/40 backdrop-blur-[4px] z-[99999] flex items-center justify-center p-4 animate-fadeIn">
-          <div className="bg-white rounded-2xl w-full max-w-sm overflow-hidden flex flex-col shadow-[0_20px_50px_rgba(76,38,24,0.15)] border border-[#EAD9CB] p-6 text-center animate-scaleUp">
-            <h3 className="text-base font-bold text-[#2D1B14] mb-2 mt-2">Bạn có chắc chắn muốn đăng xuất?</h3>
-            <p className="text-xs text-[#8B6F5F] mb-6">Phiên làm việc hiện tại của bạn trên thiết bị này sẽ được kết thúc.</p>
+        <div className="fixed inset-0 bg-fg/40 backdrop-blur-xs z-99999 flex items-center justify-center p-4 animate-fadeIn">
+          <div className="bg-white rounded-2xl w-full max-w-sm overflow-hidden flex flex-col shadow-[0_20px_50px_rgba(76,38,24,0.15)] border border-border p-6 text-center animate-scaleUp">
+            <h3 className="text-base font-bold text-fg mb-2 mt-2">Bạn có chắc chắn muốn đăng xuất?</h3>
+            <p className="text-xs text-fg-subtle mb-6">Phiên làm việc hiện tại của bạn trên thiết bị này sẽ được kết thúc.</p>
             <div className="flex gap-3 justify-center">
               <button
                 onClick={() => setShowLogoutConfirm(false)}
-                className="flex-1 py-2.5 text-xs border border-[#EAD9CB] text-[#6B4F3F] hover:bg-[#FAF6F2] rounded-xl font-bold transition-all"
+                className="flex-1 py-2.5 text-xs border border-border text-fg-muted hover:bg-[#FAF6F2] rounded-xl font-bold transition-all"
               >
                 Hủy bỏ
               </button>
               <button
                 onClick={handleLogoutConfirm}
-                className="flex-1 py-2.5 text-xs bg-[#C25450] hover:bg-[#A9433F] text-white font-bold rounded-xl shadow-md shadow-[#C25450]/20 hover:scale-95 transition-all"
+                className="flex-1 py-2.5 text-xs bg-primary hover:bg-[#A9433F] text-white font-bold rounded-xl shadow-md shadow-primary/20 hover:scale-95 transition-all"
               >
                 Đăng xuất
               </button>

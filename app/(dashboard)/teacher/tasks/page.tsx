@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/auth/useAuth";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { HomeworkList } from "@/components/teacher/HomeworkList";
-import styles from "../dashboard/teacher-dashboard.module.css";
 
 export default function TeacherTasks() {
   const { user, loading: authLoading } = useAuth();
@@ -22,7 +21,7 @@ export default function TeacherTasks() {
 
   if (authLoading || loading) {
     return (
-      <div style={{ padding: "24px", textAlign: "center", color: "#6B4F43", fontWeight: "bold" }}>
+      <div className="p-6 text-center text-fg-muted font-bold">
         Đang tải...
       </div>
     );
@@ -30,7 +29,7 @@ export default function TeacherTasks() {
 
   return (
     <DashboardShell pageTitle="Bài tập">
-      <div className={styles.page}>
+      <div className="flex flex-col gap-5">
         <HomeworkList />
       </div>
     </DashboardShell>
