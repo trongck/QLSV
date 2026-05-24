@@ -1,0 +1,1667 @@
+{
+  "_type": "Project",
+  "_id": "AAAAAAFwi2r6mfdZYrWyMjXq",
+  "name": "Hệ thống Quản lý Sinh viên - Phân quyền Giảng viên",
+  "ownedElements": [
+    {
+      "_type": "UMLModel",
+      "_id": "AAAAAAFSyMfqbZanaafYXjUR",
+      "_parent": {
+        "$ref": "AAAAAAFwi2r6mfdZYrWyMjXq"
+      },
+      "name": "TeacherActivityModel",
+      "ownedElements": [
+        {
+          "_type": "UMLActivity",
+          "_id": "AAAAAAFoLAZbbmIrHM3EOC9Z",
+          "_parent": {
+            "$ref": "AAAAAAFSyMfqbZanaafYXjUR"
+          },
+          "name": "0. Tổng quan Luồng Giảng viên",
+          "nodes": [
+            {
+              "_type": "UMLInitialNode",
+              "_id": "AAAAAAF7odiwUUH5bDULp1ho",
+              "_parent": {
+                "$ref": "AAAAAAFoLAZbbmIrHM3EOC9Z"
+              },
+              "name": "Bắt đầu"
+            },
+            {
+              "_type": "UMLAction",
+              "_id": "AAAAAAFl4YxUXdVZ3DaJNlMV",
+              "_parent": {
+                "$ref": "AAAAAAFoLAZbbmIrHM3EOC9Z"
+              },
+              "name": "Đăng nhập hệ thống (Giảng viên)"
+            },
+            {
+              "_type": "UMLDecisionNode",
+              "_id": "AAAAAAF37pgKzMYXHQs2w08L",
+              "_parent": {
+                "$ref": "AAAAAAFoLAZbbmIrHM3EOC9Z"
+              },
+              "name": "Kiểm tra thông tin"
+            },
+            {
+              "_type": "UMLAction",
+              "_id": "AAAAAAFqp3Z0bSUmFc3nO5DU",
+              "_parent": {
+                "$ref": "AAAAAAFoLAZbbmIrHM3EOC9Z"
+              },
+              "name": "Báo lỗi đăng nhập & Nhập lại"
+            },
+            {
+              "_type": "UMLAction",
+              "_id": "AAAAAAFNn5BcLYW6wHTKsUwc",
+              "_parent": {
+                "$ref": "AAAAAAFoLAZbbmIrHM3EOC9Z"
+              },
+              "name": "Điều hướng tới Dashboard Giảng viên"
+            },
+            {
+              "_type": "UMLDecisionNode",
+              "_id": "AAAAAAFeqgRqgKkJzffvLEg7",
+              "_parent": {
+                "$ref": "AAAAAAFoLAZbbmIrHM3EOC9Z"
+              },
+              "name": "Dashboard Giảng viên (Menu trung tâm)"
+            },
+            {
+              "_type": "UMLAction",
+              "_id": "AAAAAAFLEkz2JPGK4VYWcleR",
+              "_parent": {
+                "$ref": "AAAAAAFoLAZbbmIrHM3EOC9Z"
+              },
+              "name": "Truy cập Phân hệ Giảng dạy & Lớp học"
+            },
+            {
+              "_type": "UMLAction",
+              "_id": "AAAAAAFe6jBapa3J7LAADzrB",
+              "_parent": {
+                "$ref": "AAAAAAFoLAZbbmIrHM3EOC9Z"
+              },
+              "name": "Hoàn thành tác vụ Phân hệ Giảng dạy & Lớp học"
+            },
+            {
+              "_type": "UMLAction",
+              "_id": "AAAAAAFUnmuIzquMDHLGspVS",
+              "_parent": {
+                "$ref": "AAAAAAFoLAZbbmIrHM3EOC9Z"
+              },
+              "name": "Truy cập Phân hệ Nghiệp vụ Học vụ"
+            },
+            {
+              "_type": "UMLAction",
+              "_id": "AAAAAAF9DnJwBM9tjNNMPT6k",
+              "_parent": {
+                "$ref": "AAAAAAFoLAZbbmIrHM3EOC9Z"
+              },
+              "name": "Hoàn thành tác vụ Phân hệ Nghiệp vụ Học vụ"
+            },
+            {
+              "_type": "UMLAction",
+              "_id": "AAAAAAFyUNYFAAqdbfhgCJVH",
+              "_parent": {
+                "$ref": "AAAAAAFoLAZbbmIrHM3EOC9Z"
+              },
+              "name": "Truy cập Phân hệ Giao tiếp & Cá nhân"
+            },
+            {
+              "_type": "UMLAction",
+              "_id": "AAAAAAFQeS0z1Ig2eZ87Wjvm",
+              "_parent": {
+                "$ref": "AAAAAAFoLAZbbmIrHM3EOC9Z"
+              },
+              "name": "Hoàn thành tác vụ Phân hệ Giao tiếp & Cá nhân"
+            },
+            {
+              "_type": "UMLAction",
+              "_id": "AAAAAAFZRMHvT22sS2ECE9HQ",
+              "_parent": {
+                "$ref": "AAAAAAFoLAZbbmIrHM3EOC9Z"
+              },
+              "name": "Đăng xuất tài khoản"
+            },
+            {
+              "_type": "UMLActivityFinalNode",
+              "_id": "AAAAAAFsYs4KbxkAc65w1HJz",
+              "_parent": {
+                "$ref": "AAAAAAFoLAZbbmIrHM3EOC9Z"
+              },
+              "name": "Kết thúc phiên làm việc"
+            }
+          ],
+          "edges": [
+            {
+              "_type": "UMLControlFlow",
+              "_id": "AAAAAAFtUhty0mGxJSmXTGaU",
+              "_parent": {
+                "$ref": "AAAAAAFoLAZbbmIrHM3EOC9Z"
+              },
+              "source": {
+                "$ref": "AAAAAAF7odiwUUH5bDULp1ho"
+              },
+              "target": {
+                "$ref": "AAAAAAFl4YxUXdVZ3DaJNlMV"
+              }
+            },
+            {
+              "_type": "UMLControlFlow",
+              "_id": "AAAAAAFWu33DQxG0eC6HPRAg",
+              "_parent": {
+                "$ref": "AAAAAAFoLAZbbmIrHM3EOC9Z"
+              },
+              "source": {
+                "$ref": "AAAAAAFl4YxUXdVZ3DaJNlMV"
+              },
+              "target": {
+                "$ref": "AAAAAAF37pgKzMYXHQs2w08L"
+              }
+            },
+            {
+              "_type": "UMLControlFlow",
+              "_id": "AAAAAAFD6QRyVESmB1JXw4fb",
+              "_parent": {
+                "$ref": "AAAAAAFoLAZbbmIrHM3EOC9Z"
+              },
+              "source": {
+                "$ref": "AAAAAAF37pgKzMYXHQs2w08L"
+              },
+              "target": {
+                "$ref": "AAAAAAFqp3Z0bSUmFc3nO5DU"
+              },
+              "name": "Sai mật khẩu / tài khoản"
+            },
+            {
+              "_type": "UMLControlFlow",
+              "_id": "AAAAAAFdiA0d5KYWNcN3qzUs",
+              "_parent": {
+                "$ref": "AAAAAAFoLAZbbmIrHM3EOC9Z"
+              },
+              "source": {
+                "$ref": "AAAAAAFqp3Z0bSUmFc3nO5DU"
+              },
+              "target": {
+                "$ref": "AAAAAAFl4YxUXdVZ3DaJNlMV"
+              }
+            },
+            {
+              "_type": "UMLControlFlow",
+              "_id": "AAAAAAFsdJ1vpgfIFGjuTx9p",
+              "_parent": {
+                "$ref": "AAAAAAFoLAZbbmIrHM3EOC9Z"
+              },
+              "source": {
+                "$ref": "AAAAAAF37pgKzMYXHQs2w08L"
+              },
+              "target": {
+                "$ref": "AAAAAAFNn5BcLYW6wHTKsUwc"
+              },
+              "name": "Hợp lệ"
+            },
+            {
+              "_type": "UMLControlFlow",
+              "_id": "AAAAAAFPhQnr8iV8Z86hfpZb",
+              "_parent": {
+                "$ref": "AAAAAAFoLAZbbmIrHM3EOC9Z"
+              },
+              "source": {
+                "$ref": "AAAAAAFNn5BcLYW6wHTKsUwc"
+              },
+              "target": {
+                "$ref": "AAAAAAFeqgRqgKkJzffvLEg7"
+              }
+            },
+            {
+              "_type": "UMLControlFlow",
+              "_id": "AAAAAAFUagRZ79noyzmCVDkv",
+              "_parent": {
+                "$ref": "AAAAAAFoLAZbbmIrHM3EOC9Z"
+              },
+              "source": {
+                "$ref": "AAAAAAFeqgRqgKkJzffvLEg7"
+              },
+              "target": {
+                "$ref": "AAAAAAFLEkz2JPGK4VYWcleR"
+              }
+            },
+            {
+              "_type": "UMLControlFlow",
+              "_id": "AAAAAAF0U1KSfOqCDkw5NO8S",
+              "_parent": {
+                "$ref": "AAAAAAFoLAZbbmIrHM3EOC9Z"
+              },
+              "source": {
+                "$ref": "AAAAAAFLEkz2JPGK4VYWcleR"
+              },
+              "target": {
+                "$ref": "AAAAAAFe6jBapa3J7LAADzrB"
+              }
+            },
+            {
+              "_type": "UMLControlFlow",
+              "_id": "AAAAAAFbON00eTwixQlZKmJU",
+              "_parent": {
+                "$ref": "AAAAAAFoLAZbbmIrHM3EOC9Z"
+              },
+              "source": {
+                "$ref": "AAAAAAFe6jBapa3J7LAADzrB"
+              },
+              "target": {
+                "$ref": "AAAAAAFeqgRqgKkJzffvLEg7"
+              }
+            },
+            {
+              "_type": "UMLControlFlow",
+              "_id": "AAAAAAFWEAIAThZnN9li7xhW",
+              "_parent": {
+                "$ref": "AAAAAAFoLAZbbmIrHM3EOC9Z"
+              },
+              "source": {
+                "$ref": "AAAAAAFeqgRqgKkJzffvLEg7"
+              },
+              "target": {
+                "$ref": "AAAAAAFUnmuIzquMDHLGspVS"
+              }
+            },
+            {
+              "_type": "UMLControlFlow",
+              "_id": "AAAAAAFcaCFQYYbYcF8S3j7y",
+              "_parent": {
+                "$ref": "AAAAAAFoLAZbbmIrHM3EOC9Z"
+              },
+              "source": {
+                "$ref": "AAAAAAFUnmuIzquMDHLGspVS"
+              },
+              "target": {
+                "$ref": "AAAAAAF9DnJwBM9tjNNMPT6k"
+              }
+            },
+            {
+              "_type": "UMLControlFlow",
+              "_id": "AAAAAAFr2M0OhbIgQYoRkI98",
+              "_parent": {
+                "$ref": "AAAAAAFoLAZbbmIrHM3EOC9Z"
+              },
+              "source": {
+                "$ref": "AAAAAAF9DnJwBM9tjNNMPT6k"
+              },
+              "target": {
+                "$ref": "AAAAAAFeqgRqgKkJzffvLEg7"
+              }
+            },
+            {
+              "_type": "UMLControlFlow",
+              "_id": "AAAAAAF61AVqVc93XBhzCEri",
+              "_parent": {
+                "$ref": "AAAAAAFoLAZbbmIrHM3EOC9Z"
+              },
+              "source": {
+                "$ref": "AAAAAAFeqgRqgKkJzffvLEg7"
+              },
+              "target": {
+                "$ref": "AAAAAAFyUNYFAAqdbfhgCJVH"
+              }
+            },
+            {
+              "_type": "UMLControlFlow",
+              "_id": "AAAAAAFB72aRGMZOGImdLuxZ",
+              "_parent": {
+                "$ref": "AAAAAAFoLAZbbmIrHM3EOC9Z"
+              },
+              "source": {
+                "$ref": "AAAAAAFyUNYFAAqdbfhgCJVH"
+              },
+              "target": {
+                "$ref": "AAAAAAFQeS0z1Ig2eZ87Wjvm"
+              }
+            },
+            {
+              "_type": "UMLControlFlow",
+              "_id": "AAAAAAF4fYIavvwhHrVxY2te",
+              "_parent": {
+                "$ref": "AAAAAAFoLAZbbmIrHM3EOC9Z"
+              },
+              "source": {
+                "$ref": "AAAAAAFQeS0z1Ig2eZ87Wjvm"
+              },
+              "target": {
+                "$ref": "AAAAAAFeqgRqgKkJzffvLEg7"
+              }
+            },
+            {
+              "_type": "UMLControlFlow",
+              "_id": "AAAAAAFaGmurur4vVnDUWcBT",
+              "_parent": {
+                "$ref": "AAAAAAFoLAZbbmIrHM3EOC9Z"
+              },
+              "source": {
+                "$ref": "AAAAAAFeqgRqgKkJzffvLEg7"
+              },
+              "target": {
+                "$ref": "AAAAAAFZRMHvT22sS2ECE9HQ"
+              },
+              "name": "Nhấn Đăng xuất"
+            },
+            {
+              "_type": "UMLControlFlow",
+              "_id": "AAAAAAFWsdwem6bskPf0LhLG",
+              "_parent": {
+                "$ref": "AAAAAAFoLAZbbmIrHM3EOC9Z"
+              },
+              "source": {
+                "$ref": "AAAAAAFZRMHvT22sS2ECE9HQ"
+              },
+              "target": {
+                "$ref": "AAAAAAFsYs4KbxkAc65w1HJz"
+              }
+            }
+          ],
+          "ownedElements": [
+            {
+              "_type": "UMLActivityDiagram",
+              "_id": "AAAAAAFSF840EyvNpdzEYMXv",
+              "_parent": {
+                "$ref": "AAAAAAFoLAZbbmIrHM3EOC9Z"
+              },
+              "name": "0. Sơ đồ Tổng quan và Điều hướng",
+              "model": {
+                "$ref": "AAAAAAFoLAZbbmIrHM3EOC9Z"
+              }
+            }
+          ]
+        },
+        {
+          "_type": "UMLActivity",
+          "_id": "AAAAAAFk5gHVrWPF6FMVRXWW",
+          "_parent": {
+            "$ref": "AAAAAAFSyMfqbZanaafYXjUR"
+          },
+          "name": "1. Giảng dạy & Lớp học",
+          "nodes": [
+            {
+              "_type": "UMLInitialNode",
+              "_id": "AAAAAAFgnYiUm1TDcKCY8VQe",
+              "_parent": {
+                "$ref": "AAAAAAFk5gHVrWPF6FMVRXWW"
+              },
+              "name": "Bắt đầu"
+            },
+            {
+              "_type": "UMLAction",
+              "_id": "AAAAAAF1GGvxvjvhMO74iQ3o",
+              "_parent": {
+                "$ref": "AAAAAAFk5gHVrWPF6FMVRXWW"
+              },
+              "name": "Truy cập Lớp học / Sinh viên"
+            },
+            {
+              "_type": "UMLDecisionNode",
+              "_id": "AAAAAAFZcAjGeZwSz4uDapVQ",
+              "_parent": {
+                "$ref": "AAAAAAFk5gHVrWPF6FMVRXWW"
+              },
+              "name": "Lựa chọn đối tượng"
+            },
+            {
+              "_type": "UMLAction",
+              "_id": "AAAAAAFiH9Vs1pvaq8BUHiWr",
+              "_parent": {
+                "$ref": "AAAAAAFk5gHVrWPF6FMVRXWW"
+              },
+              "name": "Tra cứu danh sách Lớp học giảng dạy"
+            },
+            {
+              "_type": "UMLAction",
+              "_id": "AAAAAAFnGMU4bUVLxJmvWVOs",
+              "_parent": {
+                "$ref": "AAAAAAFk5gHVrWPF6FMVRXWW"
+              },
+              "name": "Xem danh sách Sinh viên thuộc lớp dạy"
+            },
+            {
+              "_type": "UMLAction",
+              "_id": "AAAAAAFq1ZGyuT4CIViP1hPM",
+              "_parent": {
+                "$ref": "AAAAAAFk5gHVrWPF6FMVRXWW"
+              },
+              "name": "Xem chi tiết Báo cáo & Thống kê lớp"
+            },
+            {
+              "_type": "UMLDecisionNode",
+              "_id": "AAAAAAF5VrvQpca4KZ9SwIsX",
+              "_parent": {
+                "$ref": "AAAAAAFk5gHVrWPF6FMVRXWW"
+              },
+              "name": "Thực hiện thao tác"
+            },
+            {
+              "_type": "UMLAction",
+              "_id": "AAAAAAFqn7QVdYXYqTNSHGzG",
+              "_parent": {
+                "$ref": "AAAAAAFk5gHVrWPF6FMVRXWW"
+              },
+              "name": "Xem chi tiết thời khóa biểu giảng dạy"
+            },
+            {
+              "_type": "UMLAction",
+              "_id": "AAAAAAFpDN3Dr1wwR1N5rG8X",
+              "_parent": {
+                "$ref": "AAAAAAFk5gHVrWPF6FMVRXWW"
+              },
+              "name": "Truy vấn hồ sơ học vụ sinh viên"
+            },
+            {
+              "_type": "UMLAction",
+              "_id": "AAAAAAF2kyQ0QnoOU5XhMeUx",
+              "_parent": {
+                "$ref": "AAAAAAFk5gHVrWPF6FMVRXWW"
+              },
+              "name": "Xem biểu đồ phổ điểm & tỷ lệ chuyên cần"
+            },
+            {
+              "_type": "UMLDecisionNode",
+              "_id": "AAAAAAFB4FX9MK4P8VsOfKED",
+              "_parent": {
+                "$ref": "AAAAAAFk5gHVrWPF6FMVRXWW"
+              },
+              "name": "Hoàn tất"
+            },
+            {
+              "_type": "UMLActivityFinalNode",
+              "_id": "AAAAAAF0BjDhM8PDWg3o4cDf",
+              "_parent": {
+                "$ref": "AAAAAAFk5gHVrWPF6FMVRXWW"
+              },
+              "name": "Kết thúc"
+            }
+          ],
+          "edges": [
+            {
+              "_type": "UMLControlFlow",
+              "_id": "AAAAAAFCoRA2eiIozxHoovtk",
+              "_parent": {
+                "$ref": "AAAAAAFk5gHVrWPF6FMVRXWW"
+              },
+              "source": {
+                "$ref": "AAAAAAFgnYiUm1TDcKCY8VQe"
+              },
+              "target": {
+                "$ref": "AAAAAAF1GGvxvjvhMO74iQ3o"
+              }
+            },
+            {
+              "_type": "UMLControlFlow",
+              "_id": "AAAAAAFcuVSOPM7ybjpH348e",
+              "_parent": {
+                "$ref": "AAAAAAFk5gHVrWPF6FMVRXWW"
+              },
+              "source": {
+                "$ref": "AAAAAAF1GGvxvjvhMO74iQ3o"
+              },
+              "target": {
+                "$ref": "AAAAAAFZcAjGeZwSz4uDapVQ"
+              }
+            },
+            {
+              "_type": "UMLControlFlow",
+              "_id": "AAAAAAF8LbGALToMRbxQHyTP",
+              "_parent": {
+                "$ref": "AAAAAAFk5gHVrWPF6FMVRXWW"
+              },
+              "source": {
+                "$ref": "AAAAAAFZcAjGeZwSz4uDapVQ"
+              },
+              "target": {
+                "$ref": "AAAAAAFiH9Vs1pvaq8BUHiWr"
+              }
+            },
+            {
+              "_type": "UMLControlFlow",
+              "_id": "AAAAAAFo4Vi8Pdwqd6mlFSW6",
+              "_parent": {
+                "$ref": "AAAAAAFk5gHVrWPF6FMVRXWW"
+              },
+              "source": {
+                "$ref": "AAAAAAFZcAjGeZwSz4uDapVQ"
+              },
+              "target": {
+                "$ref": "AAAAAAFnGMU4bUVLxJmvWVOs"
+              }
+            },
+            {
+              "_type": "UMLControlFlow",
+              "_id": "AAAAAAFgmDOEA9UgPhX8Nv9f",
+              "_parent": {
+                "$ref": "AAAAAAFk5gHVrWPF6FMVRXWW"
+              },
+              "source": {
+                "$ref": "AAAAAAFZcAjGeZwSz4uDapVQ"
+              },
+              "target": {
+                "$ref": "AAAAAAFq1ZGyuT4CIViP1hPM"
+              }
+            },
+            {
+              "_type": "UMLControlFlow",
+              "_id": "AAAAAAFawpGRHFryZ5h2ZJgI",
+              "_parent": {
+                "$ref": "AAAAAAFk5gHVrWPF6FMVRXWW"
+              },
+              "source": {
+                "$ref": "AAAAAAFiH9Vs1pvaq8BUHiWr"
+              },
+              "target": {
+                "$ref": "AAAAAAF5VrvQpca4KZ9SwIsX"
+              }
+            },
+            {
+              "_type": "UMLControlFlow",
+              "_id": "AAAAAAFMPefZfJcyag9v7IXU",
+              "_parent": {
+                "$ref": "AAAAAAFk5gHVrWPF6FMVRXWW"
+              },
+              "source": {
+                "$ref": "AAAAAAFnGMU4bUVLxJmvWVOs"
+              },
+              "target": {
+                "$ref": "AAAAAAF5VrvQpca4KZ9SwIsX"
+              }
+            },
+            {
+              "_type": "UMLControlFlow",
+              "_id": "AAAAAAFp5jf9jWNmfqLXfaJH",
+              "_parent": {
+                "$ref": "AAAAAAFk5gHVrWPF6FMVRXWW"
+              },
+              "source": {
+                "$ref": "AAAAAAFq1ZGyuT4CIViP1hPM"
+              },
+              "target": {
+                "$ref": "AAAAAAF5VrvQpca4KZ9SwIsX"
+              }
+            },
+            {
+              "_type": "UMLControlFlow",
+              "_id": "AAAAAAFXLIG5fVdqseOlrCVU",
+              "_parent": {
+                "$ref": "AAAAAAFk5gHVrWPF6FMVRXWW"
+              },
+              "source": {
+                "$ref": "AAAAAAF5VrvQpca4KZ9SwIsX"
+              },
+              "target": {
+                "$ref": "AAAAAAFqn7QVdYXYqTNSHGzG"
+              }
+            },
+            {
+              "_type": "UMLControlFlow",
+              "_id": "AAAAAAFBkjBJN5e2OOLOsmI2",
+              "_parent": {
+                "$ref": "AAAAAAFk5gHVrWPF6FMVRXWW"
+              },
+              "source": {
+                "$ref": "AAAAAAF5VrvQpca4KZ9SwIsX"
+              },
+              "target": {
+                "$ref": "AAAAAAFpDN3Dr1wwR1N5rG8X"
+              }
+            },
+            {
+              "_type": "UMLControlFlow",
+              "_id": "AAAAAAFBUC8Mf7g5RLXkYoay",
+              "_parent": {
+                "$ref": "AAAAAAFk5gHVrWPF6FMVRXWW"
+              },
+              "source": {
+                "$ref": "AAAAAAF5VrvQpca4KZ9SwIsX"
+              },
+              "target": {
+                "$ref": "AAAAAAF2kyQ0QnoOU5XhMeUx"
+              }
+            },
+            {
+              "_type": "UMLControlFlow",
+              "_id": "AAAAAAFDujgiJPcpjCcWOswF",
+              "_parent": {
+                "$ref": "AAAAAAFk5gHVrWPF6FMVRXWW"
+              },
+              "source": {
+                "$ref": "AAAAAAFqn7QVdYXYqTNSHGzG"
+              },
+              "target": {
+                "$ref": "AAAAAAFB4FX9MK4P8VsOfKED"
+              }
+            },
+            {
+              "_type": "UMLControlFlow",
+              "_id": "AAAAAAFbWqUl5ji794uw5K1h",
+              "_parent": {
+                "$ref": "AAAAAAFk5gHVrWPF6FMVRXWW"
+              },
+              "source": {
+                "$ref": "AAAAAAFpDN3Dr1wwR1N5rG8X"
+              },
+              "target": {
+                "$ref": "AAAAAAFB4FX9MK4P8VsOfKED"
+              }
+            },
+            {
+              "_type": "UMLControlFlow",
+              "_id": "AAAAAAFrK7p2KjNzOJxMM3eA",
+              "_parent": {
+                "$ref": "AAAAAAFk5gHVrWPF6FMVRXWW"
+              },
+              "source": {
+                "$ref": "AAAAAAF2kyQ0QnoOU5XhMeUx"
+              },
+              "target": {
+                "$ref": "AAAAAAFB4FX9MK4P8VsOfKED"
+              }
+            },
+            {
+              "_type": "UMLControlFlow",
+              "_id": "AAAAAAFUGhakLL5zxiWzlpEJ",
+              "_parent": {
+                "$ref": "AAAAAAFk5gHVrWPF6FMVRXWW"
+              },
+              "source": {
+                "$ref": "AAAAAAFB4FX9MK4P8VsOfKED"
+              },
+              "target": {
+                "$ref": "AAAAAAFZcAjGeZwSz4uDapVQ"
+              },
+              "name": "Tiếp tục"
+            },
+            {
+              "_type": "UMLControlFlow",
+              "_id": "AAAAAAFS04wq4vZ2IUxndQLS",
+              "_parent": {
+                "$ref": "AAAAAAFk5gHVrWPF6FMVRXWW"
+              },
+              "source": {
+                "$ref": "AAAAAAFB4FX9MK4P8VsOfKED"
+              },
+              "target": {
+                "$ref": "AAAAAAF0BjDhM8PDWg3o4cDf"
+              },
+              "name": "Quay lại Dashboard"
+            }
+          ],
+          "ownedElements": [
+            {
+              "_type": "UMLActivityDiagram",
+              "_id": "AAAAAAFpon86NrNb0ZP2lDJC",
+              "_parent": {
+                "$ref": "AAAAAAFk5gHVrWPF6FMVRXWW"
+              },
+              "name": "1. Sơ đồ Giảng dạy & Lớp học",
+              "model": {
+                "$ref": "AAAAAAFk5gHVrWPF6FMVRXWW"
+              }
+            }
+          ]
+        },
+        {
+          "_type": "UMLActivity",
+          "_id": "AAAAAAF1YgdzinWcJf8B31nB",
+          "_parent": {
+            "$ref": "AAAAAAFSyMfqbZanaafYXjUR"
+          },
+          "name": "2. Nghiệp vụ Học vụ",
+          "nodes": [
+            {
+              "_type": "UMLInitialNode",
+              "_id": "AAAAAAFtLygdIDRnoHYpfMh4",
+              "_parent": {
+                "$ref": "AAAAAAF1YgdzinWcJf8B31nB"
+              },
+              "name": "Bắt đầu"
+            },
+            {
+              "_type": "UMLAction",
+              "_id": "AAAAAAFcemM23trGDGVVrDfA",
+              "_parent": {
+                "$ref": "AAAAAAF1YgdzinWcJf8B31nB"
+              },
+              "name": "Truy cập Nghiệp vụ Học vụ"
+            },
+            {
+              "_type": "UMLDecisionNode",
+              "_id": "AAAAAAFXjhybwxXpQ55WgMPH",
+              "_parent": {
+                "$ref": "AAAAAAF1YgdzinWcJf8B31nB"
+              },
+              "name": "Lựa chọn nghiệp vụ"
+            },
+            {
+              "_type": "UMLDecisionNode",
+              "_id": "AAAAAAForthLeJkQ0E2x4e46",
+              "_parent": {
+                "$ref": "AAAAAAF1YgdzinWcJf8B31nB"
+              },
+              "name": "Hoàn thành tác vụ học vụ"
+            },
+            {
+              "_type": "UMLActivityFinalNode",
+              "_id": "AAAAAAFmaNBlIdQaW7lbPD5S",
+              "_parent": {
+                "$ref": "AAAAAAF1YgdzinWcJf8B31nB"
+              },
+              "name": "Kết thúc"
+            },
+            {
+              "_type": "UMLAction",
+              "_id": "AAAAAAFIaL8YDzGOgZ462cko",
+              "_parent": {
+                "$ref": "AAAAAAF1YgdzinWcJf8B31nB"
+              },
+              "name": "Chọn Điểm danh (Attendance)"
+            },
+            {
+              "_type": "UMLDecisionNode",
+              "_id": "AAAAAAF1efRkAitNGdeadROo",
+              "_parent": {
+                "$ref": "AAAAAAF1YgdzinWcJf8B31nB"
+              },
+              "name": "Quy trình Điểm danh (Attendance)"
+            },
+            {
+              "_type": "UMLAction",
+              "_id": "AAAAAAFfqHtqP7iA3cUVGxix",
+              "_parent": {
+                "$ref": "AAAAAAF1YgdzinWcJf8B31nB"
+              },
+              "name": "Tạo QR Code điểm danh động"
+            },
+            {
+              "_type": "UMLAction",
+              "_id": "AAAAAAFwqIgWa2ksBngKc5WM",
+              "_parent": {
+                "$ref": "AAAAAAF1YgdzinWcJf8B31nB"
+              },
+              "name": "Quét khuôn mặt bằng AI (Face Recognition)"
+            },
+            {
+              "_type": "UMLAction",
+              "_id": "AAAAAAFA5LyS4AiGvRHd8GjH",
+              "_parent": {
+                "$ref": "AAAAAAF1YgdzinWcJf8B31nB"
+              },
+              "name": "Cập nhật trạng thái thủ công (Muộn/Vắng/Có mặt)"
+            },
+            {
+              "_type": "UMLAction",
+              "_id": "AAAAAAF5a0KMANfJYXP86eSR",
+              "_parent": {
+                "$ref": "AAAAAAF1YgdzinWcJf8B31nB"
+              },
+              "name": "Chọn Nhập điểm (Grades)"
+            },
+            {
+              "_type": "UMLDecisionNode",
+              "_id": "AAAAAAF9odA3HIYCzKeuGs93",
+              "_parent": {
+                "$ref": "AAAAAAF1YgdzinWcJf8B31nB"
+              },
+              "name": "Quy trình Nhập điểm (Grades)"
+            },
+            {
+              "_type": "UMLAction",
+              "_id": "AAAAAAFsW2SFDoDk3dJSivur",
+              "_parent": {
+                "$ref": "AAAAAAF1YgdzinWcJf8B31nB"
+              },
+              "name": "Nhập điểm thành phần (giữa kỳ/bài tập)"
+            },
+            {
+              "_type": "UMLAction",
+              "_id": "AAAAAAFB0zzEo1HvvxnFGVrQ",
+              "_parent": {
+                "$ref": "AAAAAAF1YgdzinWcJf8B31nB"
+              },
+              "name": "Nhập điểm thi kết thúc môn"
+            },
+            {
+              "_type": "UMLAction",
+              "_id": "AAAAAAFKtvO9WA5Wvmt1wbvC",
+              "_parent": {
+                "$ref": "AAAAAAF1YgdzinWcJf8B31nB"
+              },
+              "name": "Hiệu chỉnh điểm số trước khi đóng cổng"
+            },
+            {
+              "_type": "UMLAction",
+              "_id": "AAAAAAFLVLvrO7Z52HlZ4O24",
+              "_parent": {
+                "$ref": "AAAAAAF1YgdzinWcJf8B31nB"
+              },
+              "name": "Chọn Giao bài tập (Tasks)"
+            },
+            {
+              "_type": "UMLDecisionNode",
+              "_id": "AAAAAAFZEwZndxbFTWXfXv28",
+              "_parent": {
+                "$ref": "AAAAAAF1YgdzinWcJf8B31nB"
+              },
+              "name": "Quy trình Giao bài tập (Tasks)"
+            },
+            {
+              "_type": "UMLAction",
+              "_id": "AAAAAAF7bCEdsBOPk3WNS9ry",
+              "_parent": {
+                "$ref": "AAAAAAF1YgdzinWcJf8B31nB"
+              },
+              "name": "Soạn & Đăng bài tập kèm hạn nộp"
+            },
+            {
+              "_type": "UMLAction",
+              "_id": "AAAAAAF93FM3Hg9Pov1cz1Pw",
+              "_parent": {
+                "$ref": "AAAAAAF1YgdzinWcJf8B31nB"
+              },
+              "name": "Xem danh sách sinh viên nộp bài"
+            },
+            {
+              "_type": "UMLAction",
+              "_id": "AAAAAAFnMnh4W9wpRWq1R9ze",
+              "_parent": {
+                "$ref": "AAAAAAF1YgdzinWcJf8B31nB"
+              },
+              "name": "Chấm điểm & Phản hồi bài nộp"
+            },
+            {
+              "_type": "UMLAction",
+              "_id": "AAAAAAFw4LzkHIVcRsgCGKGX",
+              "_parent": {
+                "$ref": "AAAAAAF1YgdzinWcJf8B31nB"
+              },
+              "name": "Chọn Thi trực tuyến (Exam)"
+            },
+            {
+              "_type": "UMLDecisionNode",
+              "_id": "AAAAAAF2QHv6agXm4AUNA69C",
+              "_parent": {
+                "$ref": "AAAAAAF1YgdzinWcJf8B31nB"
+              },
+              "name": "Quy trình Thi trực tuyến (Exam)"
+            },
+            {
+              "_type": "UMLAction",
+              "_id": "AAAAAAFYes8fr9RgzOBIXQr2",
+              "_parent": {
+                "$ref": "AAAAAAF1YgdzinWcJf8B31nB"
+              },
+              "name": "Soạn ngân hàng câu hỏi đề thi"
+            },
+            {
+              "_type": "UMLAction",
+              "_id": "AAAAAAFEi78b4itzlwCREgzG",
+              "_parent": {
+                "$ref": "AAAAAAF1YgdzinWcJf8B31nB"
+              },
+              "name": "Thiết lập thời gian & Bảo mật thi"
+            },
+            {
+              "_type": "UMLAction",
+              "_id": "AAAAAAFlG3sCC8Pn4K6ufizA",
+              "_parent": {
+                "$ref": "AAAAAAF1YgdzinWcJf8B31nB"
+              },
+              "name": "Xem bảng điểm thi tự động chấm"
+            }
+          ],
+          "edges": [
+            {
+              "_type": "UMLControlFlow",
+              "_id": "AAAAAAFH1SusmwKfyCSTeRbi",
+              "_parent": {
+                "$ref": "AAAAAAF1YgdzinWcJf8B31nB"
+              },
+              "source": {
+                "$ref": "AAAAAAFXjhybwxXpQ55WgMPH"
+              },
+              "target": {
+                "$ref": "AAAAAAFIaL8YDzGOgZ462cko"
+              }
+            },
+            {
+              "_type": "UMLControlFlow",
+              "_id": "AAAAAAFI9A4cIiorQMTZVOEB",
+              "_parent": {
+                "$ref": "AAAAAAF1YgdzinWcJf8B31nB"
+              },
+              "source": {
+                "$ref": "AAAAAAFIaL8YDzGOgZ462cko"
+              },
+              "target": {
+                "$ref": "AAAAAAF1efRkAitNGdeadROo"
+              }
+            },
+            {
+              "_type": "UMLControlFlow",
+              "_id": "AAAAAAF0tCdCt9FWQh81B5OQ",
+              "_parent": {
+                "$ref": "AAAAAAF1YgdzinWcJf8B31nB"
+              },
+              "source": {
+                "$ref": "AAAAAAF1efRkAitNGdeadROo"
+              },
+              "target": {
+                "$ref": "AAAAAAFfqHtqP7iA3cUVGxix"
+              }
+            },
+            {
+              "_type": "UMLControlFlow",
+              "_id": "AAAAAAFMkmvSyl5DubIVwisI",
+              "_parent": {
+                "$ref": "AAAAAAF1YgdzinWcJf8B31nB"
+              },
+              "source": {
+                "$ref": "AAAAAAFfqHtqP7iA3cUVGxix"
+              },
+              "target": {
+                "$ref": "AAAAAAForthLeJkQ0E2x4e46"
+              }
+            },
+            {
+              "_type": "UMLControlFlow",
+              "_id": "AAAAAAFcxIiAoCEvoQBNhDJ2",
+              "_parent": {
+                "$ref": "AAAAAAF1YgdzinWcJf8B31nB"
+              },
+              "source": {
+                "$ref": "AAAAAAF1efRkAitNGdeadROo"
+              },
+              "target": {
+                "$ref": "AAAAAAFwqIgWa2ksBngKc5WM"
+              }
+            },
+            {
+              "_type": "UMLControlFlow",
+              "_id": "AAAAAAFG29id6hCmarZKzy9M",
+              "_parent": {
+                "$ref": "AAAAAAF1YgdzinWcJf8B31nB"
+              },
+              "source": {
+                "$ref": "AAAAAAFwqIgWa2ksBngKc5WM"
+              },
+              "target": {
+                "$ref": "AAAAAAForthLeJkQ0E2x4e46"
+              }
+            },
+            {
+              "_type": "UMLControlFlow",
+              "_id": "AAAAAAFMctQXgCDJLji9GCN6",
+              "_parent": {
+                "$ref": "AAAAAAF1YgdzinWcJf8B31nB"
+              },
+              "source": {
+                "$ref": "AAAAAAF1efRkAitNGdeadROo"
+              },
+              "target": {
+                "$ref": "AAAAAAFA5LyS4AiGvRHd8GjH"
+              }
+            },
+            {
+              "_type": "UMLControlFlow",
+              "_id": "AAAAAAFo3zgfvffBbDKI3j0b",
+              "_parent": {
+                "$ref": "AAAAAAF1YgdzinWcJf8B31nB"
+              },
+              "source": {
+                "$ref": "AAAAAAFA5LyS4AiGvRHd8GjH"
+              },
+              "target": {
+                "$ref": "AAAAAAForthLeJkQ0E2x4e46"
+              }
+            },
+            {
+              "_type": "UMLControlFlow",
+              "_id": "AAAAAAFojtUTI8WmK6EzSyCD",
+              "_parent": {
+                "$ref": "AAAAAAF1YgdzinWcJf8B31nB"
+              },
+              "source": {
+                "$ref": "AAAAAAFXjhybwxXpQ55WgMPH"
+              },
+              "target": {
+                "$ref": "AAAAAAF5a0KMANfJYXP86eSR"
+              }
+            },
+            {
+              "_type": "UMLControlFlow",
+              "_id": "AAAAAAFhwNgtbXDB4but4qpS",
+              "_parent": {
+                "$ref": "AAAAAAF1YgdzinWcJf8B31nB"
+              },
+              "source": {
+                "$ref": "AAAAAAF5a0KMANfJYXP86eSR"
+              },
+              "target": {
+                "$ref": "AAAAAAF9odA3HIYCzKeuGs93"
+              }
+            },
+            {
+              "_type": "UMLControlFlow",
+              "_id": "AAAAAAFZfptXYG4CXWdRTQcj",
+              "_parent": {
+                "$ref": "AAAAAAF1YgdzinWcJf8B31nB"
+              },
+              "source": {
+                "$ref": "AAAAAAF9odA3HIYCzKeuGs93"
+              },
+              "target": {
+                "$ref": "AAAAAAFsW2SFDoDk3dJSivur"
+              }
+            },
+            {
+              "_type": "UMLControlFlow",
+              "_id": "AAAAAAF2MZ08uk8NvkZnrUE1",
+              "_parent": {
+                "$ref": "AAAAAAF1YgdzinWcJf8B31nB"
+              },
+              "source": {
+                "$ref": "AAAAAAFsW2SFDoDk3dJSivur"
+              },
+              "target": {
+                "$ref": "AAAAAAForthLeJkQ0E2x4e46"
+              }
+            },
+            {
+              "_type": "UMLControlFlow",
+              "_id": "AAAAAAFX1Gw4pptfbhRw5ozP",
+              "_parent": {
+                "$ref": "AAAAAAF1YgdzinWcJf8B31nB"
+              },
+              "source": {
+                "$ref": "AAAAAAF9odA3HIYCzKeuGs93"
+              },
+              "target": {
+                "$ref": "AAAAAAFB0zzEo1HvvxnFGVrQ"
+              }
+            },
+            {
+              "_type": "UMLControlFlow",
+              "_id": "AAAAAAFncDlF197sr0qio5Om",
+              "_parent": {
+                "$ref": "AAAAAAF1YgdzinWcJf8B31nB"
+              },
+              "source": {
+                "$ref": "AAAAAAFB0zzEo1HvvxnFGVrQ"
+              },
+              "target": {
+                "$ref": "AAAAAAForthLeJkQ0E2x4e46"
+              }
+            },
+            {
+              "_type": "UMLControlFlow",
+              "_id": "AAAAAAFcvJpKEenjipuv4ReB",
+              "_parent": {
+                "$ref": "AAAAAAF1YgdzinWcJf8B31nB"
+              },
+              "source": {
+                "$ref": "AAAAAAF9odA3HIYCzKeuGs93"
+              },
+              "target": {
+                "$ref": "AAAAAAFKtvO9WA5Wvmt1wbvC"
+              }
+            },
+            {
+              "_type": "UMLControlFlow",
+              "_id": "AAAAAAFJt2FBSnbwe1Ap8mqJ",
+              "_parent": {
+                "$ref": "AAAAAAF1YgdzinWcJf8B31nB"
+              },
+              "source": {
+                "$ref": "AAAAAAFKtvO9WA5Wvmt1wbvC"
+              },
+              "target": {
+                "$ref": "AAAAAAForthLeJkQ0E2x4e46"
+              }
+            },
+            {
+              "_type": "UMLControlFlow",
+              "_id": "AAAAAAFxphzJKdzeCk0Jdv2w",
+              "_parent": {
+                "$ref": "AAAAAAF1YgdzinWcJf8B31nB"
+              },
+              "source": {
+                "$ref": "AAAAAAFXjhybwxXpQ55WgMPH"
+              },
+              "target": {
+                "$ref": "AAAAAAFLVLvrO7Z52HlZ4O24"
+              }
+            },
+            {
+              "_type": "UMLControlFlow",
+              "_id": "AAAAAAFXfnNfxlYcHvasGfwI",
+              "_parent": {
+                "$ref": "AAAAAAF1YgdzinWcJf8B31nB"
+              },
+              "source": {
+                "$ref": "AAAAAAFLVLvrO7Z52HlZ4O24"
+              },
+              "target": {
+                "$ref": "AAAAAAFZEwZndxbFTWXfXv28"
+              }
+            },
+            {
+              "_type": "UMLControlFlow",
+              "_id": "AAAAAAFS7BfGhd3pkCobqz5J",
+              "_parent": {
+                "$ref": "AAAAAAF1YgdzinWcJf8B31nB"
+              },
+              "source": {
+                "$ref": "AAAAAAFZEwZndxbFTWXfXv28"
+              },
+              "target": {
+                "$ref": "AAAAAAF7bCEdsBOPk3WNS9ry"
+              }
+            },
+            {
+              "_type": "UMLControlFlow",
+              "_id": "AAAAAAF63jayfbwDPHzDK3C2",
+              "_parent": {
+                "$ref": "AAAAAAF1YgdzinWcJf8B31nB"
+              },
+              "source": {
+                "$ref": "AAAAAAF7bCEdsBOPk3WNS9ry"
+              },
+              "target": {
+                "$ref": "AAAAAAForthLeJkQ0E2x4e46"
+              }
+            },
+            {
+              "_type": "UMLControlFlow",
+              "_id": "AAAAAAFGjULQo6P9Ah809j7E",
+              "_parent": {
+                "$ref": "AAAAAAF1YgdzinWcJf8B31nB"
+              },
+              "source": {
+                "$ref": "AAAAAAFZEwZndxbFTWXfXv28"
+              },
+              "target": {
+                "$ref": "AAAAAAF93FM3Hg9Pov1cz1Pw"
+              }
+            },
+            {
+              "_type": "UMLControlFlow",
+              "_id": "AAAAAAFZMEDMh61otMaxizII",
+              "_parent": {
+                "$ref": "AAAAAAF1YgdzinWcJf8B31nB"
+              },
+              "source": {
+                "$ref": "AAAAAAF93FM3Hg9Pov1cz1Pw"
+              },
+              "target": {
+                "$ref": "AAAAAAForthLeJkQ0E2x4e46"
+              }
+            },
+            {
+              "_type": "UMLControlFlow",
+              "_id": "AAAAAAFlkV7ROSdygQuOaqvA",
+              "_parent": {
+                "$ref": "AAAAAAF1YgdzinWcJf8B31nB"
+              },
+              "source": {
+                "$ref": "AAAAAAFZEwZndxbFTWXfXv28"
+              },
+              "target": {
+                "$ref": "AAAAAAFnMnh4W9wpRWq1R9ze"
+              }
+            },
+            {
+              "_type": "UMLControlFlow",
+              "_id": "AAAAAAFrJqcErY9sD2JXWqHn",
+              "_parent": {
+                "$ref": "AAAAAAF1YgdzinWcJf8B31nB"
+              },
+              "source": {
+                "$ref": "AAAAAAFnMnh4W9wpRWq1R9ze"
+              },
+              "target": {
+                "$ref": "AAAAAAForthLeJkQ0E2x4e46"
+              }
+            },
+            {
+              "_type": "UMLControlFlow",
+              "_id": "AAAAAAFuZO0y1SryLGAgdTlN",
+              "_parent": {
+                "$ref": "AAAAAAF1YgdzinWcJf8B31nB"
+              },
+              "source": {
+                "$ref": "AAAAAAFXjhybwxXpQ55WgMPH"
+              },
+              "target": {
+                "$ref": "AAAAAAFw4LzkHIVcRsgCGKGX"
+              }
+            },
+            {
+              "_type": "UMLControlFlow",
+              "_id": "AAAAAAFMgRQnaUL6aDjnVkXT",
+              "_parent": {
+                "$ref": "AAAAAAF1YgdzinWcJf8B31nB"
+              },
+              "source": {
+                "$ref": "AAAAAAFw4LzkHIVcRsgCGKGX"
+              },
+              "target": {
+                "$ref": "AAAAAAF2QHv6agXm4AUNA69C"
+              }
+            },
+            {
+              "_type": "UMLControlFlow",
+              "_id": "AAAAAAFL1VmvVfvZKgV5StLd",
+              "_parent": {
+                "$ref": "AAAAAAF1YgdzinWcJf8B31nB"
+              },
+              "source": {
+                "$ref": "AAAAAAF2QHv6agXm4AUNA69C"
+              },
+              "target": {
+                "$ref": "AAAAAAFYes8fr9RgzOBIXQr2"
+              }
+            },
+            {
+              "_type": "UMLControlFlow",
+              "_id": "AAAAAAFJJPR5odX12afkr7sF",
+              "_parent": {
+                "$ref": "AAAAAAF1YgdzinWcJf8B31nB"
+              },
+              "source": {
+                "$ref": "AAAAAAFYes8fr9RgzOBIXQr2"
+              },
+              "target": {
+                "$ref": "AAAAAAForthLeJkQ0E2x4e46"
+              }
+            },
+            {
+              "_type": "UMLControlFlow",
+              "_id": "AAAAAAFAoJH36KZ6IsEyu5eh",
+              "_parent": {
+                "$ref": "AAAAAAF1YgdzinWcJf8B31nB"
+              },
+              "source": {
+                "$ref": "AAAAAAF2QHv6agXm4AUNA69C"
+              },
+              "target": {
+                "$ref": "AAAAAAFEi78b4itzlwCREgzG"
+              }
+            },
+            {
+              "_type": "UMLControlFlow",
+              "_id": "AAAAAAFGD4dz9kZ1b7d2vqWZ",
+              "_parent": {
+                "$ref": "AAAAAAF1YgdzinWcJf8B31nB"
+              },
+              "source": {
+                "$ref": "AAAAAAFEi78b4itzlwCREgzG"
+              },
+              "target": {
+                "$ref": "AAAAAAForthLeJkQ0E2x4e46"
+              }
+            },
+            {
+              "_type": "UMLControlFlow",
+              "_id": "AAAAAAFEbLwCwJnMEzGjKgEj",
+              "_parent": {
+                "$ref": "AAAAAAF1YgdzinWcJf8B31nB"
+              },
+              "source": {
+                "$ref": "AAAAAAF2QHv6agXm4AUNA69C"
+              },
+              "target": {
+                "$ref": "AAAAAAFlG3sCC8Pn4K6ufizA"
+              }
+            },
+            {
+              "_type": "UMLControlFlow",
+              "_id": "AAAAAAFZmmhAw8HWAZxUyxuw",
+              "_parent": {
+                "$ref": "AAAAAAF1YgdzinWcJf8B31nB"
+              },
+              "source": {
+                "$ref": "AAAAAAFlG3sCC8Pn4K6ufizA"
+              },
+              "target": {
+                "$ref": "AAAAAAForthLeJkQ0E2x4e46"
+              }
+            },
+            {
+              "_type": "UMLControlFlow",
+              "_id": "AAAAAAFrnZv99x4hbp28xFUt",
+              "_parent": {
+                "$ref": "AAAAAAF1YgdzinWcJf8B31nB"
+              },
+              "source": {
+                "$ref": "AAAAAAForthLeJkQ0E2x4e46"
+              },
+              "target": {
+                "$ref": "AAAAAAFXjhybwxXpQ55WgMPH"
+              },
+              "name": "Tiếp tục tác vụ khác"
+            },
+            {
+              "_type": "UMLControlFlow",
+              "_id": "AAAAAAFYwfSTBwWi5BwMKgQ3",
+              "_parent": {
+                "$ref": "AAAAAAF1YgdzinWcJf8B31nB"
+              },
+              "source": {
+                "$ref": "AAAAAAForthLeJkQ0E2x4e46"
+              },
+              "target": {
+                "$ref": "AAAAAAFmaNBlIdQaW7lbPD5S"
+              },
+              "name": "Quay lại Dashboard"
+            }
+          ],
+          "ownedElements": [
+            {
+              "_type": "UMLActivityDiagram",
+              "_id": "AAAAAAFd0FMxbG5loxmcPist",
+              "_parent": {
+                "$ref": "AAAAAAF1YgdzinWcJf8B31nB"
+              },
+              "name": "2. Sơ đồ Nghiệp vụ Học vụ",
+              "model": {
+                "$ref": "AAAAAAF1YgdzinWcJf8B31nB"
+              }
+            }
+          ]
+        },
+        {
+          "_type": "UMLActivity",
+          "_id": "AAAAAAFRpOs6mYKeJRZg0bEO",
+          "_parent": {
+            "$ref": "AAAAAAFSyMfqbZanaafYXjUR"
+          },
+          "name": "3. Giao tiếp & Cá nhân",
+          "nodes": [
+            {
+              "_type": "UMLInitialNode",
+              "_id": "AAAAAAFMo4fr4vWLABZ5FJ7f",
+              "_parent": {
+                "$ref": "AAAAAAFRpOs6mYKeJRZg0bEO"
+              },
+              "name": "Bắt đầu"
+            },
+            {
+              "_type": "UMLAction",
+              "_id": "AAAAAAFdmUFXRnxgttoVFyLQ",
+              "_parent": {
+                "$ref": "AAAAAAFRpOs6mYKeJRZg0bEO"
+              },
+              "name": "Truy cập Giao tiếp & Cá nhân"
+            },
+            {
+              "_type": "UMLDecisionNode",
+              "_id": "AAAAAAFdYLB41tADkT3K1RGt",
+              "_parent": {
+                "$ref": "AAAAAAFRpOs6mYKeJRZg0bEO"
+              },
+              "name": "Lựa chọn chức năng"
+            },
+            {
+              "_type": "UMLAction",
+              "_id": "AAAAAAFpoManxKFyfsjEh0Y8",
+              "_parent": {
+                "$ref": "AAAAAAFRpOs6mYKeJRZg0bEO"
+              },
+              "name": "Gửi/Nhận tin nhắn học thuật (Messages)"
+            },
+            {
+              "_type": "UMLAction",
+              "_id": "AAAAAAF8Yiy0jDeD8uJG7U6o",
+              "_parent": {
+                "$ref": "AAAAAAFRpOs6mYKeJRZg0bEO"
+              },
+              "name": "Xem hòm thư Thông báo hành chính"
+            },
+            {
+              "_type": "UMLAction",
+              "_id": "AAAAAAFHv5yvnTWKPJKToIZ1",
+              "_parent": {
+                "$ref": "AAAAAAFRpOs6mYKeJRZg0bEO"
+              },
+              "name": "Soạn & Phát hành thông báo tới Lớp giảng dạy"
+            },
+            {
+              "_type": "UMLAction",
+              "_id": "AAAAAAFiZbEkqAxalRYfft9I",
+              "_parent": {
+                "$ref": "AAAAAAFRpOs6mYKeJRZg0bEO"
+              },
+              "name": "Xem thông tin cá nhân & Lịch dạy trong ngày"
+            },
+            {
+              "_type": "UMLAction",
+              "_id": "AAAAAAFSiZGq2pSli7Z2cFjZ",
+              "_parent": {
+                "$ref": "AAAAAAFRpOs6mYKeJRZg0bEO"
+              },
+              "name": "Thay đổi mật khẩu tài khoản"
+            },
+            {
+              "_type": "UMLDecisionNode",
+              "_id": "AAAAAAF5tkZHTOhs8F0s8Ezo",
+              "_parent": {
+                "$ref": "AAAAAAFRpOs6mYKeJRZg0bEO"
+              },
+              "name": "Hoàn tất"
+            },
+            {
+              "_type": "UMLActivityFinalNode",
+              "_id": "AAAAAAFl4rPB8Ajgex3hNjgJ",
+              "_parent": {
+                "$ref": "AAAAAAFRpOs6mYKeJRZg0bEO"
+              },
+              "name": "Kết thúc"
+            }
+          ],
+          "edges": [
+            {
+              "_type": "UMLControlFlow",
+              "_id": "AAAAAAFCLlf2i6pTZHRi4yDQ",
+              "_parent": {
+                "$ref": "AAAAAAFRpOs6mYKeJRZg0bEO"
+              },
+              "source": {
+                "$ref": "AAAAAAFMo4fr4vWLABZ5FJ7f"
+              },
+              "target": {
+                "$ref": "AAAAAAFdmUFXRnxgttoVFyLQ"
+              }
+            },
+            {
+              "_type": "UMLControlFlow",
+              "_id": "AAAAAAFwNhhRWqQ24XklCgHC",
+              "_parent": {
+                "$ref": "AAAAAAFRpOs6mYKeJRZg0bEO"
+              },
+              "source": {
+                "$ref": "AAAAAAFdmUFXRnxgttoVFyLQ"
+              },
+              "target": {
+                "$ref": "AAAAAAFdYLB41tADkT3K1RGt"
+              }
+            },
+            {
+              "_type": "UMLControlFlow",
+              "_id": "AAAAAAF56hjoweAWegTE7JJs",
+              "_parent": {
+                "$ref": "AAAAAAFRpOs6mYKeJRZg0bEO"
+              },
+              "source": {
+                "$ref": "AAAAAAFdYLB41tADkT3K1RGt"
+              },
+              "target": {
+                "$ref": "AAAAAAFpoManxKFyfsjEh0Y8"
+              }
+            },
+            {
+              "_type": "UMLControlFlow",
+              "_id": "AAAAAAFQqHxn1HVymt0qy1qn",
+              "_parent": {
+                "$ref": "AAAAAAFRpOs6mYKeJRZg0bEO"
+              },
+              "source": {
+                "$ref": "AAAAAAFdYLB41tADkT3K1RGt"
+              },
+              "target": {
+                "$ref": "AAAAAAF8Yiy0jDeD8uJG7U6o"
+              }
+            },
+            {
+              "_type": "UMLControlFlow",
+              "_id": "AAAAAAFBxvUBeg3269k1Yhmv",
+              "_parent": {
+                "$ref": "AAAAAAFRpOs6mYKeJRZg0bEO"
+              },
+              "source": {
+                "$ref": "AAAAAAFdYLB41tADkT3K1RGt"
+              },
+              "target": {
+                "$ref": "AAAAAAFHv5yvnTWKPJKToIZ1"
+              }
+            },
+            {
+              "_type": "UMLControlFlow",
+              "_id": "AAAAAAFxNgfUJROKcnuWCtWA",
+              "_parent": {
+                "$ref": "AAAAAAFRpOs6mYKeJRZg0bEO"
+              },
+              "source": {
+                "$ref": "AAAAAAFdYLB41tADkT3K1RGt"
+              },
+              "target": {
+                "$ref": "AAAAAAFiZbEkqAxalRYfft9I"
+              }
+            },
+            {
+              "_type": "UMLControlFlow",
+              "_id": "AAAAAAFOWIDDQFAQeNkrJ7I8",
+              "_parent": {
+                "$ref": "AAAAAAFRpOs6mYKeJRZg0bEO"
+              },
+              "source": {
+                "$ref": "AAAAAAFdYLB41tADkT3K1RGt"
+              },
+              "target": {
+                "$ref": "AAAAAAFSiZGq2pSli7Z2cFjZ"
+              }
+            },
+            {
+              "_type": "UMLControlFlow",
+              "_id": "AAAAAAFxkPaimzFPNXMPZyHk",
+              "_parent": {
+                "$ref": "AAAAAAFRpOs6mYKeJRZg0bEO"
+              },
+              "source": {
+                "$ref": "AAAAAAFpoManxKFyfsjEh0Y8"
+              },
+              "target": {
+                "$ref": "AAAAAAF5tkZHTOhs8F0s8Ezo"
+              }
+            },
+            {
+              "_type": "UMLControlFlow",
+              "_id": "AAAAAAFZt17jrL0OXQdaiuU3",
+              "_parent": {
+                "$ref": "AAAAAAFRpOs6mYKeJRZg0bEO"
+              },
+              "source": {
+                "$ref": "AAAAAAF8Yiy0jDeD8uJG7U6o"
+              },
+              "target": {
+                "$ref": "AAAAAAF5tkZHTOhs8F0s8Ezo"
+              }
+            },
+            {
+              "_type": "UMLControlFlow",
+              "_id": "AAAAAAFuNRlxNc8GdFh5peHM",
+              "_parent": {
+                "$ref": "AAAAAAFRpOs6mYKeJRZg0bEO"
+              },
+              "source": {
+                "$ref": "AAAAAAFHv5yvnTWKPJKToIZ1"
+              },
+              "target": {
+                "$ref": "AAAAAAF5tkZHTOhs8F0s8Ezo"
+              }
+            },
+            {
+              "_type": "UMLControlFlow",
+              "_id": "AAAAAAF8S7ivvkhsycXTrCKr",
+              "_parent": {
+                "$ref": "AAAAAAFRpOs6mYKeJRZg0bEO"
+              },
+              "source": {
+                "$ref": "AAAAAAFiZbEkqAxalRYfft9I"
+              },
+              "target": {
+                "$ref": "AAAAAAF5tkZHTOhs8F0s8Ezo"
+              }
+            },
+            {
+              "_type": "UMLControlFlow",
+              "_id": "AAAAAAFARnEv1msJIyznrKQ3",
+              "_parent": {
+                "$ref": "AAAAAAFRpOs6mYKeJRZg0bEO"
+              },
+              "source": {
+                "$ref": "AAAAAAFSiZGq2pSli7Z2cFjZ"
+              },
+              "target": {
+                "$ref": "AAAAAAF5tkZHTOhs8F0s8Ezo"
+              }
+            },
+            {
+              "_type": "UMLControlFlow",
+              "_id": "AAAAAAFVgVSlziuJUbb1V8An",
+              "_parent": {
+                "$ref": "AAAAAAFRpOs6mYKeJRZg0bEO"
+              },
+              "source": {
+                "$ref": "AAAAAAF5tkZHTOhs8F0s8Ezo"
+              },
+              "target": {
+                "$ref": "AAAAAAFdYLB41tADkT3K1RGt"
+              },
+              "name": "Tiếp tục"
+            },
+            {
+              "_type": "UMLControlFlow",
+              "_id": "AAAAAAFrvZbLyFpSE0TgCTuq",
+              "_parent": {
+                "$ref": "AAAAAAFRpOs6mYKeJRZg0bEO"
+              },
+              "source": {
+                "$ref": "AAAAAAF5tkZHTOhs8F0s8Ezo"
+              },
+              "target": {
+                "$ref": "AAAAAAFl4rPB8Ajgex3hNjgJ"
+              },
+              "name": "Quay lại Dashboard"
+            }
+          ],
+          "ownedElements": [
+            {
+              "_type": "UMLActivityDiagram",
+              "_id": "AAAAAAFclvPw2FIA7ZFTqT2f",
+              "_parent": {
+                "$ref": "AAAAAAFRpOs6mYKeJRZg0bEO"
+              },
+              "name": "3. Sơ đồ Giao tiếp & Cá nhân",
+              "model": {
+                "$ref": "AAAAAAFRpOs6mYKeJRZg0bEO"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

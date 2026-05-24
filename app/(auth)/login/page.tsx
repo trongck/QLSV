@@ -131,7 +131,7 @@ export default function LoginPage() {
         </div>
 
         <div className="w-full max-w-[420px] max-sm:max-w-full">
-          <p className="text-[13px] font-semibold text-primary uppercase tracking-[0.08em] m-0 mb-3 max-sm:text-[11px]">Hệ thống quản lý sinh viên - VNUA</p>
+          <p className="text-[13px] font-semibold text-primary uppercase tracking-[0.08em] m-0 mb-3 max-sm:text-[11px]">Hệ thống quản lý sinh viên</p>
           <h1 className="text-[38px] font-bold text-[#2D1B14] leading-tight tracking-tight m-0 mb-3 max-lg:text-[32px] max-sm:text-[28px]">
             Xin chào,
             <br />

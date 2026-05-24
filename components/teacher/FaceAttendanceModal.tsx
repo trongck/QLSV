@@ -267,7 +267,7 @@ export function FaceAttendanceModal({ isOpen, onClose, roster, onMarkPresent }: 
             {/* Header */}
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 bg-[#F2A8A8]/20 rounded-2xl flex items-center justify-center">
-                <ScanFace size={22} className="text-[#C25450]" />
+                <ScanFace size={22} className="text-primary" />
               </div>
               <div>
                 <h3 className="text-lg font-bold text-[#6B4F43]">Điểm danh bằng khuôn mặt</h3>
