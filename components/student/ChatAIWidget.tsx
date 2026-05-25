@@ -75,7 +75,7 @@ export const ChatAIWidget = () => {
       role: "model",
       parts: [
         {
-          text: `${getGreeting()} **${displayName}** 👋\n\nMình là **AI hỗ trợ học viên QLSV**. Mình có thể giúp bạn:\n- 📅 Xem lịch học & thời khóa biểu\n- 📊 Tra cứu điểm số\n- ✅ Hướng dẫn điểm danh\n- 📚 Hỗ trợ học tập\n\nBạn cần mình giúp gì không?`,
+          text: `${getGreeting()} **${displayName}**!\n\nMình là **AI hỗ trợ học viên QLSV**. Mình có thể giúp bạn:\n- Xem lịch học & thời khóa biểu\n- Tra cứu điểm số\n- Hướng dẫn điểm danh\n- Hỗ trợ học tập\n\nBạn cần mình giúp gì không?`,
         },
       ],
       timestamp: new Date(),
@@ -259,12 +259,12 @@ export const ChatAIWidget = () => {
             {/* Quick suggest */}
             {messages.length === 1 && (
               <div className="ai-suggestions">
-                {["📅 Xem lịch học hôm nay", "📊 Kiểm tra điểm số", "✅ Cách điểm danh QR"].map((s) => (
+                {["Xem lịch học hôm nay", "Kiểm tra điểm số", "Cách điểm danh QR"].map((s) => (
                   <button
                     key={s}
                     className="ai-suggest-btn"
                     onClick={() => {
-                      setInput(s.replace(/^[^\s]+\s/, ""));
+                      setInput(s);
                     }}
                   >
                     {s}

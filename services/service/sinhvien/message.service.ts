@@ -157,8 +157,9 @@ export const messageService = {
         if (error) throw new Error(error.message);
 
         // Cập nhật thoigianxemcuoi
-        const now = new Date().toISOString();
-        await messageRepo.updateMemberLastView(convId, userId, now);
+        const vnDate = new Date(new Date().getTime() + 7 * 60 * 60 * 1000);
+        const vnNow = vnDate.toISOString().replace("T", " ").substring(0, 19);
+        await messageRepo.updateMemberLastView(convId, userId, vnNow);
 
         return {
             data: msgs ?? [],
@@ -193,8 +194,7 @@ export const messageService = {
         await messageRepo.restoreConversationVisibility(convId);
 
         // Cập nhật thoigianxemcuoi cho người gửi
-        const now = new Date().toISOString();
-        await messageRepo.updateMemberLastView(convId, userId, now);
+        await messageRepo.updateMemberLastView(convId, userId, vnNow);
 
         if (request) {
             let senderName = userId;

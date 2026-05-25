@@ -161,6 +161,8 @@ export const studentRepo = {
                 tietbatdau,
                 tietketthuc,
                 phancong (
+                    ngaybatdau,
+                    ngayketthuc,
                     monhoc (
                         tenmon
                     )
@@ -174,13 +176,23 @@ export const studentRepo = {
             return { data: null, error: lhError };
         }
 
-        // 3. Map về cấu trúc dữ liệu tương thích
-        const mappedData = (lichRows ?? []).map((row: any) => ({
-            tenmon: row.phancong?.monhoc?.tenmon ?? "Môn học",
-            phonghoc: row.maphong,
-            tietbatdau: row.tietbatdau,
-            tietketthuc: row.tietketthuc
-        }));
+        const todayStr = new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
+
+        // 3. Map và lọc về cấu trúc dữ liệu tương thích
+        const mappedData = (lichRows ?? [])
+            .filter((row: any) => {
+                const pc = row.phancong;
+                if (!pc) return true;
+                if (pc.ngaybatdau && todayStr < pc.ngaybatdau) return false;
+                if (pc.ngayketthuc && todayStr > pc.ngayketthuc) return false;
+                return true;
+            })
+            .map((row: any) => ({
+                tenmon: row.phancong?.monhoc?.tenmon ?? "Môn học",
+                phonghoc: row.maphong,
+                tietbatdau: row.tietbatdau,
+                tietketthuc: row.tietketthuc
+            }));
 
         return { data: mappedData, error: null };
     },

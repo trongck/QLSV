@@ -97,17 +97,26 @@ export function AssignmentCard({
           </button>
         ) : null}
         {/* Nộp bài */}
-        <button
-          onClick={() => onSubmit(item)}
-          className={`flex items-center justify-center gap-2 py-3.5 rounded-2xl text-sm font-bold transition-all shadow-md w-full ${
-            item.nopbai
-              ? "bg-[#FFF4F4] text-[#C0392B] border border-[#F2A8A8] hover:bg-[#FFE0E0]"
-              : "bg-[#E57373] text-white hover:bg-[#C0392B] shadow-[#F2A8A8]/60"
-          }`}
-        >
-          <Upload size={16} />
-          {item.nopbai ? "Nộp lại" : "Nộp bài"}
-        </button>
+        {isPastDue ? (
+          <button
+            disabled
+            className="flex items-center justify-center gap-2 py-3.5 rounded-2xl text-sm font-bold bg-gray-100 text-gray-400 border border-gray-200 cursor-not-allowed w-full"
+          >
+            Đã hết hạn nộp
+          </button>
+        ) : (
+          <button
+            onClick={() => onSubmit(item)}
+            className={`flex items-center justify-center gap-2 py-3.5 rounded-2xl text-sm font-bold transition-all shadow-md w-full ${
+              item.nopbai
+                ? "bg-[#FFF4F4] text-[#C0392B] border border-[#F2A8A8] hover:bg-[#FFE0E0]"
+                : "bg-[#E57373] text-white hover:bg-[#C0392B] shadow-[#F2A8A8]/60"
+            }`}
+          >
+            <Upload size={16} />
+            {item.nopbai ? "Nộp lại" : "Nộp bài"}
+          </button>
+        )}
         {/* Xem đề bài */}
         <button
           onClick={() => onViewDetails(item)}

@@ -260,7 +260,7 @@ function QRModal({ onClose, onSuccess }: { onClose: () => void; onSuccess: () =>
                 onClick={startScanner}
                 className="w-full bg-red-600 hover:bg-red-700 active:scale-95 text-white font-bold py-3.5 rounded-2xl transition shadow-lg shadow-red-100 text-sm"
               >
-                📷 Mở camera quét QR
+                Mở camera quét QR
               </button>
             </div>
           )}

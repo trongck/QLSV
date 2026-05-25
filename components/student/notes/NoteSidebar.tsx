@@ -67,11 +67,10 @@ export const NoteSidebar: React.FC<NoteSidebarProps> = ({
             <div
               key={note.manhatky}
               onClick={() => onSelectNote(note)}
-              className={`p-4 cursor-pointer border-b border-gray-50 transition-all ${
-                selectedId === note.manhatky
+              className={`p-4 cursor-pointer border-b border-gray-300 transition-all ${selectedId === note.manhatky
                   ? "bg-red-50 border-r-4 border-red-500"
                   : "hover:bg-gray-50"
-              }`}
+                }`}
             >
               {/* Top row */}
               <div className="flex justify-between items-start mb-1.5">
@@ -88,9 +87,8 @@ export const NoteSidebar: React.FC<NoteSidebarProps> = ({
 
               {/* Title */}
               <h3
-                className={`font-bold text-sm mb-1 truncate ${
-                  selectedId === note.manhatky ? "text-red-700" : "text-gray-800"
-                }`}
+                className={`font-bold text-sm mb-1 truncate ${selectedId === note.manhatky ? "text-red-700" : "text-gray-800"
+                  }`}
               >
                 {note.tieude || "Không có tiêu đề"}
               </h3>

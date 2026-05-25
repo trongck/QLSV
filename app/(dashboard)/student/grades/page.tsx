@@ -112,7 +112,7 @@ export default function StudentGradesPage() {
           display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap",
           background: "#fff", borderRadius: 16, padding: "12px 20px", border: "1px solid #ead9cb",
         }}>
-          <span style={{ fontSize: 13, fontWeight: 600, color: "#8b6f5f" }}>📅 Học kỳ:</span>
+          <span style={{ fontSize: 13, fontWeight: 600, color: "#8b6f5f" }}>Học kỳ:</span>
           <select
             id="select-hocky"
             value={mahocky}

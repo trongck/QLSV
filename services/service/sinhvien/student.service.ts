@@ -478,7 +478,7 @@ export const sinhVienService = {
             }
         }
 
-        return (data ?? []).map((bt: any) => {
+        const mapped = (data ?? []).map((bt: any) => {
             const pc = bt.phancong;
             if (pc && pc.giangvien) {
                 pc.giangvien = {
@@ -492,6 +492,17 @@ export const sinhVienService = {
                 nopbai: nopBaiMap[bt.mabaitap] ?? null
             };
         });
+
+        // Sắp xếp: bài tập còn hạn trước (hạn nộp gần nhất xếp trước - ascending),
+        // bài tập đã hết hạn sau (hết hạn gần nhất xếp trước - descending)
+        const now = new Date();
+        const active = mapped.filter((item) => new Date(item.hannop) >= now);
+        const expired = mapped.filter((item) => new Date(item.hannop) < now);
+
+        active.sort((a, b) => new Date(a.hannop).getTime() - new Date(b.hannop).getTime());
+        expired.sort((a, b) => new Date(b.hannop).getTime() - new Date(a.hannop).getTime());
+
+        return [...active, ...expired];
     },
 
     async submitAssignment(masv: string, mabaitap: number, noidungnop: string | null, filenop: string | null) {
@@ -505,7 +516,10 @@ export const sinhVienService = {
 
         const now = new Date();
         const hannop = new Date(baitap.hannop);
-        const trenop = now > hannop;
+        if (now > hannop) {
+            throw new Error("Bài tập đã quá hạn nộp, không thể nộp bài.");
+        }
+        const trenop = false;
 
         // Kiểm tra đã nộp chưa
         const { data: existing } = await studentRepo.checkNopBai(masv, mabaitap);

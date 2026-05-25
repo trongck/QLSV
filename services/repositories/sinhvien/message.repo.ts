@@ -284,7 +284,7 @@ export const messageRepo = {
     uploadMessageFile: async (filePath: string, buffer: Uint8Array, contentType: string) => {
         const supabase = await getSupabase();
         return await supabase.storage
-            .from("tinnhan-files")
+            .from("attachments")
             .upload(filePath, buffer, {
                 contentType,
                 upsert: false,
@@ -295,7 +295,7 @@ export const messageRepo = {
     getPublicUrl: async (filePath: string) => {
         const supabase = await getSupabase();
         return supabase.storage
-            .from("tinnhan-files")
+            .from("attachments")
             .getPublicUrl(filePath);
     },
 
