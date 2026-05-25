@@ -114,8 +114,18 @@ export const diemdanhRepo = {
 
         if (options?.month && options?.year) {
             filtered = filtered.filter((d: any) => {
-                const date = new Date(d.thoigiandiemdanh);
-                return date.getMonth() + 1 === options.month && date.getFullYear() === options.year;
+                let ngay = new Date(NaN);
+                if (d.buoihoc?.ngayhoc) {
+                    const parts = d.buoihoc.ngayhoc.split('-');
+                    if (parts.length === 3) {
+                        ngay = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+                    } else {
+                        ngay = new Date(d.buoihoc.ngayhoc);
+                    }
+                } else if (d.thoigiandiemdanh) {
+                    ngay = new Date(d.thoigiandiemdanh);
+                }
+                return !isNaN(ngay.getTime()) && ngay.getMonth() + 1 === options.month && ngay.getFullYear() === options.year;
             });
         }
 

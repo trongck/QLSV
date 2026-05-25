@@ -75,6 +75,19 @@ export const diemdanhService = {
             };
         });
 
+        // Sắp xếp giảm dần theo ngày học (newest first / từ dưới lên)
+        history.sort((a, b) => {
+            const dateA = a.ngayhoc || (a.thoigiandiemdanh ? new Date(a.thoigiandiemdanh).toISOString().slice(0, 10) : "");
+            const dateB = b.ngayhoc || (b.thoigiandiemdanh ? new Date(b.thoigiandiemdanh).toISOString().slice(0, 10) : "");
+            
+            if (dateA !== dateB) {
+                return dateB.localeCompare(dateA);
+            }
+            const timeA = a.thoigiandiemdanh || "";
+            const timeB = b.thoigiandiemdanh || "";
+            return timeB.localeCompare(timeA);
+        });
+
         // Tính thống kê
         const total = history.length;
         const comat = history.filter((r) => r.trangthai === 'Comat').length;
@@ -254,10 +267,35 @@ export const diemdanhService = {
             'Manual': 'thu_cong'
         };
 
-        return (data ?? []).map((dd: any) => {
+        const mapped = (data ?? []).map((dd: any) => {
             const lh = dd.buoihoc?.lichhoc;
             const pc = lh?.phancong;
-            const ngay = new Date(dd.thoigiandiemdanh ?? dd.thoigian);
+
+            let ngay = new Date(NaN);
+            const checkInTime = dd.thoigiandiemdanh ?? dd.thoigian;
+            if (dd.buoihoc?.ngayhoc) {
+                const parts = dd.buoihoc.ngayhoc.split('-');
+                if (parts.length === 3) {
+                    ngay = new Date(parseInt(parts[0], 10), parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+                } else {
+                    ngay = new Date(dd.buoihoc.ngayhoc);
+                }
+            } else if (checkInTime) {
+                ngay = new Date(checkInTime);
+            }
+
+            const hasValidDate = !isNaN(ngay.getTime());
+            const day = hasValidDate ? String(ngay.getDate()).padStart(2, '0') : '--';
+            const month = hasValidDate ? `T${String(ngay.getMonth() + 1).padStart(2, '0')}` : '--';
+
+            let timeStr = '--:--:--';
+            if (checkInTime) {
+                const checkInDate = new Date(checkInTime);
+                if (!isNaN(checkInDate.getTime())) {
+                    timeStr = checkInDate.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+                }
+            }
+
             return {
                 madiemdanh: dd.madiemdanh,
                 thoigian: dd.thoigiandiemdanh ?? dd.thoigian,
@@ -265,9 +303,9 @@ export const diemdanhService = {
                 phuongthuc: methodMapping[dd.phuongthuc] ?? dd.phuongthuc,
                 ghichu: dd.ghichu,
                 ngayhoc: dd.buoihoc?.ngayhoc ?? null,
-                day: String(ngay.getDate()).padStart(2, '0'),
-                month: `T${String(ngay.getMonth() + 1).padStart(2, '0')}`,
-                timeStr: ngay.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' }),
+                day,
+                month,
+                timeStr,
                 monhoc: pc?.monhoc ?? null,
                 phong: lh?.maphong ?? null,
                 giangvien: pc?.giangvien ? {
@@ -278,6 +316,21 @@ export const diemdanhService = {
                 maphancong: lh?.maphancong ?? null,
             };
         });
+
+        // Sắp xếp giảm dần theo ngày học (newest first / từ dưới lên)
+        mapped.sort((a, b) => {
+            const dateA = a.ngayhoc || (a.thoigian ? new Date(a.thoigian).toISOString().slice(0, 10) : "");
+            const dateB = b.ngayhoc || (b.thoigian ? new Date(b.thoigian).toISOString().slice(0, 10) : "");
+
+            if (dateA !== dateB) {
+                return dateB.localeCompare(dateA);
+            }
+            const timeA = a.thoigian || "";
+            const timeB = b.thoigian || "";
+            return timeB.localeCompare(timeA);
+        });
+
+        return mapped;
     },
 
     /** Thống kê điểm danh theo từng môn học */
