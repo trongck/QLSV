@@ -46,7 +46,7 @@ export function NotificationBell({
       </button>
 
       {isOpen && (
-        <div className="absolute top-[48px] right-0 w-[300px] bg-white border border-gray-200 rounded-xl shadow-xl z-50 overflow-hidden">
+        <div className="absolute top-[48px] left-0 sm:left-auto right-auto sm:right-0 w-[280px] sm:w-[300px] bg-white border border-gray-200 rounded-xl shadow-xl z-50 overflow-hidden">
           <div className="p-3 border-b border-gray-100 bg-gray-50 flex items-center justify-between">
             <span className="text-xs font-bold text-gray-800">Thông báo của bạn</span>
             {unreadBellCount > 0 && (
