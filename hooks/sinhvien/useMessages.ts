@@ -11,7 +11,7 @@ import {
   uploadFile as uploadFileApi,
   ChatRoom,
   Message,
-} from "@/api/sinhvien/messages.api";
+} from "@/app/api/sinhvien/messages.api";
 
 export type { ChatRoom, Message };
 

@@ -6,7 +6,7 @@ import {
     fetchExamDetail as fetchExamDetailApi,
     submitExam as submitExamApi,
     fetchExamResult as fetchExamResultApi,
-} from "@/api/sinhvien/exams.api";
+} from "@/app/api/sinhvien/exams.api";
 import { useAuth } from "@/hooks/auth/useAuth";
 
 export interface Exam {

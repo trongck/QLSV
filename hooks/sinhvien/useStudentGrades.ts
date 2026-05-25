@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { fetchGrades as fetchGradesApi } from "@/api/sinhvien/grades.api";
+import { fetchGrades as fetchGradesApi } from "@/app/api/sinhvien/grades.api";
 import { useAuth } from "@/hooks/auth/useAuth";
 
 export interface GradeItem {

@@ -5,7 +5,7 @@ import {
   fetchNotifications as fetchNotificationsApi,
   markAsRead as markAsReadApi,
   markAllAsRead as markAllAsReadApi
-} from "@/api/sinhvien/notifications.api";
+} from "@/app/api/sinhvien/notifications.api";
 import { useAuth } from "@/hooks/auth/useAuth";
 
 export interface Notification {

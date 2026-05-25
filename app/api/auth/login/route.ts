@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/utils/supabase/server";
 import { loginService } from "@/services/service/auth/auth-server.service";
+import { extractClientIp } from "@/lib/utils/audit";
 
 export async function POST(request: Request) {
   try {
@@ -14,16 +15,17 @@ export async function POST(request: Request) {
       );
     }
 
-
-    const { email, matkhau } = body as { email: string; matkhau: string };
+    const { email, matkhau, clientIp } = body as {
+      email: string;
+      matkhau: string;
+      clientIp?: string;
+    };
 
     const cookieStore = await cookies();
     const supabase = createClient(cookieStore);
 
-    const diachiip =
-      request.headers.get("x-forwarded-for") ??
-      request.headers.get("x-real-ip") ??
-      null;
+    // Ưu tiên IP do client tự lấy (qua ipify), fallback sang headers
+    const diachiip = clientIp?.trim() || extractClientIp(request);
 
     const { accessToken, refreshToken, user } = await loginService(supabase, email, matkhau, diachiip);
 

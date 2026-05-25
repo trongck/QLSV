@@ -60,7 +60,22 @@ export async function logSystemActionRepo(supabase: SupabaseClient, payload: {
   makhoachinh?: string;
   diachiip: string;
 }) {
-  return supabase.from("nhatkyhethong").insert(payload);
+  // Chuẩn hóa thời gian (UTC+7)
+  const ngaytao = new Date(new Date().getTime() + 7 * 60 * 60 * 1000).toISOString().replace("Z", "");
+
+  // Chuẩn hóa IPv6 loopback → IPv4 cho dễ đọc
+  let diachiip = payload.diachiip;
+  if (diachiip === "::1" || diachiip === "::ffff:127.0.0.1") {
+    diachiip = "127.0.0.1";
+  } else if (diachiip?.startsWith("::ffff:")) {
+    diachiip = diachiip.slice(7);
+  }
+
+  return supabase.from("nhatkyhethong").insert({
+    ...payload,
+    diachiip,
+    ngaytao
+  });
 }
 
 export async function globalSearchRepo(supabase: SupabaseClient, search: string) {

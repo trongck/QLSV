@@ -5,7 +5,7 @@ import {
     fetchProfile as fetchProfileApi,
     updateProfile as updateProfileApi,
     registerFace as registerFaceApi,
-} from "@/api/sinhvien/profile.api";
+} from "@/app/api/sinhvien/profile.api";
 
 export interface StudentProfile {
     masv: string;

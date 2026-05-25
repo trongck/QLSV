@@ -62,6 +62,25 @@ export const tokenStorage = {
   },
 };
 
+// ─── Client IP helper ───────────────────────────────────────────────────────
+
+/**
+ * Lấy địa chỉ IP thật của máy client qua ipify (timeout 3s).
+ * Fallback: undefined (server sẽ dùng headers).
+ */
+async function getClientIp(): Promise<string | undefined> {
+  try {
+    const res = await Promise.race([
+      fetch("https://api.ipify.org?format=json"),
+      new Promise<never>((_, reject) => setTimeout(() => reject(new Error("timeout")), 3000)),
+    ]) as Response;
+    const data = await res.json() as { ip: string };
+    return data?.ip || undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 // ─── Auth Service ─────────────────────────────────────────────────────────────
 
 export const authService = {
@@ -69,10 +88,13 @@ export const authService = {
   // ── Đăng nhập ──────────────────────────────────────────────────────────────
 
   async login(payload: LoginRequest, remember = false): Promise<LoginResponse> {
+    // Lấy IP thật của máy client trước khi gửi request
+    const clientIp = await getClientIp();
+
     const res = await fetch("/api/auth/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
+      body: JSON.stringify({ ...payload, clientIp }),
     });
 
     const data = await safeJson<LoginResponse & { error?: string }>(res);
@@ -88,11 +110,17 @@ export const authService = {
   async logout(): Promise<void> {
     const refreshToken = tokenStorage.getRefreshToken();
     if (refreshToken) {
-      fetch("/api/auth/logout", {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ refreshToken }),
-      }).catch(() => {/* best-effort */ });
+      try {
+        // Lấy IP thật của máy client trước khi gửi request
+        const clientIp = await getClientIp();
+        await fetch("/api/auth/logout", {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ refreshToken, clientIp }),
+        });
+      } catch (e) {
+        console.error("Logout fetch error:", e);
+      }
     }
     tokenStorage.clear();
   },

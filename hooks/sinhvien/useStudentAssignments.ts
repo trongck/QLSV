@@ -5,7 +5,7 @@ import {
     fetchAssignments as fetchAssignmentsApi,
     uploadFile as uploadFileApi,
     submitAssignment as submitAssignmentApi,
-} from "@/api/sinhvien/assignments.api";
+} from "@/app/api/sinhvien/assignments.api";
 import { useAuth } from "@/hooks/auth/useAuth";
 
 export interface Assignment {

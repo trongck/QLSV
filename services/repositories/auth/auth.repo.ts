@@ -135,7 +135,32 @@ export async function logSystemActionRepo(supabase: SupabaseClient, log: {
   giatrimoi: any;
   diachiip: string;
 }) {
-  return supabase.from("nhatkyhethong").insert(log);
+  const hanhdongLower = log.hanhdong.toLowerCase();
+  const isAuthAction = 
+    hanhdongLower.includes("đăng nhập") ||
+    hanhdongLower.includes("đăng xuất") ||
+    hanhdongLower.includes("mật khẩu");
+
+  if (!isAuthAction) {
+    return;
+  }
+
+  // Chuẩn hóa thời gian (UTC+7) và địa chỉ IP
+  const ngaytao = new Date(new Date().getTime() + 7 * 60 * 60 * 1000).toISOString().replace("Z", "");
+
+  // Chuẩn hóa IPv6 loopback → IPv4 cho dễ đọc
+  let diachiip = log.diachiip;
+  if (diachiip === "::1" || diachiip === "::ffff:127.0.0.1") {
+    diachiip = "127.0.0.1";
+  } else if (diachiip?.startsWith("::ffff:")) {
+    diachiip = diachiip.slice(7);
+  }
+
+  return supabase.from("nhatkyhethong").insert({
+    ...log,
+    diachiip,
+    ngaytao
+  });
 }
 
 export async function getResetPasswordLogsRepo(supabase: SupabaseClient) {

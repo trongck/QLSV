@@ -177,11 +177,11 @@ export default function AdminStudentsPage() {
                 : "Quản lý toàn bộ sinh viên"}
             </p>
           </div>
-          <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+          <div className="flex items-center gap-2 max-sm:w-full max-sm:grid max-sm:grid-cols-2">
             <button
               className="btn-secondary"
               onClick={() => setShowImport(true)}
-              style={{ display: "flex", alignItems: "center", gap: "6px" }}
+              style={{ display: "flex", alignItems: "center", gap: "6px", justifyContent: "center" }}
             >
               <svg
                 width="14"

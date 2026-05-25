@@ -16,7 +16,7 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
             style={{ textAlign: "center", padding: "20px" }}
             
           >
-            © 2026 HỌC VIỆN NÔNG NGHIỆP VIỆT NAM - VIETNAM NATIONAL UNIVERSITY OF AGRICULTURE
+            © 2026 - Developed by Trong Team
           </footer>
         </div>
       </div>

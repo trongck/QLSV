@@ -4,7 +4,7 @@ export default function Header() {
   return (
     <header className="sticky top-0 h-[90px] bg-[#f6ede8] border-b border-[#ece6e1] flex items-center justify-between px-8 z-40">
       <div>
-        <h2 className="text-3xl font-bold">Chào, An 👋</h2>
+        <h2 className="text-3xl font-bold">Chào, An </h2>
         <p className="text-[#777] mt-1">Thứ Hai, 04/05/2026</p>
       </div>
 

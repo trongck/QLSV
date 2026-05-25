@@ -2,16 +2,20 @@ import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/utils/supabase/server";
 import { logoutService, logoutAllService } from "@/services/service/auth/auth-server.service";
+import { extractClientIp } from "@/lib/utils/audit";
 
 export async function DELETE(request: Request) {
   try {
     const body = await request.json().catch(() => ({}));
-    const { refreshToken } = body;
+    const { refreshToken, clientIp } = body as { refreshToken?: string; clientIp?: string };
 
     const cookieStore = await cookies();
     const supabase = createClient(cookieStore);
 
-    await logoutService(supabase, refreshToken);
+    // Ưu tiên IP do client tự lấy (qua ipify), fallback sang headers
+    const diachiip = clientIp?.trim() || extractClientIp(request);
+
+    await logoutService(supabase, refreshToken ?? "", diachiip);
 
     const res = NextResponse.json({ success: true });
 
@@ -28,12 +32,15 @@ export async function DELETE(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { mataikhoan } = body;
+    const { mataikhoan, clientIp } = body as { mataikhoan?: string; clientIp?: string };
 
     const cookieStore = await cookies();
     const supabase = createClient(cookieStore);
 
-    await logoutAllService(supabase, mataikhoan);
+    // Ưu tiên IP do client tự lấy (qua ipify), fallback sang headers
+    const diachiip = clientIp?.trim() || extractClientIp(request);
+
+    await logoutAllService(supabase, mataikhoan ?? "", diachiip);
 
     const res = NextResponse.json({ success: true });
 

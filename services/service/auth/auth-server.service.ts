@@ -138,19 +138,67 @@ export async function loginService(supabase: SupabaseClient, email: string, matk
 
   await repo.updateLastLoginRepo(supabase, taikhoan.mataikhoan);
 
+  await repo.logSystemActionRepo(supabase, {
+    mataikhoan: taikhoan.mataikhoan,
+    hanhdong: `Đăng nhập hệ thống (Phân quyền: ${taikhoan.vaitro})`,
+    tentable: "taikhoan",
+    makhoachinh: taikhoan.mataikhoan,
+    giatricu: null,
+    giatrimoi: null,
+    diachiip: diachiip || "127.0.0.1",
+  });
+
   return { accessToken, refreshToken, user: userProfile };
 }
 
-export async function logoutService(supabase: SupabaseClient, refreshToken: string) {
+export async function logoutService(supabase: SupabaseClient, refreshToken: string, diachiip: string | null = null) {
   if (refreshToken) {
+    let mataikhoan = null;
+    let vaitro = null;
+    try {
+      const payload = await verifyToken(refreshToken);
+      mataikhoan = payload?.mataikhoan;
+      vaitro = payload?.vaitro;
+    } catch (e) {
+      try {
+        const { data: session } = await repo.getSessionRepo(supabase, refreshToken);
+        if (session) {
+          mataikhoan = session.mataikhoan;
+        }
+      } catch (_) {}
+    }
+
+    if (mataikhoan) {
+      await repo.logSystemActionRepo(supabase, {
+        mataikhoan,
+        hanhdong: `Đăng xuất hệ thống${vaitro ? ` (Phân quyền: ${vaitro})` : ""}`,
+        tentable: "taikhoan",
+        makhoachinh: mataikhoan,
+        giatricu: null,
+        giatrimoi: null,
+        diachiip: diachiip || "127.0.0.1",
+      });
+    }
+
     await repo.deleteSessionRepo(supabase, refreshToken);
   }
 }
 
-export async function logoutAllService(supabase: SupabaseClient, mataikhoan: string) {
+export async function logoutAllService(supabase: SupabaseClient, mataikhoan: string, diachiip: string | null = null) {
   if (!mataikhoan) {
     throw new Error("Thiếu mataikhoan.");
   }
+
+  await repo.logSystemActionRepo(supabase, {
+    mataikhoan,
+    hanhdong: "Đăng xuất khỏi tất cả thiết bị",
+    tentable: "taikhoan",
+    makhoachinh: mataikhoan,
+    giatricu: null,
+    giatrimoi: null,
+    diachiip: diachiip || "127.0.0.1",
+  });
+
   await repo.deleteAllSessionsRepo(supabase, mataikhoan);
 }
 

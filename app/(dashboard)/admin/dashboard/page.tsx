@@ -210,8 +210,8 @@ export default function AdminDashboard() {
             </p>
           </div>
 
-          {/* CỤM AVATAR NẰM NGANG HÀNG VỚI XIN CHÀO */}
-          <div className="flex items-center gap-4 relative">
+          {/* CỤM AVATAR NẰM NGANG HÀNG VỚI XIN CHÀO — Ẩn trên mobile/tablet để tránh trùng lặp */}
+          <div className="flex items-center gap-4 relative max-lg:hidden">
             
             {/* CỤM PROFILE AVATAR VÀ POPUP CHỨC NĂNG */}
             <div className="relative">

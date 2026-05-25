@@ -66,7 +66,8 @@ export default function StudentDashboard() {
             <p className="text-[13px] text-fg-subtle m-0 capitalize">{today}</p>
           </div>
 
-          <div className="flex items-center gap-4 relative">
+          {/* CỤM AVATAR VÀ CHUÔNG — Ẩn trên mobile/tablet để tránh trùng lặp */}
+          <div className="flex items-center gap-4 relative max-lg:hidden">
             {/* 1. CỤM NÚT CHUÔNG VÀ POPUP THÔNG BÁO */}
             <NotificationBell
               unreadBellCount={unreadBellCount}

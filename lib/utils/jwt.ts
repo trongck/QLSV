@@ -17,7 +17,7 @@ function getSecret(): Uint8Array {
   return new TextEncoder().encode(secret);
 }
 
-const ACCESS_EXPIRES  = process.env.JWT_ACCESS_EXPIRES  ?? "15m";
+const ACCESS_EXPIRES = process.env.JWT_ACCESS_EXPIRES ?? "15m";
 const REFRESH_EXPIRES = process.env.JWT_REFRESH_EXPIRES ?? "7d";
 
 // ─── Sign ─────────────────────────────────────────────────────────────────────

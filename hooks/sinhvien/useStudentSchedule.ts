@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { fetchHocKyList, fetchSchedule } from "@/api/sinhvien/schedule.api";
+import { fetchHocKyList, fetchSchedule } from "@/app/api/sinhvien/schedule.api";
 import { useAuth } from "@/hooks/auth/useAuth";
 
 export interface HocKy {

@@ -7,8 +7,8 @@ import {
     checkIn as checkInApi,
     computeAttendanceStats,
     AttendanceStats,
-} from "@/api/sinhvien/attendance.api";
-import { fetchHocKyList } from "@/api/sinhvien/schedule.api";
+} from "@/app/api/sinhvien/attendance.api";
+import { fetchHocKyList } from "@/app/api/sinhvien/schedule.api";
 import { useAuth } from "@/hooks/auth/useAuth";
 
 export interface AttendanceRecord {

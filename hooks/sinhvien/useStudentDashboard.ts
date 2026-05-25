@@ -6,7 +6,7 @@ import {
   markAllNotificationsRead,
   DashboardData,
   BellNotification,
-} from "@/api/sinhvien/dashboard.api";
+} from "@/app/api/sinhvien/dashboard.api";
 import { useAuth } from "@/hooks/auth/useAuth";
 
 export type { DashboardData, BellNotification };

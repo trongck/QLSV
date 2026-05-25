@@ -110,18 +110,25 @@ export function DashboardSidebar({ onProfileClick }: { onProfileClick?: () => vo
   );
 }
 
+import { useState } from "react";
+
 // ─── Top bar (mobile hamburger) ────────────────────────────────────────────────
 
 export function DashboardTopbar({
   title,
   onMenuClick,
   onProfileClick,
+  onChangePasswordClick,
+  onLogoutClick,
 }: {
   title: string;
   onMenuClick: () => void;
   onProfileClick?: () => void;
+  onChangePasswordClick?: () => void;
+  onLogoutClick?: () => void;
 }) {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   return (
     <header className="hidden max-lg:flex items-center gap-3 p-[0_16px] h-14 bg-white border-b border-[#EAD9CB] sticky top-0 z-[50]">
@@ -141,19 +148,74 @@ export function DashboardTopbar({
         </svg>
       </button>
       <h1 className="flex-1 text-[15px] font-bold text-[#2D1B14] m-0">{title}</h1>
-      <div className="flex items-center gap-2">
-        <div
-          className={`w-[30px] h-[30px] rounded-full bg-primary text-white text-xs font-bold flex items-center justify-center ${onProfileClick ? "cursor-pointer hover:opacity-85 transition-opacity" : ""}`}
-          aria-label={`Xin chào, ${user?.hoten}`}
-          onClick={onProfileClick}
-          title={onProfileClick ? "Xem hồ sơ cá nhân" : undefined}
-        >
-          {user?.hoten?.charAt(0) ?? "?"}
+      
+      <div className="flex items-center gap-2 relative">
+        {/* Profile menu dropdown container */}
+        <div className="relative">
+          <div
+            className="w-[32px] h-[32px] rounded-full bg-primary text-white text-xs font-bold flex items-center justify-center cursor-pointer hover:opacity-85 transition-opacity"
+            aria-label={`Xin chào, ${user?.hoten}`}
+            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+          >
+            {user?.hoten?.charAt(0) ?? "?"}
+          </div>
+
+          {isDropdownOpen && (
+            <>
+              {/* Invisible Click-away listener */}
+              <div 
+                className="fixed inset-0 z-[98] bg-transparent" 
+                onClick={() => setIsDropdownOpen(false)}
+              />
+              <div className="absolute top-[40px] right-0 w-[180px] bg-white border border-[#EAD9CB] rounded-xl shadow-xl p-1.5 z-[99] flex flex-col animate-scaleUp">
+                <div className="px-3 py-1.5 border-b border-[#FAF6F2] mb-1">
+                  <p className="text-[11px] font-bold text-fg truncate m-0">{user?.hoten}</p>
+                  <p className="text-[9px] text-fg-subtle truncate m-0 mt-0.5">
+                    {user?.vaitro === VaiTro.Admin ? "Quản trị" : user?.vaitro === VaiTro.GiangVien ? "Giảng viên" : "Sinh viên"}
+                  </p>
+                </div>
+                
+                <button
+                  className="w-full text-left px-3 py-1.5 text-xs text-gray-700 hover:bg-[#FAF6F2] rounded-lg transition-colors font-medium border-none bg-transparent cursor-pointer"
+                  onClick={() => {
+                    setIsDropdownOpen(false);
+                    onProfileClick?.();
+                  }}
+                >
+                  Thông tin cá nhân
+                </button>
+
+                <button
+                  className="w-full text-left px-3 py-1.5 text-xs text-gray-700 hover:bg-[#FAF6F2] rounded-lg transition-colors font-medium border-none bg-transparent cursor-pointer"
+                  onClick={() => {
+                    setIsDropdownOpen(false);
+                    onChangePasswordClick?.();
+                  }}
+                >
+                  Đổi mật khẩu
+                </button>
+
+                <hr className="border-[#FAF6F2] my-1" />
+
+                <button
+                  className="w-full text-left px-3 py-1.5 text-xs text-red-500 hover:bg-red-50 rounded-lg transition-colors font-bold border-none bg-transparent cursor-pointer"
+                  onClick={() => {
+                    setIsDropdownOpen(false);
+                    onLogoutClick?.();
+                  }}
+                >
+                  Đăng xuất
+                </button>
+              </div>
+            </>
+          )}
         </div>
+
+        {/* Quick logout button */}
         <button
           className="bg-none border-none cursor-pointer p-1.5 text-[#8B6F5F] rounded-lg flex items-center hover:text-[#C25450]"
-          onClick={() => logout()}
-          aria-label="Đăng xuất"
+          onClick={onLogoutClick}
+          aria-label="Đăng xuất nhanh"
         >
           <svg
             width="16"

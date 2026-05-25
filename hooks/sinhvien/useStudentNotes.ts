@@ -6,7 +6,7 @@ import {
     createNote as createNoteApi,
     updateNote as updateNoteApi,
     deleteNote as deleteNoteApi,
-} from "@/api/sinhvien/notes.api";
+} from "@/app/api/sinhvien/notes.api";
 import { useAuth } from "@/hooks/auth/useAuth";
 
 export interface Note {

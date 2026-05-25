@@ -162,8 +162,8 @@ export default function TeacherDashboard() {
             </p>
           </div>
 
-          {/* CỤM CHUÔNG THÔNG BÁO VÀ AVATAR NẰM NGANG HÀNG VỚI XIN CHÀO */}
-          <div className="flex items-center gap-4 relative">
+          {/* CỤM CHUÔNG THÔNG BÁO VÀ AVATAR NẰM NGANG HÀNG VỚI XIN CHÀO — Ẩn trên mobile/tablet để tránh trùng lặp */}
+          <div className="flex items-center gap-4 relative max-lg:hidden">
             
             {/* 1. CỤM NÚT CHUÔNG VÀ POPUP THÔNG BÁO */}
             <div className="relative">

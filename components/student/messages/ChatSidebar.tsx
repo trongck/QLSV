@@ -115,7 +115,7 @@ export function ChatSidebar({
 
         {/* Chat List */}
         {chatList
-          .filter((chat) => chat.name.toLowerCase().includes(searchTerm.toLowerCase()))
+          .filter((chat) => (chat.name || chat.tieude || "").toLowerCase().includes(searchTerm.toLowerCase()))
           .map((chat) => (
             <div
               key={chat.id}
@@ -176,7 +176,9 @@ export function ChatSidebar({
                       fontWeight: chat.unread ? "600" : "normal",
                     }}
                   >
-                    {chat.lastMsg}
+                    {typeof chat.lastMsg === "object" && chat.lastMsg !== null
+                      ? (chat.lastMsg as any).noidung || "Đã gửi tệp đính kèm"
+                      : chat.lastMsg || "Bắt đầu trò chuyện..."}
                   </p>
                   {chat.unread > 0 && (
                     <span
