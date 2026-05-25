@@ -9,61 +9,67 @@ export function MessagesLayout({ children }: MessagesLayoutProps) {
     <>
       <style>{`
         .msg-container {
-          padding: 24px 32px;
-          height: calc(100vh - 90px);
           display: flex;
           flex-direction: column;
+          gap: 20px;
+          width: 100%;
+          height: calc(100vh - 130px);
         }
         .msg-layout {
           display: flex;
           padding: 0;
           flex: 1;
+          min-height: 0;
           overflow: hidden;
-          border: 1px solid #EAE0DA;
+          border: 1px solid #F0E1D9;
           border-radius: 12px;
           background: #FFF;
-          box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+          box-shadow: 0 4px 20px rgba(76, 38, 24, 0.03);
         }
         .msg-sidebar-left {
-          width: 280px;
-          border-right: 1px solid #EAE0DA;
+          width: 300px;
+          border-right: 1px solid #F0E1D9;
           display: flex;
           flex-direction: column;
-          background: #FAFAFA;
+          background: #FDF8F5;
           flex-shrink: 0;
         }
         .msg-main {
           flex: 1;
           display: flex;
           flex-direction: column;
-          background: #FAF9F8;
+          background: #FAF6F3;
           min-width: 0;
         }
         .msg-sidebar-right {
-          width: 260px;
-          border-left: 1px solid #EAE0DA;
-          padding: 24px;
+          width: 240px;
+          border-left: 1px solid #F0E1D9;
+          padding: 20px;
           display: flex;
           flex-direction: column;
-          background: #FFF;
+          background: #FDF8F5;
           flex-shrink: 0;
           overflow-y: auto;
         }
 
         /* Responsive */
-        @media (max-width: 1024px) {
+        @media (max-width: 1200px) {
           .msg-sidebar-right {
             display: none !important;
           }
         }
         @media (max-width: 768px) {
           .msg-container {
-            padding: 12px;
-            height: calc(100vh - 60px);
+            padding: 0;
+            height: calc(100vh - 56px);
+            gap: 0;
           }
           .msg-layout {
             flex-direction: column;
             height: 100%;
+            border: none;
+            border-radius: 0;
+            box-shadow: none;
           }
           
           /* When showing list (hide chat panel) */

@@ -34,10 +34,45 @@ export async function fetchChatRooms(): Promise<{ data: ChatRoom[] }> {
   const res = await apiFetch("/api/student/messages/conversations");
   if (!res.ok) throw new Error(`Lỗi tải phòng chat (${res.status})`);
   const json = await res.json();
-  const data = (json.data ?? json ?? []).map((c: any) => ({
-    ...c,
-    id: c.macuoctrochuyen,
-  }));
+  const data = (json.data ?? json ?? []).map((c: any) => {
+    const otherMember = c.otherMembers?.[0];
+    const account = otherMember?.taikhoan;
+    const name = c.loai === "CaNhan"
+      ? (account?.hoten || account?.email || c.tieude || "Không tên")
+      : (c.tieude || "Trò chuyện nhóm");
+
+    const role = account?.vaitro === "SinhVien" ? "Sinh viên" : (account?.vaitro === "GiangVien" ? "Giảng viên" : "Quản trị");
+    const email = account?.email || "";
+    const masv = account?.id_phu || "";
+    
+    // Convert ngayvaotruong or ngaytao to readable date string
+    const rawDate = account?.ngayvaotruong || otherMember?.ngaythamgia;
+    const startDate = rawDate ? new Date(rawDate).toLocaleDateString("vi-VN") : "";
+
+    const getFormattedTime = (dateStr: string) => {
+      const d = new Date(dateStr);
+      const now = new Date();
+      if (d.toDateString() === now.toDateString()) {
+        return d.toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" });
+      }
+      const dd = String(d.getDate()).padStart(2, "0");
+      const mm = String(d.getMonth() + 1).padStart(2, "0");
+      return `${dd}-${mm}`;
+    };
+
+    return {
+      ...c,
+      id: c.macuoctrochuyen,
+      name,
+      avatar: account?.anhdaidien || "",
+      lastMsg: c.lastMsg,
+      time: c.lastMsg ? getFormattedTime(c.lastMsg.ngaytao) : "",
+      role,
+      email,
+      masv,
+      startDate
+    };
+  });
   return { data };
 }
 

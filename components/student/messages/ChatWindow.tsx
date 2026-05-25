@@ -105,18 +105,16 @@ export function ChatWindow({
               background: "none",
               border: "none",
               cursor: "pointer",
-              color: "#BDBDBD",
-              padding: "8px",
-              borderRadius: "8px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
+              color: "#8B6F5F",
+              fontSize: "13px",
+              fontWeight: "600",
+              padding: "4px 8px",
+              transition: "color 0.2s"
             }}
-            onMouseOver={(e) => (e.currentTarget.style.color = "#E57373")}
-            onMouseOut={(e) => (e.currentTarget.style.color = "#BDBDBD")}
-            title="Xóa cuộc trò chuyện"
+            onMouseOver={(e) => (e.currentTarget.style.color = "#C25450")}
+            onMouseOut={(e) => (e.currentTarget.style.color = "#8B6F5F")}
           >
-            <Trash2 size={18} />
+            xoá
           </button>
         </div>
       </div>
@@ -163,34 +161,40 @@ export function ChatWindow({
                     width: "32px",
                     height: "32px",
                     borderRadius: "50%",
-                    background: "#E8ECEF",
+                    background: "#F5EBE6",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    fontSize: "14px",
                     flexShrink: 0,
+                    overflow: "hidden"
                   }}
                 >
-                  {selectedChatInfo.avatar}
+                  {selectedChatInfo.avatar ? (
+                    <img src={selectedChatInfo.avatar} alt="avatar" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                  ) : (
+                    <svg className="w-4 h-4 text-[#8B6F5F]" fill="currentColor" viewBox="0 0 20 20" style={{ width: "16px", height: "16px" }}>
+                      <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+                    </svg>
+                  )}
                 </div>
               )}
               <div>
                 {!msg.isMine && (
-                  <div style={{ fontSize: "11px", color: "#888", marginBottom: "4px" }}>
+                  <div style={{ fontSize: "11px", color: "#8B6F5F", fontWeight: "600", marginBottom: "4px" }}>
                     {selectedChatInfo.name}
                   </div>
                 )}
                 <div
                   style={{
-                    background: msg.isMine ? "#FFF4F4" : "#FFF",
-                    padding: "12px 16px",
+                    background: msg.isMine ? "#FFF2EB" : "#FFF",
+                    padding: "10px 14px",
                     borderRadius: msg.isMine ? "16px 16px 4px 16px" : "4px 16px 16px 16px",
                     border: msg.isMine ? "1px solid #F2A8A8" : "1px solid #EAE0DA",
                     fontSize: "13px",
-                    color: "#333",
-                    lineHeight: "1.4",
-                    boxShadow: "0 1px 2px rgba(0,0,0,0.02)",
-                    textAlign: msg.isMine ? "right" : "left",
+                    color: "#2D1B14",
+                    lineHeight: "1.5",
+                    boxShadow: "0 1px 2px rgba(0,0,0,0.01)",
+                    textAlign: "left",
                   }}
                 >
                   {msg.fileUrl ? (

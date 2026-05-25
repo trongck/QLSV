@@ -92,8 +92,26 @@ export function ChatSidebar({
                     cursor: "pointer",
                   }}
                 >
-                  <div style={{ width: "40px", height: "40px", borderRadius: "50%", background: "#E8ECEF", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "18px", color: "#555" }}>
-                    👤
+                  <div
+                    style={{
+                      width: "40px",
+                      height: "40px",
+                      borderRadius: "50%",
+                      background: "#F5EBE6",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      flexShrink: 0,
+                      overflow: "hidden"
+                    }}
+                  >
+                    {userItem.anhdaidien ? (
+                      <img src={userItem.anhdaidien} alt={userItem.hoten} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    ) : (
+                      <svg className="w-5 h-5 text-[#8B6F5F]" fill="currentColor" viewBox="0 0 20 20" style={{ width: "20px", height: "20px" }}>
+                        <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+                      </svg>
+                    )}
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <h4 style={{ margin: 0, fontSize: "13.5px", color: "#333", fontWeight: "600" }}>{userItem.hoten}</h4>
@@ -136,16 +154,23 @@ export function ChatSidebar({
                   width: "40px",
                   height: "40px",
                   borderRadius: "50%",
-                  background: "#E8ECEF",
+                  background: "#F5EBE6",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                   fontSize: "18px",
-                  color: "#555",
+                  color: "#8B6F5F",
                   flexShrink: 0,
+                  overflow: "hidden"
                 }}
               >
-                {chat.avatar}
+                {chat.avatar ? (
+                  <img src={chat.avatar} alt={chat.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                ) : (
+                  <svg className="w-5 h-5 text-[#8B6F5F]" fill="currentColor" viewBox="0 0 20 20" style={{ width: "20px", height: "20px" }}>
+                    <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+                  </svg>
+                )}
               </div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "4px" }}>

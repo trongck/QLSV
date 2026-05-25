@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/hooks/auth/useAuth";
 import { VaiTro } from "@/types";
+import { NotificationBell } from "@/components/student/NotificationBell";
 
 // ─── Nav items per role ────────────────────────────────────────────────────────
 
@@ -120,15 +121,22 @@ export function DashboardTopbar({
   onProfileClick,
   onChangePasswordClick,
   onLogoutClick,
+  unreadBellCount = 0,
+  bellNotifications = [],
+  onMarkAllRead,
 }: {
   title: string;
   onMenuClick: () => void;
   onProfileClick?: () => void;
   onChangePasswordClick?: () => void;
   onLogoutClick?: () => void;
+  unreadBellCount?: number;
+  bellNotifications?: any[];
+  onMarkAllRead?: () => Promise<void>;
 }) {
   const { user } = useAuth();
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
 
   return (
     <header className="hidden max-lg:flex items-center gap-3 p-[0_16px] h-14 bg-white border-b border-[#EAD9CB] sticky top-0 z-[50]">
@@ -149,13 +157,29 @@ export function DashboardTopbar({
       </button>
       <h1 className="flex-1 text-[15px] font-bold text-[#2D1B14] m-0">{title}</h1>
       
-      <div className="flex items-center gap-2 relative">
+      <div className="flex items-center gap-3 relative">
+        {user?.vaitro === VaiTro.SinhVien && (
+          <NotificationBell
+            unreadBellCount={unreadBellCount}
+            bellNotifications={bellNotifications}
+            onMarkAllRead={onMarkAllRead ?? (async () => {})}
+            isOpen={isNotificationOpen}
+            onToggle={() => {
+              setIsNotificationOpen(!isNotificationOpen);
+              setIsDropdownOpen(false);
+            }}
+          />
+        )}
+
         {/* Profile menu dropdown container */}
         <div className="relative">
           <div
             className="w-[32px] h-[32px] rounded-full bg-primary text-white text-xs font-bold flex items-center justify-center cursor-pointer hover:opacity-85 transition-opacity"
             aria-label={`Xin chào, ${user?.hoten}`}
-            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+            onClick={() => {
+              setIsDropdownOpen(!isDropdownOpen);
+              setIsNotificationOpen(false);
+            }}
           >
             {user?.hoten?.charAt(0) ?? "?"}
           </div>

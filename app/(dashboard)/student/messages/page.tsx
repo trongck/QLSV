@@ -119,10 +119,8 @@ export default function MessagesPage() {
       }, 3000);
 
       return () => clearInterval(interval);
-    } else if (chatList.length > 0) {
-      setSelectedChatId(chatList[0]?.id ?? null);
     }
-  }, [selectedChatId, fetchMessages, pollMessages, chatList, setSelectedChatId]);
+  }, [selectedChatId, fetchMessages, pollMessages]);
 
   // Handle Send message
   const handleSend = async () => {
@@ -146,23 +144,25 @@ export default function MessagesPage() {
     setPendingFile({ file, url: previewUrl });
   };
 
-  const selectedChatInfo = chatList.find((c) => c.id === selectedChatId) || chatList[0] || {};
+  const selectedChatInfo = chatList.find((c) => c.id === selectedChatId) || {};
 
   if (authLoading || (isLoading && chatList.length === 0)) {
     return <div className="flex h-full items-center justify-center bg-[#FDF8F6]">Đang tải dữ liệu...</div>;
   }
 
   return (
-    <DashboardShell pageTitle="Tin nhắn" fullWidth={true}>
+    <DashboardShell pageTitle="Tin nhắn">
       <MessagesLayout>
         {/* Page title */}
-        <div style={{ marginBottom: "20px" }}>
-          <h2 style={{ fontSize: "20px", fontWeight: "700", color: "#6B4F43", margin: 0 }}>
-            Hộp thư &amp; Tin nhắn trao đổi
-          </h2>
-          <p style={{ fontSize: "13px", color: "#8B6F5F", margin: "4px 0 0" }}>
-            Trao đổi trực tiếp với sinh viên và đồng nghiệp qua kênh tin nhắn nội bộ
-          </p>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div>
+            <h2 style={{ fontSize: "20px", fontWeight: "700", color: "#6B4F43", margin: 0 }}>
+              Hộp thư &amp; Tin nhắn trao đổi
+            </h2>
+            <p style={{ fontSize: "13px", color: "#8B6F5F", margin: "4px 0 0" }}>
+              Trao đổi trực tiếp với sinh viên và đồng nghiệp qua kênh tin nhắn nội bộ
+            </p>
+          </div>
         </div>
 
         {/* 3-Column Message System Layout */}
@@ -183,7 +183,40 @@ export default function MessagesPage() {
             onCloseSearch={handleCloseSearch}
           />
 
-          {chatList.length === 0 ? (
+          {selectedChatId === null ? (
+            <div className="msg-main" style={{ 
+              display: "flex", 
+              flexDirection: "column",
+              alignItems: "center", 
+              justifyContent: "center",
+              background: "#FAF9F8",
+              flex: 1,
+              padding: "20px",
+              textAlign: "center"
+            }}>
+              <div style={{
+                width: "80px",
+                height: "80px",
+                borderRadius: "50%",
+                background: "#FAF0EC",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                marginBottom: "20px",
+                boxShadow: "0 4px 12px rgba(242, 168, 168, 0.15)"
+              }}>
+                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M21 15C21 15.5304 20.7893 16.0391 20.4142 16.4142C20.0391 16.7893 19.5304 17 19 17H7L3 21V5C3 4.46957 3.21071 3.96086 3.58579 3.58579C3.96086 3.21071 4.46957 3 5 3H19C19.5304 3 20.0391 3.21071 20.4142 3.58579C20.7893 3.96086 21 4.46957 21 5V15Z" stroke="#F2A8A8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </div>
+              <h3 style={{ color: "#2D1B14", fontSize: "16px", marginBottom: "8px", fontWeight: "700" }}>
+                Hộp thoại chưa được chọn
+              </h3>
+              <p style={{ color: "#8B6F5F", fontSize: "13px", margin: 0, textAlign: "center", maxWidth: "340px", lineHeight: "1.5" }}>
+                Chọn một cuộc hội thoại bên trái hoặc tìm kiếm sinh viên để bắt đầu trò chuyện
+              </p>
+            </div>
+          ) : chatList.length === 0 ? (
             <div className="msg-main" style={{ alignItems: "center", justifyContent: "center" }}>
               <h3 style={{ color: "#6B4F43", marginBottom: "16px", fontWeight: "bold" }}>
                 Hiện tại chưa có tin nhắn

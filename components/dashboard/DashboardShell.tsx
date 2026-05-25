@@ -8,6 +8,7 @@ import { ProfileModal } from "@/components/teacher/ProfileModal";
 import { StudentProfileModal } from "@/components/student/ProfileModal";
 import { AdminProfileModal } from "@/components/admin/AdminProfileModal";
 import { ChangePasswordModal } from "@/components/dashboard/ChangePasswordModal";
+import { fetchDashboardAll } from "@/app/api/sinhvien/dashboard.api";
 
 interface DashboardShellProps {
   children: React.ReactNode;
@@ -25,6 +26,32 @@ export function DashboardShell({ children, pageTitle, fullWidth }: DashboardShel
   const isTeacher = user?.vaitro === VaiTro.GiangVien;
   const isStudent = user?.vaitro === VaiTro.SinhVien;
   const isAdmin = user?.vaitro === VaiTro.Admin;
+
+  const [bellNotifications, setBellNotifications] = useState<any[]>([]);
+  const [unreadBellCount, setUnreadBellCount] = useState(0);
+
+  useEffect(() => {
+    if (isStudent && user) {
+      fetchDashboardAll()
+        .then(({ bellNotifications: bells, unreadCount }) => {
+          setBellNotifications(bells);
+          setUnreadBellCount(unreadCount);
+        })
+        .catch(err => console.error("Failed to fetch notifications in DashboardShell:", err));
+    }
+  }, [isStudent, user]);
+
+  const handleMarkAllRead = async () => {
+    try {
+      const res = await fetch("/api/student/notifications/unread", { method: "PUT" });
+      if (res.ok) {
+        setBellNotifications(prev => prev.map(n => ({ ...n, dadoc: true })));
+        setUnreadBellCount(0);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   const handleLogout = () => {
     setLogoutConfirmOpen(true);
@@ -75,6 +102,9 @@ export function DashboardShell({ children, pageTitle, fullWidth }: DashboardShel
             onProfileClick={isTeacher || isStudent || isAdmin ? () => setProfileOpen(true) : undefined}
             onChangePasswordClick={() => setChangePassOpen(true)}
             onLogoutClick={handleLogout}
+            unreadBellCount={unreadBellCount}
+            bellNotifications={bellNotifications}
+            onMarkAllRead={handleMarkAllRead}
           />
         </div>
 

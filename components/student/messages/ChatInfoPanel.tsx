@@ -5,71 +5,53 @@ interface ChatInfoPanelProps {
 }
 
 export function ChatInfoPanel({ selectedChatInfo }: ChatInfoPanelProps) {
+  const getFormattedDate = (dateStr: string) => {
+    try {
+      if (!dateStr) return "";
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return dateStr;
+      return d.toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric" });
+    } catch {
+      return dateStr || "";
+    }
+  };
+
   return (
     <div className="msg-sidebar-right">
-      <h3 style={{ fontSize: "14px", color: "#333", fontWeight: "700", margin: "0 0 24px 0" }}>
+      <h3 style={{ fontSize: "13px", color: "#8B6F5F", fontWeight: "bold", margin: 0 }}>
         Thông tin chi tiết
       </h3>
-      <div
-        style={{
-          textAlign: "center",
-          paddingBottom: "24px",
-          borderBottom: "1px solid #EAE0DA",
-          marginBottom: "20px",
-        }}
-      >
-        <div
-          style={{
-            width: "70px",
-            height: "70px",
-            borderRadius: "50%",
-            background: "#E8ECEF",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            margin: "0 auto 16px auto",
-            fontSize: "32px",
-            color: "#555",
-          }}
-        >
-          {selectedChatInfo.avatar}
+
+      <div style={{ textAlign: "center", paddingBottom: "15px", borderBottom: "1px solid #F0E1D9", marginTop: "20px", marginBottom: "15px" }}>
+        <div style={{
+          width: "60px", height: "60px", borderRadius: "50%", background: "#EAD9CB",
+          display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden", margin: "0 auto 10px auto", fontSize: "24px"
+        }}>
+          {selectedChatInfo.avatar ? (
+            <img src={selectedChatInfo.avatar} alt="avatar" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+          ) : (
+            <svg className="w-6 h-6 text-[#8B6F5F]" fill="currentColor" viewBox="0 0 20 20" style={{ width: "24px", height: "24px" }}>
+              <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+            </svg>
+          )}
         </div>
-        <h4 style={{ margin: 0, fontSize: "15px", color: "#333", fontWeight: "700" }}>
+        <h4 style={{ margin: 0, fontSize: "13px", color: "#6B4F43", fontWeight: "bold" }}>
           {selectedChatInfo.name}
         </h4>
-        <p style={{ margin: "4px 0 0 0", fontSize: "12px", color: "#27AE60" }}>
+        <p style={{ margin: "2px 0 0 0", fontSize: "11px", color: "#8B6F5F" }}>
           {selectedChatInfo.role}
         </p>
       </div>
-      <div style={{ fontSize: "12px", color: "#555", display: "flex", flexDirection: "column", gap: "14px" }}>
+
+      <div style={{ fontSize: "11px", color: "#6B4F43", display: "flex", flexDirection: "column", gap: "10px" }}>
+        {selectedChatInfo.masv && (
+          <div><b>Mã:</b> {selectedChatInfo.masv}</div>
+        )}
         {selectedChatInfo.email && (
-          <div style={{ display: "flex", gap: "10px" }}>
-            <span style={{ fontSize: "14px" }}>📧</span>
-            <div>
-              <b style={{ color: "#333" }}>Email:</b> <br />
-              <span
-                style={{
-                  wordBreak: "break-all",
-                  color: "#777",
-                  marginTop: "2px",
-                  display: "inline-block",
-                }}
-              >
-                {selectedChatInfo.email}
-              </span>
-            </div>
-          </div>
+          <div style={{ wordBreak: "break-all" }}><b>Email:</b> {selectedChatInfo.email}</div>
         )}
         {selectedChatInfo.startDate && (
-          <div style={{ display: "flex", gap: "10px" }}>
-            <span style={{ fontSize: "14px" }}>📅</span>
-            <div>
-              <b style={{ color: "#333" }}>Ngày bắt đầu:</b> <br />
-              <span style={{ color: "#777", marginTop: "2px", display: "inline-block" }}>
-                {selectedChatInfo.startDate}
-              </span>
-            </div>
-          </div>
+          <div><b>Ngày bắt đầu:</b> {getFormattedDate(selectedChatInfo.startDate)}</div>
         )}
       </div>
     </div>

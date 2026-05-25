@@ -9,7 +9,7 @@ export const messageService = {
         const { data: gvRows } = await messageRepo.searchTeachers(search, limit);
 
         const students = (svRows ?? []).map((s) => ({
-            id: s.masv,
+            id: s.mataikhoan,
             masv: s.masv,
             magv: null,
             hoten: [s.hodem, s.ten].filter(Boolean).join(" ") || "Sinh Viên",
@@ -20,7 +20,7 @@ export const messageService = {
         }));
 
         const teachers = (gvRows ?? []).map((g) => ({
-            id: g.magv,
+            id: g.mataikhoan,
             masv: null,
             magv: g.magv,
             hoten: [g.hodem, g.ten].filter(Boolean).join(" ") || "Giảng Viên",
@@ -65,22 +65,22 @@ export const messageService = {
                 const members: any[] = (conv.thanhvientrochuyen ?? []).map((tv: any) => {
                     const tk = tv.taikhoan;
                     if (tk) {
-                        const gv = Array.isArray(tk.giangvien) ? tk.giangvien[0] : tk.giangvien;
-                        if (gv) {
-                            tv.giangvien = {
-                                ...gv,
-                                hoten: [gv.hodem, gv.ten].filter(Boolean).join(" ") || "Giảng viên",
-                                emailtruong: gv.emailtruong || tk.email
-                            };
+                        const sysRole = tk.vaitro;
+                        let profile: any = null;
+                        if (sysRole === "SinhVien") {
+                            profile = Array.isArray(tk.sinhvien) ? tk.sinhvien[0] : tk.sinhvien;
+                        } else if (sysRole === "GiangVien") {
+                            profile = Array.isArray(tk.giangvien) ? tk.giangvien[0] : tk.giangvien;
                         }
-                        const sv = Array.isArray(tk.sinhvien) ? tk.sinhvien[0] : tk.sinhvien;
-                        if (sv) {
-                            tv.sinhvien = {
-                                ...sv,
-                                hoten: [sv.hodem, sv.ten].filter(Boolean).join(" ") || "Sinh viên",
-                                emailtruong: sv.emailtruong || tk.email
-                            };
-                        }
+                        
+                        tv.taikhoan = {
+                            email: tk.email,
+                            vaitro: tk.vaitro,
+                            hoten: profile ? ([profile.hodem, profile.ten].filter(Boolean).join(" ") || (sysRole === "SinhVien" ? "Sinh viên" : "Giảng viên")) : "Người dùng",
+                            anhdaidien: profile?.anhdaidien ?? null,
+                            id_phu: profile ? (profile.masv || profile.magv || "") : "",
+                            ngayvaotruong: tv.ngaythamgia || conv.ngaytao || null
+                        };
                     }
                     return tv;
                 });

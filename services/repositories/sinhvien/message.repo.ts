@@ -40,12 +40,13 @@ export const messageRepo = {
                     mataikhoan,
                     vaitro,
                     thoigianxemcuoi,
+                    ngaythamgia,
                     taikhoan:mataikhoan (
                         mataikhoan,
                         email,
                         vaitro,
-                        sinhvien (hodem, ten, emailtruong, anhdaidien),
-                        giangvien (hodem, ten, emailtruong, anhdaidien)
+                        sinhvien (hodem, ten, emailtruong, anhdaidien, masv),
+                        giangvien (hodem, ten, emailtruong, anhdaidien, magv)
                     )
                 ),
                 tinnhan (
@@ -240,7 +241,7 @@ export const messageRepo = {
         const supabase = await getSupabase();
         let query = supabase
             .from('sinhvien')
-            .select('masv, hodem, ten, anhdaidien, emailtruong, lop:malop ( tenlop )');
+            .select('masv, hodem, ten, anhdaidien, emailtruong, lop:malop ( tenlop ), mataikhoan');
         if (search.trim()) {
             query = query.or(`hodem.ilike.%${search}%,ten.ilike.%${search}%,masv.ilike.%${search}%`);
         }
@@ -252,7 +253,7 @@ export const messageRepo = {
         const supabase = await getSupabase();
         let query = supabase
             .from('giangvien')
-            .select('magv, hodem, ten, anhdaidien, emailtruong, khoa:makhoa ( tenkhoa )');
+            .select('magv, hodem, ten, anhdaidien, emailtruong, khoa:makhoa ( tenkhoa ), mataikhoan');
         if (search.trim()) {
             query = query.or(`hodem.ilike.%${search}%,ten.ilike.%${search}%,magv.ilike.%${search}%`);
         }
