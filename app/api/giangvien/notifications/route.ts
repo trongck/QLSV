@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { createClient } from "@/lib/utils/supabase/server";
+import { getSupabaseClient } from "@/lib/utils/supabase/server";
 import { verifyToken, extractBearer } from "@/lib/utils/jwt";
 import { VaiTro } from "@/types";
 
@@ -31,7 +31,7 @@ export async function GET(req: Request) {
   const offset = (page - 1) * limit;
 
   try {
-    const supabase = createClient(await cookies());
+    const supabase = await getSupabaseClient();
 
     // Query notifications targeting everyone or teachers specifically, or created by this teacher
     let query = supabase
@@ -125,7 +125,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Nội dung không được để trống" }, { status: 400 });
     }
 
-    const supabase = createClient(await cookies());
+    const supabase = await getSupabaseClient();
 
     const insertPayload: Record<string, any> = {
       mataikhoantao: payload.mataikhoan,
@@ -167,7 +167,7 @@ export async function PATCH(req: Request) {
 
   try {
     const body = await req.json();
-    const supabase = createClient(await cookies());
+    const supabase = await getSupabaseClient();
     const vnNow = new Date().toISOString();
 
     if (body.all === true) {

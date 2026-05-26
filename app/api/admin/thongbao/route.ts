@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { createClient } from "@/lib/utils/supabase/server";
+import { getSupabaseClient } from "@/lib/utils/supabase/server";
 import { requireAdmin } from "@/lib/utils/jwt";
 import { validateThongBao } from "@/lib/validation/admin.validation";
 import { getThongbaoListService, createThongbaoService } from "@/services/service/admin/thongbao.service";
@@ -20,7 +20,7 @@ export async function GET(request: Request) {
   const limit = Math.min(50, Math.max(1, Number(searchParams.get("limit") ?? 15)));
 
   try {
-    const supabase = createClient(await cookies());
+    const supabase = await getSupabaseClient();
     const { data, total } = await getThongbaoListService(supabase, {
       search,
       loai,
@@ -58,7 +58,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: validationErrors[0].message, errors: validationErrors }, { status: 400 });
     }
 
-    const supabase = createClient(await cookies());
+    const supabase = await getSupabaseClient();
     const data = await createThongbaoService(supabase, adminPayload.mataikhoan, body);
 
     return NextResponse.json({ data }, { status: 201 });

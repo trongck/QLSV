@@ -61,10 +61,8 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
 
     let filedinhUrl = undefined;
     if (file && file.size > 0) {
-      const { createClient } = await import("@/lib/utils/supabase/server");
-      const { cookies } = await import("next/headers");
-      const cookieStore = await cookies();
-      const supabase = createClient(cookieStore);
+      const { getSupabaseClient } = await import("@/lib/utils/supabase/server");
+    const supabase = await getSupabaseClient();
 
       const fileExtension = file.name.split(".").pop()?.toLowerCase();
       const fileName = `task_${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExtension}`;

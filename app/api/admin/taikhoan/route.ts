@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { createClient } from "@/lib/utils/supabase/server";
+import { getSupabaseClient } from "@/lib/utils/supabase/server";
 import { requireAdmin } from "@/lib/utils/jwt";
 import { getTaiKhoanListService } from "@/services/service/admin/taikhoan.service";
 
@@ -17,8 +17,7 @@ export async function GET(request: Request) {
   const limit = Math.min(50, parseInt(searchParams.get("limit") ?? "20"));
 
   try {
-    const cookieStore = await cookies();
-    const supabase = createClient(cookieStore);
+    const supabase = await getSupabaseClient();
 
     const { data, total } = await getTaiKhoanListService(supabase, {
       search,

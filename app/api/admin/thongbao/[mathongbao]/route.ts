@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { createClient } from "@/lib/utils/supabase/server";
+import { getSupabaseClient } from "@/lib/utils/supabase/server";
 import { requireAdmin } from "@/lib/utils/jwt";
 import { validateThongBao } from "@/lib/validation/admin.validation";
 import { updateThongbaoService, deleteThongbaoService } from "@/services/service/admin/thongbao.service";
@@ -20,7 +20,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ math
       return NextResponse.json({ error: validationErrors[0].message, errors: validationErrors }, { status: 400 });
     }
 
-    const supabase = createClient(await cookies());
+    const supabase = await getSupabaseClient();
     const data = await updateThongbaoService(supabase, id, body);
 
     return NextResponse.json({ data });
@@ -37,7 +37,7 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ m
   try {
     const { mathongbao } = await params;
     const id = Number(mathongbao);
-    const supabase = createClient(await cookies());
+    const supabase = await getSupabaseClient();
 
     await deleteThongbaoService(supabase, id);
 
@@ -67,7 +67,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ ma
     if (body.maphancong === "") body.maphancong = null;
     else if (body.maphancong !== undefined && body.maphancong !== null) body.maphancong = Number(body.maphancong);
 
-    const supabase = createClient(await cookies());
+    const supabase = await getSupabaseClient();
     const data = await updateThongbaoService(supabase, id, body);
 
     return NextResponse.json({ data });

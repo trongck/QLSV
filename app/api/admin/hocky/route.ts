@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { createClient } from "@/lib/utils/supabase/server";
+import { getSupabaseClient } from "@/lib/utils/supabase/server";
 import { requireAdmin } from "@/lib/utils/jwt";
 import { validateHocKy } from "@/lib/validation/admin.validation";
 import { getHockyListService, createHockyService } from "@/services/service/admin/hocky.service";
@@ -15,7 +15,7 @@ export async function GET(request: Request) {
   const namhoc = searchParams.get("namhoc");
 
   try {
-    const supabase = createClient(await cookies());
+    const supabase = await getSupabaseClient();
     const { data, total } = await getHockyListService(supabase, {
       search,
       namhoc: namhoc ? Number(namhoc) : undefined,
@@ -38,7 +38,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: validationErrors[0].message, errors: validationErrors }, { status: 400 });
     }
 
-    const supabase = createClient(await cookies());
+    const supabase = await getSupabaseClient();
     const data = await createHockyService(supabase, body);
     return NextResponse.json({ data }, { status: 201 });
   } catch (err: any) {

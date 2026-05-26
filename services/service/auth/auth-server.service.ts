@@ -9,24 +9,16 @@ import {
   extractBearer,
 } from "@/lib/utils/jwt";
 import * as repo from "../../repositories/auth/auth.repo";
-import fs from "fs";
-import path from "path";
 
 // ─── Logging & Format Helpers ──────────────────────────────────────────────────
 
 function writeResetLog(id: string, type: string, email: string, name: string) {
   try {
-    const logDir = path.join(process.cwd(), "logs");
-    if (!fs.existsSync(logDir)) {
-      fs.mkdirSync(logDir, { recursive: true });
-    }
-    const logPath = path.join(logDir, "password_resets.log");
     const timestamp = new Date().toLocaleString("vi-VN", { timeZone: "Asia/Ho_Chi_Minh" });
-    const logMessage = `[${timestamp}] CẤP LẠI MẬT KHẨU THÀNH CÔNG: Loại=${type}, Mã số=${id}, Họ tên=${name}, Email=${email}\n`;
-    fs.appendFileSync(logPath, logMessage, "utf8");
-    console.log(logMessage.trim());
+    const logMessage = `[${timestamp}] CẤP LẠI MẬT KHẨU THÀNH CÔNG: Loại=${type}, Mã số=${id}, Họ tên=${name}, Email=${email}`;
+    console.log(logMessage);
   } catch (err) {
-    console.error("Lỗi khi ghi file nhật ký reset password:", err);
+    console.error("Lỗi khi ghi nhật ký reset password:", err);
   }
 }
 

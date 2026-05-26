@@ -1,12 +1,12 @@
 // repositories/sinhvien/diemdanh.repo.ts
-import { createClient } from '@/lib/utils/supabase/server';
-import { cookies } from 'next/headers';
+import { getSupabaseClient } from '@/lib/utils/supabase/server';
 import { logAuditAction } from '@/lib/utils/audit';
+import { TIET_TO_TIME } from './schedule.repo';
 
 async function getSupabase() {
-    const cookieStore = await cookies();
-    return createClient(cookieStore);
+    return await getSupabaseClient();
 }
+
 
 // ─── Trạng thái điểm danh ────────────────────────────────────────────────────
 export type TrangThaiDiemDanh = 'Comat' | 'Cophep' | 'Vangmat' | 'Dimuon' | 'co_mat' | 'vang_co_phep' | 'vang_khong_phep' | 'muon';
@@ -91,7 +91,9 @@ export const diemdanhRepo = {
             .eq('masv', masv)
             .order('thoigiandiemdanh', { ascending: false }); // Sửa 'thoigian' thành 'thoigiandiemdanh'
 
-        if (options?.limit) {
+        // Chỉ limit ở DB nếu không có bất kỳ filter JS nào hoạt động
+        const hasFilters = options?.mahocky || options?.maphancong || (options?.month && options?.year);
+        if (options?.limit && !hasFilters) {
             query = query.limit(options.limit);
         }
 
@@ -127,6 +129,11 @@ export const diemdanhRepo = {
                 }
                 return !isNaN(ngay.getTime()) && ngay.getMonth() + 1 === options.month && ngay.getFullYear() === options.year;
             });
+        }
+
+        // Áp dụng limit sau khi đã lọc để đảm bảo đủ dữ liệu chính xác
+        if (options?.limit && hasFilters) {
+            filtered = filtered.slice(0, options.limit);
         }
 
         return { data: filtered, error };
@@ -230,12 +237,6 @@ export const diemdanhRepo = {
                 .maybeSingle();
 
             if (buoi) {
-                const TIET_TO_TIME: Record<number, string> = {
-                    1: '07:00', 2: '07:50', 3: '08:40', 4: '09:30',
-                    5: '10:20', 6: '11:10', 7: '12:30', 8: '13:20',
-                    9: '14:10', 10: '15:00', 11: '15:50', 12: '16:40',
-                    13: '18:00', 14: '18:50', 15: '19:40',
-                };
                 const tietBD = (buoi as any).lichhoc?.tietbatdau ?? 1;
                 const startStr = TIET_TO_TIME[tietBD] ?? '07:00';
                 const [sh, sm] = startStr.split(':').map(Number);
@@ -298,33 +299,52 @@ export const diemdanhRepo = {
 
         if (!phanCongs) return { data: [], error: null };
 
-        // Lọc lịch học hôm nay
-        const todaySessions: any[] = [];
+        // Thu thập toàn bộ lịch học của hôm nay và tạo ánh xạ trace phancong
+        const validLichHocs: any[] = [];
+        const pcMap = new Map<number, { pc: any; hk: any }>();
+
         for (const pc of phanCongs) {
             const hk = (pc as any).hocky;
             if (!hk?.danghieuluc) continue;
             const lichhocs = (pc as any).lichhoc ?? [];
             for (const lh of lichhocs) {
                 if (lh.thutrongtuan === thuTrongTuan) {
-                    // Tìm hoặc tạo buoihoc cho ngày hôm nay
-                    const { data: buoi } = await supabase
-                        .from('buoihoc')
-                        .select('mabuoihoc, ngayhoc')
-                        .eq('malichhoc', lh.malichhoc)
-                        .eq('ngayhoc', todayStr)
-                        .maybeSingle();
-
-                    todaySessions.push({
-                        ...lh,
-                        maphancong: pc.maphancong,
-                        monhoc: (pc as any).monhoc,
-                        giangvien: (pc as any).giangvien,
-                        hocky: hk,
-                        mabuoihoc: buoi?.mabuoihoc ?? null,
-                        ngayhoc: todayStr,
-                    });
+                    validLichHocs.push(lh);
+                    pcMap.set(lh.malichhoc, { pc, hk });
                 }
             }
+        }
+
+        if (validLichHocs.length === 0) return { data: [], error: null };
+
+        const malichhocList = validLichHocs.map(lh => lh.malichhoc);
+
+        // Chạy 1 query duy nhất để lấy thông tin các buổi học đã được tạo
+        const { data: buoiHocs, error: buoiError } = await supabase
+            .from('buoihoc')
+            .select('mabuoihoc, malichhoc, ngayhoc')
+            .in('malichhoc', malichhocList)
+            .eq('ngayhoc', todayStr);
+
+        if (buoiError) return { data: [], error: buoiError };
+
+        // Ánh xạ nhanh bằng Map
+        const buoiMap = new Map<number, any>();
+        buoiHocs?.forEach((b: any) => buoiMap.set(b.malichhoc, b));
+
+        const todaySessions: any[] = [];
+        for (const lh of validLichHocs) {
+            const trace = pcMap.get(lh.malichhoc)!;
+            const buoi = buoiMap.get(lh.malichhoc);
+            todaySessions.push({
+                ...lh,
+                maphancong: trace.pc.maphancong,
+                monhoc: trace.pc.monhoc,
+                giangvien: trace.pc.giangvien,
+                hocky: trace.hk,
+                mabuoihoc: buoi?.mabuoihoc ?? null,
+                ngayhoc: todayStr,
+            });
         }
 
         return { data: todaySessions, error: null };

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { createClient } from "@/lib/utils/supabase/server";
+import { getSupabaseClient } from "@/lib/utils/supabase/server";
 import { verifyToken, extractBearer } from "@/lib/utils/jwt";
 import { VaiTro } from "@/types";
 import { giangVienService } from "@/services/teacher.service";
@@ -95,8 +95,7 @@ export async function PUT(request: Request) {
 
     // Các trường ngayvaotruong và hesoluong chỉ đọc — không cho phép tự sửa
 
-    const cookieStore = await cookies();
-    const supabase = createClient(cookieStore);
+    const supabase = await getSupabaseClient();
 
     // Cập nhật tất cả trong 1 bảng giangvien
     const nameStr = hoten?.trim() || "";

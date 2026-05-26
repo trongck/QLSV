@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { createClient } from "@/lib/utils/supabase/server";
+import { getSupabaseClient } from "@/lib/utils/supabase/server";
 import { verifyToken, extractBearer } from "@/lib/utils/jwt";
 import { VaiTro } from "@/types";
 
@@ -27,7 +27,7 @@ export async function GET(
   const convId = Number(id);
   if (isNaN(convId)) return NextResponse.json({ error: "ID không hợp lệ" }, { status: 400 });
 
-  const supabase = createClient(await cookies());
+  const supabase = await getSupabaseClient();
 
   const { data: memberRows, error } = await supabase
     .from("thanhvientrochuyen")

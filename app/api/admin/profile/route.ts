@@ -1,13 +1,12 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { createClient } from "@/lib/utils/supabase/server";
+import { getSupabaseClient } from "@/lib/utils/supabase/server";
 import { getCurrentUserService } from "@/services/service/auth/auth-server.service";
 
 export async function GET(request: Request) {
   try {
     const authHeader = request.headers.get("authorization");
-    const cookieStore = await cookies();
-    const supabase = createClient(cookieStore);
+    const supabase = await getSupabaseClient();
 
     // 1. Xác thực và trích xuất thông tin tài khoản admin
     const userProfile = await getCurrentUserService(supabase, authHeader);
@@ -43,8 +42,7 @@ export async function GET(request: Request) {
 export async function PUT(request: Request) {
   try {
     const authHeader = request.headers.get("authorization");
-    const cookieStore = await cookies();
-    const supabase = createClient(cookieStore);
+    const supabase = await getSupabaseClient();
 
     // 1. Xác thực người dùng hiện tại
     const userProfile = await getCurrentUserService(supabase, authHeader);

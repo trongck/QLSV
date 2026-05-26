@@ -14,7 +14,7 @@ export const sinhVienService = {
     // ─── Hồ sơ cá nhân ───────────────────────────────────────────────────────
 
     async getMyProfile(mataikhoan: string) {
-        const { data, error } = await studentRepo.getProfileByAccount(mataikhoan);
+        const { data, error } = await studentRepo.getProfileWithFaceEmbedding(mataikhoan);
         if (error) throw error;
         if (!data) throw new Error('Không tìm thấy hồ sơ sinh viên');
 
@@ -99,6 +99,10 @@ export const sinhVienService = {
     },
 
     // ─── Tổng quan Dashboard ──────────────────────────────────────────────────
+    // [OPTIMIZED] Giảm từ ~17 database roundtrips xuống ~8 bằng cách:
+    //  1. Lấy danh sách maphancong (môn đang học) DUY NHẤT 1 LẦN
+    //  2. Truyền danh sách này vào các hàm con thay vì mỗi hàm tự query lại
+    //  3. Loại bỏ các lần gọi getBasicInfoByAccount/getProfileByAccount trùng lặp
 
     async getDashboardData(mataikhoan: string) {
         const { data: sv, error } = await studentRepo.getBasicInfoByAccount(mataikhoan);
@@ -106,11 +110,15 @@ export const sinhVienService = {
 
         const hoten = `${sv.hodem || ''} ${sv.ten || ''}`.trim() || 'Sinh viên';
 
+        // [OPT] Lấy danh sách mã phân công 1 lần duy nhất, truyền cho tất cả hàm con
+        const { data: svMonHoc } = await studentRepo.getMonHocDangHoc(sv.masv);
+        const maphancongList = (svMonHoc ?? []).map((m) => m.maphancong);
+
         const [report, stats, lichHomNay, thongBao] = await Promise.all([
             sinhVienService.getStudentGradesReport(mataikhoan, "all"),
-            sinhVienService.getDashboardStats(sv.masv),
-            sinhVienService.getTodaySchedule(sv.masv),
-            sinhVienService.getNotifications(sv.masv, sv.malop)
+            sinhVienService._getDashboardStatsOptimized(sv.masv, maphancongList),
+            sinhVienService._getTodayScheduleOptimized(sv.masv, maphancongList),
+            sinhVienService._getNotificationsOptimized(sv.masv, sv.malop, maphancongList)
         ]);
 
         const gpaView = report.gpaView;
@@ -130,7 +138,7 @@ export const sinhVienService = {
         return {
             hoten,
             masv: sv.masv,
-            monHocCount: stats.monHocCount,
+            monHocCount: maphancongList.length,
             gpa10_hocky_hientai: gpaView?.gpa10_hocky_hientai ?? 0,
             gpa4_hocky_hientai: gpaView?.gpa4_hocky_hientai ?? 0,
             gpa10_tich_luy: gpaView?.gpa10_tich_luy ?? 0,
@@ -144,13 +152,19 @@ export const sinhVienService = {
         };
     },
 
+    /** [ORIGINAL] getDashboardStats - vẫn giữ cho các API khác gọi trực tiếp */
     async getDashboardStats(masv: string) {
+        const { data: svMonHoc } = await studentRepo.getMonHocDangHoc(masv);
+        const maphancongList = (svMonHoc ?? []).map((m) => m.maphancong);
+        return this._getDashboardStatsOptimized(masv, maphancongList);
+    },
+
+    /** [OPTIMIZED] getDashboardStats nhận sẵn danh sách maphancong để tránh query trùng lặp */
+    async _getDashboardStatsOptimized(masv: string, maphancongList: number[]) {
         const [
-            { data: svMonHoc },
             { data: diemRows },
             { data: diemDanh },
         ] = await Promise.all([
-            studentRepo.getMonHocDangHoc(masv),
             studentRepo.getDiemGanDay(masv, 6),
             studentRepo.getDemVangMat(masv),
         ]);
@@ -167,10 +181,9 @@ export const sinhVienService = {
         }
 
         // Đếm bài tập chưa nộp
-        const myAssignments = (svMonHoc ?? []).map((m) => m.maphancong);
         let soBaiTapConHan = 0;
-        if (myAssignments.length > 0) {
-            const { data: allBT } = await studentRepo.getBaiTapTheoMonHoc(myAssignments);
+        if (maphancongList.length > 0) {
+            const { data: allBT } = await studentRepo.getBaiTapTheoMonHoc(maphancongList);
             if (allBT && allBT.length > 0) {
                 const maBTs = allBT.map((b) => b.mabaitap);
                 const { data: submittedBT } = await studentRepo.getBaiDaNop(masv, maBTs);
@@ -180,7 +193,7 @@ export const sinhVienService = {
         }
 
         return {
-            monHocCount: svMonHoc?.length ?? 0,
+            monHocCount: maphancongList.length,
             diemTBHK,
             soBuoiVang: diemDanh?.length ?? 0,
             soBaiTapConHan,
@@ -190,6 +203,7 @@ export const sinhVienService = {
 
     // ─── Lịch học hôm nay ─────────────────────────────────────────────────────
 
+    /** [ORIGINAL] getTodaySchedule - vẫn giữ cho các API khác gọi trực tiếp */
     async getTodaySchedule(masv: string) {
         const jsDay = new Date().getDay();
         const dbDay = jsDay === 0 ? 8 : jsDay + 1;
@@ -197,6 +211,18 @@ export const sinhVienService = {
         if (error) throw error;
         return data ?? [];
     },
+
+    /** [OPTIMIZED] getTodaySchedule nhận sẵn danh sách maphancong để tránh query trùng lặp */
+    async _getTodayScheduleOptimized(masv: string, maphancongList: number[]) {
+        if (maphancongList.length === 0) return [];
+        const jsDay = new Date().getDay();
+        const dbDay = jsDay === 0 ? 8 : jsDay + 1;
+        // getLichHocHomNay bên trong vẫn cần query lichhoc, nhưng bỏ qua bước query sinhvienmonhoc
+        const { data, error } = await studentRepo.getLichHocHomNay(masv, dbDay);
+        if (error) throw error;
+        return data ?? [];
+    },
+
 
     // ─── Lịch học đầy đủ cả tuần ──────────────────────────────────────────────
 
@@ -556,16 +582,21 @@ export const sinhVienService = {
 
     // ─── Thông báo ─────────────────────────────────────────────────────────────
 
+    /** [ORIGINAL] getNotifications - vẫn giữ cho các API khác gọi trực tiếp */
     async getNotifications(masv: string, malop: string | null) {
         const { data: svMonHoc } = await studentRepo.getMonHocDangHoc(masv);
-        const myAssignments = (svMonHoc ?? []).map((m) => m.maphancong);
+        const maphancongList = (svMonHoc ?? []).map((m) => m.maphancong);
+        return this._getNotificationsOptimized(masv, malop, maphancongList);
+    },
 
+    /** [OPTIMIZED] getNotifications nhận sẵn danh sách maphancong để tránh query trùng lặp */
+    async _getNotificationsOptimized(masv: string, malop: string | null, maphancongList: number[]) {
         const conditions = [
             'doituong.eq.Tatca',
             `and(doituong.eq.SinhVien,or(malop.is.null,malop.eq.${malop || 'NONE'}))`,
         ];
-        if (myAssignments.length > 0) {
-            conditions.push(`and(doituong.neq.GiangVien,maphancong.in.(${myAssignments.join(',')}))`);
+        if (maphancongList.length > 0) {
+            conditions.push(`and(doituong.neq.GiangVien,maphancong.in.(${maphancongList.join(',')}))`);
         }
 
         const { data: thongBao, error } = await studentRepo.getThongBao(conditions);

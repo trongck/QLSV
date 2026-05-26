@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { createClient } from "@/lib/utils/supabase/server";
+import { getSupabaseClient } from "@/lib/utils/supabase/server";
 import { requireAdmin } from "@/lib/utils/jwt";
 import {
   getSinhVienDetailForStatsService,
@@ -49,8 +49,7 @@ export async function GET(request: Request) {
     const detailType = searchParams.get("detailType") ?? ""; // "sv" | "gv"
     const detailId = searchParams.get("detailId") ?? "";
 
-    const cookieStore = await cookies();
-    const supabase = createClient(cookieStore);
+    const supabase = await getSupabaseClient();
     const ip = request.headers.get("x-forwarded-for")?.split(",")[0] || request.headers.get("x-real-ip") || "127.0.0.1";
 
     // A. XỬ LÝ XEM CHI TIẾT (Detail View) + Ghi Log

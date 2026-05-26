@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { createClient } from "@/lib/utils/supabase/server";
+import { getSupabaseClient } from "@/lib/utils/supabase/server";
 import { requireAdmin } from "@/lib/utils/jwt";
 import { validateTaiKhoanUpdate } from "@/lib/validation/admin.validation";
 import { updateTaiKhoanService, deleteTaiKhoanService } from "@/services/service/admin/taikhoan.service";
@@ -19,8 +19,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ mata
       return NextResponse.json({ error: validationErrors[0].message, errors: validationErrors }, { status: 400 });
     }
 
-    const cookieStore = await cookies();
-    const supabase = createClient(cookieStore);
+    const supabase = await getSupabaseClient();
 
     const data = await updateTaiKhoanService(supabase, mataikhoan, body);
 
@@ -37,8 +36,7 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ m
 
   try {
     const { mataikhoan } = await params;
-    const cookieStore = await cookies();
-    const supabase = createClient(cookieStore);
+    const supabase = await getSupabaseClient();
 
     await deleteTaiKhoanService(supabase, mataikhoan);
 

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { createClient } from "@/lib/utils/supabase/server";
+import { getSupabaseClient } from "@/lib/utils/supabase/server";
 import { requireAdmin } from "@/lib/utils/jwt";
 import { validateLop } from "@/lib/validation/admin.validation";
 import { getLopListService, createLopService } from "@/services/service/admin/lop.service";
@@ -16,8 +16,7 @@ export async function GET(request: Request) {
   const limit = Math.min(50, parseInt(searchParams.get("limit") ?? "20"));
 
   try {
-    const cookieStore = await cookies();
-    const supabase = createClient(cookieStore);
+    const supabase = await getSupabaseClient();
     const { data, count } = await getLopListService(supabase, { search, makhoa, page, limit });
 
     return NextResponse.json({
@@ -42,8 +41,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: validationErrors[0].message, errors: validationErrors }, { status: 400 });
     }
 
-    const cookieStore = await cookies();
-    const supabase = createClient(cookieStore);
+    const supabase = await getSupabaseClient();
     const data = await createLopService(supabase, body);
 
     return NextResponse.json({ success: true, data }, { status: 201 });

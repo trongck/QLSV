@@ -57,7 +57,7 @@ export function ChangePasswordModal({ isOpen, onClose }: ChangePasswordModalProp
     setIsSubmitting(true);
     try {
       const res = await apiFetch("/api/auth/change-password", {
-        method: "POST",
+        method: "PUT",
         body: JSON.stringify({ oldPassword, newPassword }),
       });
       const data = await res.json().catch(() => null);
@@ -112,12 +112,12 @@ export function ChangePasswordModal({ isOpen, onClose }: ChangePasswordModalProp
           {/* Alerts */}
           {errorMsg && (
             <div className="bg-rose-50 border border-rose-200 text-rose-700 text-xs px-4 py-2.5 rounded-xl font-medium animate-fadeInUp">
-              ⚠️ {errorMsg}
+               {errorMsg}
             </div>
           )}
           {successMsg && (
             <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs px-4 py-2.5 rounded-xl font-medium animate-fadeInUp">
-              ✅ {successMsg}
+               {successMsg}
             </div>
           )}
 

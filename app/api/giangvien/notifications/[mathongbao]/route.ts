@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { createClient } from "@/lib/utils/supabase/server";
+import { getSupabaseClient } from "@/lib/utils/supabase/server";
 import { verifyToken, extractBearer } from "@/lib/utils/jwt";
 import { VaiTro } from "@/types";
 
@@ -35,7 +35,7 @@ export async function PATCH(
 
   try {
     const body = await req.json();
-    const supabase = createClient(await cookies());
+    const supabase = await getSupabaseClient();
 
     // 1. Verify notification exists and was created by this teacher
     const { data: existing, error: fetchError } = await supabase
@@ -106,7 +106,7 @@ export async function DELETE(
   }
 
   try {
-    const supabase = createClient(await cookies());
+    const supabase = await getSupabaseClient();
 
     // 1. Verify notification exists and was created by this teacher
     const { data: existing, error: fetchError } = await supabase

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { createClient } from "@/lib/utils/supabase/server";
+import { getSupabaseClient } from "@/lib/utils/supabase/server";
 import { requireAdmin } from "@/lib/utils/jwt";
 import { getTaiKhoanStatsService } from "@/services/service/admin/taikhoan.service";
 
@@ -10,8 +10,7 @@ export async function GET(request: Request) {
   }
 
   try {
-    const cookieStore = await cookies();
-    const supabase = createClient(cookieStore);
+    const supabase = await getSupabaseClient();
 
     const stats = await getTaiKhoanStatsService(supabase);
 

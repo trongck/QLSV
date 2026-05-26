@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { createClient } from "@/lib/utils/supabase/server";
+import { getSupabaseClient } from "@/lib/utils/supabase/server";
 import { requireAdmin } from "@/lib/utils/jwt";
 import { validateSinhVienUpdate } from "@/lib/validation/admin.validation";
 import {
@@ -16,7 +16,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ masv
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { masv } = await params;
-  const supabase = createClient(await cookies());
+  const supabase = await getSupabaseClient();
 
   try {
     const data = await getSinhVienByIdService(supabase, masv);
@@ -41,7 +41,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ masv
     return NextResponse.json({ error: validationErrors[0].message, errors: validationErrors }, { status: 400 });
   }
 
-  const supabase = createClient(await cookies());
+  const supabase = await getSupabaseClient();
 
   try {
     const data = await updateSinhVienService(supabase, masv, body);
@@ -58,7 +58,7 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ m
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const { masv } = await params;
-  const supabase = createClient(await cookies());
+  const supabase = await getSupabaseClient();
 
   try {
     await deleteSinhVienService(supabase, masv);

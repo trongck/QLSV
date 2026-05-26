@@ -1,5 +1,4 @@
-import { createClient } from "@/lib/utils/supabase/server";
-import { cookies } from "next/headers";
+import { getSupabaseClient } from "@/lib/utils/supabase/server";
 
 export const giangVienService = {
   /**
@@ -7,8 +6,7 @@ export const giangVienService = {
    * Dữ liệu này sẽ bao gồm thông tin từ bảng giangvien và taikhoan liên kết
    */
   async getMyProfile(mataikhoan: string) {
-    const cookieStore = await cookies();
-    const supabase = createClient(cookieStore);
+    const supabase = await getSupabaseClient();
 
     // Bảng giangvien đã merge toàn bộ trường chi tiết — chỉ cần 1 query
     const { data, error } = await supabase
@@ -57,8 +55,7 @@ export const giangVienService = {
    * - Lịch dạy hôm nay
    */
   async getDashboardStats(magv: string) {
-    const cookieStore = await cookies();
-    const supabase = createClient(cookieStore);
+    const supabase = await getSupabaseClient();
 
     // 1. Lấy danh sách phân công đang hiệu lực
     const { data: phancongList } = await supabase
@@ -211,8 +208,7 @@ export const giangVienService = {
    *  - Tab 3: Tài liệu của tất cả lớp đang dạy
    */
   async getClassesData(magv: string) {
-    const cookieStore = await cookies();
-    const supabase = createClient(cookieStore);
+    const supabase = await getSupabaseClient();
 
     // ── 1. Phân công đang hiệu lực ───────────────────────────────────────────
     const { data: phancongList } = await supabase
@@ -309,8 +305,7 @@ export const giangVienService = {
    * Lấy danh sách lịch dạy
    */
   async getMySchedule(magv: string) {
-    const cookieStore = await cookies();
-    const supabase = createClient(cookieStore);
+    const supabase = await getSupabaseClient();
 
     const { data, error } = await supabase
       .from("lichhoc")
@@ -325,8 +320,7 @@ export const giangVienService = {
    * Lấy danh sách phân công học tập & buổi học & đơn xin nghỉ của giảng viên
    */
   async getAttendanceOverview(magv: string) {
-    const cookieStore = await cookies();
-    const supabase = createClient(cookieStore);
+    const supabase = await getSupabaseClient();
 
     // A. Lấy danh sách phân công đang hiệu lực
     const { data: phancongList } = await supabase
@@ -423,8 +417,7 @@ export const giangVienService = {
    * Lấy danh sách điểm danh chi tiết của một buổi học
    */
   async getAttendanceList(mabuoihoc: number, maphancong: number) {
-    const cookieStore = await cookies();
-    const supabase = createClient(cookieStore);
+    const supabase = await getSupabaseClient();
 
     // 1. Lấy danh sách sinh viên đang học của lớp học phần
     const { data: svMonHoc } = await supabase
@@ -486,8 +479,7 @@ export const giangVienService = {
    * Tạo ca điểm danh (buoihoc) mới cho một phân công vào ngày cụ thể
    */
   async createAttendanceSession(maphancong: number, dateStr: string) {
-    const cookieStore = await cookies();
-    const supabase = createClient(cookieStore);
+    const supabase = await getSupabaseClient();
 
     // 1. Tìm lịch học tương ứng với phân công này
     const { data: lichhoc } = await supabase
@@ -555,8 +547,7 @@ export const giangVienService = {
    * Cập nhật trạng thái điểm danh cho một sinh viên (Sử dụng cơ chế Check-then-Insert/Update tin cậy)
    */
   async updateStudentAttendance(mabuoihoc: number, masv: string, status: string, ghichu: string) {
-    const cookieStore = await cookies();
-    const supabase = createClient(cookieStore);
+    const supabase = await getSupabaseClient();
 
     // Chuẩn hóa trạng thái Frontend -> DB
     let trangthai = "Vangmat";
@@ -612,8 +603,7 @@ export const giangVienService = {
    * Cập nhật trạng thái đơn xin nghỉ học và đồng bộ điểm danh (Sử dụng cơ chế Check-then-Insert/Update tin cậy)
    */
   async updateLeaveRequest(madon: number, status: string, magv: string) {
-    const cookieStore = await cookies();
-    const supabase = createClient(cookieStore);
+    const supabase = await getSupabaseClient();
 
     // Xác định trạng thái DB
     const trangthai = status === "Đã duyệt" ? "DaDuyet" : "TuChoi";
@@ -673,8 +663,7 @@ export const giangVienService = {
    * Tạo mã bí mật QR mới cho buổi học dựa trực tiếp trên mabuoihoc lấy từ DB
    */
   async generateQRCode(mabuoihoc: number) {
-    const cookieStore = await cookies();
-    const supabase = createClient(cookieStore);
+    const supabase = await getSupabaseClient();
 
     // Dùng trực tiếp mã buổi học mabuoihoc từ database để thiết lập chuỗi QR tĩnh cố định
     const qrSecret = `mabuoihoc_${mabuoihoc}`;
@@ -716,8 +705,7 @@ export const giangVienService = {
    * Điểm danh bằng QR kèm kiểm tra vị trí GPS trong vòng 300m
    */
   async studentQRCheckin(masv: string, mabuoihoc: number, qrSecretParam: string, lat: number, lng: number) {
-    const cookieStore = await cookies();
-    const supabase = createClient(cookieStore);
+    const supabase = await getSupabaseClient();
 
     // 1. Kiểm tra sự tồn tại và trạng thái của buổi học
     const { data: buoihoc, error: bhError } = await supabase
@@ -819,8 +807,7 @@ export const giangVienService = {
    * Lấy danh sách lớp phân công kèm thông tin môn học, học kỳ để chọn trong GradeSheet
    */
   async getGradeClasses(magv: string) {
-    const cookieStore = await cookies();
-    const supabase = createClient(cookieStore);
+    const supabase = await getSupabaseClient();
 
     const { data, error } = await supabase
       .from("phancong")
@@ -846,8 +833,7 @@ export const giangVienService = {
    * Trả về danh sách SV kèm các cột điểm thành phần + tổng kết
    */
   async getGradeSheet(maphancong: number) {
-    const cookieStore = await cookies();
-    const supabase = createClient(cookieStore);
+    const supabase = await getSupabaseClient();
 
     // 1. Lấy danh sách SV đang học lớp này
     const { data: svList, error: svErr } = await supabase
@@ -942,8 +928,7 @@ export const giangVienService = {
    * Lưu / cập nhật 1 cột điểm cho 1 SV (check-then-insert/update)
    */
   async saveGrade(magv: string, maphancong: number, masv: string, loaidiem: string, giatri: number, heso: number, ghichu?: string) {
-    const cookieStore = await cookies();
-    const supabase = createClient(cookieStore);
+    const supabase = await getSupabaseClient();
 
     // Validate giá trị điểm
     if (giatri < 0 || giatri > 10) {
@@ -1012,8 +997,7 @@ export const giangVienService = {
       dapan: Array<{ noidung: string; ladapandung: boolean }>;
     }>
   ) {
-    const cookieStore = await cookies();
-    const supabase = createClient(cookieStore);
+    const supabase = await getSupabaseClient();
 
     // Validate quyền (phải là đề thi của GV này)
     const { data: dethiCheck } = await supabase
@@ -1120,8 +1104,7 @@ export const giangVienService = {
    * Công thức: ChuyenCan*10% + GiuaKy*30% + CuoiKy*60%
    */
   async calculateAndSaveFinalGrade(maphancong: number, masv: string) {
-    const cookieStore = await cookies();
-    const supabase = createClient(cookieStore);
+    const supabase = await getSupabaseClient();
 
     const masvTrimmed = masv.trim();
 
@@ -1208,8 +1191,7 @@ export const giangVienService = {
    * Lấy danh sách học sinh theo lớp phân công từ Supabase
    */
   async getRosterStudents(maphancong: number) {
-    const cookieStore = await cookies();
-    const supabase = createClient(cookieStore);
+    const supabase = await getSupabaseClient();
 
     const { data, error } = await supabase
       .from("sinhvienmonhoc")
@@ -1267,8 +1249,7 @@ export const giangVienService = {
       address: string;
     }
   ) {
-    const cookieStore = await cookies();
-    const supabase = createClient(cookieStore);
+    const supabase = await getSupabaseClient();
 
     // Tách họ tên thành hodem và ten
     const nameParts = updateData.name.trim().split(/\s+/);
@@ -1303,8 +1284,7 @@ export const giangVienService = {
    * Lấy danh sách bài tập (tasks) của giảng viên (không làm chức năng Thêm mới)
    */
   async getTasks(magv: string) {
-    const cookieStore = await cookies();
-    const supabase = createClient(cookieStore);
+    const supabase = await getSupabaseClient();
 
     // 1. Lấy danh sách phân công
     const { data: phancongList } = await supabase
@@ -1380,8 +1360,7 @@ export const giangVienService = {
    * Cập nhật bài tập (không có thêm mới theo yêu cầu)
    */
   async updateTask(mabaitap: number, updates: any) {
-    const cookieStore = await cookies();
-    const supabase = createClient(cookieStore);
+    const supabase = await getSupabaseClient();
 
     const updatePayload: any = {
       tieude: updates.tieude || updates.title,
@@ -1407,8 +1386,7 @@ export const giangVienService = {
    * Lấy danh sách bài nộp của một bài tập
    */
   async getTaskSubmissions(mabaitap: number) {
-    const cookieStore = await cookies();
-    const supabase = createClient(cookieStore);
+    const supabase = await getSupabaseClient();
 
     const { data, error } = await supabase
       .from("nopbai")
@@ -1445,8 +1423,7 @@ export const giangVienService = {
       filedinh?: string;
     }
   ) {
-    const cookieStore = await cookies();
-    const supabase = createClient(cookieStore);
+    const supabase = await getSupabaseClient();
 
     // Validate if maphancong belongs to magv
     const { data: pcCheck } = await supabase
@@ -1505,8 +1482,7 @@ export const giangVienService = {
    * Lấy danh sách các bài thi trực tuyến (đề thi) của giảng viên
    */
   async getExams(magv: string) {
-    const cookieStore = await cookies();
-    const supabase = createClient(cookieStore);
+    const supabase = await getSupabaseClient();
 
     // 1. Lấy danh sách phân công
     const { data: phancongList } = await supabase
@@ -1542,8 +1518,7 @@ export const giangVienService = {
    * Kết thúc ca thi trực tuyến (cập nhật thoigianketthuc = now)
    */
   async endExam(magv: string, madethi: number) {
-    const cookieStore = await cookies();
-    const supabase = createClient(cookieStore);
+    const supabase = await getSupabaseClient();
 
     // Validate quyền
     const { data: phancongList } = await supabase
@@ -1593,8 +1568,7 @@ export const giangVienService = {
       dapan: Array<{ noidung: string; ladapandung: boolean }>;
     }>
   ) {
-    const cookieStore = await cookies();
-    const supabase = createClient(cookieStore);
+    const supabase = await getSupabaseClient();
 
     // Validate quyền
     const { data: pcCheck } = await supabase
@@ -1679,8 +1653,7 @@ export const giangVienService = {
       thoigianketthuc: string;
     }
   ) {
-    const cookieStore = await cookies();
-    const supabase = createClient(cookieStore);
+    const supabase = await getSupabaseClient();
 
     // Validate quyền
     const { data: pcCheck } = await supabase
@@ -1718,8 +1691,7 @@ export const giangVienService = {
    * Tính toán thống kê học phần
    */
   async getClassStats(magv: string, maphancong: number) {
-    const cookieStore = await cookies();
-    const supabase = createClient(cookieStore);
+    const supabase = await getSupabaseClient();
 
     // Validate quyền
     const { data: pcCheck } = await supabase
@@ -1814,8 +1786,7 @@ export const giangVienService = {
    * Lấy danh sách báo cáo cũ
    */
   async getReports(magv: string, maphancong: number) {
-    const cookieStore = await cookies();
-    const supabase = createClient(cookieStore);
+    const supabase = await getSupabaseClient();
 
     const { data: pcCheck } = await supabase
       .from("phancong")
@@ -1848,8 +1819,7 @@ export const giangVienService = {
     mota: string,
     statsJson: string
   ) {
-    const cookieStore = await cookies();
-    const supabase = createClient(cookieStore);
+    const supabase = await getSupabaseClient();
 
     const { data: pcCheck } = await supabase
       .from("phancong")
@@ -1889,8 +1859,7 @@ export const giangVienService = {
     matailieu: number,
     updates: { tieude?: string; mota?: string }
   ) {
-    const cookieStore = await cookies();
-    const supabase = createClient(cookieStore);
+    const supabase = await getSupabaseClient();
 
     const { data: pcCheck } = await supabase
       .from("phancong")

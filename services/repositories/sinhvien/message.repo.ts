@@ -1,12 +1,11 @@
 // services/repositories/sinhvien/message.repo.ts
-import { createClient } from '@/lib/utils/supabase/server';
-import { cookies } from 'next/headers';
+import { getSupabaseClient } from '@/lib/utils/supabase/server';
 import { logAuditAction } from '@/lib/utils/audit';
 
 async function getSupabase() {
-    const cookieStore = await cookies();
-    return createClient(cookieStore);
+    return await getSupabaseClient();
 }
+
 
 export interface SendMessageDto {
     macuoctrochuyen: number;

@@ -16,10 +16,8 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Không có quyền truy cập" }, { status: 403 });
     }
 
-    const { createClient } = await import("@/lib/utils/supabase/server");
-    const { cookies } = await import("next/headers");
-    const cookieStore = await cookies();
-    const supabase = createClient(cookieStore);
+    const { getSupabaseClient } = await import("@/lib/utils/supabase/server");
+    const supabase = await getSupabaseClient();
 
     const { data: gv } = await supabase
       .from("giangvien")
@@ -60,10 +58,8 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { createClient } = await import("@/lib/utils/supabase/server");
-    const { cookies } = await import("next/headers");
-    const cookieStore = await cookies();
-    const supabase = createClient(cookieStore);
+    const { getSupabaseClient } = await import("@/lib/utils/supabase/server");
+    const supabase = await getSupabaseClient();
 
     const { data: gv } = await supabase
       .from("giangvien")

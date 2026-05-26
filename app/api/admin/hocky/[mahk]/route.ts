@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { createClient } from "@/lib/utils/supabase/server";
+import { getSupabaseClient } from "@/lib/utils/supabase/server";
 import { requireAdmin } from "@/lib/utils/jwt";
 import { validateHocKy } from "@/lib/validation/admin.validation";
 import { updateHockyService, deleteHockyService, activateHockyService } from "@/services/service/admin/hocky.service";
@@ -20,7 +20,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ mahk
       return NextResponse.json({ error: validationErrors[0].message, errors: validationErrors }, { status: 400 });
     }
 
-    const supabase = createClient(await cookies());
+    const supabase = await getSupabaseClient();
     const data = await updateHockyService(supabase, id, body);
     return NextResponse.json({ data });
   } catch (err: any) {
@@ -36,7 +36,7 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ m
   try {
     const { mahk } = await params;
     const id = Number(mahk);
-    const supabase = createClient(await cookies());
+    const supabase = await getSupabaseClient();
 
     await deleteHockyService(supabase, id);
     return NextResponse.json({ success: true });
@@ -57,7 +57,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ ma
   try {
     const { mahk } = await params;
     const id = Number(mahk);
-    const supabase = createClient(await cookies());
+    const supabase = await getSupabaseClient();
 
     const data = await activateHockyService(supabase, id);
     return NextResponse.json({ data });

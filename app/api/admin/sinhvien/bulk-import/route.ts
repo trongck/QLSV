@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { createClient } from "@/lib/utils/supabase/server";
+import { getSupabaseClient } from "@/lib/utils/supabase/server";
 import { requireAdmin } from "@/lib/utils/jwt";
 import { bulkImportSinhVienService } from "@/services/service/admin/sinhvien.services/sinhvien.service";
 
@@ -16,7 +16,7 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { rows, validateOnly = true } = body;
 
-    const supabase = createClient(await cookies());
+    const supabase = await getSupabaseClient();
 
     const result = await bulkImportSinhVienService(supabase, rows, validateOnly);
 

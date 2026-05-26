@@ -1,13 +1,12 @@
 // services/repositories/sinhvien/student.repo.ts
 // Repository chứa toàn bộ truy vấn Supabase dành cho sinh viên:
 // Hồ sơ, Dashboard, Lịch học, Điểm, Bài tập, Tin nhắn, Điểm danh
-import { createClient } from '@/lib/utils/supabase/server';
-import { cookies } from 'next/headers';
+import { getSupabaseClient } from '@/lib/utils/supabase/server';
 
 async function getSupabase() {
-    const cookieStore = await cookies();
-    return createClient(cookieStore);
+    return await getSupabaseClient();
 }
+
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 export interface UpdateProfileDto {
@@ -34,8 +33,24 @@ export const studentRepo = {
 
     // ─── Hồ sơ sinh viên ─────────────────────────────────────────────────────
 
-    /** Lấy hồ sơ sinh viên theo mataikhoan */
+    /** Lấy hồ sơ sinh viên theo mataikhoan (không kèm face_embedding để tối ưu băng thông) */
     getProfileByAccount: async (mataikhoan: string) => {
+        const supabase = await getSupabase();
+        return await supabase
+            .from('sinhvien')
+            .select(`
+                masv, mataikhoan, malop, hodem, ten,
+                ngaysinh, gioitinh, anhdaidien, emailtruong, trangthai,
+                quequan, diachi, sodienthoai, emailcanhan,
+                tenphuhuynh, sodienthoaiphuhuynh, cccd, ngaycapcccd,
+                noicapcccd, dantoc, tongiao
+            `)
+            .eq('mataikhoan', mataikhoan)
+            .single();
+    },
+
+    /** Lấy hồ sơ sinh viên kèm face_embedding (chỉ dùng cho tính năng nhận diện khuôn mặt) */
+    getProfileWithFaceEmbedding: async (mataikhoan: string) => {
         const supabase = await getSupabase();
         return await supabase
             .from('sinhvien')

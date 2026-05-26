@@ -39,13 +39,28 @@ export function FaceAttendanceModal({ isOpen, onClose, roster, onMarkPresent }: 
   // Filter roster to find students who actually have face registration data
   const registeredStudents = roster.filter(s => s.face_embedding && Array.isArray(s.face_embedding) && s.face_embedding.length > 0);
 
+  // Sử dụng Refs để lưu trữ dữ liệu động, tránh re-render làm restart camera
+  const registeredStudentsRef = useRef(registeredStudents);
+  const onMarkPresentRef = useRef(onMarkPresent);
+  const lastScannedMssvRef = useRef<string | null>(null);
+  const lastScannedTimeRef = useRef<number>(0);
+
+  // Đồng bộ Refs với Props và State mới nhất
+  useEffect(() => {
+    registeredStudentsRef.current = registeredStudents;
+  }, [registeredStudents]);
+
+  useEffect(() => {
+    onMarkPresentRef.current = onMarkPresent;
+  }, [onMarkPresent]);
+
   // Load models from CDN (same as student side for compatibility)
   useEffect(() => {
     if (!isOpen) return;
     
     const loadModels = async () => {
       try {
-        const MODEL_URL = "https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/";
+        const MODEL_URL = "/models/"; // Tải model từ server nội bộ thay vì CDN nước ngoài để tăng tốc
         await Promise.all([
           faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL),
           faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
@@ -74,6 +89,14 @@ export function FaceAttendanceModal({ isOpen, onClose, roster, onMarkPresent }: 
       streamRef.current.getTracks().forEach((track) => track.stop());
       streamRef.current = null;
     }
+    if (videoRef.current) {
+      try {
+        videoRef.current.pause();
+        videoRef.current.srcObject = null;
+      } catch (e) {
+        console.warn("Lỗi khi giải phóng video element:", e);
+      }
+    }
   }, []);
 
   useEffect(() => {
@@ -83,8 +106,96 @@ export function FaceAttendanceModal({ isOpen, onClose, roster, onMarkPresent }: 
       setCurrentMatch(null);
       setMatchStatus("idle");
       setLastScannedMssv(null);
+      lastScannedMssvRef.current = null;
+      lastScannedTimeRef.current = 0;
     }
   }, [isOpen, stopCameraAndScanning]);
+
+  // Real-time face scanner matching
+  const performFaceScan = useCallback(async () => {
+    const video = videoRef.current;
+    if (!video || video.paused || video.ended || video.readyState < 2) return;
+
+    try {
+      // 1. Detect single face with landmarks & descriptor
+      const detection = await faceapi.detectSingleFace(video)
+        .withFaceLandmarks()
+        .withFaceDescriptor();
+
+      if (!detection) {
+        // No face found in current frame
+        return;
+      }
+
+      setMatchStatus("matching");
+      const detectedDescriptor = detection.descriptor;
+      
+      let bestMatch: { student: StudentAttendance; distance: number } | null = null;
+      let minDistance = Infinity;
+
+      // 2. Perform Euclidean distance matching against all registered students in the classroom
+      const currentStudents = registeredStudentsRef.current;
+      for (const student of currentStudents) {
+        if (!student.face_embedding) continue;
+        
+        // Convert stored number[] back to Float32Array
+        const savedDescriptor = new Float32Array(student.face_embedding);
+        const distance = faceapi.euclideanDistance(detectedDescriptor, savedDescriptor);
+        
+        if (distance < minDistance) {
+          minDistance = distance;
+          bestMatch = { student, distance };
+        }
+      }
+
+      // 3. Evaluate match using a standard strict threshold (0.55)
+      if (bestMatch && minDistance <= 0.55) {
+        const matchedSv = bestMatch.student;
+        const now = Date.now();
+
+        // Prevent repeated scans of the same student within 5 seconds cooldown
+        if (lastScannedMssvRef.current === matchedSv.mssv && (now - lastScannedTimeRef.current) < 5000) {
+          setMatchStatus("cooldown");
+          return;
+        }
+
+        // Match found!
+        setCurrentMatch({
+          name: matchedSv.name,
+          mssv: matchedSv.mssv,
+          distance: minDistance
+        });
+        setMatchStatus("success");
+        setLastScannedMssv(matchedSv.mssv);
+        lastScannedMssvRef.current = matchedSv.mssv;
+        lastScannedTimeRef.current = now;
+
+        // Update database and parent local state to "Có mặt"
+        await onMarkPresentRef.current(matchedSv.mssv);
+
+        // Play subtle custom success sound (synthesized via Web Audio API, works in all modern browsers without asset loading!)
+        playSuccessBeep();
+
+        // Add to scanned history log in modal
+        const timeStr = new Date().toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+        setScannedHistory(prev => [
+          { mssv: matchedSv.mssv, name: matchedSv.name, time: timeStr },
+          ...prev
+        ]);
+        
+        // Reset status message after a short delay
+        setTimeout(() => {
+          setMatchStatus("idle");
+          setCurrentMatch(null);
+        }, 3000);
+      } else {
+        // Face detected but not matched to anyone registered with enough confidence
+        setMatchStatus("idle");
+      }
+    } catch (err) {
+      console.error("Lỗi quét khuôn mặt:", err);
+    }
+  }, []);
 
   // Start camera and begin scanning loop
   const startCameraAndScanning = useCallback(async () => {
@@ -116,7 +227,7 @@ export function FaceAttendanceModal({ isOpen, onClose, roster, onMarkPresent }: 
       setCameraState("error");
       setErrorMessage("Không thể mở camera. Hãy chắc chắn rằng bạn đã cấp quyền truy cập camera.");
     }
-  }, [modelsLoaded, registeredStudents]);
+  }, [modelsLoaded, performFaceScan]);
 
   // Trigger camera start when models are ready and modal is open
   useEffect(() => {
@@ -128,90 +239,6 @@ export function FaceAttendanceModal({ isOpen, onClose, roster, onMarkPresent }: 
     };
   }, [isOpen, modelsLoaded, startCameraAndScanning, stopCameraAndScanning]);
 
-  // Real-time face scanner matching
-  const performFaceScan = async () => {
-    const video = videoRef.current;
-    if (!video || video.paused || video.ended || video.readyState < 2) return;
-
-    try {
-      // 1. Detect single face with landmarks & descriptor
-      const detection = await faceapi.detectSingleFace(video)
-        .withFaceLandmarks()
-        .withFaceDescriptor();
-
-      if (!detection) {
-        // No face found in current frame
-        return;
-      }
-
-      setMatchStatus("matching");
-      const detectedDescriptor = detection.descriptor;
-      
-      let bestMatch: { student: StudentAttendance; distance: number } | null = null;
-      let minDistance = Infinity;
-
-      // 2. Perform Euclidean distance matching against all registered students in the classroom
-      for (const student of registeredStudents) {
-        if (!student.face_embedding) continue;
-        
-        // Convert stored number[] back to Float32Array
-        const savedDescriptor = new Float32Array(student.face_embedding);
-        const distance = faceapi.euclideanDistance(detectedDescriptor, savedDescriptor);
-        
-        if (distance < minDistance) {
-          minDistance = distance;
-          bestMatch = { student, distance };
-        }
-      }
-
-      // 3. Evaluate match using a standard strict threshold (0.55)
-      // Usually, distance < 0.6 is a match; 0.55 offers higher precision (fewer false positives)
-      if (bestMatch && minDistance <= 0.55) {
-        const matchedSv = bestMatch.student;
-        const now = Date.now();
-
-        // Prevent repeated scans of the same student within 5 seconds cooldown
-        if (lastScannedMssv === matchedSv.mssv && (now - lastScannedTime) < 5000) {
-          setMatchStatus("cooldown");
-          return;
-        }
-
-        // Match found!
-        setCurrentMatch({
-          name: matchedSv.name,
-          mssv: matchedSv.mssv,
-          distance: minDistance
-        });
-        setMatchStatus("success");
-        setLastScannedMssv(matchedSv.mssv);
-        setLastScannedTime(now);
-
-        // Update database and parent local state to "Có mặt"
-        await onMarkPresent(matchedSv.mssv);
-
-        // Play subtle custom success sound (synthesized via Web Audio API, works in all modern browsers without asset loading!)
-        playSuccessBeep();
-
-        // Add to scanned history log in modal
-        const timeStr = new Date().toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
-        setScannedHistory(prev => [
-          { mssv: matchedSv.mssv, name: matchedSv.name, time: timeStr },
-          ...prev
-        ]);
-        
-        // Reset status message after a short delay
-        setTimeout(() => {
-          setMatchStatus("idle");
-          setCurrentMatch(null);
-        }, 3000);
-      } else {
-        // Face detected but not matched to anyone registered with enough confidence
-        setMatchStatus("idle");
-      }
-    } catch (err) {
-      console.error("Lỗi quét khuôn mặt:", err);
-    }
-  };
 
   // Synthesize beep via browser Web Audio API for satisfying user experience
   const playSuccessBeep = () => {
@@ -278,17 +305,15 @@ export function FaceAttendanceModal({ isOpen, onClose, roster, onMarkPresent }: 
             {/* Camera viewport container */}
             <div className="relative aspect-video w-full rounded-2xl overflow-hidden bg-gray-900 border-2 border-[#EAD9CB] shadow-inner flex items-center justify-center">
               
-              {/* Active Video Stream */}
-              {cameraState === "active" && (
-                <video
-                  ref={videoRef}
-                  autoPlay
-                  playsInline
-                  muted
-                  className="w-full h-full object-cover"
-                  style={{ transform: "scaleX(-1)" }}
-                />
-              )}
+              {/* Active Video Stream (Luôn mount trong DOM để tránh race-condition videoRef bị null) */}
+              <video
+                ref={videoRef}
+                autoPlay
+                playsInline
+                muted
+                className={`w-full h-full object-cover ${cameraState === "active" ? "block" : "hidden"}`}
+                style={{ transform: "scaleX(-1)" }}
+              />
 
               {/* Scanning visual guide - Laser line scanning effect */}
               {cameraState === "active" && matchStatus !== "success" && (

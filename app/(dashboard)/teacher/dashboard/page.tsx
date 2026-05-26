@@ -150,7 +150,7 @@ export default function TeacherDashboard() {
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-[22px] font-bold text-fg m-0 mb-1">
-              Chào, {user.hoten?.split(" ").pop()} 👋
+              Chào, {user.hoten?.split(" ").pop()} 
             </h1>
             <p className="text-[13px] text-fg-subtle m-0 capitalize">
               {new Date().toLocaleDateString("vi-VN", {

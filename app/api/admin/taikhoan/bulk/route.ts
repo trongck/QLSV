@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { createClient } from "@/lib/utils/supabase/server";
+import { getSupabaseClient } from "@/lib/utils/supabase/server";
 import { requireAdmin } from "@/lib/utils/jwt";
 import { bulkAccountActionService } from "@/services/service/admin/taikhoan.service";
 
@@ -25,8 +25,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Tối đa 100 tài khoản mỗi lần." }, { status: 400 });
     }
 
-    const cookieStore = await cookies();
-    const supabase = createClient(cookieStore);
+    const supabase = await getSupabaseClient();
 
     const result = await bulkAccountActionService(supabase, ids, action, matkhau);
 

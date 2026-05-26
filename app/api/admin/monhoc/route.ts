@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { createClient } from "@/lib/utils/supabase/server";
+import { getSupabaseClient } from "@/lib/utils/supabase/server";
 import { requireAdmin } from "@/lib/utils/jwt";
 import { validateMonHoc } from "@/lib/validation/admin.validation";
 import { getMonhocListService, createMonhocService } from "@/services/service/admin/monhoc.service";
@@ -18,7 +18,7 @@ export async function GET(request: Request) {
   const limit = Math.min(50, Math.max(1, Number(searchParams.get("limit") ?? 15)));
 
   try {
-    const supabase = createClient(await cookies());
+    const supabase = await getSupabaseClient();
     const { data, total, stats } = await getMonhocListService(supabase, {
       search,
       makhoa,
@@ -57,7 +57,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: validationErrors[0].message, errors: validationErrors }, { status: 400 });
     }
 
-    const supabase = createClient(await cookies());
+    const supabase = await getSupabaseClient();
     const data = await createMonhocService(supabase, body);
 
     return NextResponse.json({ data }, { status: 201 });

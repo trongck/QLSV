@@ -1,9 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import dynamic from "next/dynamic";
 import { apiFetch } from "@/services/service/auth/auth.service";
 
-import { FaceAttendanceModal } from "./FaceAttendanceModal";
+// Lazy-load thư viện nhận diện khuôn mặt AI (~2MB) chỉ khi giảng viên nhấn nút mở camera
+const FaceAttendanceModal = dynamic(
+  () => import("./FaceAttendanceModal").then((mod) => mod.FaceAttendanceModal),
+  { ssr: false }
+);
 
 type SubTab = "list" | "qrcode" | "leave_requests";
 

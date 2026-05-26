@@ -22,10 +22,8 @@ export async function GET(request: Request) {
 
     // Lấy magv từ bảng giangvien theo mataikhoan trong token
     // getDashboardStats nhận magv — cần resolve trước
-    const { createClient } = await import("@/lib/utils/supabase/server");
-    const { cookies } = await import("next/headers");
-    const cookieStore = await cookies();
-    const supabase = createClient(cookieStore);
+    const { getSupabaseClient } = await import("@/lib/utils/supabase/server");
+    const supabase = await getSupabaseClient();
 
     const { data: gv } = await supabase
       .from("giangvien")

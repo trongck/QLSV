@@ -1,13 +1,12 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { createClient } from "@/lib/utils/supabase/server";
+import { getSupabaseClient } from "@/lib/utils/supabase/server";
 import { getCurrentUserService } from "@/services/service/auth/auth-server.service";
 
 export async function GET(request: Request) {
   try {
     const authHeader = request.headers.get("authorization");
-    const cookieStore = await cookies();
-    const supabase = createClient(cookieStore);
+    const supabase = await getSupabaseClient();
 
     const userProfile = await getCurrentUserService(supabase, authHeader);
 

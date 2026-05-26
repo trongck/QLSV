@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { createClient } from "@/lib/utils/supabase/server";
+import { getSupabaseClient } from "@/lib/utils/supabase/server";
 import { requireAdmin } from "@/lib/utils/jwt";
 import { validateLop } from "@/lib/validation/admin.validation";
 import { updateLopService, deleteLopService } from "@/services/service/admin/lop.service";
@@ -18,8 +18,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ malo
       return NextResponse.json({ error: validationErrors[0].message, errors: validationErrors }, { status: 400 });
     }
 
-    const cookieStore = await cookies();
-    const supabase = createClient(cookieStore);
+    const supabase = await getSupabaseClient();
     const data = await updateLopService(supabase, malop, body);
 
     return NextResponse.json({ success: true, data });
@@ -34,8 +33,7 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ m
 
   try {
     const { malop } = await params;
-    const cookieStore = await cookies();
-    const supabase = createClient(cookieStore);
+    const supabase = await getSupabaseClient();
 
     await deleteLopService(supabase, malop);
     return NextResponse.json({ success: true });

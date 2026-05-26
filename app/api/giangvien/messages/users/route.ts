@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { createClient } from "@/lib/utils/supabase/server";
+import { getSupabaseClient } from "@/lib/utils/supabase/server";
 import { verifyToken, extractBearer } from "@/lib/utils/jwt";
 import { VaiTro } from "@/types";
 
@@ -30,7 +30,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ data: [] });
   }
 
-  const supabase = createClient(await cookies());
+  const supabase = await getSupabaseClient();
 
   // Tìm sinh viên (bằng mã sinh viên hoặc tên)
   const { data: svRows, error: svErr } = await supabase

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { createClient } from "@/lib/utils/supabase/server";
+import { getSupabaseClient } from "@/lib/utils/supabase/server";
 import { verifyToken, extractBearer } from "@/lib/utils/jwt";
 import { VaiTro } from "@/types";
 import { logAuditAction } from "@/lib/utils/audit";
@@ -31,7 +31,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
   const limit = Math.min(50, Math.max(1, Number(searchParams.get("limit") ?? 30)));
   const offset = (page - 1) * limit;
 
-  const supabase = createClient(await cookies());
+  const supabase = await getSupabaseClient();
 
   let query = supabase
     .from("tinnhan")
@@ -79,7 +79,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     return NextResponse.json({ error: "Nội dung không được trống" }, { status: 400 });
   }
 
-  const supabase = createClient(await cookies());
+  const supabase = await getSupabaseClient();
 
   const vnNow = new Date(new Date().getTime() + 7 * 60 * 60 * 1000).toISOString().replace("Z", "");
 
@@ -132,7 +132,7 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
   const convId = Number(id);
   if (isNaN(convId)) return NextResponse.json({ error: "ID không hợp lệ" }, { status: 400 });
 
-  const supabase = createClient(await cookies());
+  const supabase = await getSupabaseClient();
   const userId = payload.mataikhoan;
 
   // Lấy toàn bộ tin nhắn để đánh dấu đã xóa cho user hiện tại

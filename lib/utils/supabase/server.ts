@@ -47,7 +47,16 @@ function wrapQueryBuilder(builder: any, onExecute: () => Promise<void>) {
   });
 }
 
-export const createClient = (cookieStore: Awaited<ReturnType<typeof cookies>>) => {
+import { cache } from "react";
+
+export const createClient = (cookieStore: Awaited<ReturnType<typeof cookies>>, token?: string) => {
+  const headersObj: Record<string, string> = {};
+  // Chúng ta KHÔNG truyền token tùy chỉnh này trực tiếp vào headers của Supabase Client
+  // bởi vì JWT của hệ thống được ký bằng JWT_SECRET riêng biệt của Next.js (trong file .env.local),
+  // không khớp với JWT Secret của dự án Supabase Cloud. Việc truyền nó sẽ khiến Supabase
+  // trả về lỗi "PGRST301 (Invalid/Expired JWT)" và chặn đứng tất cả các truy vấn (kể cả Đăng nhập).
+  // Bảo mật của chúng ta được đảm bảo tuyệt đối ở tầng API Routes / Next.js Middleware.
+
   const client = createServerClient(
     supabaseUrl!,
     supabaseKey!,
@@ -66,8 +75,12 @@ export const createClient = (cookieStore: Awaited<ReturnType<typeof cookies>>) =
           }
         },
       },
+      global: {
+        headers: headersObj,
+      }
     },
   );
+
 
   return new Proxy(client, {
     get(target, prop) {
@@ -167,3 +180,16 @@ export const createClient = (cookieStore: Awaited<ReturnType<typeof cookies>>) =
     }
   });
 };
+
+export const getSupabaseClient = cache(async () => {
+  const cookieStore = await cookies();
+  let token: string | undefined;
+  try {
+    const headerStore = await headers();
+    token = cookieStore.get("auth_access_token")?.value || 
+            headerStore.get("authorization")?.replace("Bearer ", "");
+  } catch {
+    // Thao tác ngoài ngữ cảnh HTTP request hoặc trong quá trình build static
+  }
+  return createClient(cookieStore, token);
+});

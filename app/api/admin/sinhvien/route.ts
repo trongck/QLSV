@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { createClient } from "@/lib/utils/supabase/server";
+import { getSupabaseClient } from "@/lib/utils/supabase/server";
 import { requireAdmin } from "@/lib/utils/jwt";
 import { validateSinhVienCreate } from "@/lib/validation/admin.validation";
 import { getSinhVienListService, createSinhVienService } from "@/services/service/admin/sinhvien.services/sinhvien.service";
@@ -19,7 +19,7 @@ export async function GET(request: Request) {
   const page = Math.max(1, parseInt(searchParams.get("page") ?? "1"));
   const limit = Math.min(50, parseInt(searchParams.get("limit") ?? "20"));
 
-  const supabase = createClient(await cookies());
+  const supabase = await getSupabaseClient();
 
   try {
     const { data, total } = await getSinhVienListService(supabase, {
@@ -60,7 +60,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: validationErrors[0].message, errors: validationErrors }, { status: 400 });
   }
 
-  const supabase = createClient(await cookies());
+  const supabase = await getSupabaseClient();
 
   try {
     const data = await createSinhVienService(supabase, body);

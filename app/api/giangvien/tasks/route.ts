@@ -17,10 +17,8 @@ export async function GET(request: Request) {
     }
 
     // Lấy magv từ mataikhoan
-    const { createClient } = await import("@/lib/utils/supabase/server");
-    const { cookies } = await import("next/headers");
-    const cookieStore = await cookies();
-    const supabase = createClient(cookieStore);
+    const { getSupabaseClient } = await import("@/lib/utils/supabase/server");
+    const supabase = await getSupabaseClient();
 
     const { data: gv } = await supabase
       .from("giangvien")
@@ -61,10 +59,8 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { createClient } = await import("@/lib/utils/supabase/server");
-    const { cookies } = await import("next/headers");
-    const cookieStore = await cookies();
-    const supabase = createClient(cookieStore);
+    const { getSupabaseClient } = await import("@/lib/utils/supabase/server");
+    const supabase = await getSupabaseClient();
 
     const { data: gv } = await supabase
       .from("giangvien")
@@ -89,10 +85,8 @@ export async function POST(request: Request) {
 
     let filedinhUrl = "";
     if (file && file.size > 0) {
-      const { createClient } = await import("@/lib/utils/supabase/server");
-      const { cookies } = await import("next/headers");
-      const cookieStore = await cookies();
-      const supabase = createClient(cookieStore);
+      const { getSupabaseClient } = await import("@/lib/utils/supabase/server");
+    const supabase = await getSupabaseClient();
 
       const fileExtension = file.name.split(".").pop()?.toLowerCase();
       const fileName = `task_${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExtension}`;

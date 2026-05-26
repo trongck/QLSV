@@ -1,11 +1,10 @@
 // repositories/sinhvien/notification.repo.ts
-import { createClient } from '@/lib/utils/supabase/server';
-import { cookies } from 'next/headers';
+import { getSupabaseClient } from '@/lib/utils/supabase/server';
 
 async function getSupabase() {
-    const cookieStore = await cookies();
-    return createClient(cookieStore);
+    return await getSupabaseClient();
 }
+
 
 export const notificationRepo = {
     /**

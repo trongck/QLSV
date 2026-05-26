@@ -1,13 +1,12 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { createClient } from "@/lib/utils/supabase/server";
+import { getSupabaseClient } from "@/lib/utils/supabase/server";
 import { getCurrentUserService, changePasswordService } from "@/services/service/auth/auth-server.service";
 
 export async function PUT(request: Request) {
   try {
     const authHeader = request.headers.get("authorization");
-    const cookieStore = await cookies();
-    const supabase = createClient(cookieStore);
+    const supabase = await getSupabaseClient();
 
     // 1. Xác thực người dùng hiện tại qua Session JWT
     const userProfile = await getCurrentUserService(supabase, authHeader);

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { createClient } from "@/lib/utils/supabase/server";
+import { getSupabaseClient } from "@/lib/utils/supabase/server";
 import { refreshTokenService } from "@/services/service/auth/auth-server.service";
 
 export async function POST(request: Request) {
@@ -8,8 +8,7 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { refreshToken } = body;
 
-    const cookieStore = await cookies();
-    const supabase = createClient(cookieStore);
+    const supabase = await getSupabaseClient();
 
     const diachiip = request.headers.get("x-forwarded-for") ?? request.headers.get("x-real-ip") ?? null;
 

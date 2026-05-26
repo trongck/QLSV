@@ -19,10 +19,8 @@ export async function GET(request: Request) {
     }
 
     // Resolve magv từ mataikhoan
-    const { createClient } = await import("@/lib/utils/supabase/server");
-    const { cookies } = await import("next/headers");
-    const cookieStore = await cookies();
-    const supabase = createClient(cookieStore);
+    const { getSupabaseClient } = await import("@/lib/utils/supabase/server");
+    const supabase = await getSupabaseClient();
 
     const { data: gv } = await supabase
       .from("giangvien")
@@ -140,10 +138,8 @@ export async function PUT(request: Request) {
 
   try {
     // Resolve magv từ mataikhoan
-    const { createClient } = await import("@/lib/utils/supabase/server");
-    const { cookies } = await import("next/headers");
-    const cookieStore = await cookies();
-    const supabase = createClient(cookieStore);
+    const { getSupabaseClient } = await import("@/lib/utils/supabase/server");
+    const supabase = await getSupabaseClient();
 
     const { data: gv } = await supabase
       .from("giangvien")

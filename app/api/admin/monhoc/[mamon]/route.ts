@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { createClient } from "@/lib/utils/supabase/server";
+import { getSupabaseClient } from "@/lib/utils/supabase/server";
 import { requireAdmin } from "@/lib/utils/jwt";
 import { validateMonHoc } from "@/lib/validation/admin.validation";
 import { updateMonhocService, deleteMonhocService } from "@/services/service/admin/monhoc.service";
@@ -19,7 +19,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ mamo
       return NextResponse.json({ error: validationErrors[0].message, errors: validationErrors }, { status: 400 });
     }
 
-    const supabase = createClient(await cookies());
+    const supabase = await getSupabaseClient();
     const data = await updateMonhocService(supabase, mamon, body);
 
     return NextResponse.json({ data });
@@ -35,7 +35,7 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ m
 
   try {
     const { mamon } = await params;
-    const supabase = createClient(await cookies());
+    const supabase = await getSupabaseClient();
 
     await deleteMonhocService(supabase, mamon);
     return NextResponse.json({ success: true });

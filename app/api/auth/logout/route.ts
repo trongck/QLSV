@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { createClient } from "@/lib/utils/supabase/server";
+import { getSupabaseClient } from "@/lib/utils/supabase/server";
 import { logoutService, logoutAllService } from "@/services/service/auth/auth-server.service";
 import { extractClientIp } from "@/lib/utils/audit";
 
@@ -9,8 +9,7 @@ export async function DELETE(request: Request) {
     const body = await request.json().catch(() => ({}));
     const { refreshToken, clientIp } = body as { refreshToken?: string; clientIp?: string };
 
-    const cookieStore = await cookies();
-    const supabase = createClient(cookieStore);
+    const supabase = await getSupabaseClient();
 
     // Ưu tiên IP do client tự lấy (qua ipify), fallback sang headers
     const diachiip = clientIp?.trim() || extractClientIp(request);
@@ -34,8 +33,7 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { mataikhoan, clientIp } = body as { mataikhoan?: string; clientIp?: string };
 
-    const cookieStore = await cookies();
-    const supabase = createClient(cookieStore);
+    const supabase = await getSupabaseClient();
 
     // Ưu tiên IP do client tự lấy (qua ipify), fallback sang headers
     const diachiip = clientIp?.trim() || extractClientIp(request);

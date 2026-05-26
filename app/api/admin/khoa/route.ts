@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { createClient } from "@/lib/utils/supabase/server";
+import { getSupabaseClient } from "@/lib/utils/supabase/server";
 import { requireAdmin } from "@/lib/utils/jwt";
 import { validateKhoa } from "@/lib/validation/admin.validation";
 import { getKhoaListService, createKhoaService } from "@/services/service/admin/khoa.service";
@@ -15,8 +15,7 @@ export async function GET(request: Request) {
   const search = searchParams.get("search") ?? "";
 
   try {
-    const cookieStore = await cookies();
-    const supabase = createClient(cookieStore);
+    const supabase = await getSupabaseClient();
     const data = await getKhoaListService(supabase, search);
     return NextResponse.json({ success: true, data });
   } catch (err: any) {
@@ -39,8 +38,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: validationErrors[0].message, errors: validationErrors }, { status: 400 });
     }
 
-    const cookieStore = await cookies();
-    const supabase = createClient(cookieStore);
+    const supabase = await getSupabaseClient();
     const data = await createKhoaService(supabase, body);
 
     return NextResponse.json({ success: true, data }, { status: 201 });

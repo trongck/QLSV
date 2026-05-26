@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { createClient } from "@/lib/utils/supabase/server";
+import { getSupabaseClient } from "@/lib/utils/supabase/server";
 import { requireAdmin } from "@/lib/utils/jwt";
 import { validateGiangVienCreate } from "@/lib/validation/admin.validation";
 import { getGiangVienListService, createGiangVienService } from "@/services/service/admin/giangvien.service";
@@ -17,8 +17,7 @@ export async function GET(request: Request) {
   const limit = Math.min(50, parseInt(searchParams.get("limit") ?? "20"));
 
   try {
-    const cookieStore = await cookies();
-    const supabase = createClient(cookieStore);
+    const supabase = await getSupabaseClient();
 
     const { data, total } = await getGiangVienListService(supabase, {
       search,
@@ -50,8 +49,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: validationErrors[0].message, errors: validationErrors }, { status: 400 });
     }
 
-    const cookieStore = await cookies();
-    const supabase = createClient(cookieStore);
+    const supabase = await getSupabaseClient();
 
     const data = await createGiangVienService(supabase, body);
 

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { createClient } from "@/lib/utils/supabase/server";
+import { getSupabaseClient } from "@/lib/utils/supabase/server";
 import { requireAdmin } from "@/lib/utils/jwt";
 import { validatePhanCong } from "@/lib/validation/admin.validation";
 import { getPhanCongListService, createPhanCongService } from "@/services/service/admin/phancong.service";
@@ -21,7 +21,7 @@ export async function GET(request: Request) {
   const limit = Math.min(100, parseInt(searchParams.get("limit") ?? "50"));
 
   try {
-    const supabase = createClient(await cookies());
+    const supabase = await getSupabaseClient();
     const { data, total } = await getPhanCongListService(supabase, {
       search,
       magv,
@@ -64,7 +64,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: validationErrors[0].message, errors: validationErrors }, { status: 400 });
     }
 
-    const supabase = createClient(await cookies());
+    const supabase = await getSupabaseClient();
     const data = await createPhanCongService(supabase, body);
 
     return NextResponse.json({ success: true, data }, { status: 201 });

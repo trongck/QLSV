@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { createClient } from "@/lib/utils/supabase/server";
+import { getSupabaseClient } from "@/lib/utils/supabase/server";
 import { requireAdmin } from "@/lib/utils/jwt";
 import {
   getPhongHocByCodeService,
@@ -22,7 +22,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ maph
     const isSchedule = searchParams.get("schedule") === "true";
     const isConflict = searchParams.get("conflict") === "true";
 
-    const supabase = createClient(await cookies());
+    const supabase = await getSupabaseClient();
 
     // 1. Get classroom schedules
     if (isSchedule) {
@@ -73,7 +73,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ maph
   try {
     const { maphong } = await params;
     const payload = await request.json();
-    const supabase = createClient(await cookies());
+    const supabase = await getSupabaseClient();
     const data = await updatePhongHocService(supabase, maphong, payload);
 
     return NextResponse.json({ success: true, data });
@@ -90,7 +90,7 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ m
 
   try {
     const { maphong } = await params;
-    const supabase = createClient(await cookies());
+    const supabase = await getSupabaseClient();
     await deletePhongHocService(supabase, maphong);
 
     return NextResponse.json({ success: true, message: `Xóa phòng học ${maphong} thành công.` });

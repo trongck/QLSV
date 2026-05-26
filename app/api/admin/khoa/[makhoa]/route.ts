@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { createClient } from "@/lib/utils/supabase/server";
+import { getSupabaseClient } from "@/lib/utils/supabase/server";
 import { requireAdmin } from "@/lib/utils/jwt";
 import { validateKhoa } from "@/lib/validation/admin.validation";
 import { updateKhoaService, deleteKhoaService } from "@/services/service/admin/khoa.service";
@@ -21,8 +21,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ makh
       return NextResponse.json({ error: validationErrors[0].message, errors: validationErrors }, { status: 400 });
     }
 
-    const cookieStore = await cookies();
-    const supabase = createClient(cookieStore);
+    const supabase = await getSupabaseClient();
     const data = await updateKhoaService(supabase, makhoa, body);
 
     return NextResponse.json({ success: true, data });
@@ -39,8 +38,7 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ m
 
   try {
     const { makhoa } = await params;
-    const cookieStore = await cookies();
-    const supabase = createClient(cookieStore);
+    const supabase = await getSupabaseClient();
 
     await deleteKhoaService(supabase, makhoa);
     return NextResponse.json({ success: true });

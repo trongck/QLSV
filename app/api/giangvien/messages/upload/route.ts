@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { createClient } from "@/lib/utils/supabase/server";
+import { getSupabaseClient } from "@/lib/utils/supabase/server";
 import { verifyToken, extractBearer } from "@/lib/utils/jwt";
 import { VaiTro } from "@/types";
 import { logAuditAction } from "@/lib/utils/audit";
@@ -56,7 +56,7 @@ export async function POST(req: Request) {
   if (!isAllowed)
     return NextResponse.json({ error: "Loại file không được hỗ trợ" }, { status: 415 });
 
-  const supabase = createClient(await cookies());
+  const supabase = await getSupabaseClient();
 
   const safeName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, "_");
   const filePath = `messages/${payload.mataikhoan}/${Date.now()}_${safeName}`;

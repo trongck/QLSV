@@ -26,7 +26,7 @@ export function FaceRegistrationModal({ isOpen, onClose, onSuccess }: FaceRegist
     
     const loadModels = async () => {
       try {
-        const MODEL_URL = "https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/";
+        const MODEL_URL = "/models/"; // Tải model từ server nội bộ thay vì CDN nước ngoài để tăng tốc
         await Promise.all([
           faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL),
           faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL),
@@ -44,8 +44,18 @@ export function FaceRegistrationModal({ isOpen, onClose, onSuccess }: FaceRegist
   }, [isOpen, modelsLoaded]);
 
   const stopCamera = useCallback(() => {
-    streamRef.current?.getTracks().forEach((t) => t.stop());
-    streamRef.current = null;
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((t) => t.stop());
+      streamRef.current = null;
+    }
+    if (videoRef.current) {
+      try {
+        videoRef.current.pause();
+        videoRef.current.srcObject = null;
+      } catch (e) {
+        console.warn("Lỗi khi giải phóng video element:", e);
+      }
+    }
   }, []);
 
   useEffect(() => {
@@ -54,6 +64,10 @@ export function FaceRegistrationModal({ isOpen, onClose, onSuccess }: FaceRegist
       setStep("start");
       setCaptures([]);
     }
+    // Cleanup khi component bị unmount — đảm bảo camera luôn được giải phóng
+    return () => {
+      stopCamera();
+    };
   }, [isOpen, stopCamera]);
 
   useEffect(() => {
@@ -161,8 +175,9 @@ export function FaceRegistrationModal({ isOpen, onClose, onSuccess }: FaceRegist
       
       const json = await res.json();
       if (json.success) {
+        stopCamera(); // Dừng camera ngay khi thành công (đảm bảo giải phóng)
         setStep("success");
-        setMessage("Đăng ký dữ liệu khuôn mặt thành công! 🎉");
+        setMessage("Đăng ký dữ liệu khuôn mặt thành công! ");
         setTimeout(() => {
           onSuccess();
           onClose();
@@ -222,7 +237,7 @@ export function FaceRegistrationModal({ isOpen, onClose, onSuccess }: FaceRegist
                   : "bg-gray-200 text-gray-400 cursor-not-allowed"
                 }`}
               >
-                {modelsLoaded ? "📷 Bắt đầu lấy mẫu" : "Đang tải dữ liệu AI..."}
+                {modelsLoaded ? " Bắt đầu lấy mẫu" : "Đang tải dữ liệu AI..."}
               </button>
             </div>
           )}

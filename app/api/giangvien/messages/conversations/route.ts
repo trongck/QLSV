@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { createClient } from "@/lib/utils/supabase/server";
+import { getSupabaseClient } from "@/lib/utils/supabase/server";
 import { verifyToken, extractBearer } from "@/lib/utils/jwt";
 import { VaiTro } from "@/types";
 import { logAuditAction } from "@/lib/utils/audit";
@@ -25,7 +25,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const supabase = createClient(await cookies());
+  const supabase = await getSupabaseClient();
 
   // Lấy các cuộc hội thoại mà user là thành viên
   const { data: memberRows, error: memberErr } = await supabase
@@ -180,7 +180,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Cần cung cấp otherMataikhoan của người nhận." }, { status: 400 });
   }
 
-  const supabase = createClient(await cookies());
+  const supabase = await getSupabaseClient();
 
   // Kiểm tra cuộc trò chuyện 1-1 đã tồn tại chưa
   const { data: myConvs } = await supabase

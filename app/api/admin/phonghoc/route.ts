@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { createClient } from "@/lib/utils/supabase/server";
+import { getSupabaseClient } from "@/lib/utils/supabase/server";
 import { requireAdmin } from "@/lib/utils/jwt";
 import {
   getPhongHocListService,
@@ -17,7 +17,7 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const isUtilization = searchParams.get("utilization") === "true";
-    const supabase = createClient(await cookies());
+    const supabase = await getSupabaseClient();
 
     if (isUtilization) {
       const data = await getRoomUtilizationStatsService(supabase);
@@ -39,7 +39,7 @@ export async function POST(request: Request) {
 
   try {
     const payload = await request.json();
-    const supabase = createClient(await cookies());
+    const supabase = await getSupabaseClient();
     const data = await createPhongHocService(supabase, payload);
 
     return NextResponse.json({ success: true, data });
