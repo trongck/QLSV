@@ -15,9 +15,7 @@ const SV_NAV = [
   { href: "/student/grades", label: "Kết quả" },
   { href: "/student/assignments", label: "Bài tập" },
   { href: "/student/test", label: "Bài thi" },
-  { href: "/student/messages", label: "Tin nhắn" },
-  { href: "/student/notifications", label: "Thông báo" },
-  { href: "/student/note", label: "Nhật ký sinh viên" }
+  { href: "/student/notifications", label: "Thông báo" }
 ]
 
 const GV_NAV = [
@@ -29,7 +27,6 @@ const GV_NAV = [
   { href: "/teacher/tasks", label: "Bài tập" },
   { href: "/teacher/exam", label: "Thi trực tuyến" },
   { href: "/teacher/report", label: "Báo cáo và thống kê" },
-  { href: "/teacher/message", label: "Tin nhắn" },
   { href: "/teacher/notification", label: "Thông báo" },
 ];
 

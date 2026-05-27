@@ -18,8 +18,8 @@ export interface StudentProfile {
     emailtruong: string | null;
     trangthai: string | null;
     chitietsinhvien: {
-        quequan: string | null;
-        diachi: string | null;
+        diachithuongtru: string | null;
+        diachitamtru: string | null;
         sodienthoai: string | null;
         emailcanhan: string | null;
         tenphuhuynh: string | null;

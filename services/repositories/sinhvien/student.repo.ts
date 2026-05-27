@@ -15,8 +15,8 @@ export interface UpdateProfileDto {
     ngaysinh?: string | null;
     gioitinh?: 'Nam' | 'Nu' | 'Khac' | null;
     anhdaidien?: string | null;
-    quequan?: string | null;
-    diachi?: string | null;
+    diachithuongtru?: string | null;
+    diachitamtru?: string | null;
     sodienthoai?: string | null;
     emailcanhan?: string | null;
     tenphuhuynh?: string | null;
@@ -41,7 +41,7 @@ export const studentRepo = {
             .select(`
                 masv, mataikhoan, malop, hodem, ten,
                 ngaysinh, gioitinh, anhdaidien, emailtruong, trangthai,
-                quequan, diachi, sodienthoai, emailcanhan,
+                diachithuongtru, diachitamtru, sodienthoai, emailcanhan,
                 tenphuhuynh, sodienthoaiphuhuynh, cccd, ngaycapcccd,
                 noicapcccd, dantoc, tongiao
             `)
@@ -57,7 +57,7 @@ export const studentRepo = {
             .select(`
                 masv, mataikhoan, malop, hodem, ten,
                 ngaysinh, gioitinh, anhdaidien, emailtruong, trangthai,
-                quequan, diachi, sodienthoai, emailcanhan,
+                diachithuongtru, diachitamtru, sodienthoai, emailcanhan,
                 tenphuhuynh, sodienthoaiphuhuynh, cccd, ngaycapcccd,
                 noicapcccd, dantoc, tongiao, face_embedding
             `)
@@ -358,101 +358,7 @@ export const studentRepo = {
             .order('thoigiannop', { ascending: false });
     },
 
-    // ─── Tin nhắn & Cuộc trò chuyện ───────────────────────────────────────────
 
-    /** Lấy danh sách cuộc trò chuyện sinh viên đã tham gia */
-    getMemberships: async (masv: string) => {
-        const supabase = await getSupabase();
-        return await supabase
-            .from('thanhvientrochuyen')
-            .select('macuoctrochuyen, thoigianxemcuoi')
-            .eq('masv', masv);
-    },
-
-    /** Lấy danh sách cuộc trò chuyện theo id */
-    getConversations: async (conversationIds: number[]) => {
-        const supabase = await getSupabase();
-        return await supabase
-            .from('cuoctrochuyen')
-            .select('macuoctrochuyen, tieude, loai, ngaytao, maphancong')
-            .in('macuoctrochuyen', conversationIds)
-            .order('ngaytao', { ascending: false });
-    },
-
-    /** Lấy tin nhắn cuối cùng trong một cuộc trò chuyện */
-    getLastMessage: async (macuoctrochuyen: number) => {
-        const supabase = await getSupabase();
-        return await supabase
-            .from('tinnhan')
-            .select('noidung, ngaytao, masvgui, magvgui')
-            .eq('macuoctrochuyen', macuoctrochuyen)
-            .order('ngaytao', { ascending: false })
-            .limit(1)
-            .maybeSingle();
-    },
-
-    /** Đếm tin nhắn chưa đọc trong một cuộc trò chuyện */
-    countUnreadMessages: async (macuoctrochuyen: number, since: string) => {
-        const supabase = await getSupabase();
-        return await supabase
-            .from('tinnhan')
-            .select('matinnhan', { count: 'exact', head: true })
-            .eq('macuoctrochuyen', macuoctrochuyen)
-            .gt('ngaytao', since);
-    },
-
-    /** Kiểm tra sinh viên có thuộc cuộc trò chuyện không */
-    checkMembership: async (masv: string, macuoctrochuyen: number) => {
-        const supabase = await getSupabase();
-        return await supabase
-            .from('thanhvientrochuyen')
-            .select('masv')
-            .eq('macuoctrochuyen', macuoctrochuyen)
-            .eq('masv', masv)
-            .maybeSingle();
-    },
-
-    /** Cập nhật thời gian xem cuối của sinh viên trong cuộc trò chuyện */
-    updateXemCuoi: async (masv: string, macuoctrochuyen: number, thoigian: string) => {
-        const supabase = await getSupabase();
-        return await supabase
-            .from('thanhvientrochuyen')
-            .update({ thoigianxemcuoi: thoigian })
-            .eq('macuoctrochuyen', macuoctrochuyen)
-            .eq('masv', masv);
-    },
-
-    /** Lấy tin nhắn trong cuộc trò chuyện */
-    getMessages: async (macuoctrochuyen: number, limit = 100) => {
-        const supabase = await getSupabase();
-        return await supabase
-            .from('tinnhan')
-            .select(`
-                matinnhan, noidung, filedinh, dachinh, ngaytao, masvgui, magvgui
-            `)
-            .eq('macuoctrochuyen', macuoctrochuyen)
-            .order('ngaytao', { ascending: true })
-            .limit(limit);
-    },
-
-    /** Gửi tin nhắn */
-    insertMessage: async (payload: {
-        macuoctrochuyen: number;
-        masvgui: string;
-        noidung: string;
-        filedinh?: string | null;
-        dachinh?: boolean;
-    }) => {
-        const supabase = await getSupabase();
-        return await supabase
-            .from('tinnhan')
-            .insert({
-                ...payload,
-                dachinh: payload.dachinh ?? false,
-            })
-            .select()
-            .single();
-    },
 
     // ─── Thông báo ─────────────────────────────────────────────────────────────
 
@@ -474,20 +380,34 @@ export const studentRepo = {
     /** Lấy trạng thái đã đọc thông báo */
     getDaDocThongBao: async (masv: string, mathongbaoIds: number[]) => {
         const supabase = await getSupabase();
-        return await supabase
-            .from('thongbaodadocsv')
-            .select('mathongbao, dadoc')
+        const { data: sv } = await supabase
+            .from('sinhvien')
+            .select('mataikhoan')
             .eq('masv', masv)
+            .single();
+        const mataikhoan = sv?.mataikhoan;
+        if (!mataikhoan) return { data: [], error: null };
+        return await supabase
+            .from('thongbaodadoc')
+            .select('mathongbao, dadoc')
+            .eq('mataikhoan', mataikhoan)
             .in('mathongbao', mathongbaoIds);
     },
 
     /** Kiểm tra tồn tại bản ghi đã đọc */
     checkDaDoc: async (masv: string, mathongbao: number) => {
         const supabase = await getSupabase();
-        return await supabase
-            .from('thongbaodadocsv')
-            .select('mathongbao')
+        const { data: sv } = await supabase
+            .from('sinhvien')
+            .select('mataikhoan')
             .eq('masv', masv)
+            .single();
+        const mataikhoan = sv?.mataikhoan;
+        if (!mataikhoan) return { data: null, error: new Error('Student not found') };
+        return await supabase
+            .from('thongbaodadoc')
+            .select('mathongbao')
+            .eq('mataikhoan', mataikhoan)
             .eq('mathongbao', mathongbao)
             .maybeSingle();
     },
@@ -495,19 +415,33 @@ export const studentRepo = {
     /** Cập nhật trạng thái đã đọc thông báo */
     updateDaDoc: async (masv: string, mathongbao: number, thoigian: string) => {
         const supabase = await getSupabase();
-        return await supabase
-            .from('thongbaodadocsv')
-            .update({ dadoc: true, thoigiandoc: thoigian })
+        const { data: sv } = await supabase
+            .from('sinhvien')
+            .select('mataikhoan')
             .eq('masv', masv)
+            .single();
+        const mataikhoan = sv?.mataikhoan;
+        if (!mataikhoan) return { data: null, error: new Error('Student not found') };
+        return await supabase
+            .from('thongbaodadoc')
+            .update({ dadoc: true, thoigiandoc: thoigian })
+            .eq('mataikhoan', mataikhoan)
             .eq('mathongbao', mathongbao);
     },
 
     /** Thêm bản ghi đã đọc thông báo */
     insertDaDoc: async (masv: string, mathongbao: number, thoigian: string) => {
         const supabase = await getSupabase();
+        const { data: sv } = await supabase
+            .from('sinhvien')
+            .select('mataikhoan')
+            .eq('masv', masv)
+            .single();
+        const mataikhoan = sv?.mataikhoan;
+        if (!mataikhoan) return { data: null, error: new Error('Student not found') };
         return await supabase
-            .from('thongbaodadocsv')
-            .insert({ mathongbao, masv, dadoc: true, thoigiandoc: thoigian });
+            .from('thongbaodadoc')
+            .insert({ mathongbao, mataikhoan, dadoc: true, thoigiandoc: thoigian });
     },
 
     // ─── Lịch sử điểm danh ────────────────────────────────────────────────────

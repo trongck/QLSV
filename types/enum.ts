@@ -111,10 +111,7 @@ export enum DoiTuongThongBao {
   GiangVien = "GiangVien",
 }
 
-export enum LoaiCuocTroChuyen {
-  CaNhan = "CaNhan",
-  Nhom = "Nhom",
-}
+
 
 export enum LoaiPhongHoc {
   Lythuyet = "Lythuyet",

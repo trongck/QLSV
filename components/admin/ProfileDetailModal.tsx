@@ -116,10 +116,10 @@ export function ProfileDetailModal({
               style={{ gridColumn: "span 2" }}
             >
               <span className="text-[11px] font-semibold text-[#8B6F5F] uppercase tracking-wider">
-                Quê quán (Hộ khẩu thường trú)
+                Địa chỉ thường trú
               </span>
               <span className="text-[13px] font-semibold text-[#2D1B14]">
-                {detail.quequan || "—"}
+                {detail.diachithuongtru || "—"}
               </span>
             </div>
           </div>
@@ -169,7 +169,7 @@ export function ProfileDetailModal({
                 Địa chỉ tạm trú hiện tại
               </span>
               <span className="text-[13px] font-semibold text-[#2D1B14]">
-                {detail.diachi || "—"}
+                {detail.diachitamtru || "—"}
               </span>
             </div>
           </div>

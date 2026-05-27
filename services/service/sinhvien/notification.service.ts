@@ -27,7 +27,7 @@ export const notificationSVService = {
         if (svError || !sv) throw new Error('Không tìm thấy thông tin sinh viên');
         const { masv, malop } = sv;
 
-        const { data, error } = await notificationRepo.getNotificationsForStudent(masv, malop);
+        const { data, error } = await notificationRepo.getNotificationsForStudent(mataikhoan, malop);
         if (error) throw new Error(error.message);
 
         const now = new Date();
@@ -53,7 +53,7 @@ export const notificationSVService = {
         // Đánh dấu "đã cập nhật" và "đã đọc" cho mỗi thông báo
         const result = filteredData.map((tb: any) => {
             const readRecord = Array.isArray(tb.thongbaodadoc)
-                ? tb.thongbaodadoc.find((r: any) => r.mataikhoan === masv)
+                ? tb.thongbaodadoc.find((r: any) => r.mataikhoan === mataikhoan)
                 : null;
 
             return {
@@ -90,7 +90,7 @@ export const notificationSVService = {
         const { data: sv, error: svError } = await studentRepo.getBasicInfoByAccount(mataikhoan);
         if (svError || !sv) throw new Error('Không tìm thấy thông tin sinh viên');
 
-        const { error } = await notificationRepo.markAsRead(mathongbao, sv.masv);
+        const { error } = await notificationRepo.markAsRead(mathongbao, mataikhoan);
         if (error) throw new Error(error.message);
         return { success: true };
     },
@@ -103,7 +103,7 @@ export const notificationSVService = {
         const { data: sv, error: svError } = await studentRepo.getBasicInfoByAccount(mataikhoan);
         if (svError || !sv) throw new Error('Không tìm thấy thông tin sinh viên');
 
-        const { error } = await notificationRepo.markAllAsRead(sv.masv, sv.malop);
+        const { error } = await notificationRepo.markAllAsRead(mataikhoan, sv.malop);
         if (error) throw new Error(error.message);
         return { success: true };
     },

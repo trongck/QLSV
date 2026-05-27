@@ -23,8 +23,8 @@ export const sinhVienService = {
             ...data,
             hoten,
             chitietsinhvien: {
-                quequan: data.quequan,
-                diachi: data.diachi,
+                diachithuongtru: data.diachithuongtru,
+                diachitamtru: data.diachitamtru,
                 sodienthoai: data.sodienthoai,
                 emailcanhan: data.emailcanhan,
                 tenphuhuynh: data.tenphuhuynh,
@@ -69,8 +69,8 @@ export const sinhVienService = {
 
         if ('ngaysinh' in body) dto.ngaysinh = (body.ngaysinh as string | null) ?? null;
         if ('anhdaidien' in body) dto.anhdaidien = ((body.anhdaidien as string)?.trim()) || null;
-        if ('quequan' in body) dto.quequan = ((body.quequan as string)?.trim()) || null;
-        if ('diachi' in body) dto.diachi = ((body.diachi as string)?.trim()) || null;
+        if ('diachithuongtru' in body) dto.diachithuongtru = ((body.diachithuongtru as string)?.trim()) || null;
+        if ('diachitamtru' in body) dto.diachitamtru = ((body.diachitamtru as string)?.trim()) || null;
         if ('sodienthoai' in body) dto.sodienthoai = ((body.sodienthoai as string)?.trim()) || null;
         if ('emailcanhan' in body) dto.emailcanhan = ((body.emailcanhan as string)?.trim()) || null;
         if ('tenphuhuynh' in body) dto.tenphuhuynh = ((body.tenphuhuynh as string)?.trim()) || null;

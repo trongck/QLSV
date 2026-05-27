@@ -21,8 +21,8 @@ interface ProfileData {
   anhdaidien: string | null;
   emailtruong: string | null;
   trangthai: string | null;
-  quequan: string | null;
-  diachi: string | null;
+  diachithuongtru: string | null;
+  diachitamtru: string | null;
   sodienthoai: string | null;
   emailcanhan: string | null;
   tenphuhuynh: string | null;
@@ -60,11 +60,11 @@ export function StudentProfileModal({ isOpen, onClose }: ProfileModalProps) {
   const [hoten, setHoten] = useState("");
   const [emailcanhan, setEmailcanhan] = useState("");
   const [sodienthoai, setSodienthoai] = useState("");
-  const [diachi, setDiachi] = useState("");
+  const [diachitamtru, setDiachitamtru] = useState("");
   const [ngaysinh, setNgaysinh] = useState("");
   const [gioitinh, setGioitinh] = useState<"Nam" | "Nu" | "Khac">("Nam");
   const [anhdaidien, setAnhdaidien] = useState("");
-  const [quequan, setQuequan] = useState("");
+  const [diachithuongtru, setDiachithuongtru] = useState("");
   const [tenphuhuynh, setTenphuhuynh] = useState("");
   const [sodienthoaiphuhuynh, setSodienthoaiphuhuynh] = useState("");
   const [cccd, setCccd] = useState("");
@@ -90,11 +90,11 @@ export function StudentProfileModal({ isOpen, onClose }: ProfileModalProps) {
           setHoten(p.hoten || "");
           setEmailcanhan(p.emailcanhan || "");
           setSodienthoai(p.sodienthoai || "");
-          setDiachi(p.diachi || "");
+          setDiachitamtru(p.diachitamtru || "");
           setNgaysinh(p.ngaysinh ? p.ngaysinh.split("T")[0] : "");
           setGioitinh(p.gioitinh || "Nam");
           setAnhdaidien(p.anhdaidien || "");
-          setQuequan(p.quequan || "");
+          setDiachithuongtru(p.diachithuongtru || "");
           setTenphuhuynh(p.tenphuhuynh || "");
           setSodienthoaiphuhuynh(p.sodienthoaiphuhuynh || "");
           setCccd(p.cccd || "");
@@ -128,8 +128,8 @@ export function StudentProfileModal({ isOpen, onClose }: ProfileModalProps) {
           ngaysinh: ngaysinh || null,
           gioitinh,
           anhdaidien,
-          quequan,
-          diachi,
+          diachithuongtru,
+          diachitamtru,
           sodienthoai,
           emailcanhan,
           tenphuhuynh,
@@ -152,11 +152,11 @@ export function StudentProfileModal({ isOpen, onClose }: ProfileModalProps) {
             hoten,
             emailcanhan,
             sodienthoai,
-            diachi,
+            diachitamtru,
             ngaysinh,
             gioitinh,
             anhdaidien,
-            quequan,
+            diachithuongtru,
             tenphuhuynh,
             sodienthoaiphuhuynh,
             cccd,
@@ -461,19 +461,19 @@ export function StudentProfileModal({ isOpen, onClose }: ProfileModalProps) {
                       )}
                     </div>
 
-                    {/* Quê quán */}
+                    {/* Địa chỉ thường trú */}
                     <div className="space-y-1">
-                      <label className="text-xs font-semibold text-[#8B6F5F]">Quê quán</label>
+                      <label className="text-xs font-semibold text-[#8B6F5F]">Địa chỉ thường trú</label>
                       {isEditing ? (
                         <input
                           type="text"
-                          value={quequan}
-                          onChange={(e) => setQuequan(e.target.value)}
+                          value={diachithuongtru}
+                          onChange={(e) => setDiachithuongtru(e.target.value)}
                           className="w-full text-sm p-2 rounded-lg border border-[#EAD9CB] bg-white text-[#2D1B14] focus:outline-none focus:border-[#C25450]"
                         />
                       ) : (
                         <div className="text-sm font-medium text-[#2D1B14] bg-[#FAF6F2] p-2 rounded-lg border border-transparent">
-                          {quequan || "—"}
+                          {diachithuongtru || "—"}
                         </div>
                       )}
                     </div>
@@ -512,22 +512,22 @@ export function StudentProfileModal({ isOpen, onClose }: ProfileModalProps) {
                       </div>
                     </div>
 
-                    {/* Địa chỉ thường trú */}
+                    {/* Địa chỉ tạm trú */}
                     <div className="sm:col-span-2 space-y-1">
                       <label className="text-xs font-semibold text-[#8B6F5F] flex items-center gap-1">
                         <MapPin size={12} />
-                        Địa chỉ thường trú
+                        Địa chỉ tạm trú
                       </label>
                       {isEditing ? (
                         <input
                           type="text"
-                          value={diachi}
-                          onChange={(e) => setDiachi(e.target.value)}
+                          value={diachitamtru}
+                          onChange={(e) => setDiachitamtru(e.target.value)}
                           className="w-full text-sm p-2 rounded-lg border border-[#EAD9CB] bg-white text-[#2D1B14] focus:outline-none focus:border-[#C25450]"
                         />
                       ) : (
                         <div className="text-sm font-medium text-[#2D1B14] bg-[#FAF6F2] p-2 rounded-lg border border-transparent">
-                          {diachi || "—"}
+                          {diachitamtru || "—"}
                         </div>
                       )}
                     </div>

@@ -1,7 +1,7 @@
 import {
   VaiTro, TrangThaiTaiKhoan, GioiTinh, TrangThaiSinhVien, TrangThaiSinhVienMonHoc, TrangThaiBuoiHoc,
   TrangThaiDiemDanh, PhuongThucDiemDanh, TrangThaiDonXinNghi, LoaiBaiTap, LoaiTaiLieu, LoaiCauHoi, TrangThaiKetQuaThi,
-  LoaiDiem, KetQuaDiem, LoaiThongBao, DoiTuongThongBao, LoaiCuocTroChuyen, LoaiPhongHoc
+  LoaiDiem, KetQuaDiem, LoaiThongBao, DoiTuongThongBao, LoaiPhongHoc
 } from "./enum";
 export * from "./enum";
 
@@ -72,8 +72,8 @@ export interface SinhVien {
   emailtruong: string | null;
   trangthai: TrangThaiSinhVien;
   // Merged from chitietsinhvien
-  quequan: string | null;
-  diachi: string | null;
+  diachithuongtru: string | null;
+  diachitamtru: string | null;
   sodienthoai: string | null;
   emailcanhan: string | null;
   tenphuhuynh: string | null;
@@ -358,7 +358,7 @@ export interface ThongBao {
   ngaycapnhat: Date;
 }
 
-/** [FIX-13] Unified read-status table — replaces ThongBaoDaDocSV + ThongBaoDaDocGV */
+
 export interface ThongBaoDaDoc {
   mathongbao: number;
   mataikhoan: string;
@@ -366,56 +366,8 @@ export interface ThongBaoDaDoc {
   thoigiandoc: Date | null;
 }
 
-// ─── Nhắn Tin ─────────────────────────────────────────────────────────────────
 
-export interface CuocTroChuyen {
-  macuoctrochuyen: number;
-  maphancong: number | null;
-  tieude: string | null;
-  loai: LoaiCuocTroChuyen; // CaNhan | Nhom
-  ngaytao: Date;
-  nguoidaxoa: string[];
-}
 
-/** [FIX-11] Unified — replaces masv/magv with mataikhoan, PK added */
-export interface ThanhVienTroChuyen {
-  macuoctrochuyen: number;
-  mataikhoan: string;
-  vaitro: string | null;
-  ngaythamgia: Date;
-  thoigianxemcuoi: Date | null;
-}
-
-/** [FIX-12] Unified sender — replaces masvgui/magvgui */
-export interface TinNhan {
-  matinnhan: number;
-  macuoctrochuyen: number;
-  mataikhoangui: string;
-  noidung: string;
-  filedinh: string | null;
-  dachinh: boolean;
-  ngaytao: Date;
-  ngaycapnhat: Date;
-  nguoidaxoa: string[];
-}
-
-// ─── Nhật Ký ──────────────────────────────────────────────────────────────────
-
-export interface NhatKy {
-  manhatky: number;
-  masv: string | null;
-  magv: string | null;
-  tieude: string | null;
-  noidung: string;
-  tamtrang: 1 | 2 | 3 | 4 | 5 | null;
-  maphancong: number | null;
-  ngaytao: Date;
-  ngaycapnhat: Date;
-}
-
-// ─── Thống Kê ─────────────────────────────────────────────────────────────────
-
-/** View-backed statistics (from vthongke_sinhvien VIEW) */
 export interface ThongKeSinhVien {
   masv: string;
   mahocky: number;

@@ -19,8 +19,8 @@ export interface SinhVienRow {
   sodienthoai?: string | null;
   emailcanhan?: string | null;
   cccd?: string | null;
-  quequan?: string | null;
-  diachi?: string | null;
+  diachithuongtru?: string | null;
+  diachitamtru?: string | null;
   tenphuhuynh?: string | null;
   sodienthoaiphuhuynh?: string | null;
   ngaycapcccd?: string | null;

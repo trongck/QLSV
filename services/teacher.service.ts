@@ -1207,8 +1207,8 @@ export const giangVienService = {
           emailcanhan,
           tenphuhuynh,
           sodienthoaiphuhuynh,
-          diachi,
-          quequan
+          diachitamtru,
+          diachithuongtru
         )
       `)
       .eq("maphancong", maphancong)
@@ -1229,8 +1229,8 @@ export const giangVienService = {
         parent: sv ? `${sv.tenphuhuynh ?? "Chưa rõ"} - ${sv.sodienthoaiphuhuynh ?? "Chưa rõ"}` : "—",
         parentName: sv?.tenphuhuynh ?? "",
         parentPhone: sv?.sodienthoaiphuhuynh ?? "",
-        address: sv?.diachi ?? sv?.quequan ?? "—",
-        rawAddress: sv?.diachi ?? ""
+        address: sv?.diachithuongtru ?? sv?.diachitamtru ?? "—",
+        rawAddress: sv?.diachithuongtru ?? ""
       };
     });
   },
@@ -1272,7 +1272,7 @@ export const giangVienService = {
         sodienthoai: updateData.phone,
         tenphuhuynh: updateData.parentName,
         sodienthoaiphuhuynh: updateData.parentPhone,
-        diachi: updateData.address
+        diachithuongtru: updateData.address
       })
       .eq("masv", masv);
 
