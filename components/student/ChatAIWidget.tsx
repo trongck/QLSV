@@ -14,7 +14,15 @@ interface ChatMessage {
 // ─── Markdown Renderer đơn giản ───────────────────────────────────────────────
 
 function renderMarkdown(text: string): string {
-  return text
+  // Escape HTML characters to prevent XSS
+  const escaped = text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+
+  return escaped
     // Bold **text**
     .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
     // Italic *text*

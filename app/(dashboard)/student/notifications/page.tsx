@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import {
   useStudentNotifications,
   Notification,
@@ -32,14 +32,17 @@ export default function StudentNotificationsPage() {
   const [activeTab, setActiveTab] = useState<string>("Tất cả");
   const [selectedNotification, setSelectedNotification] = useState<Notification | null>(null);
 
+  const hasProcessedRef = useRef(false);
+
   // Tự động mở thông báo khi được điều hướng từ Quả chuông Dashboard
   useEffect(() => {
-    if (notifications.length > 0) {
+    if (notifications.length > 0 && !hasProcessedRef.current) {
       const params = new URLSearchParams(window.location.search);
       const selectId = params.get("id");
       if (selectId) {
         const target = notifications.find((n) => n.mathongbao === Number(selectId));
         if (target) {
+          hasProcessedRef.current = true;
           setSelectedNotification(target);
           if (!target.dadoc) {
             markAsRead(target.mathongbao);
@@ -49,7 +52,7 @@ export default function StudentNotificationsPage() {
         }
       }
     }
-  }, [notifications]);
+  }, [notifications, markAsRead]);
 
   // ── Filter ──────────────────────────────────────────────────────────────────
   const tabs = ["Tất cả", ...Object.values(LOAI_LABEL)];

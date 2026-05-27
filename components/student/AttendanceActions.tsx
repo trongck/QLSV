@@ -379,7 +379,8 @@ function LeaveRequestModal({ onClose }: { onClose: () => void }) {
   const [selectedPC, setSelectedPC] = useState<number | "">("");
   const [selectedDate, setSelectedDate] = useState("");
   const [reason, setReason] = useState("");
-  const [evidence, setEvidence] = useState(""); // base64 data url
+  const [evidence, setEvidence] = useState(""); // preview URL (base64 or local object URL)
+  const [selectedFile, setSelectedFile] = useState<File | null>(null); // actual file for upload
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
@@ -410,10 +411,11 @@ function LeaveRequestModal({ onClose }: { onClose: () => void }) {
       alert("Vui lòng chọn hình ảnh hợp lệ (PNG, JPG, WEBP)");
       return;
     }
-    if (file.size > 3 * 1024 * 1024) {
-      alert("Dung lượng tối đa là 3MB");
+    if (file.size > 5 * 1024 * 1024) {
+      alert("Dung lượng quá lớn. Dung lượng tối đa là 5MB");
       return;
     }
+    setSelectedFile(file);
     const reader = new FileReader();
     reader.onload = (event) => {
       setEvidence(event.target?.result as string);
@@ -452,13 +454,28 @@ function LeaveRequestModal({ onClose }: { onClose: () => void }) {
     setSubmitting(true);
     setMessage(null);
     try {
+      let uploadedUrl = null;
+      if (selectedFile) {
+        const formData = new FormData();
+        formData.append("file", selectedFile);
+        const uploadRes = await apiFetch("/api/student/upload", {
+          method: "POST",
+          body: formData
+        });
+        const uploadJson = await uploadRes.json();
+        if (!uploadRes.ok || !uploadJson.success) {
+          throw new Error(uploadJson.message || "Tải ảnh minh chứng lên thất bại");
+        }
+        uploadedUrl = uploadJson.url;
+      }
+
       const res = await apiFetch("/api/student/attendance/leave", {
         method: "POST",
         body: JSON.stringify({
           malichhoc: schedule.malichhoc,
           ngayhoc: selectedDate,
           lydo: reason,
-          minhchung: evidence || null
+          minhchung: uploadedUrl || null
         })
       });
       const json = await res.json();
@@ -466,6 +483,7 @@ function LeaveRequestModal({ onClose }: { onClose: () => void }) {
         setMessage({ type: "success", text: "Đơn xin nghỉ phép đã được gửi thành công!" });
         setReason("");
         setEvidence("");
+        setSelectedFile(null);
         setSelectedPC("");
         setSelectedDate("");
         loadData();
@@ -476,8 +494,8 @@ function LeaveRequestModal({ onClose }: { onClose: () => void }) {
       } else {
         setMessage({ type: "error", text: json.message || "Gửi đơn xin nghỉ phép thất bại" });
       }
-    } catch {
-      setMessage({ type: "error", text: "Có lỗi xảy ra, vui lòng thử lại sau" });
+    } catch (err: any) {
+      setMessage({ type: "error", text: err.message || "Có lỗi xảy ra, vui lòng thử lại sau" });
     } finally {
       setSubmitting(false);
     }
@@ -617,7 +635,7 @@ function LeaveRequestModal({ onClose }: { onClose: () => void }) {
                   <div className="flex flex-col items-center gap-1 text-gray-400">
                     <Upload size={20} className="text-gray-300" />
                     <span className="text-xs font-medium text-gray-500">
-                      {evidence ? "✓ Đã chọn ảnh minh chứng" : "Tải ảnh từ thiết bị (Tối đa 3MB)"}
+                      {evidence ? "✓ Đã chọn ảnh minh chứng" : "Tải ảnh từ thiết bị (Tối đa 5MB)"}
                     </span>
                   </div>
                 </div>
@@ -626,7 +644,7 @@ function LeaveRequestModal({ onClose }: { onClose: () => void }) {
                     <img src={evidence} alt="Minh chứng" className="h-16 w-16 object-cover rounded-lg border border-gray-100" />
                     <button 
                       type="button" 
-                      onClick={() => setEvidence("")}
+                      onClick={() => { setEvidence(""); setSelectedFile(null); }}
                       className="text-xs text-red-500 font-semibold hover:underline px-3 py-1"
                     >
                       Xoá ảnh

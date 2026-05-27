@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/hooks/auth/useAuth";
 import { useRouter } from "next/navigation";
 import { VaiTro } from "@/types";
@@ -17,13 +17,14 @@ import { xepLoaiStyle, diem10Color, loaiLabel, fmt } from "@/lib/utils/grades.ut
 
 export default function StudentGradesPage() {
   const { user } = useAuth();
-  const [mahocky, setMahocky] = useState<string>("all");
   const {
+    mahocky,
+    setMahocky,
     grades,
     gpaView,
     hocKyList,
     loading,
-  } = useStudentGrades(mahocky);
+  } = useStudentGrades();
   const [tab, setTab] = useState<"chitiet" | "tongket">("chitiet");
 
   if (!user) return null;
@@ -132,7 +133,7 @@ export default function StudentGradesPage() {
           <GpaCard
             label="Tín chỉ tích lũy đạt"
             value={loading ? "…" : String(gpaView?.sotinchi_tich_luy_dat ?? 0)}
-            sub={`/ ${gpaView?.tong_sotinchi_da_hoc ?? 0} TC đã học`}
+            
           />
           <GpaCard
             label="TC kỳ hiện tại"

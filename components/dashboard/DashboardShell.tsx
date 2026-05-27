@@ -17,6 +17,11 @@ interface DashboardShellProps {
   children: React.ReactNode;
   pageTitle: string;
   fullWidth?: boolean;
+  studentBellData?: {
+    notifications: any[];
+    unreadCount: number;
+    onMarkAllRead: () => Promise<void>;
+  };
 }
 
 // ─── Shared desktop profile dropdown (teacher & admin) ────────────────────────
@@ -93,7 +98,7 @@ function DesktopProfileDropdown({
 
 // ─── Main shell ───────────────────────────────────────────────────────────────
 
-export function DashboardShell({ children, pageTitle, fullWidth }: DashboardShellProps) {
+export function DashboardShell({ children, pageTitle, fullWidth, studentBellData }: DashboardShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [changePassOpen, setChangePassOpen] = useState(false);
@@ -107,31 +112,41 @@ export function DashboardShell({ children, pageTitle, fullWidth }: DashboardShel
   const isAdmin = user?.vaitro === VaiTro.Admin;
 
   // ── Student notifications ──────────────────────────────────────────────────
-  const [bellNotifications, setBellNotifications] = useState<any[]>([]);
-  const [unreadBellCount, setUnreadBellCount] = useState(0);
+  const [localBellNotifications, setLocalBellNotifications] = useState<any[]>([]);
+  const [localUnreadBellCount, setLocalUnreadBellCount] = useState(0);
 
   useEffect(() => {
-    if (isStudent && user) {
+    if (isStudent && user && !studentBellData) {
       fetchDashboardAll()
         .then(({ bellNotifications: bells, unreadCount }) => {
-          setBellNotifications(bells);
-          setUnreadBellCount(unreadCount);
+          setLocalBellNotifications(bells);
+          setLocalUnreadBellCount(unreadCount);
         })
         .catch(err => console.error("Failed to fetch student notifications:", err));
     }
-  }, [isStudent, user]);
+  }, [isStudent, user, studentBellData]);
 
   const handleStudentMarkAllRead = async () => {
+    if (studentBellData) {
+      await studentBellData.onMarkAllRead();
+      return;
+    }
     try {
-      const res = await fetch("/api/student/notifications/unread", { method: "PUT" });
+      const res = await apiFetch("/api/student/notifications", {
+        method: "PATCH",
+        body: JSON.stringify({ all: true }),
+      });
       if (res.ok) {
-        setBellNotifications(prev => prev.map(n => ({ ...n, dadoc: true })));
-        setUnreadBellCount(0);
+        setLocalBellNotifications(prev => prev.map(n => ({ ...n, dadoc: true })));
+        setLocalUnreadBellCount(0);
       }
     } catch (err) {
       console.error(err);
     }
   };
+
+  const bellNotifications = studentBellData ? studentBellData.notifications : localBellNotifications;
+  const unreadBellCount = studentBellData ? studentBellData.unreadCount : localUnreadBellCount;
 
   // ── Teacher notifications ──────────────────────────────────────────────────
   const [teacherBells, setTeacherBells] = useState<any[]>([]);

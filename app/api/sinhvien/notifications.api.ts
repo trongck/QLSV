@@ -10,7 +10,7 @@ export async function fetchNotifications(): Promise<{
 
 export async function markAsRead(mathongbao: number): Promise<{ success: boolean }> {
   const res = await apiFetch("/api/student/notifications", {
-    method: "PUT",
+    method: "PATCH",
     body: JSON.stringify({ mathongbao }),
   });
   if (!res.ok) throw new Error(`Lỗi đánh dấu đã đọc (${res.status})`);
@@ -18,7 +18,10 @@ export async function markAsRead(mathongbao: number): Promise<{ success: boolean
 }
 
 export async function markAllAsRead(): Promise<{ success: boolean }> {
-  const res = await apiFetch("/api/student/notifications/unread", { method: "PUT" });
+  const res = await apiFetch("/api/student/notifications", {
+    method: "PATCH",
+    body: JSON.stringify({ all: true }),
+  });
   if (!res.ok) throw new Error(`Lỗi đánh dấu tất cả đã đọc (${res.status})`);
   return res.json();
 }

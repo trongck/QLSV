@@ -21,30 +21,33 @@ export default function AttendancePage() {
   const [activeTab, setActiveTab] = useState<"history" | "stats">("history");
   const [filter, setFilter] = useState<{ type: "month" | "semester"; mahocky?: number; maphancong?: number }>({ type: "month" });
 
-  const loadFilteredHistory = useCallback((f: typeof filter) => {
+  const loadFilteredHistory = useCallback(() => {
     const now = new Date();
     const opts: any = {};
-    if (f.type === "month") {
+    if (filter.type === "month") {
       opts.month = now.getMonth() + 1;
       opts.year = now.getFullYear();
     }
-    if (f.mahocky) opts.mahocky = f.mahocky;
-    if (f.maphancong) opts.maphancong = f.maphancong;
+    if (filter.mahocky) opts.mahocky = filter.mahocky;
+    if (filter.maphancong) opts.maphancong = filter.maphancong;
     fetchHistory(opts);
-  }, [fetchHistory]);
+  }, [fetchHistory, filter]);
 
   useEffect(() => {
-    loadFilteredHistory(filter);
-    fetchStats();
-  }, [loadFilteredHistory, fetchStats, filter]);
+    loadFilteredHistory();
+  }, [loadFilteredHistory]);
+
+  useEffect(() => {
+    fetchStats(filter.mahocky);
+  }, [fetchStats, filter.mahocky]);
 
   const handleFilterChange = (f: typeof filter) => {
     setFilter(f);
   };
 
   const handleCheckedIn = () => {
-    loadFilteredHistory(filter);
-    fetchStats();
+    loadFilteredHistory();
+    fetchStats(filter.mahocky);
   };
 
   // Tổng hợp số liệu

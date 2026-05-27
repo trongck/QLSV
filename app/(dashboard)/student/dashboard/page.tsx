@@ -10,6 +10,9 @@ export default function StudentDashboard() {
   const {
     data,
     fetching,
+    bellNotifications,
+    unreadBellCount,
+    markAllRead,
   } = useStudentDashboard();
 
   if (!user) return null;

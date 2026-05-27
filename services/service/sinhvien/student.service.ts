@@ -122,7 +122,13 @@ export const sinhVienService = {
         ]);
 
         const gpaView = report.gpaView;
-        const diemGanDay = (report.grades ?? []).slice(0, 6).map((g: any) => {
+        const activeHocKy = (report.hocKyList ?? []).find((hk: any) => hk.danghieuluc);
+        const activeMahocky = activeHocKy ? activeHocKy.mahocky : null;
+        const currentSemesterGrades = activeMahocky
+            ? (report.grades ?? []).filter((g: any) => g.mahocky === activeMahocky)
+            : (report.grades ?? []);
+
+        const diemGanDay = currentSemesterGrades.map((g: any) => {
             const cc = g.diemThanhPhan.find((dt: any) => dt.loai === "ChuyenCan")?.giatri;
             const gk = g.diemThanhPhan.find((dt: any) => dt.loai === "GiuaKy")?.giatri;
             const ck = g.diemThanhPhan.find((dt: any) => dt.loai === "CuoiKy")?.giatri;
@@ -250,12 +256,30 @@ export const sinhVienService = {
     },
 
     async getStudentGradesReport(mataikhoan: string, mahockyParam: string | null) {
-        const isAll = !mahockyParam || mahockyParam === "all";
-
         // 1. Lấy profile/masv
         const { data: sv, error: svError } = await studentRepo.getBasicInfoByAccount(mataikhoan);
         if (svError || !sv) throw new Error("Không tìm thấy sinh viên.");
         const masv = sv.masv;
+
+        // Lấy danh sách học kỳ trước để phục vụ việc xác định học kỳ mặc định
+        const { data: dsHocKy } = await studentRepo.getHocKyList();
+        const hocKyList = dsHocKy ?? [];
+
+        let mahocky: number | null = null;
+        let isAll = false;
+
+        if (mahockyParam === "all") {
+            isAll = true;
+        } else if (mahockyParam && mahockyParam !== "") {
+            mahocky = Number(mahockyParam);
+        } else {
+            const active = hocKyList.find(hk => hk.danghieuluc);
+            if (active) {
+                mahocky = active.mahocky;
+            } else {
+                isAll = true;
+            }
+        }
 
         // 2. Fetch profile đầy đủ để lấy email, lớp (để tương thích hoàn toàn)
         const { data: svFullData } = await studentRepo.getProfileByAccount(mataikhoan);
@@ -400,9 +424,6 @@ export const sinhVienService = {
         };
 
         // 4. Danh sách học kỳ
-        const { data: dsHocKy } = await studentRepo.getHocKyList();
-        const hocKyList = dsHocKy ?? [];
-        const mahocky = isAll ? null : Number(mahockyParam);
         const hocKyHienTai = mahocky
             ? (hocKyList.find((hk) => hk.mahocky === mahocky) ?? null)
             : null;

@@ -43,7 +43,10 @@ export async function fetchDashboardAll(): Promise<{
 }
 
 export async function markAllNotificationsRead(): Promise<{ success: boolean }> {
-  const res = await apiFetch("/api/student/notifications/unread", { method: "PUT" });
+  const res = await apiFetch("/api/student/notifications", {
+    method: "PATCH",
+    body: JSON.stringify({ all: true }),
+  });
   if (!res.ok) throw new Error(`Lỗi đánh dấu thông báo (${res.status})`);
   return res.json();
 }

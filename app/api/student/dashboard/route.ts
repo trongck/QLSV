@@ -25,9 +25,13 @@ export async function GET(request: Request) {
       data: dashboardData
     });
   } catch (err: any) {
-    console.error("Lỗi GET /api/sinhvien/dashboard:", err.message);
+    console.error("Lỗi GET /api/sinhvien/dashboard:", err.message, err.stack);
     return NextResponse.json(
-      { error: err.message ?? "Phiên đăng nhập hết hạn hoặc không hợp lệ" },
+      {
+        error: err.message ?? "Phiên đăng nhập hết hạn hoặc không hợp lệ",
+        stack: err.stack,
+        details: err
+      },
       { status: 500 }
     );
   }

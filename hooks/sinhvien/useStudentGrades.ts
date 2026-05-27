@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { fetchGrades as fetchGradesApi } from "@/app/api/sinhvien/grades.api";
 import { useAuth } from "@/hooks/auth/useAuth";
 
@@ -46,8 +46,9 @@ export interface HocKy {
     danghieuluc: boolean;
 }
 
-export function useStudentGrades(mahocky?: number | string) {
+export function useStudentGrades() {
     const { user } = useAuth();
+    const [mahocky, setMahocky] = useState<string>("");
     const [grades, setGrades] = useState<GradeItem[]>([]);
     const [gpaView, setGpaView] = useState<GpaView | null>(null);
     const [hocKyList, setHocKyList] = useState<HocKy[]>([]);
@@ -55,7 +56,10 @@ export function useStudentGrades(mahocky?: number | string) {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
+    const lastFetchedRef = useRef<string | null>(null);
+
     const fetchGrades = useCallback(async () => {
+        if (lastFetchedRef.current === mahocky) return;
         setLoading(true);
         setError(null);
         try {
@@ -64,6 +68,12 @@ export function useStudentGrades(mahocky?: number | string) {
             setGpaView(json.gpaView ?? null);
             setHocKyList(json.hocKyList ?? []);
             setHoten(json.hoten ?? "");
+
+            const resolved = json.mahocky !== undefined && json.mahocky !== null ? String(json.mahocky) : "all";
+            lastFetchedRef.current = resolved;
+            if (mahocky !== resolved) {
+                setMahocky(resolved);
+            }
         } catch (err: any) {
             setError(err.message ?? "Lỗi tải điểm");
         } finally {
@@ -76,6 +86,8 @@ export function useStudentGrades(mahocky?: number | string) {
     }, [user, fetchGrades]);
 
     return {
+        mahocky,
+        setMahocky,
         grades,
         gpaView,
         hocKyList,

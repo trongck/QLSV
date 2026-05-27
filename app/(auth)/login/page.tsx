@@ -54,6 +54,7 @@ export default function LoginPage() {
     if (!email.trim()) errs.email = "Vui lòng nhập mã tài khoản hoặc email.";
     if (!password.trim()) errs.password = "Vui lòng nhập mật khẩu.";
     else if (password.length < 6) errs.password = "Mật khẩu tối thiểu 6 ký tự.";
+    else if (password.length > 50) errs.password = "Mật khẩu tối đa 50 ký tự.";
     setFieldErrors(errs);
     return Object.keys(errs).length === 0;
   };
@@ -217,6 +218,7 @@ export default function LoginPage() {
                   aria-describedby={fieldErrors.password ? "err-pw" : undefined}
                   aria-invalid={!!fieldErrors.password}
                   disabled={submitting}
+                  maxLength={50}
                 />
                 <button
                   type="button"
