@@ -9,13 +9,13 @@ import { NotificationBell } from "@/components/student/NotificationBell";
 // ─── Nav items per role ────────────────────────────────────────────────────────
 
 const SV_NAV = [
-  { href: "/student/dashboard", label: "Tổng quan" },
-  { href: "/student/attendance", label: "Điểm danh" },
-  { href: "/student/schedule", label: "Lịch học" },
-  { href: "/student/grades", label: "Kết quả" },
-  { href: "/student/assignments", label: "Bài tập" },
-  { href: "/student/test", label: "Bài thi" },
-  { href: "/student/notifications", label: "Thông báo" }
+  { href: "/sinhvien/dashboard", label: "Tổng quan" },
+  { href: "/sinhvien/diemdanh", label: "Điểm danh" },
+  { href: "/sinhvien/schedule", label: "Lịch học" },
+  { href: "/sinhvien/ketqua", label: "Kết quả" },
+  { href: "/sinhvien/baitap", label: "Bài tập" },
+  { href: "/sinhvien/test", label: "Bài thi" },
+  { href: "/sinhvien/notifications", label: "Thông báo" }
 ]
 
 const GV_NAV = [

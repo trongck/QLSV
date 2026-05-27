@@ -1,8 +1,21 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { fetchGrades as fetchGradesApi } from "@/app/api/sinhvien/grades.api";
 import { useAuth } from "@/hooks/auth/useAuth";
+import { apiFetch } from "@/services/service/auth/auth.service";
+
+async function fetchGradesApi(mahocky?: number | string): Promise<{
+  grades: any[];
+  gpaView: any | null;
+  hocKyList: any[];
+  hoten: string;
+  mahocky?: number | string | null;
+}> {
+  const url = mahocky ? `/api/student/grades?mahocky=${mahocky}` : "/api/student/grades";
+  const res = await apiFetch(url);
+  if (!res.ok) throw new Error(`Lỗi tải điểm (${res.status})`);
+  return res.json();
+}
 
 export interface GradeItem {
     stt: number;

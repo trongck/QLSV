@@ -6,7 +6,7 @@ import { VaiTro } from "@/types";
 const ROLE_PREFIXES = {
   [VaiTro.Admin]: "/admin",
   [VaiTro.GiangVien]: "/teacher",
-  [VaiTro.SinhVien]: "/student",
+  [VaiTro.SinhVien]: "/sinhvien",
 };
 
 export async function proxy(request: NextRequest) {
@@ -26,7 +26,7 @@ export async function proxy(request: NextRequest) {
   let requiredRole: VaiTro | null = null;
   if (pathname.startsWith("/admin")) requiredRole = VaiTro.Admin;
   else if (pathname.startsWith("/teacher")) requiredRole = VaiTro.GiangVien;
-  else if (pathname.startsWith("/student")) requiredRole = VaiTro.SinhVien;
+  else if (pathname.startsWith("/sinhvien")) requiredRole = VaiTro.SinhVien;
 
   if (!requiredRole) {
     return supabaseResponse;

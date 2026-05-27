@@ -24,6 +24,6 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ success: true, data });
     } catch (error: any) {
         const status = error.message.includes('đăng nhập') ? 401 : 500;
-        return NextResponse.json({ success: false, message: error.message, stack: error.stack }, { status });
+        return NextResponse.json({ success: false, message: error.message }, { status });
     }
 }

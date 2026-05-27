@@ -1,12 +1,34 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import {
-  fetchNotifications as fetchNotificationsApi,
-  markAsRead as markAsReadApi,
-  markAllAsRead as markAllAsReadApi
-} from "@/app/api/sinhvien/notifications.api";
 import { useAuth } from "@/hooks/auth/useAuth";
+import { apiFetch } from "@/services/service/auth/auth.service";
+
+async function fetchNotificationsApi(): Promise<{
+  success: boolean; data: any[]; unreadCount: number;
+}> {
+  const res = await apiFetch("/api/student/notifications");
+  if (!res.ok) throw new Error(`Lỗi tải thông báo (${res.status})`);
+  return res.json();
+}
+
+async function markAsReadApi(mathongbao: number): Promise<{ success: boolean }> {
+  const res = await apiFetch("/api/student/notifications", {
+    method: "PATCH",
+    body: JSON.stringify({ mathongbao }),
+  });
+  if (!res.ok) throw new Error(`Lỗi đánh dấu đã đọc (${res.status})`);
+  return res.json();
+}
+
+async function markAllAsReadApi(): Promise<{ success: boolean }> {
+  const res = await apiFetch("/api/student/notifications", {
+    method: "PATCH",
+    body: JSON.stringify({ all: true }),
+  });
+  if (!res.ok) throw new Error(`Lỗi đánh dấu tất cả đã đọc (${res.status})`);
+  return res.json();
+}
 
 export interface Notification {
   mathongbao: number;

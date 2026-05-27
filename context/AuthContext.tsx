@@ -62,7 +62,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Redirect theo vai trò — chạy bất kể remember hay không
       switch (response.user.vaitro) {
         case VaiTro.SinhVien:
-          router.push("/student/dashboard");
+          router.push("/sinhvien/dashboard");
           break;
         case VaiTro.GiangVien:
           router.push("/teacher/dashboard");

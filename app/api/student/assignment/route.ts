@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
         if (!token) throw new Error('Chưa đăng nhập');
 
         const payload = await verifyToken(token);
-        
+
         // Gọi Service lấy danh sách bài tập dựa trên mataikhoan
         const data = await sinhVienService.getAssignmentsByAccount(payload.mataikhoan);
 

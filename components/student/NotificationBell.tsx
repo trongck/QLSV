@@ -17,7 +17,7 @@ export function NotificationBell({
   onMarkAllRead,
   isOpen,
   onToggle,
-  notificationRoute = "/student/notifications",
+  notificationRoute = "/sinhvien/notifications",
 }: NotificationBellProps) {
   const router = useRouter();
 

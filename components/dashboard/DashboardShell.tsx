@@ -8,20 +8,32 @@ import { ProfileModal } from "@/components/teacher/ProfileModal";
 import { StudentProfileModal } from "@/components/student/ProfileModal";
 import { AdminProfileModal } from "@/components/admin/AdminProfileModal";
 import { ChangePasswordModal } from "@/components/dashboard/ChangePasswordModal";
-import { fetchDashboardAll } from "@/app/api/sinhvien/dashboard.api";
 import { NotificationBell } from "@/components/student/NotificationBell";
 import { ProfilePopover } from "@/components/student/ProfilePopover";
 import { apiFetch } from "@/services/service/auth/auth.service";
+
+async function fetchStudentDashboardNotifications() {
+  const res = await apiFetch("/api/student/dashboard");
+  if (!res.ok) throw new Error("Failed to fetch dashboard data");
+  const json = await res.json();
+  const dashData = json.data ?? json;
+  const rawNotifications = dashData.thongBaoGanDay ?? [];
+  const bells = rawNotifications.map((tb: any) => ({
+    mathongbao: tb.mathongbao,
+    tieude: tb.tieude,
+    noidung: tb.noidung,
+    loai: tb.loai,
+    dadoc: tb.dadoc ?? false,
+    ngaytao: tb.ngaytao,
+  }));
+  const unreadCount = bells.filter((n: any) => !n.dadoc).length;
+  return { bells, unreadCount };
+}
 
 interface DashboardShellProps {
   children: React.ReactNode;
   pageTitle: string;
   fullWidth?: boolean;
-  studentBellData?: {
-    notifications: any[];
-    unreadCount: number;
-    onMarkAllRead: () => Promise<void>;
-  };
 }
 
 // ─── Shared desktop profile dropdown (teacher & admin) ────────────────────────
@@ -98,7 +110,7 @@ function DesktopProfileDropdown({
 
 // ─── Main shell ───────────────────────────────────────────────────────────────
 
-export function DashboardShell({ children, pageTitle, fullWidth, studentBellData }: DashboardShellProps) {
+export function DashboardShell({ children, pageTitle, fullWidth }: DashboardShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [changePassOpen, setChangePassOpen] = useState(false);
@@ -112,41 +124,31 @@ export function DashboardShell({ children, pageTitle, fullWidth, studentBellData
   const isAdmin = user?.vaitro === VaiTro.Admin;
 
   // ── Student notifications ──────────────────────────────────────────────────
-  const [localBellNotifications, setLocalBellNotifications] = useState<any[]>([]);
-  const [localUnreadBellCount, setLocalUnreadBellCount] = useState(0);
+  const [bellNotifications, setBellNotifications] = useState<any[]>([]);
+  const [unreadBellCount, setUnreadBellCount] = useState(0);
 
   useEffect(() => {
-    if (isStudent && user && !studentBellData) {
-      fetchDashboardAll()
-        .then(({ bellNotifications: bells, unreadCount }) => {
-          setLocalBellNotifications(bells);
-          setLocalUnreadBellCount(unreadCount);
+    if (isStudent && user) {
+      fetchStudentDashboardNotifications()
+        .then(({ bells, unreadCount }) => {
+          setBellNotifications(bells);
+          setUnreadBellCount(unreadCount);
         })
         .catch(err => console.error("Failed to fetch student notifications:", err));
     }
-  }, [isStudent, user, studentBellData]);
+  }, [isStudent, user]);
 
   const handleStudentMarkAllRead = async () => {
-    if (studentBellData) {
-      await studentBellData.onMarkAllRead();
-      return;
-    }
     try {
-      const res = await apiFetch("/api/student/notifications", {
-        method: "PATCH",
-        body: JSON.stringify({ all: true }),
-      });
+      const res = await fetch("/api/student/notifications/unread", { method: "PUT" });
       if (res.ok) {
-        setLocalBellNotifications(prev => prev.map(n => ({ ...n, dadoc: true })));
-        setLocalUnreadBellCount(0);
+        setBellNotifications(prev => prev.map(n => ({ ...n, dadoc: true })));
+        setUnreadBellCount(0);
       }
     } catch (err) {
       console.error(err);
     }
   };
-
-  const bellNotifications = studentBellData ? studentBellData.notifications : localBellNotifications;
-  const unreadBellCount = studentBellData ? studentBellData.unreadCount : localUnreadBellCount;
 
   // ── Teacher notifications ──────────────────────────────────────────────────
   const [teacherBells, setTeacherBells] = useState<any[]>([]);
@@ -202,7 +204,7 @@ export function DashboardShell({ children, pageTitle, fullWidth, studentBellData
   // Shared topbar bell data (mobile uses student data; teacher mobile uses DashboardTopbar which only shows bell for SinhVien)
   const topbarBells = isStudent ? bellNotifications : isTeacher ? teacherBells : [];
   const topbarUnread = isStudent ? unreadBellCount : isTeacher ? teacherUnread : 0;
-  const topbarMarkAllRead = isStudent ? handleStudentMarkAllRead : isTeacher ? handleTeacherMarkAllRead : async () => {};
+  const topbarMarkAllRead = isStudent ? handleStudentMarkAllRead : isTeacher ? handleTeacherMarkAllRead : async () => { };
 
   return (
     <div className="flex min-h-screen bg-[#FFF2EB]">
