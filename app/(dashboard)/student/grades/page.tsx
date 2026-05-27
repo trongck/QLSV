@@ -16,8 +16,7 @@ import { xepLoaiStyle, diem10Color, loaiLabel, fmt } from "@/lib/utils/grades.ut
 
 
 export default function StudentGradesPage() {
-  const { user, loading: authLoading } = useAuth();
-  const router = useRouter();
+  const { user } = useAuth();
   const [mahocky, setMahocky] = useState<string>("all");
   const {
     grades,
@@ -27,12 +26,7 @@ export default function StudentGradesPage() {
   } = useStudentGrades(mahocky);
   const [tab, setTab] = useState<"chitiet" | "tongket">("chitiet");
 
-  useEffect(() => {
-    if (!authLoading && !user) router.replace("/login");
-    if (!authLoading && user && user.vaitro !== VaiTro.SinhVien) router.replace("/login");
-  }, [user, authLoading, router]);
-
-  if (authLoading || !user) return null;
+  if (!user) return null;
 
   const xl10 = xepLoaiStyle(gpaView?.xep_loai_hoc_luc ?? null);
   const xl4  = xepLoaiStyle(gpaView?.xep_loai_hoc_luc_he4 ?? null);
@@ -75,29 +69,20 @@ export default function StudentGradesPage() {
           }
         }
       `}</style>
-      <div style={{ display: "flex", flexDirection: "column", gap: 20, padding: "8px 0" }}>
+      <div className="flex flex-col gap-5 py-2">
 
         {/* ── Thông tin sinh viên ─────────────────────────────────────────── */}
-        <div style={{
-          background: "linear-gradient(135deg,#fff8f5 0%,#fff 100%)",
-          borderRadius: 20, border: "1px solid #ead9cb",
-          padding: "20px 24px", display: "flex", flexDirection: "column", gap: 16,
-        }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
-            <div style={{
-              width: 52, height: 52, borderRadius: "50%",
-              background: "linear-gradient(135deg,#c25450,#a8443f)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              flexShrink: 0, boxShadow: "0 4px 12px rgba(194,84,80,0.3)",
-            }}>
+        <div className="bg-gradient-to-br from-[#fff8f5] to-white rounded-[20px] border border-[#ead9cb] p-[20px_24px] flex flex-col gap-4">
+          <div className="flex items-center gap-3.5">
+            <div className="w-[52px] h-[52px] rounded-full bg-gradient-to-br from-[#c25450] to-[#a8443f] flex items-center justify-center shrink-0 shadow-[0_4px_12px_rgba(194,84,80,0.3)]">
               <GraduationCap size={26} color="#fff" />
             </div>
             <div>
-              <div style={{ fontSize: 18, fontWeight: 800, color: "#2d1b14", lineHeight: 1.2 }}>
+              <div className="text-[18px] font-extrabold text-[#2d1b14] leading-tight">
                 {loading ? "…" : (gpaView?.hoten ?? user.hoten ?? "—")}
               </div>
-              <div style={{ fontSize: 12, color: "#8b6f5f", marginTop: 2 }}>
-                Mã SV: <strong style={{ color: "#c25450" }}>{gpaView?.masv ?? user.maSinhVien ?? "—"}</strong>
+              <div className="text-[12px] text-[#8b6f5f] mt-0.5">
+                Mã SV: <strong className="text-[#c25450] font-bold">{gpaView?.masv ?? user.maSinhVien ?? "—"}</strong>
               </div>
             </div>
           </div>
@@ -108,19 +93,13 @@ export default function StudentGradesPage() {
         </div>
 
         {/* ── Bộ lọc học kỳ ─────────────────────────────────────────────── */}
-        <div style={{
-          display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap",
-          background: "#fff", borderRadius: 16, padding: "12px 20px", border: "1px solid #ead9cb",
-        }}>
-          <span style={{ fontSize: 13, fontWeight: 600, color: "#8b6f5f" }}>Học kỳ:</span>
+        <div className="flex items-center gap-3 flex-wrap bg-white rounded-2xl p-[12px_20px] border border-[#ead9cb]">
+          <span className="text-[13px] font-semibold text-[#8b6f5f]">Học kỳ:</span>
           <select
             id="select-hocky"
             value={mahocky}
             onChange={(e) => setMahocky(e.target.value)}
-            style={{
-              padding: "7px 14px", borderRadius: 10, border: "1px solid #ead9cb",
-              fontSize: 13, fontWeight: 600, color: "#2d1b14", background: "#fff8f5", cursor: "pointer",
-            }}
+            className="p-[7px_14px] rounded-lg border border-[#ead9cb] text-[13px] font-semibold text-[#2d1b14] bg-[#fff8f5] cursor-pointer outline-none focus:ring-2 focus:ring-red-100"
           >
             <option value="all">Tất cả học kỳ</option>
             {hocKyList.map((hk) => (
@@ -130,7 +109,7 @@ export default function StudentGradesPage() {
             ))}
           </select>
           {gpaView && (
-            <span style={{ marginLeft: "auto", fontSize: 12, color: "#8b6f5f" }}>
+            <span className="ml-auto text-[12px] text-[#8b6f5f]">
               {grades.length} môn · {gpaView.tenlop}
             </span>
           )}
@@ -168,39 +147,44 @@ export default function StudentGradesPage() {
             { label: "Xếp loại học lực (thang 10)", value: gpaView?.xep_loai_hoc_luc, style: xl10, icon: <TrendingUp size={20} /> },
             { label: "Xếp loại học lực (thang 4)", value: gpaView?.xep_loai_hoc_luc_he4, style: xl4, icon: <Star size={20} /> },
           ].map((item, i) => (
-            <div key={i} style={{
-              borderRadius: 16, padding: "18px 24px", display: "flex", alignItems: "center",
-              gap: 16, background: item.style.bg, border: `1px solid ${item.style.border}`,
-            }}>
-              <div style={{ color: item.style.dot }}>{item.icon}</div>
+            <div key={i} 
+              className="rounded-2xl p-[18px_24px] flex items-center gap-4 border"
+              style={{
+                background: item.style.bg,
+                borderColor: item.style.border,
+              }}
+            >
+              <div style={{ color: item.style.dot }} className="shrink-0">{item.icon}</div>
               <div>
-                <div style={{ fontSize: 11, fontWeight: 600, color: item.style.text, marginBottom: 4 }}>{item.label}</div>
-                <div style={{ fontSize: 24, fontWeight: 800, color: item.style.text }}>{item.value ?? "—"}</div>
+                <div className="text-[11px] font-semibold mb-1" style={{ color: item.style.text }}>{item.label}</div>
+                <div className="text-[24px] font-extrabold" style={{ color: item.style.text }}>{item.value ?? "—"}</div>
               </div>
             </div>
           ))}
         </div>
 
         {/* ── Bảng điểm ───────────────────────────────────────────────────── */}
-        <div style={{ background: "#fff", borderRadius: 24, border: "1px solid #ead9cb", overflow: "hidden", minWidth: 0 }}>
+        <div className="bg-white rounded-3xl border border-[#ead9cb] overflow-hidden min-w-0 shadow-sm">
           {/* Header + Tab */}
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "16px 24px 0", borderBottom: "1px solid #ead9cb", flexWrap: "wrap", gap: 8 }}>
+          <div className="flex items-center justify-between p-[16px_24px_12px] border-b border-[#ead9cb] flex-wrap gap-4">
             <div>
-              <h2 style={{ fontSize: 15, fontWeight: 700, color: "#2d1b14", margin: 0 }}>Bảng điểm chi tiết</h2>
-              <p style={{ fontSize: 12, color: "#8b6f5f", margin: "2px 0 0" }}>
+              <h2 className="text-[15px] font-bold text-[#2d1b14] m-0">Bảng điểm chi tiết</h2>
+              <p className="text-[12px] text-[#8b6f5f] m-0 mt-0.5">
                 {mahocky === "all" ? "Tất cả học kỳ" : hocKyList.find((h) => String(h.mahocky) === mahocky)?.tenhocky}
                 {" · "}{grades.length} môn
               </p>
             </div>
-            <div style={{ display: "flex", gap: 4, background: "#f5ede8", padding: 4, borderRadius: 12, marginBottom: 4 }}>
+            <div className="flex gap-1 bg-[#f5ede8] p-1 rounded-xl">
               {(["chitiet", "tongket"] as const).map((t) => (
-                <button key={t} onClick={() => setTab(t)} style={{
-                  padding: "6px 18px", borderRadius: 10, border: "none", fontSize: 12, fontWeight: 700,
-                  cursor: "pointer", transition: "all 0.15s",
-                  background: tab === t ? "#fff" : "transparent",
-                  color: tab === t ? "#2d1b14" : "#8b6f5f",
-                  boxShadow: tab === t ? "0 1px 4px rgba(0,0,0,0.08)" : "none",
-                }}>
+                <button 
+                  key={t} 
+                  onClick={() => setTab(t)} 
+                  className={`px-[18px] py-1.5 rounded-lg border-none text-[12px] font-bold cursor-pointer transition-all duration-150 ${
+                    tab === t 
+                      ? "bg-white text-[#2d1b14] shadow-[0_1px_4px_rgba(0,0,0,0.08)]" 
+                      : "bg-transparent text-[#8b6f5f] hover:text-[#2d1b14]"
+                  }`}
+                >
                   {t === "chitiet" ? "Chi tiết điểm" : "Tổng kết GPA"}
                 </button>
               ))}
@@ -208,77 +192,72 @@ export default function StudentGradesPage() {
           </div>
 
           {loading ? (
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, padding: "60px 20px", color: "#8b6f5f" }}>
-              <Loader2 size={24} style={{ animation: "spin 1s linear infinite", color: "#c25450" }} />
-              <span style={{ fontSize: 13, fontWeight: 600 }}>Đang tải dữ liệu điểm…</span>
+            <div className="flex items-center justify-center gap-2.5 p-[60px_20px] text-[#8b6f5f]">
+              <Loader2 size={24} className="animate-spin text-[#c25450]" />
+              <span className="text-[13px] font-semibold">Đang tải dữ liệu điểm…</span>
             </div>
           ) : tab === "chitiet" ? (
             grades.length === 0 ? (
-              <div style={{ padding: "48px 24px", textAlign: "center" }}>
-                <BookOpen size={40} color="#d1d5db" style={{ margin: "0 auto 12px" }} />
-                <p style={{ color: "#8b6f5f", fontSize: 14, fontWeight: 600 }}>Không có dữ liệu điểm.</p>
+              <div className="p-[48px_24px] text-center">
+                <BookOpen size={40} className="text-gray-300 mx-auto mb-3" />
+                <p className="text-[#8b6f5f] text-sm font-semibold">Không có dữ liệu điểm.</p>
               </div>
             ) : (
-              <div style={{ overflowX: "auto" }}>
-                <table style={{ width: "100%", minWidth: "900px", borderCollapse: "collapse", fontSize: 13 }}>
+              <div className="table-responsive">
+                <table className="w-full border-collapse text-[13px] min-w-[900px]">
                   <thead>
-                    <tr style={{ background: "#fff8f5" }}>
+                    <tr className="bg-[#fff8f5]">
                       {["STT", "Mã MH", "Tên môn học", "TC", "GV", "Điểm thành phần", "TK (H10)", "Chữ", "Kết quả"].map((h, i) => (
-                        <th key={i} style={{
-                          padding: "12px 14px", textAlign: i < 3 ? "left" : "center",
-                          fontSize: 10, fontWeight: 800, color: "#8b6f5f",
-                          textTransform: "uppercase", letterSpacing: "0.08em",
-                          borderBottom: "1px solid #ead9cb", whiteSpace: "nowrap",
-                        }}>{h}</th>
+                        <th 
+                          key={i} 
+                          className={`p-[12px_14px] ${i < 3 ? "text-left" : "text-center"} text-[10px] font-extrabold text-[#8b6f5f] uppercase tracking-wider border-b border-[#ead9cb] whitespace-nowrap`}
+                        >
+                          {h}
+                        </th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
                     {grades.map((row, i) => (
-                      <tr key={i} style={{ borderBottom: "1px solid #f5ede8", background: i % 2 === 0 ? "#fff" : "#fffaf8" }}>
-                        <td style={{ padding: "11px 14px", color: "#9ca3af", fontWeight: 600 }}>{row.stt}</td>
-                        <td style={{ padding: "11px 14px", fontWeight: 700, color: "#c25450", fontSize: 12, whiteSpace: "nowrap" }}>{row.mamon}</td>
-                        <td style={{ padding: "11px 14px", fontWeight: 700, color: "#2d1b14", maxWidth: 220 }}>{row.tenmon}</td>
-                        <td style={{ padding: "11px 14px", textAlign: "center", fontWeight: 700 }}>{row.sotinchi}</td>
-                        <td style={{ padding: "11px 14px", textAlign: "center", fontSize: 12, color: "#6b7280", maxWidth: 140, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{row.giangvien}</td>
-                        <td style={{ padding: "11px 14px" }}>
+                      <tr key={i} className={`border-b border-[#f5ede8] ${i % 2 === 0 ? "bg-white" : "bg-[#fffaf8]"} hover:bg-page-bg/30 transition-colors`}>
+                        <td className="p-[11px_14px] text-gray-400 font-semibold">{row.stt}</td>
+                        <td className="p-[11px_14px] font-bold text-[#c25450] text-[12px] whitespace-nowrap">{row.mamon}</td>
+                        <td className="p-[11px_14px] font-bold text-[#2d1b14] max-w-[220px] truncate" title={row.tenmon}>{row.tenmon}</td>
+                        <td className="p-[11px_14px] text-center font-bold">{row.sotinchi}</td>
+                        <td className="p-[11px_14px] text-center text-[12px] text-gray-500 max-w-[140px] truncate" title={row.giangvien}>{row.giangvien}</td>
+                        <td className="p-[11px_14px]">
                           {row.diemThanhPhan.length > 0 ? (
-                            <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+                            <div className="flex flex-wrap gap-1.5">
                               {row.diemThanhPhan.map((d, idx) => (
-                                <span key={idx} style={{
-                                  padding: "2px 8px", borderRadius: 20, fontSize: 11, fontWeight: 600,
-                                  background: "#f5ede8", border: "1px solid #ead9cb", color: "#2d1b14", whiteSpace: "nowrap",
-                                }}>
-                                  {loaiLabel(d.loai)} ({Math.round(d.heso * 100)}%): <strong style={{ color: "#c25450" }}>{d.giatri}</strong>
+                                <span key={idx} className="p-[2px_8px] rounded-full text-[11px] font-semibold bg-[#f5ede8] border border-[#ead9cb] text-[#2d1b14] whitespace-nowrap">
+                                  {loaiLabel(d.loai)} ({Math.round(d.heso * 100)}%): <strong className="text-[#c25450] font-bold">{d.giatri}</strong>
                                 </span>
                               ))}
                             </div>
-                          ) : <span style={{ color: "#d1d5db", fontSize: 12, fontStyle: "italic" }}>—</span>}
+                          ) : <span className="text-gray-300 text-[12px] italic">—</span>}
                         </td>
-                        <td style={{ padding: "11px 14px", textAlign: "center" }}>
-                          <span style={{ fontSize: 15, fontWeight: 800, color: diem10Color(row.diem10) }}>
+                        <td className="p-[11px_14px] text-center">
+                          <span className="text-[15px] font-black" style={{ color: diem10Color(row.diem10) }}>
                             {row.diem10 !== null ? row.diem10.toFixed(2) : "—"}
                           </span>
                         </td>
-                        <td style={{ padding: "11px 14px", textAlign: "center" }}>
-                          <span style={{
-                            padding: "3px 10px", borderRadius: 20, fontSize: 12, fontWeight: 800,
-                            background: row.diemchu ? "#f5ede8" : "#f3f4f6",
-                            color: row.diemchu ? "#c25450" : "#9ca3af",
-                          }}>{row.diemchu ?? "—"}</span>
+                        <td className="p-[11px_14px] text-center">
+                          <span className={`p-[3px_10px] rounded-full text-[12px] font-extrabold ${
+                            row.diemchu ? "bg-[#f5ede8] text-[#c25450]" : "bg-gray-100 text-gray-400"
+                          }`}>{row.diemchu ?? "—"}</span>
                         </td>
-                        <td style={{ padding: "11px 14px", textAlign: "center" }}>
+                        <td className="p-[11px_14px] text-center">
                           {!row.coDiem ? (
-                            <span style={{ fontSize: 11, color: "#9ca3af" }}>Chưa có</span>
+                            <span className="text-[11px] text-gray-400">Chưa có</span>
                           ) : row.dat ? (
-                            <span style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
-                              <CheckCircle size={14} color="#059669" />
-                              <span style={{ fontSize: 11, fontWeight: 700, color: "#059669" }}>Đạt</span>
+                            <span className="inline-flex items-center justify-center gap-1">
+                              <CheckCircle size={14} className="text-[#059669]" />
+                              <span className="text-[11px] font-bold text-[#059669]">Đạt</span>
                             </span>
                           ) : (
-                            <span style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 4 }}>
-                              <XCircle size={14} color="#dc2626" />
-                              <span style={{ fontSize: 11, fontWeight: 700, color: "#dc2626" }}>Không đạt</span>
+                            <span className="inline-flex items-center justify-center gap-1">
+                              <XCircle size={14} className="text-[#dc2626]" />
+                              <span className="text-[11px] font-bold text-[#dc2626]">Không đạt</span>
                             </span>
                           )}
                         </td>
@@ -290,17 +269,17 @@ export default function StudentGradesPage() {
             )
           ) : (
             /* ── Tab Tổng kết GPA ─────────────────────────────────────────── */
-            <div style={{ padding: 24 }}>
-              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+            <div className="p-6 overflow-x-auto">
+              <table className="w-full border-collapse text-[13px] min-w-[500px]">
                 <thead>
-                  <tr style={{ background: "#fff8f5" }}>
+                  <tr className="bg-[#fff8f5]">
                     {["Chỉ số", "Kỳ hiện tại", "Tích lũy toàn khóa"].map((h, i) => (
-                      <th key={i} style={{
-                        padding: "12px 16px", textAlign: i === 0 ? "left" : "center",
-                        fontSize: 11, fontWeight: 800, color: "#8b6f5f",
-                        textTransform: "uppercase", letterSpacing: "0.08em",
-                        borderBottom: "1px solid #ead9cb",
-                      }}>{h}</th>
+                      <th 
+                        key={i} 
+                        className={`p-[12px_16px] ${i === 0 ? "text-left" : "text-center"} text-[11px] font-extrabold text-[#8b6f5f] uppercase tracking-wider border-b border-[#ead9cb]`}
+                      >
+                        {h}
+                      </th>
                     ))}
                   </tr>
                 </thead>
@@ -313,15 +292,15 @@ export default function StudentGradesPage() {
                     { label: "Xếp loại (thang 10)", ky: gpaView?.xep_loai_hoc_luc ?? "—", tl: gpaView?.xep_loai_hoc_luc ?? "—" },
                     { label: "Xếp loại (thang 4)",  ky: gpaView?.xep_loai_hoc_luc_he4 ?? "—", tl: gpaView?.xep_loai_hoc_luc_he4 ?? "—" },
                   ].map((row, i) => (
-                    <tr key={i} style={{ borderBottom: "1px solid #f5ede8", background: i % 2 === 0 ? "#fff" : "#fffaf8" }}>
-                      <td style={{ padding: "13px 16px", fontWeight: 600, color: "#6b7280" }}>
-                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                          <Award size={14} color="#c25450" />
+                    <tr key={i} className={`border-b border-[#f5ede8] ${i % 2 === 0 ? "bg-white" : "bg-[#fffaf8]"} hover:bg-page-bg/30 transition-colors`}>
+                      <td className="p-[13px_16px] font-semibold text-gray-500">
+                        <div className="flex items-center gap-2">
+                          <Award size={14} className="text-[#c25450] shrink-0" />
                           {row.label}
                         </div>
                       </td>
-                      <td style={{ padding: "13px 16px", textAlign: "center", fontWeight: 800, color: "#2d1b14" }}>{row.ky}</td>
-                      <td style={{ padding: "13px 16px", textAlign: "center", fontWeight: 800, color: "#c25450" }}>{row.tl}</td>
+                      <td className="p-[13px_16px] text-center font-extrabold text-[#2d1b14]">{row.ky}</td>
+                      <td className="p-[13px_16px] text-center font-extrabold text-[#c25450]">{row.tl}</td>
                     </tr>
                   ))}
                 </tbody>

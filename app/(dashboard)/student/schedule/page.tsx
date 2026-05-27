@@ -11,9 +11,6 @@ import {
   List,
   Loader2,
 } from "lucide-react";
-import { useAuth } from "@/hooks/auth/useAuth";
-import { useRouter } from "next/navigation";
-import { VaiTro } from "@/types";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { getMonday, addDays, formatDateShort } from "@/lib/utils/date.utils";
 import { SubjectDetailPanel } from "@/components/student/schedule/SubjectDetailPanel";
@@ -22,9 +19,6 @@ import { SemesterView } from "@/components/student/schedule/SemesterView";
 
 // ─── Component ────────────────────────────────────────────────────────────────
 export default function SchedulePage() {
-  const { user, loading: authLoading } = useAuth();
-  const router = useRouter();
-  
   const {
     viewMode,
     setViewMode,
@@ -38,12 +32,6 @@ export default function SchedulePage() {
 
   const [weekStart, setWeekStart] = useState<Date>(() => getMonday(new Date()));
   const [selectedItem, setSelectedItem] = useState<LichHoc | null>(null);
-
-  // Route guard
-  useEffect(() => {
-    if (!authLoading && !user) router.replace("/login");
-    if (!authLoading && user && user.vaitro !== VaiTro.SinhVien) router.replace("/login");
-  }, [user, authLoading, router]);
 
   const currentHocKy = hocKyList.find((h) => h.mahocky === selectedMahocky);
 

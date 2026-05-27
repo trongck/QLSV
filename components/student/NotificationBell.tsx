@@ -8,6 +8,7 @@ export interface NotificationBellProps {
   onMarkAllRead: () => Promise<void>;
   isOpen: boolean;
   onToggle: () => void;
+  notificationRoute?: string; // Default: /student/notifications
 }
 
 export function NotificationBell({
@@ -16,6 +17,7 @@ export function NotificationBell({
   onMarkAllRead,
   isOpen,
   onToggle,
+  notificationRoute = "/student/notifications",
 }: NotificationBellProps) {
   const router = useRouter();
 
@@ -70,7 +72,7 @@ export function NotificationBell({
                   <div
                     key={notif.mathongbao}
                     onClick={() => {
-                      router.push(`/student/notifications?id=${notif.mathongbao}`);
+                      router.push(`${notificationRoute}?id=${notif.mathongbao}`);
                       onToggle();
                     }}
                     className={`p-3 border-b border-gray-100 hover:bg-gray-50 transition-colors cursor-pointer flex flex-col gap-1 ${
@@ -103,7 +105,7 @@ export function NotificationBell({
           <div className="p-2 bg-gray-50 border-t border-gray-100 text-center">
             <span
               onClick={() => {
-                router.push("/student/notifications");
+                router.push(notificationRoute);
                 onToggle();
               }}
               className="text-xs text-[#C25450] font-semibold cursor-pointer hover:underline"

@@ -1,51 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/auth/useAuth";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
-import { VaiTro } from "@/types";
-import { ChangePasswordModal } from "../../teacher/dashboard/changepass";
 import { useStudentDashboard } from "@/hooks/sinhvien/useStudentDashboard";
 import { StatCard } from "@/components/student/StatCardDashboard";
-import { NotificationBell } from "@/components/student/NotificationBell";
-import { ProfilePopover } from "@/components/student/ProfilePopover";
-import dynamic from "next/dynamic";
-
-const StudentProfileModal = dynamic(
-  () => import("@/components/student/ProfileModal").then((mod) => mod.StudentProfileModal),
-  { ssr: false }
-);
 
 export default function StudentDashboard() {
-  const { user, loading } = useAuth();
-  const router = useRouter();
+  const { user } = useAuth();
   const {
     data,
     fetching,
-    bellNotifications,
-    unreadBellCount,
-    markAllRead,
   } = useStudentDashboard();
 
-  // States quản lý trạng thái ẩn hiện Popover và Modal
-  const [isProfileOpen, setIsProfileOpen] = useState(false);
-  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
-  const [isModalOpen, setIsModalOpen] = useState(false); // State mở StudentProfileModal
-  const [isChangePassOpen, setIsChangePassOpen] = useState(false); // State mở ChangePasswordModal
-
-  const handleMarkAllRead = async () => {
-    await markAllRead();
-  };
-
-  // Route guard
-  useEffect(() => {
-    if (!loading && !user) router.replace("/login");
-    if (!loading && user && user.vaitro !== VaiTro.SinhVien)
-      router.replace("/login");
-  }, [user, loading, router]);
-
-  if (loading || !user) return null;
+  if (!user) return null;
 
   const today = new Date().toLocaleDateString("vi-VN", {
     weekday: "long",
@@ -64,33 +31,6 @@ export default function StudentDashboard() {
               Chào, {user.hoten?.split(" ").pop()} 👋
             </h1>
             <p className="text-[13px] text-fg-subtle m-0 capitalize">{today}</p>
-          </div>
-
-          {/* CỤM AVATAR VÀ CHUÔNG — Chỉ hiển thị trên Desktop (max-lg:hidden) */}
-          <div className="flex items-center gap-4 relative max-lg:hidden">
-            {/* 1. CỤM NÚT CHUÔNG VÀ POPUP THÔNG BÁO */}
-            <NotificationBell
-              unreadBellCount={unreadBellCount}
-              bellNotifications={bellNotifications}
-              onMarkAllRead={handleMarkAllRead}
-              isOpen={isNotificationOpen}
-              onToggle={() => {
-                setIsNotificationOpen(!isNotificationOpen);
-                setIsProfileOpen(false);
-              }}
-            />
-
-            {/* 2. CỤM PROFILE AVATAR VÀ POPUP CHỨC NĂNG */}
-            <ProfilePopover
-              user={user}
-              isOpen={isProfileOpen}
-              onToggle={() => {
-                setIsProfileOpen(!isProfileOpen);
-                setIsNotificationOpen(false);
-              }}
-              onOpenProfile={() => setIsModalOpen(true)}
-              onOpenChangePass={() => setIsChangePassOpen(true)}
-            />
           </div>
         </div>
 
@@ -247,9 +187,7 @@ export default function StudentDashboard() {
           )}
         </section>
       </div>
-
-      <StudentProfileModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
-      <ChangePasswordModal isOpen={isChangePassOpen} onClose={() => setIsChangePassOpen(false)} />
     </DashboardShell>
   );
 }
+

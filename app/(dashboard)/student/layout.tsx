@@ -44,8 +44,6 @@ export default function StudentLayout({
   children: React.ReactNode;
 }) {
   return (
-    <AuthProvider>
       <StudentGuard>{children}</StudentGuard>
-    </AuthProvider>
   );
 }

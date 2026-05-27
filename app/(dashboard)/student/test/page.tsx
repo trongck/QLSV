@@ -1,25 +1,16 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { Search, Filter, FileText, Clock, Calendar, Loader2, CheckCircle2 } from "lucide-react";
-import { useAuth } from "@/hooks/auth/useAuth";
+import React, { useState } from "react";
+import { Search, FileText, Clock, Calendar, Loader2, CheckCircle2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { VaiTro } from "@/types";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { useStudentExams, Exam } from "@/hooks/sinhvien/useStudentExams";
 
 export default function ExamPage() {
-  const { user, loading: authLoading } = useAuth();
   const router = useRouter();
   const [activeTab, setActiveTab] = useState("Tất cả");
 
   const { exams, loading } = useStudentExams();
-
-  // Route guard
-  useEffect(() => {
-    if (!authLoading && !user) router.replace("/login");
-    if (!authLoading && user && user.vaitro !== VaiTro.SinhVien) router.replace("/login");
-  }, [user, authLoading, router]);
 
   const [selectedResult, setSelectedResult] = useState<Exam | null>(null);
 

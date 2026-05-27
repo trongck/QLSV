@@ -2,9 +2,6 @@
 
 import { useState, useEffect, useCallback } from "react";
 import AttendanceActions from "@/components/student/AttendanceActions";
-import { useAuth } from "@/hooks/auth/useAuth";
-import { useRouter } from "next/navigation";
-import { VaiTro } from "@/types";
 import AttendanceLogCard, { type LogEntry, type TrangThai } from "@/components/student/AttendanceLogCard";
 import { BookOpen, TrendingUp, XCircle, Clock } from "lucide-react";
 import { StatCard, EmptyState } from "@/components/student/StudentUI";
@@ -13,9 +10,6 @@ import { useStudentAttendance } from "@/hooks/sinhvien/useStudentAttendance";
 import { SubjectStatsRow } from "@/components/student/SubjectStatsRow";
 
 export default function AttendancePage() {
-  const { user, loading: authLoading } = useAuth();
-  const router = useRouter();
-
   const {
     history,
     subjectStats,
@@ -26,12 +20,6 @@ export default function AttendancePage() {
 
   const [activeTab, setActiveTab] = useState<"history" | "stats">("history");
   const [filter, setFilter] = useState<{ type: "month" | "semester"; mahocky?: number; maphancong?: number }>({ type: "month" });
-
-  // Route guard
-  useEffect(() => {
-    if (!authLoading && !user) router.replace("/login");
-    if (!authLoading && user && user.vaitro !== VaiTro.SinhVien) router.replace("/login");
-  }, [user, authLoading, router]);
 
   const loadFilteredHistory = useCallback((f: typeof filter) => {
     const now = new Date();
@@ -81,7 +69,7 @@ export default function AttendancePage() {
 
   return (
     <DashboardShell pageTitle="Điểm danh">
-      <div className="flex flex-col gap-8 w-full p-6 md:p-8 bg-gray-50/50 min-h-screen">
+      <div className="flex flex-col gap-8 w-full p-6 md:p-8 bg-[#FAF7F6] min-h-screen">
         {/* Header + Actions */}
         <AttendanceActions onFilterChange={handleFilterChange} onCheckedIn={handleCheckedIn} />
 

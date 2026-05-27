@@ -2,9 +2,6 @@
 
 import React, { useState, useEffect } from "react";
 import { Search, FileText, Loader2 } from "lucide-react";
-import { useAuth } from "@/hooks/auth/useAuth";
-import { useRouter } from "next/navigation";
-import { VaiTro } from "@/types";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { useStudentAssignments, Assignment } from "@/hooks/sinhvien/useStudentAssignments";
 import { AssignmentCard } from "@/components/student/assignments/AssignmentCard";
@@ -13,9 +10,6 @@ import { AssignmentSubmitModal } from "@/components/student/assignments/Assignme
 import { SubmissionDetailModal } from "@/components/student/assignments/SubmissionDetailModal";
 
 export default function AssignmentPage() {
-  const { user, loading: authLoading } = useAuth();
-  const router = useRouter();
-
   const {
     filteredAssignments,
     loading,
@@ -40,12 +34,6 @@ export default function AssignmentPage() {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [detailTarget, setDetailTarget] = useState<Assignment | null>(null);
 
-  // Route guard
-  useEffect(() => {
-    if (!authLoading && !user) router.replace("/login");
-    if (!authLoading && user && user.vaitro !== VaiTro.SinhVien) router.replace("/login");
-  }, [user, authLoading, router]);
-
   const openSubmitModal = (item: Assignment) => {
     setSubmitTarget(item);
     setShowSubmitModal(true);
@@ -63,8 +51,6 @@ export default function AssignmentPage() {
       // Error handled by hook state (error)
     }
   };
-
-  if (authLoading || !user) return null;
 
   return (
     <DashboardShell pageTitle="Bài tập">

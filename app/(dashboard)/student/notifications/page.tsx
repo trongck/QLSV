@@ -11,9 +11,6 @@ import {
   CheckCheck,
   RefreshCw,
 } from "lucide-react";
-import { useAuth } from "@/hooks/auth/useAuth";
-import { useRouter } from "next/navigation";
-import { VaiTro } from "@/types";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { formatDate } from "@/lib/utils/date.utils";
 import { LOAI_LABEL } from "@/components/student/notifications/notificationConstants";
@@ -22,9 +19,6 @@ import { NotificationDetailModal } from "@/components/student/notifications/Noti
 
 // ─── Component ────────────────────────────────────────────────────────────────
 export default function StudentNotificationsPage() {
-  const { user, loading: authLoading } = useAuth();
-  const router = useRouter();
-
   const {
     notifications,
     loading,
@@ -37,12 +31,6 @@ export default function StudentNotificationsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState<string>("Tất cả");
   const [selectedNotification, setSelectedNotification] = useState<Notification | null>(null);
-
-  // Route guard
-  useEffect(() => {
-    if (!authLoading && !user) router.replace("/login");
-    if (!authLoading && user && user.vaitro !== VaiTro.SinhVien) router.replace("/login");
-  }, [user, authLoading, router]);
 
   // Tự động mở thông báo khi được điều hướng từ Quả chuông Dashboard
   useEffect(() => {
