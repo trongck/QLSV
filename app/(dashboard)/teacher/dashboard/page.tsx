@@ -304,8 +304,13 @@ export default function TeacherDashboard() {
                       </td>
                       <td>
                         <button
+<<<<<<< Updated upstream
                           className="btn-secondary"
                           style={{ fontSize: "12px", padding: "4px 12px" }}
+=======
+                          onClick={() => router.push("/teacher/students")}
+                          className="btn-secondary text-[12px] py-1 px-3"
+>>>>>>> Stashed changes
                         >
                           Chi tiết
                         </button>
