@@ -16,14 +16,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Không có quyền truy cập" }, { status: 403 });
     }
 
-    const { getSupabaseClient } = await import("@/lib/utils/supabase/server");
-    const supabase = await getSupabaseClient();
-
-    const { data: gv } = await supabase
-      .from("giangvien")
-      .select("magv")
-      .eq("mataikhoan", payload.mataikhoan)
-      .single();
+    const gv = await giangVienService.getMyProfile(payload.mataikhoan);
 
     if (!gv) {
       return NextResponse.json({ error: "Không tìm thấy giảng viên" }, { status: 404 });
@@ -58,14 +51,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { getSupabaseClient } = await import("@/lib/utils/supabase/server");
-    const supabase = await getSupabaseClient();
-
-    const { data: gv } = await supabase
-      .from("giangvien")
-      .select("magv")
-      .eq("mataikhoan", payload.mataikhoan)
-      .single();
+    const gv = await giangVienService.getMyProfile(payload.mataikhoan);
 
     if (!gv) {
       return NextResponse.json({ error: "Không tìm thấy giảng viên" }, { status: 404 });
@@ -93,65 +79,68 @@ export async function POST(request: Request) {
 
     const { GoogleGenerativeAI } = await import("@google/generative-ai");
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
-    const model = genAI.getGenerativeModel({
-      model: "gemini-2.5-flash",
-      generationConfig: {
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: "ARRAY",
-          items: {
-            type: "OBJECT",
-            properties: {
-              noidung: { type: "STRING" },
-              diem: { type: "NUMBER" },
-              dapan: {
-                type: "ARRAY",
-                items: {
-                  type: "OBJECT",
-                  properties: {
-                    noidung: { type: "STRING" },
-                    ladapandung: { type: "BOOLEAN" }
-                  },
-                  required: ["noidung", "ladapandung"]
+    
+    const getModelInstance = (modelName: string) => {
+      return genAI.getGenerativeModel({
+        model: modelName,
+        generationConfig: {
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: "ARRAY",
+            items: {
+              type: "OBJECT",
+              properties: {
+                noidung: { type: "STRING" },
+                diem: { type: "NUMBER" },
+                dapan: {
+                  type: "ARRAY",
+                  items: {
+                    type: "OBJECT",
+                    properties: {
+                      noidung: { type: "STRING" },
+                      ladapandung: { type: "BOOLEAN" }
+                    },
+                    required: ["noidung", "ladapandung"]
+                  }
                 }
-              }
-            },
-            required: ["noidung", "dapan"]
-          }
-        } as any
-      }
-    });
-
-    if (fileExtension === "docx" || fileExtension === "doc") {
-      // Dùng textutil của macos để chuyển docx -> txt
-      const fs = await import("fs");
-      const path = await import("path");
-      const { execSync } = await import("child_process");
-
-      const tempDir = path.join(process.cwd(), "scratch");
-      if (!fs.existsSync(tempDir)) {
-        fs.mkdirSync(tempDir, { recursive: true });
-      }
-
-      const tempFilePath = path.join(tempDir, `temp_upload_${Date.now()}.${fileExtension}`);
-      fs.writeFileSync(tempFilePath, fileBuffer);
-
-      try {
-        textToParse = execSync(`/usr/bin/textutil -convert txt -stdout "${tempFilePath}"`).toString("utf-8");
-      } catch (err: any) {
-        console.error("Lỗi chạy textutil:", err.message);
-        throw new Error("Không thể trích xuất văn bản từ tệp Word. Hãy chắc chắn rằng tệp không bị lỗi.");
-      } finally {
-        if (fs.existsSync(tempFilePath)) {
-          fs.unlinkSync(tempFilePath);
+              },
+              required: ["noidung", "dapan"]
+            }
+          } as any
         }
+      });
+    };
+
+    if (fileExtension === "docx") {
+      try {
+        const mammoth = await import("mammoth");
+        const result = await mammoth.extractRawText({ buffer: fileBuffer });
+        textToParse = result.value;
+      } catch (err: any) {
+        console.error("Lỗi parse docx bằng mammoth:", err);
+        throw new Error("Không thể trích xuất văn bản từ tệp Word (.docx). Hãy chắc chắn rằng tệp không bị lỗi.");
       }
+    } else if (fileExtension === "doc") {
+      throw new Error("Hệ thống chỉ hỗ trợ tệp Word định dạng mới (.docx). Vui lòng chuyển đổi tệp .doc của bạn sang .docx và thử lại.");
     } else if (fileExtension === "pdf") {
       // Đưa trực tiếp PDF base64 cho Gemini xử lý
       inlineDataPart = {
         inlineData: {
           data: fileBuffer.toString("base64"),
           mimeType: "application/pdf"
+        }
+      };
+    } else if (["png", "jpg", "jpeg", "webp"].includes(fileExtension || "")) {
+      const mimeMap: Record<string, string> = {
+        png: "image/png",
+        jpg: "image/jpeg",
+        jpeg: "image/jpeg",
+        webp: "image/webp"
+      };
+      inlineDataPart = {
+        inlineData: {
+          data: fileBuffer.toString("base64"),
+          mimeType: mimeMap[fileExtension || ""] || "image/jpeg"
         }
       };
     } else {
@@ -162,12 +151,32 @@ export async function POST(request: Request) {
     const prompt = "Hãy đọc tài liệu kiểm tra này và trích xuất ra toàn bộ danh sách câu hỏi trắc nghiệm cùng đáp án. Mỗi câu hỏi cần ghi nhận rõ đáp án đúng (ladapandung: true). Điểm mặc định cho mỗi câu là 0.2 nếu không được chỉ rõ.";
     
     let resultText = "";
-    if (inlineDataPart) {
-      const result = await model.generateContent([inlineDataPart, prompt]);
+    try {
+      // Đầu tiên thử gemini-2.5-flash
+      const model = getModelInstance("gemini-2.5-flash");
+      let result;
+      if (inlineDataPart) {
+        result = await model.generateContent([inlineDataPart, prompt]);
+      } else {
+        result = await model.generateContent([textToParse, prompt]);
+      }
       resultText = result.response.text();
-    } else {
-      const result = await model.generateContent([textToParse, prompt]);
-      resultText = result.response.text();
+    } catch (err: any) {
+      console.warn("Lỗi khi dùng gemini-2.5-flash, thử chuyển sang gemini-1.5-flash:", err.message);
+      // Fallback sang gemini-1.5-flash cực kỳ ổn định
+      try {
+        const modelFallback = getModelInstance("gemini-1.5-flash");
+        let result;
+        if (inlineDataPart) {
+          result = await modelFallback.generateContent([inlineDataPart, prompt]);
+        } else {
+          result = await modelFallback.generateContent([textToParse, prompt]);
+        }
+        resultText = result.response.text();
+      } catch (fallbackErr: any) {
+        console.error("Lỗi cả model fallback gemini-1.5-flash:", fallbackErr.message);
+        throw new Error("Dịch vụ phân tích đề thi bằng AI đang quá tải (Lỗi 503). Vui lòng thử lại sau vài giây.");
+      }
     }
 
     const parsedQuestions = JSON.parse(resultText);

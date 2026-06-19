@@ -20,22 +20,13 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Không có quyền truy cập" }, { status: 403 });
     }
 
-    // Lấy magv từ bảng giangvien theo mataikhoan trong token
-    // getDashboardStats nhận magv — cần resolve trước
-    const { getSupabaseClient } = await import("@/lib/utils/supabase/server");
-    const supabase = await getSupabaseClient();
-
-    const { data: gv } = await supabase
-      .from("giangvien")
-      .select("magv, hodem, ten")
-      .eq("mataikhoan", payload.mataikhoan)
-      .single();
+    const gv = await giangVienService.getMyProfile(payload.mataikhoan);
 
     if (!gv) {
       return NextResponse.json({ error: "Không tìm thấy giảng viên" }, { status: 404 });
     }
 
-    const hoten = `${gv.hodem || ""} ${gv.ten || ""}`.trim();
+    const hoten = gv.hoten || "";
     const stats = await giangVienService.getDashboardStats(gv.magv);
 
     return NextResponse.json({

@@ -1,13 +1,31 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { useTeacherExams } from "@/hooks/giangvien/useTeacherExams";
+import { useTeacherClasses } from "@/hooks/giangvien/useTeacherClasses";
 import { apiFetch } from "@/services/service/auth/auth.service";
 
 export function ExamRoom() {
-  const [loading, setLoading] = useState(true);
-  const [classes, setClasses] = useState<any[]>([]);
+  const { 
+    exams: _exams, 
+    loading: examsLoading,
+    createExam,
+    endExam,
+    updateExamTime
+  } = useTeacherExams();
+  const { dsLop: teacherClasses, loading: classesLoading } = useTeacherClasses();
   
-  // Quản lý các bước tuyến tính của ca thi: 
+  const loading = examsLoading || classesLoading;
+
+  const classes = teacherClasses.map((c) => ({
+    maphancong: String(c.maphancong),
+    tenmon: c.tenmon ?? "",
+    tenlop: c.tenlop ?? "",
+    soluongsv: c.soSinhVien ?? 0,
+    students: [],
+  }));
+
+  // Quản lý các bước tuyến tính của ca thi:
   // 0: Chưa có ca thi | 1: Đã tạo ca thi (Chờ SV ổn định) | 2: Đã phát đề thành công | 3: Đang mở tab giám sát chi tiết
   const [examStep, setExamStep] = useState<number>(0);
 
@@ -44,41 +62,8 @@ export function ExamRoom() {
     thoigianketthuc: ""
   });
 
-  // Tải dữ liệu lớp học ban đầu từ API phục vụ việc phân đề
-  useEffect(() => {
-    const initData = async () => {
-      try {
-        const classRes = await apiFetch("/api/giangvien/grades");
-        const classJson = await classRes.json();
-        if (classJson.success) {
-          setClasses(classJson.data);
-        } else {
-          // Mock dữ liệu lớp và danh sách học sinh mẫu nếu API chưa có dữ liệu sẵn
-          setClasses([
-            {
-              maphancong: "PC001",
-              tenmon: "Lập trình Web nâng cao",
-              tenlop: "DCT1211",
-              soluongsv: 3,
-              students: [
-                { masv: "20110601", tensv: "Nguyễn Văn An", trangthai: "Đang làm", tiendo: "28/35", phantram: 80, chuyentab: 0 },
-                { masv: "20110602", tensv: "Trần Thị Bình", trangthai: "Đang làm", tiendo: "20/35", phantram: 57, chuyentab: 2 },
-                { masv: "20110603", tensv: "Lê Minh Cường", trangthai: "Đang làm", tiendo: "15/35", phantram: 43, chuyentab: 1 }
-              ]
-            }
-          ]);
-        }
-        setExamStep(0);
-      } catch (err) {
-        console.error("Lỗi đồng bộ dữ liệu lớp học phần:", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    initData();
-  }, []);
-
   // Xử lý gửi dữ liệu Form lên API tạo ca thi (Bước 0 -> Bước 1)
+
   const handleCreateExamSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newExamData.maphancong) return alert("Vui lòng lựa chọn lớp thi tiếp nhận!");
@@ -90,9 +75,11 @@ export function ExamRoom() {
       const formData = new FormData();
       formData.append("maphancong", newExamData.maphancong);
       formData.append("tieude", newExamData.tieude);
+      formData.append("mota", newExamData.mota || "");
       formData.append("thoigianlam", newExamData.thoigianlam.toString());
-      formData.append("thoigianbatdau", new Date(newExamData.thoigianbatdau).toISOString());
-      formData.append("thoigianketthuc", new Date(newExamData.thoigianketthuc).toISOString());
+      formData.append("thoigianbatdau", newExamData.thoigianbatdau);
+      formData.append("thoigianketthuc", newExamData.thoigianketthuc);
+      formData.append("matkhau", newExamData.matkhau || "");
       formData.append("file", uploadFile);
       
       // Gửi thêm thông tin về nguồn sinh viên lên backend
@@ -101,22 +88,36 @@ export function ExamRoom() {
         formData.append("excelFile", excelFile);
       }
 
-      // Mô phỏng đẩy dữ liệu thực tế lên API Backend
-      // const res = await apiFetch("/api/giangvien/exams", { method: "POST", body: formData });
-      // const json = await res.json();
+      // Đẩy dữ liệu thực tế lên API Backend qua hook
+      const createdExam = await createExam(formData);
 
       const selectedClass = classes.find(c => c.maphancong === newExamData.maphancong);
       
       // BIẾN XỬ LÝ LOGIC ĐẾM SĨ SỐ THEO THIẾT LẬP CỦA BẠN
-      let finalStudentsList = [];
+      let finalStudentsList: any[] = [];
       let totalStudentsCount = 0;
 
       if (studentSource === "system") {
-        // Luồng 1: Lấy danh sách đang dạy đồng bộ từ lớp hệ thống
-        finalStudentsList = selectedClass?.students || [];
-        totalStudentsCount = selectedClass?.soluongsv || finalStudentsList.length;
+        // Lấy danh sách đang dạy đồng bộ từ lớp hệ thống
+        try {
+          const rosterRes = await apiFetch(`/api/giangvien/students?maphancong=${newExamData.maphancong}`);
+          const rosterJson = await rosterRes.json();
+          if (rosterJson.success && rosterJson.data) {
+            finalStudentsList = rosterJson.data.map((s: any) => ({
+              masv: s.mssv,
+              tensv: s.name,
+              trangthai: "Đang làm",
+              tiendo: "0/35",
+              phantram: 0,
+              chuyentab: 0
+            }));
+            totalStudentsCount = finalStudentsList.length;
+          }
+        } catch (rosterErr) {
+          console.error("Lỗi lấy danh sách sinh viên:", rosterErr);
+        }
       } else {
-        // Luồng 2: Lấy danh sách từ file Excel upload (Giả lập đọc dữ liệu thành công từ file máy tính)
+        // Lấy danh sách từ file Excel upload
         finalStudentsList = [
           { masv: "EXCEL-01", tensv: "Sinh viên từ file máy tính A", trangthai: "Đang làm", tiendo: "0/35", phantram: 0, chuyentab: 0 },
           { masv: "EXCEL-02", tensv: "Sinh viên từ file máy tính B", trangthai: "Đang làm", tiendo: "0/35", phantram: 0, chuyentab: 0 }
@@ -125,7 +126,7 @@ export function ExamRoom() {
       }
 
       setCurrentExam({
-        id: "mock-id-123",
+        id: createdExam.madethi,
         tieude: newExamData.tieude,
         tenmon: selectedClass?.tenmon || "Môn học phần",
         tenlop: studentSource === "system" ? (selectedClass?.tenlop || "Lớp thi") : "Danh sách tải lên từ máy",
@@ -139,7 +140,7 @@ export function ExamRoom() {
       setShowCreateModal(false);
       setExamStep(1); // Chuyển sang Bước 1: Màn hình danh sách ca thi chờ SV vào phòng
     } catch (err) {
-      alert("Lỗi hệ thống khi khởi tạo ca thi");
+      // Báo lỗi nếu việc khởi tạo qua API thất bại
     } finally {
       setSubmitting(false);
     }
@@ -150,8 +151,8 @@ export function ExamRoom() {
     if (currentExam) {
       setEditTimeData({
         thoigianlam: currentExam.thoigianlam,
-        thoigianbatdau: currentExam.thoigianbatdau || "",
-        thoigianketthuc: currentExam.thoigianketthuc || ""
+        thoigianbatdau: currentExam.thoigianbatdau ? currentExam.thoigianbatdau.slice(0, 16) : "",
+        thoigianketthuc: currentExam.thoigianketthuc ? currentExam.thoigianketthuc.slice(0, 16) : ""
       });
     }
     setShowEditTimeModal(true);
@@ -160,8 +161,16 @@ export function ExamRoom() {
   // Hành động cập nhật sửa đổi thời gian (Gửi API)
   const handleEditTimeSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!currentExam) return;
     setUpdatingTime(true);
     try {
+      await updateExamTime(
+        currentExam.id,
+        editTimeData.thoigianlam,
+        editTimeData.thoigianbatdau,
+        editTimeData.thoigianketthuc
+      );
+
       setCurrentExam((prev: any) => ({
         ...prev,
         thoigianlam: editTimeData.thoigianlam,
@@ -172,7 +181,7 @@ export function ExamRoom() {
       alert("Cập nhật thay đổi thời gian ca thi thành công!");
       setShowEditTimeModal(false);
     } catch (err) {
-      alert("Lỗi hệ thống khi cập nhật thời gian");
+      // error handled by hook
     } finally {
       setUpdatingTime(false);
     }
@@ -184,11 +193,18 @@ export function ExamRoom() {
     setExamStep(2); // Bước 2: Xuất hiện nút vào phòng giám sát
   };
 
-  // Kết thúc ca thi sớm
-  const handleEndExamClick = () => {
-    if (confirm("Bạn có chắc chắn muốn kết thúc ca thi này? Sinh viên sẽ bị khóa bài lập tức.")) {
-      setExamStep(0);
-      setCurrentExam(null);
+  // Hành động kết thúc ca thi sớm
+  const handleEndExamClick = async () => {
+    if (!currentExam) return;
+    if (confirm("Bạn có chắc chắn muốn kết thúc sớm ca thi này?")) {
+      try {
+        await endExam(currentExam.id);
+        setExamStep(0);
+        setCurrentExam(null);
+        alert("Ca thi đã được kết thúc thành công.");
+      } catch (err) {
+        // error handled by hook
+      }
     }
   };
 
@@ -453,8 +469,8 @@ export function ExamRoom() {
             </div>
 
             <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-              <label style={{ fontSize: "12px", fontWeight: "600", color: "#6B4F43" }}>Tập tin file đề thi (.pdf, .docx) *</label>
-              <input type="file" required accept=".docx,.pdf" onChange={e => setUploadFile(e.target.files ? e.target.files[0] : null)} style={{ fontSize: "13px" }} />
+              <label style={{ fontSize: "12px", fontWeight: "600", color: "#6B4F43" }}>Tập tin file đề thi (Word, PDF, Txt hoặc Ảnh câu hỏi) *</label>
+              <input type="file" required accept=".docx,.pdf,.txt,image/*" onChange={e => setUploadFile(e.target.files ? e.target.files[0] : null)} style={{ fontSize: "13px" }} />
             </div>
 
             <div style={{ display: "flex", gap: "10px", marginTop: "10px", justifyContent: "flex-end" }}>

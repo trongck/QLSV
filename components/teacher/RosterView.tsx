@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { apiFetch } from "@/services/service/auth/auth.service";
+import { useState } from "react";
+import { useTeacherRoster } from "@/hooks/giangvien/useTeacherRoster";
 import styles from "@/app/(dashboard)/teacher/dashboard/teacher-dashboard.module.css";
 
 interface RosterStudent {
@@ -18,66 +18,36 @@ interface RosterStudent {
 }
 
 export function RosterView() {
-  const [classes, setClasses] = useState<any[]>([]);
-  const [selectedPC, setSelectedPC] = useState<number | null>(null);
-  const [studentList, setStudentList] = useState<RosterStudent[]>([]);
+  const {
+    classes,
+    students: rawStudents,
+    selectedPC,
+    setSelectedPC,
+    loading,
+    rosterLoading,
+    updateStudent,
+  } = useTeacherRoster();
+
+  // Map hook's StudentRosterRow → local display shape
+  const studentList: RosterStudent[] = rawStudents.map((s) => ({
+    mssv: s.mssv,
+    name: s.name,
+    class: s.class,
+    phone: s.phone,
+    email: s.email,
+    parent: s.parent,
+    parentName: s.parentName,
+    parentPhone: s.parentPhone,
+    address: s.address,
+    rawAddress: s.rawAddress,
+  }));
+
   const [selectedStudent, setSelectedStudent] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [loading, setLoading] = useState(true);
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingStudent, setEditingStudent] = useState<RosterStudent | null>(null);
   const [isSaving, setIsSaving] = useState(false);
-
-  // Tải danh sách lớp phân công
-  useEffect(() => {
-    async function loadClasses() {
-      try {
-        const res = await apiFetch("/api/giangvien/students");
-        const json = await res.json();
-        if (json && json.success && Array.isArray(json.data)) {
-          setClasses(json.data);
-          if (json.data.length > 0) {
-            setSelectedPC(json.data[0].maphancong);
-          }
-        }
-      } catch (err) {
-        console.error("Lỗi tải lớp học phần:", err);
-      } finally {
-        setLoading(false);
-      }
-    }
-    loadClasses();
-  }, []);
-
-  // Tải danh sách học sinh của lớp được chọn
-  useEffect(() => {
-    if (!selectedPC) return;
-    async function loadStudents() {
-      setLoading(true);
-      try {
-        const res = await apiFetch(`/api/giangvien/students?maphancong=${selectedPC}`);
-        const json = await res.json();
-        if (json && json.success && Array.isArray(json.data)) {
-          setStudentList(json.data);
-          if (json.data.length > 0) {
-            setSelectedStudent(json.data[0].mssv);
-          } else {
-            setSelectedStudent(null);
-          }
-        } else {
-          setStudentList([]);
-          setSelectedStudent(null);
-        }
-      } catch (err) {
-        console.error("Lỗi tải danh sách học sinh:", err);
-        setStudentList([]);
-      } finally {
-        setLoading(false);
-      }
-    }
-    loadStudents();
-  }, [selectedPC]);
 
   const handleOpenEdit = (student: RosterStudent) => {
     setEditingStudent({ ...student });
@@ -90,35 +60,19 @@ export function RosterView() {
 
     setIsSaving(true);
     try {
-      const res = await apiFetch("/api/giangvien/students", {
-        method: "PUT",
-        body: JSON.stringify({
-          masv: editingStudent.mssv,
-          name: editingStudent.name,
-          email: editingStudent.email,
-          phone: editingStudent.phone,
-          parentName: editingStudent.parentName,
-          parentPhone: editingStudent.parentPhone,
-          address: editingStudent.rawAddress || editingStudent.address
-        })
+      await updateStudent({
+        masv: editingStudent.mssv,
+        name: editingStudent.name,
+        email: editingStudent.email,
+        phone: editingStudent.phone,
+        parentName: editingStudent.parentName,
+        parentPhone: editingStudent.parentPhone,
+        address: editingStudent.rawAddress || editingStudent.address,
       });
-
-      const json = await res.json();
-      if (json && json.success) {
-        if (selectedPC) {
-          const resReload = await apiFetch(`/api/giangvien/students?maphancong=${selectedPC}`);
-          const jsonReload = await resReload.json();
-          if (jsonReload && jsonReload.success && Array.isArray(jsonReload.data)) {
-            setStudentList(jsonReload.data);
-          }
-        }
-        alert("Đã cập nhật thông tin sinh viên thành công!");
-        setIsEditModalOpen(false);
-      } else {
-        alert(json?.error || "Không thể cập nhật thông tin sinh viên");
-      }
-    } catch (err: any) {
-      alert("Đã xảy ra lỗi: " + err.message);
+      alert("Đã cập nhật thông tin sinh viên thành công!");
+      setIsEditModalOpen(false);
+    } catch {
+      // error is handled inside updateStudent (alert)
     } finally {
       setIsSaving(false);
     }
@@ -133,6 +87,7 @@ export function RosterView() {
 
   // Tìm sinh viên đang chọn một cách an toàn
   const currentStudent = studentList.find(s => s.mssv === selectedStudent) || studentList[0] || null;
+
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
@@ -218,7 +173,7 @@ export function RosterView() {
                 </tr>
               </thead>
               <tbody>
-                {loading ? (
+                {loading || rosterLoading ? (
                   <tr>
                     <td colSpan={5} style={{ padding: "40px", textAlign: "center", color: "#8B6F5F" }}>
                       Đang tải danh sách sinh viên...

@@ -18,14 +18,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Không có quyền truy cập" }, { status: 403 });
     }
 
-    const { getSupabaseClient } = await import("@/lib/utils/supabase/server");
-    const supabase = await getSupabaseClient();
-
-    const { data: gv } = await supabase
-      .from("giangvien")
-      .select("magv")
-      .eq("mataikhoan", payload.mataikhoan)
-      .single();
+    const gv = await giangVienService.getMyProfile(payload.mataikhoan);
 
     if (!gv) {
       return NextResponse.json({ error: "Không tìm thấy giảng viên" }, { status: 404 });
@@ -73,14 +66,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { getSupabaseClient } = await import("@/lib/utils/supabase/server");
-    const supabase = await getSupabaseClient();
-
-    const { data: gv } = await supabase
-      .from("giangvien")
-      .select("magv")
-      .eq("mataikhoan", payload.mataikhoan)
-      .single();
+    const gv = await giangVienService.getMyProfile(payload.mataikhoan);
 
     if (!gv) {
       return NextResponse.json({ error: "Không tìm thấy giảng viên" }, { status: 404 });

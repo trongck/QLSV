@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import dynamic from "next/dynamic";
-import { apiFetch } from "@/services/service/auth/auth.service";
+import { useTeacherAttendance } from "@/hooks/giangvien/useTeacherAttendance";
 
 // Lazy-load thư viện nhận diện khuôn mặt AI (~2MB) chỉ khi giảng viên nhấn nút mở camera
 const FaceAttendanceModal = dynamic(
@@ -12,281 +12,44 @@ const FaceAttendanceModal = dynamic(
 
 type SubTab = "list" | "qrcode" | "leave_requests";
 
-interface LopItem {
-  maphancong: number;
-  malophoc: string;
-  tenmon: string;
-  mamon: string;
-  tenlop: string;
-}
-
-interface BuoiHocItem {
-  mabuoihoc: number;
-  malichhoc: number;
-  maphancong?: number;
-  ngayhoc: string;
-  trangthai: string;
-  qr_secret?: string;
-}
-
-interface LeaveRequestItem {
-  id: number;
-  mssv: string;
-  name: string;
-  class: string;
-  dateRequested: string;
-  reason: string;
-  dateSubmitted: string;
-  evidence: string;
-  status: string;
-}
-
-interface StudentAttendance {
-  mssv: string;
-  name: string;
-  status: string;
-  type: string;
-  time: string;
-  note: string;
-  face_embedding?: number[] | null;
-}
-
 export function AttendanceView() {
   const [subTab, setSubTab] = useState<SubTab>("list");
   const [isFaceModalOpen, setIsFaceModalOpen] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [classes, setClasses] = useState<LopItem[]>([]);
-  const [allSessions, setAllSessions] = useState<BuoiHocItem[]>([]);
-  const [leaveRequests, setLeaveRequests] = useState<LeaveRequestItem[]>([]);
-  
-  // Selection States
-  const [selectedPC, setSelectedPC] = useState<number | null>(null);
-  const [selectedBH, setSelectedBH] = useState<number | null>(null);
-  const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().slice(0, 10));
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Roster Student Checklist
-  const [roster, setRoster] = useState<StudentAttendance[]>([]);
-
-  // Fetch overview data (classes, sessions, leave requests)
-  const fetchOverview = async (selectFirst = false) => {
-    try {
-      const res = await apiFetch("/api/giangvien/attendance");
-      const json = await res.json();
-      if (json.success) {
-        setClasses(json.data.dsLop || []);
-        setAllSessions(json.data.buoiHocList || []);
-        setLeaveRequests(json.data.dsDonXinNghi || []);
-
-        if (selectFirst && json.data.dsLop?.length > 0) {
-          const firstPC = json.data.dsLop[0].maphancong;
-          setSelectedPC(firstPC);
-        }
-      }
-    } catch (err) {
-      console.error("Lỗi lấy thông tin điểm danh:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchOverview(true);
-  }, []);
+  const {
+    loading,
+    classes,
+    allSessions,
+    leaveRequests,
+    roster,
+    selectedPC,
+    setSelectedPC,
+    selectedBH,
+    setSelectedBH,
+    selectedDate,
+    setSelectedDate,
+    fetchOverview,
+    createSession,
+    refreshQR: handleRefreshQR,
+    updateStatus: handleStatusChange,
+    updateNote: handleNoteChange,
+    approveLeave: handleApproveLeave,
+    rejectLeave: handleRejectLeave,
+  } = useTeacherAttendance();
 
   // Filter sessions matching selected class (maphancong)
   const classSessions = allSessions.filter((s) => {
     return s.maphancong === selectedPC;
   });
 
-  // Khi thay đổi lớp hoặc buổi học được chọn
-  useEffect(() => {
-    if (selectedBH && selectedPC) {
-      apiFetch(`/api/giangvien/attendance?mabuoihoc=${selectedBH}&maphancong=${selectedPC}`)
-        .then((r) => r.json())
-        .then((json) => {
-          if (json.success) {
-            setRoster(json.data);
-          }
-        })
-        .catch((e) => console.error("Lỗi tải danh sách điểm danh:", e));
-    } else {
-      setRoster([]);
-    }
-  }, [selectedBH, selectedPC]);
-
-  // Tự động tìm buổi học trùng với ngày được chọn khi đổi lớp hoặc đổi ngày
-  useEffect(() => {
-    if (!selectedPC) return;
-    const match = allSessions.find((s) => s.ngayhoc === selectedDate && s.maphancong === selectedPC);
-    if (match) {
-      setSelectedBH(match.mabuoihoc);
-    } else {
-      setSelectedBH(null);
-    }
-  }, [selectedPC, selectedDate, allSessions]);
-
-  // Làm mới mã QR động
-  const handleRefreshQR = async () => {
-    if (!selectedBH) return;
-    try {
-      const res = await apiFetch("/api/giangvien/attendance", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "generateQR",
-          mabuoihoc: selectedBH,
-        }),
-      });
-      const json = await res.json();
-      if (json.success) {
-        const newSecret = json.data.qr_secret;
-        setAllSessions(prev => prev.map(s => s.mabuoihoc === selectedBH ? { ...s, qr_secret: newSecret } : s));
-      }
-    } catch (e) {
-      console.error("Lỗi làm mới mã QR:", e);
-    }
-  };
-
-
-
-  // Tạo buổi điểm danh mới cho ngày được chọn
-  const handleCreateSession = async () => {
-    if (!selectedPC) return;
-    setLoading(true);
-    try {
-      const res = await apiFetch("/api/giangvien/attendance", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "createSession",
-          maphancong: selectedPC,
-          date: selectedDate,
-        }),
-      });
-      const json = await res.json();
-      if (json.success) {
-        await fetchOverview(false);
-        setSelectedBH(json.data.mabuoihoc);
-      } else {
-        alert(json.error || "Không thể tạo buổi học");
-      }
-    } catch (e) {
-      console.error(e);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Cập nhật trạng thái điểm danh của sinh viên trực tiếp
-  const handleStatusChange = async (mssv: string, newStatus: string) => {
-    if (!selectedBH) return;
-    try {
-      const current = roster.find(r => r.mssv === mssv);
-      const res = await apiFetch("/api/giangvien/attendance", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "updateAttendance",
-          mabuoihoc: selectedBH,
-          masv: mssv,
-          status: newStatus,
-          ghichu: current?.note || "-"
-        }),
-      });
-      const json = await res.json();
-      if (json.success) {
-        // Cập nhật local state cực mượt
-        setRoster(prev => prev.map(item => {
-          if (item.mssv === mssv) {
-            const type = newStatus === "Có mặt" ? "green" : newStatus === "Đi muộn" ? "orange" : newStatus === "Vắng có phép" ? "orange" : "red";
-            return {
-              ...item,
-              status: newStatus,
-              type,
-              time: newStatus === "Có mặt" || newStatus === "Đi muộn" ? new Date().toLocaleTimeString("vi-VN", { hour: "2-digit", minute: "2-digit" }) : "--"
-            };
-          }
-          return item;
-        }));
-      }
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  // Sửa ghi chú điểm danh
-  const handleNoteChange = async (mssv: string, newNote: string) => {
-    if (!selectedBH) return;
-    try {
-      const current = roster.find(r => r.mssv === mssv);
-      const res = await apiFetch("/api/giangvien/attendance", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "updateAttendance",
-          mabuoihoc: selectedBH,
-          masv: mssv,
-          status: current?.status || "Vắng",
-          ghichu: newNote
-        }),
-      });
-      const json = await res.json();
-      if (json.success) {
-        setRoster(prev => prev.map(item => item.mssv === mssv ? { ...item, note: newNote } : item));
-      }
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  // Duyệt đơn xin nghỉ
-  const handleApproveLeave = async (madon: number, mssv: string) => {
-    try {
-      const res = await apiFetch("/api/giangvien/attendance", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "updateLeave",
-          madon,
-          status: "Đã duyệt"
-        }),
-      });
-      const json = await res.json();
-      if (json.success) {
-        setLeaveRequests(prev => prev.map(req => req.id === madon ? { ...req, status: "Đã duyệt" } : req));
-        // Nếu đang mở đúng ca điểm danh đó thì đồng bộ trạng thái hiển thị
-        setRoster(prev => prev.map(std => std.mssv === mssv ? { ...std, status: "Vắng có phép", type: "orange", note: "Vắng có phép (Đơn xin nghỉ)" } : std));
-      }
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  // Từ chối đơn xin nghỉ
-  const handleRejectLeave = async (madon: number) => {
-    try {
-      const res = await apiFetch("/api/giangvien/attendance", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          action: "updateLeave",
-          madon,
-          status: "Từ chối"
-        }),
-      });
-      const json = await res.json();
-      if (json.success) {
-        setLeaveRequests(prev => prev.map(req => req.id === madon ? { ...req, status: "Từ chối" } : req));
-      }
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
   const filteredRoster = roster.filter(r => 
     r.mssv.includes(searchQuery) || r.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const handleCreateSession = () => {
+    createSession();
+  };
 
   if (loading) {
     return (

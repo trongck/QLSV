@@ -1,25 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
-
 import { useRouter } from "next/navigation";
-import { apiFetch } from "@/services/service/auth/auth.service";
-
-interface Homework {
-  id: number;
-  title: string;
-  description: string;
-  class: string;
-  date: string;
-  isoDate: string;
-  done: number;
-  total: number;
-  color: string;
-  bg: string;
-  label: string;
-  maxScore: number;
-  filedinhUrl?: string;
-}
+import { useTeacherTasks, TaskItem } from "@/hooks/giangvien/useTeacherTasks";
+import { useTeacherGrades } from "@/hooks/giangvien/useTeacherGrades";
 
 const getViewerUrl = (url: string) => {
   const ext = url.split('.').pop()?.toLowerCase();
@@ -31,11 +15,26 @@ const getViewerUrl = (url: string) => {
 
 export function HomeworkList() {
   const router = useRouter();
-  const [tasks, setTasks] = useState<Homework[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [editTask, setEditTask] = useState<Homework | null>(null);
+  
+  const {
+    tasks,
+    submissions,
+    loading: tasksLoading,
+    submissionsLoading: loadingSubmissions,
+    createTask,
+    updateTask,
+    fetchSubmissions,
+  } = useTeacherTasks();
+
+  const {
+    classes,
+    loading: classesLoading,
+  } = useTeacherGrades();
+
+  const loading = tasksLoading || classesLoading;
+
+  const [editTask, setEditTask] = useState<TaskItem | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [classes, setClasses] = useState<any[]>([]);
   const [saving, setSaving] = useState(false);
   
   const [newTaskData, setNewTaskData] = useState({
@@ -47,51 +46,12 @@ export function HomeworkList() {
   const [createFile, setCreateFile] = useState<File | null>(null);
   const [editFile, setEditFile] = useState<File | null>(null);
 
-  const [viewSubmissionsTask, setViewSubmissionsTask] = useState<Homework | null>(null);
-  const [submissions, setSubmissions] = useState<any[]>([]);
-  const [loadingSubmissions, setLoadingSubmissions] = useState(false);
+  const [viewSubmissionsTask, setViewSubmissionsTask] = useState<TaskItem | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
 
-  const fetchTasks = async () => {
-    setLoading(true);
-    try {
-      const res = await apiFetch("/api/giangvien/tasks");
-      const json = await res.json();
-      if (json.success) {
-        setTasks(json.data);
-      }
-      
-      const classRes = await apiFetch("/api/giangvien/grades");
-      const classJson = await classRes.json();
-      if (classJson.success) {
-        setClasses(classJson.data);
-      }
-    } catch (err) {
-      console.error("Failed to fetch tasks or classes", err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchTasks();
-  }, []);
-
-  const handleViewSubmissions = async (task: Homework) => {
+  const handleViewSubmissions = async (task: TaskItem) => {
     setViewSubmissionsTask(task);
-    setLoadingSubmissions(true);
-    setSubmissions([]);
-    try {
-      const res = await apiFetch(`/api/giangvien/tasks/${task.id}`);
-      const json = await res.json();
-      if (json.success) {
-        setSubmissions(json.data);
-      }
-    } catch (err) {
-      alert("Lỗi tải danh sách bài nộp");
-    } finally {
-      setLoadingSubmissions(false);
-    }
+    await fetchSubmissions(task.id);
   };
 
   const handleEditSubmit = async (e: React.FormEvent) => {
@@ -108,20 +68,11 @@ export function HomeworkList() {
         formData.append("file", editFile);
       }
 
-      const res = await apiFetch(`/api/giangvien/tasks/${editTask.id}`, {
-        method: "PUT",
-        body: formData
-      });
-      const json = await res.json();
-      if (json.success) {
-        setEditTask(null);
-        setEditFile(null);
-        fetchTasks();
-      } else {
-        alert("Lỗi khi lưu bài tập: " + json.error);
-      }
+      await updateTask(editTask.id, formData);
+      setEditTask(null);
+      setEditFile(null);
     } catch (err) {
-      alert("Lỗi kết nối khi lưu bài tập");
+      // Error handled by hook
     } finally {
       setSaving(false);
     }
@@ -145,21 +96,12 @@ export function HomeworkList() {
         formData.append("file", createFile);
       }
 
-      const res = await apiFetch("/api/giangvien/tasks", {
-        method: "POST",
-        body: formData
-      });
-      const json = await res.json();
-      if (json.success) {
-        setShowCreateModal(false);
-        setNewTaskData({ maphancong: "", tieude: "", mota: "", hannop: "" });
-        setCreateFile(null);
-        fetchTasks();
-      } else {
-        alert("Lỗi khi tạo bài tập: " + json.error);
-      }
+      await createTask(formData);
+      setShowCreateModal(false);
+      setNewTaskData({ maphancong: "", tieude: "", mota: "", hannop: "" });
+      setCreateFile(null);
     } catch (err) {
-      alert("Lỗi kết nối khi tạo bài tập");
+      // Error handled by hook
     } finally {
       setSaving(false);
     }

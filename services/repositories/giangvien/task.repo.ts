@@ -92,5 +92,22 @@ export const taskRepo = {
     return await supabase
       .from("thongbao")
       .insert(payload);
+  },
+
+  async uploadAttachment(fileName: string, fileBuffer: ArrayBuffer, contentType: string) {
+    const supabase = await getSupabaseClient();
+    const { error } = await supabase.storage
+      .from("attachments")
+      .upload(fileName, fileBuffer, {
+        contentType,
+        upsert: true
+      });
+    if (error) throw error;
+    
+    const { data: publicUrlData } = supabase.storage
+      .from("attachments")
+      .getPublicUrl(fileName);
+      
+    return publicUrlData.publicUrl;
   }
 };

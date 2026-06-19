@@ -1,84 +1,42 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { apiFetch } from "@/services/service/auth/auth.service";
+import { useTeacherGrades, StudentGradeRow } from "@/hooks/giangvien/useTeacherGrades";
 import styles from "@/app/(dashboard)/teacher/dashboard/teacher-dashboard.module.css";
 import * as XLSX from "xlsx";
 
-interface StudentGradeRow {
-  stt: number;
-  masv: string;
-  hoten: string;
-  malop: string;
-  diemChuyenCan: { giatri: number; heso: number } | null;
-  diemGiuaKy: { giatri: number; heso: number } | null;
-  diemCuoiKy: { giatri: number; heso: number } | null;
-  tongKet: { diemtongket: number; diemchu: string; ketqua: string } | null;
-  nopbaiFiles?: { tieude: string; filenop: string }[];
-}
-
 export function GradeSheet() {
-  const [classes, setClasses] = useState<any[]>([]);
-  const [selectedPC, setSelectedPC] = useState<number | null>(null);
-  const [students, setStudents] = useState<StudentGradeRow[]>([]);
-  const [loading, setLoading] = useState(true);
+  const {
+    classes,
+    students,
+    selectedPC,
+    setSelectedPC,
+    loading,
+    gradesLoading,
+    saveGrade,
+    fetchGrades,
+  } = useTeacherGrades();
+
   const [savingRow, setSavingRow] = useState<string | null>(null);
   const [editingRows, setEditingRows] = useState<Record<string, boolean>>({});
   const [tempGrades, setTempGrades] = useState<Record<string, { ChuyenCan: string; GiuaKy: string; CuoiKy: string }>>({});
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedHocKy, setSelectedHocKy] = useState<string>("all");
 
-  // Tải danh sách lớp học
+  // Sync tempGrades inputs when students state updates from the hook
   useEffect(() => {
-    async function loadClasses() {
-      try {
-        const res = await apiFetch("/api/giangvien/grades");
-        const json = await res.json();
-        if (json.success && json.data) {
-          setClasses(json.data);
-          if (json.data.length > 0) {
-            setSelectedPC(json.data[0].maphancong);
-          }
-        }
-      } catch (err) {
-        console.error("Lỗi tải danh sách lớp:", err);
-      } finally {
-        setLoading(false);
-      }
+    if (students && students.length > 0) {
+      const initialInputs: Record<string, any> = {};
+      students.forEach((s: StudentGradeRow) => {
+        initialInputs[s.masv] = {
+          ChuyenCan: s.diemChuyenCan?.giatri?.toString() ?? "",
+          GiuaKy: s.diemGiuaKy?.giatri?.toString() ?? "",
+          CuoiKy: s.diemCuoiKy?.giatri?.toString() ?? "",
+        };
+      });
+      setTempGrades(initialInputs);
     }
-    loadClasses();
-  }, []);
-
-  // Tải bảng điểm khi chọn lớp khác
-  useEffect(() => {
-    if (!selectedPC) return;
-    async function loadGradeSheet() {
-      setLoading(true);
-      try {
-        const res = await apiFetch(`/api/giangvien/grades?maphancong=${selectedPC}`);
-        const json = await res.json();
-        if (json.success && json.data) {
-          setStudents(json.data);
-          
-          // Khởi tạo các giá trị input tạm thời
-          const initialInputs: Record<string, any> = {};
-          json.data.forEach((s: StudentGradeRow) => {
-            initialInputs[s.masv] = {
-              ChuyenCan: s.diemChuyenCan?.giatri?.toString() ?? "",
-              GiuaKy: s.diemGiuaKy?.giatri?.toString() ?? "",
-              CuoiKy: s.diemCuoiKy?.giatri?.toString() ?? "",
-            };
-          });
-          setTempGrades(initialInputs);
-        }
-      } catch (err) {
-        console.error("Lỗi tải bảng điểm lớp:", err);
-      } finally {
-        setLoading(false);
-      }
-    }
-    loadGradeSheet();
-  }, [selectedPC]);
+  }, [students]);
 
   const handleGradeChange = (masv: string, type: "ChuyenCan" | "GiuaKy" | "CuoiKy", val: string) => {
     if (val !== "" && !/^[0-9]*\.?[0-9]*$/.test(val)) return;
@@ -132,29 +90,10 @@ export function GradeSheet() {
         { loaidiem: "CuoiKy", giatri: parseFloat(row.CuoiKy), heso: 0.6 },
       ].filter((g) => !isNaN(g.giatri));
 
-      const res = await apiFetch("/api/giangvien/grades", {
-        method: "POST",
-        body: JSON.stringify({
-          maphancong: selectedPC,
-          masv,
-          grades: gradesPayload,
-        }),
-      });
-
-      const json = await res.json();
-      if (json.success) {
-        // Tải lại toàn bộ bảng điểm lớp để cập nhật kết quả tính tổng kết chính xác
-        const resReload = await apiFetch(`/api/giangvien/grades?maphancong=${selectedPC}`);
-        const jsonReload = await resReload.json();
-        if (jsonReload.success && jsonReload.data) {
-          setStudents(jsonReload.data);
-        }
-        setEditingRows((prev) => ({ ...prev, [masv]: false }));
-      } else {
-        alert(json.error || "Không thể lưu điểm");
-      }
+      await saveGrade(Number(selectedPC), masv, gradesPayload);
+      setEditingRows((prev) => ({ ...prev, [masv]: false }));
     } catch (err: any) {
-      alert("Đã xảy ra lỗi: " + err.message);
+      // Error is handled inside the hook
     } finally {
       setSavingRow(null);
     }
@@ -178,7 +117,7 @@ export function GradeSheet() {
       return;
     }
 
-    const currentClass = classes.find(c => c.maphancong === selectedPC);
+    const currentClass = classes.find(c => c.maphancong === Number(selectedPC));
     const className = currentClass ? `${currentClass.lop?.tenlop ?? ""} - ${currentClass.monhoc?.tenmon ?? ""}` : "Bảng điểm";
 
     const exportData = students.map(s => {
@@ -230,8 +169,7 @@ export function GradeSheet() {
           <button
             onClick={() => {
               if (selectedPC) {
-                // Tải lại bảng điểm
-                setSelectedPC(selectedPC);
+                fetchGrades(Number(selectedPC));
               }
             }}
             className={styles.primaryBtn}
@@ -259,8 +197,7 @@ export function GradeSheet() {
             if (filtered.length > 0) {
               setSelectedPC(filtered[0].maphancong);
             } else {
-              setSelectedPC(null);
-              setStudents([]);
+              setSelectedPC("");
             }
           }}
           style={{ padding: "8px 12px", borderRadius: "8px", border: "1px solid #EAD9CB", outline: "none", color: "#6B4F43", background: "white" }}

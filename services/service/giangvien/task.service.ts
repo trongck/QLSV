@@ -176,4 +176,11 @@ export const taskService = {
 
     return data;
   },
+
+  /**
+   * Upload file đính kèm bài tập lên Supabase Storage
+   */
+  async uploadAttachment(fileName: string, fileBuffer: ArrayBuffer, contentType: string) {
+    return await taskRepo.uploadAttachment(fileName, fileBuffer, contentType);
+  }
 };

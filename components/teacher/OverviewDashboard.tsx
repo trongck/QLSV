@@ -1,8 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/auth/useAuth";
-import { apiFetch } from "@/services/service/auth/auth.service";
+import { useTeacherDashboard } from "@/hooks/giangvien/useTeacherDashboard";
 import styles from "@/app/(dashboard)/teacher/dashboard/teacher-dashboard.module.css";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -61,18 +60,7 @@ function timeAgo(isoDate: string): string {
 
 export function OverviewDashboard() {
   const { user } = useAuth();
-  const [data, setData] = useState<DashboardData | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    apiFetch("/api/giangvien/dashboard")
-      .then((res) => res.json())
-      .then((json) => {
-        if (json.success) setData(json.data);
-      })
-      .catch((err) => console.error("Lỗi tải dashboard:", err))
-      .finally(() => setLoading(false));
-  }, []);
+  const { data, loading } = useTeacherDashboard();
 
   // Xác định trạng thái buổi học theo tiết hiện tại
   const currentTiet = (() => {

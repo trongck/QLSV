@@ -16,15 +16,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Không có quyền truy cập" }, { status: 403 });
     }
 
-    // Lấy magv từ mataikhoan
-    const { getSupabaseClient } = await import("@/lib/utils/supabase/server");
-    const supabase = await getSupabaseClient();
-
-    const { data: gv } = await supabase
-      .from("giangvien")
-      .select("magv")
-      .eq("mataikhoan", payload.mataikhoan)
-      .single();
+    const gv = await giangVienService.getMyProfile(payload.mataikhoan);
 
     if (!gv) {
       return NextResponse.json({ error: "Không tìm thấy giảng viên" }, { status: 404 });
@@ -59,14 +51,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const { getSupabaseClient } = await import("@/lib/utils/supabase/server");
-    const supabase = await getSupabaseClient();
-
-    const { data: gv } = await supabase
-      .from("giangvien")
-      .select("magv")
-      .eq("mataikhoan", payload.mataikhoan)
-      .single();
+    const gv = await giangVienService.getMyProfile(payload.mataikhoan);
 
     if (!gv) {
       return NextResponse.json({ error: "Không tìm thấy giảng viên" }, { status: 404 });
@@ -85,31 +70,17 @@ export async function POST(request: Request) {
 
     let filedinhUrl = "";
     if (file && file.size > 0) {
-      const { getSupabaseClient } = await import("@/lib/utils/supabase/server");
-    const supabase = await getSupabaseClient();
-
       const fileExtension = file.name.split(".").pop()?.toLowerCase();
       const fileName = `task_${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExtension}`;
       
       const fileBuffer = await file.arrayBuffer();
       
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from("attachments")
-        .upload(fileName, fileBuffer, {
-          contentType: file.type,
-          upsert: true
-        });
-
-      if (uploadError) {
+      try {
+        filedinhUrl = await giangVienService.uploadAttachment(fileName, fileBuffer, file.type);
+      } catch (uploadError) {
         console.error("Upload error:", uploadError);
         return NextResponse.json({ error: "Lỗi khi upload file đính kèm" }, { status: 500 });
       }
-
-      const { data: publicUrlData } = supabase.storage
-        .from("attachments")
-        .getPublicUrl(fileName);
-        
-      filedinhUrl = publicUrlData.publicUrl;
     }
 
     const newTask = await giangVienService.createTask(gv.magv, {

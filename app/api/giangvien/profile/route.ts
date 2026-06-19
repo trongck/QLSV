@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { getSupabaseClient } from "@/lib/utils/supabase/server";
 import { verifyToken, extractBearer } from "@/lib/utils/jwt";
 import { VaiTro } from "@/types";
 import { giangVienService } from "@/services/service/giangvien/teacher.service";
@@ -95,50 +94,20 @@ export async function PUT(request: Request) {
 
     // Các trường ngayvaotruong và hesoluong chỉ đọc — không cho phép tự sửa
 
-    const supabase = await getSupabaseClient();
-
-    // Cập nhật tất cả trong 1 bảng giangvien
-    const nameStr = hoten?.trim() || "";
-    const parts = nameStr.split(/\s+/);
-    const ten = parts.length > 1 ? parts[parts.length - 1] : parts[0];
-    const hodem = parts.length > 1 ? parts.slice(0, -1).join(" ") : "";
-
-    const { error: gvError } = await supabase
-      .from("giangvien")
-      .update({
-        hodem:       hodem               || null,
-        ten:         ten                 || null,
-        emailtruong: email?.trim()       ?? null,
-        makhoa:      mapKhoa(faculty),
-        ngaysinh:    ngaysinh            ?? null,
-        gioitinh:    normalizeGioiTinh(gioitinh),
-        hocvi:       hocvi?.trim()       || null,
-        chuyennganh: chuyennganh?.trim() || null,
-        anhdaidien:  anhdaidien?.trim()  || null,
-        thanhtuu:    thanhtuu?.trim()    || null,
-        diachi:      diachi?.trim()      || null,
-        sodienthoai: sodienthoai?.trim() || null,
-        emailcanhan: emailcanhan?.trim() || null,
-      })
-      .eq("mataikhoan", payload.mataikhoan);
-
-    if (gvError) {
-      console.error("Lỗi cập nhật giangvien:", gvError.message);
-      throw gvError;
-    }
-
-    // Đồng bộ email đăng nhập trong bảng taikhoan nếu email thay đổi
-    if (email?.trim()) {
-      const { error: tkError } = await supabase
-        .from("taikhoan")
-        .update({ email: email.trim() })
-        .eq("mataikhoan", payload.mataikhoan);
-
-      if (tkError) {
-        // Không throw — chỉ log, email trường vẫn đã lưu thành công
-        console.warn("Cảnh báo: không thể đồng bộ email taikhoan:", tkError.message);
-      }
-    }
+    await giangVienService.updateProfile(payload.mataikhoan, {
+      hoten,
+      email,
+      faculty,
+      ngaysinh,
+      gioitinh,
+      hocvi,
+      chuyennganh,
+      anhdaidien,
+      thanhtuu,
+      diachi,
+      sodienthoai,
+      emailcanhan,
+    });
 
     return NextResponse.json({ success: true });
   } catch (err: any) {

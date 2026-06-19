@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 
-import { apiFetch } from "@/services/service/auth/auth.service";
+import { useTeacherReports, ReportData } from "@/hooks/giangvien/useTeacherReports";
+import { useTeacherClasses } from "@/hooks/giangvien/useTeacherClasses";
 
 interface ClassInfo {
   maphancong: number;
@@ -22,50 +23,40 @@ interface ClassInfo {
   };
 }
 
-interface ReportData {
-  matailieu: number;
-  tieude: string;
-  mota: string;
-  duongdan: string; // JSON stats
-  ngaytao: string;
-}
-
-interface StatsData {
-  avgAttendance: number;
-  passRate: number;
-  avgGpa: number;
-  gradeDist: {
-    A: number;
-    B: number;
-    C: number;
-    DF: number;
-  };
-}
-
 export function ReportView() {
-  const [loading, setLoading] = useState(true);
-  const [classes, setClasses] = useState<ClassInfo[]>([]);
-  const [selectedPC, setSelectedPC] = useState<number | "">("");
+  const {
+    reports,
+    stats,
+    setStats,
+    selectedPC,
+    setSelectedPC,
+    loading,
+    saving,
+    fetchLiveStats,
+    createReport,
+    updateReport,
+  } = useTeacherReports();
+
+  // Classes come from the classes hook (same grades endpoint)
+  const { dsLop: rawClasses } = useTeacherClasses();
+  // Normalise to the local ClassInfo shape used by this view
+  const classes: ClassInfo[] = rawClasses.map((c) => ({
+    maphancong: c.maphancong,
+    malophoc: c.malophoc,
+    malop: c.malop,
+    monhoc: { tenmon: c.tenmon, sotinchi: c.sotinchi },
+    lop: { tenlop: c.tenlop },
+  }));
 
   // Filters for Semester and Academic Year
   const [selectedYear, setSelectedYear] = useState<string>("Tất cả");
   const [selectedSemester, setSelectedSemester] = useState<string>("Tất cả");
 
-  // Statistics
-  const [stats, setStats] = useState<StatsData>({
-    avgAttendance: 0,
-    passRate: 0,
-    avgGpa: 0,
-    gradeDist: { A: 0, B: 0, C: 0, DF: 0 }
-  });
-
   // History & Modal states
-  const [reports, setReports] = useState<ReportData[]>([]);
   const [selectedReportId, setSelectedReportId] = useState<number | "live">("live");
   const [comments, setComments] = useState("");
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newReportTitle, setNewReportTitle] = useState("");
-  const [saving, setSaving] = useState(false);
   // Inline edit state for saved report title
   const [editingReportId, setEditingReportId] = useState<number | null>(null);
   const [editingTitle, setEditingTitle] = useState("");
@@ -74,7 +65,7 @@ export function ReportView() {
   const yearOptions = Array.from(
     new Set(
       classes
-        .map((c) => c.hocky?.namhoc)
+        .map((c) => (c as any).hocky?.namhoc)
         .filter((nh): nh is number => nh !== undefined && nh !== null)
         .map((nh) => `${nh}-${nh + 1}`)
     )
@@ -83,16 +74,16 @@ export function ReportView() {
   const semesterOptions = Array.from(
     new Set(
       classes
-        .map((c) => c.hocky?.tenhocky)
+        .map((c) => (c as any).hocky?.tenhocky)
         .filter(Boolean)
     )
   ).sort() as string[];
 
   // Filtered classes list
   const filteredClasses = classes.filter((c) => {
-    const classYear = c.hocky?.namhoc ? `${c.hocky.namhoc}-${c.hocky.namhoc + 1}` : "";
+    const classYear = (c as any).hocky?.namhoc ? `${(c as any).hocky.namhoc}-${(c as any).hocky.namhoc + 1}` : "";
     const matchYear = selectedYear === "Tất cả" || classYear === selectedYear;
-    const matchSem = selectedSemester === "Tất cả" || c.hocky?.tenhocky === selectedSemester;
+    const matchSem = selectedSemester === "Tất cả" || (c as any).hocky?.tenhocky === selectedSemester;
     return matchYear && matchSem;
   });
 
@@ -106,62 +97,7 @@ export function ReportView() {
     } else {
       setSelectedPC("");
     }
-  }, [selectedYear, selectedSemester, classes, selectedPC]);
-
-  // Load classes initially
-  useEffect(() => {
-    async function loadClasses() {
-      try {
-        const res = await apiFetch("/api/giangvien/grades");
-        const json = await res.json();
-        if (json.success && json.data && json.data.length > 0) {
-          setClasses(json.data);
-          setSelectedPC(json.data[0].maphancong);
-        } else {
-          setLoading(false);
-        }
-      } catch (err) {
-        console.error("Lỗi tải danh sách lớp phân công:", err);
-        setLoading(false);
-      }
-    }
-    loadClasses();
-  }, []);
-
-  // Fetch stats and reports list when class selection changes
-  useEffect(() => {
-    if (!selectedPC) {
-      setLoading(false);
-      return;
-    }
-    setLoading(true);
-    setSelectedReportId("live");
-    setComments("");
-
-    async function loadStatsAndReports() {
-      try {
-        // Fetch Live Stats
-        const statsRes = await apiFetch(`/api/giangvien/reports?maphancong=${selectedPC}&action=GET_STATS`);
-        const statsJson = await statsRes.json();
-        if (statsJson.success) {
-          setStats(statsJson.data);
-        }
-
-        // Fetch Saved Reports
-        const reportsRes = await apiFetch(`/api/giangvien/reports?maphancong=${selectedPC}&action=GET_REPORTS`);
-        const reportsJson = await reportsRes.json();
-        if (reportsJson.success) {
-          setReports(reportsJson.data);
-        }
-      } catch (err) {
-        console.error("Lỗi tải thông tin thống kê / báo cáo:", err);
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    loadStatsAndReports();
-  }, [selectedPC]);
+  }, [selectedYear, selectedSemester, classes, selectedPC, setSelectedPC]);
 
   // Handle switching between live report and saved historical reports
   const handleSelectReport = (report: ReportData | "live") => {
@@ -169,11 +105,9 @@ export function ReportView() {
       setSelectedReportId("live");
       setComments("");
       // Reset stats to live stats
-      apiFetch(`/api/giangvien/reports?maphancong=${selectedPC}&action=GET_STATS`)
-        .then(res => res.json())
-        .then(json => {
-          if (json.success) setStats(json.data);
-        });
+      if (selectedPC) {
+        fetchLiveStats(Number(selectedPC));
+      }
     } else {
       setSelectedReportId(report.matailieu);
       setComments(report.mota || "");
@@ -198,37 +132,17 @@ export function ReportView() {
     e.preventDefault();
     if (!selectedPC || !newReportTitle.trim()) return;
 
-    setSaving(true);
     try {
-      const res = await apiFetch("/api/giangvien/reports", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          maphancong: selectedPC,
-          tieude: newReportTitle,
-          mota: comments,
-          stats: stats
-        })
+      const newRep = await createReport({
+        maphancong: Number(selectedPC),
+        tieude: newReportTitle,
+        mota: comments,
+        stats: stats
       });
-      const json = await res.json();
-      if (json.success) {
-        setShowCreateModal(false);
-        // Refresh list of reports
-        const reportsRes = await apiFetch(`/api/giangvien/reports?maphancong=${selectedPC}&action=GET_REPORTS`);
-        const reportsJson = await reportsRes.json();
-        if (reportsJson.success) {
-          setReports(reportsJson.data);
-          // Auto select the new report
-          const newRep = reportsJson.data.find((r: any) => r.matailieu === json.data.matailieu);
-          if (newRep) handleSelectReport(newRep);
-        }
-      } else {
-        alert("Lỗi: " + json.error);
-      }
-    } catch (err) {
-      alert("Lỗi hệ thống khi tạo báo cáo mới");
-    } finally {
-      setSaving(false);
+      setShowCreateModal(false);
+      if (newRep) handleSelectReport(newRep);
+    } catch {
+      // error is handled in hook (alert)
     }
   };
 
@@ -238,25 +152,11 @@ export function ReportView() {
       return;
     }
 
-    setSaving(true);
     try {
-      const res = await apiFetch(`/api/giangvien/reports/${selectedReportId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mota: comments })
-      });
-      const json = await res.json();
-      if (json.success) {
-        alert("Cập nhật nhận xét thành công!");
-        // Update reports list comments locally
-        setReports(prev => prev.map(r => r.matailieu === selectedReportId ? { ...r, mota: comments } : r));
-      } else {
-        alert("Lỗi: " + json.error);
-      }
-    } catch (err) {
-      alert("Lỗi hệ thống khi lưu nhận xét");
-    } finally {
-      setSaving(false);
+      await updateReport(Number(selectedReportId), { mota: comments });
+      alert("Cập nhật nhận xét thành công!");
+    } catch {
+      // error handled in hook
     }
   };
 
@@ -594,24 +494,13 @@ export function ReportView() {
                           onClick={async (e) => {
                             e.stopPropagation();
                             if (!editingTitle.trim()) return;
-                            setSaving(true);
                             try {
-                              const res = await apiFetch(`/api/giangvien/reports/${rep.matailieu}`, {
-                                method: "PUT",
-                                headers: { "Content-Type": "application/json" },
-                                body: JSON.stringify({ tieude: editingTitle })
-                              });
-                              const json = await res.json();
-                              if (json.success) {
-                                setReports(prev => prev.map(r => r.matailieu === rep.matailieu ? { ...r, tieude: editingTitle } : r));
+                              const ok = await updateReport(rep.matailieu, { tieude: editingTitle });
+                              if (ok) {
                                 setEditingReportId(null);
-                              } else {
-                                alert("Lỗi: " + json.error);
                               }
                             } catch {
-                              alert("Lỗi khi cập nhật tên báo cáo");
-                            } finally {
-                              setSaving(false);
+                              // error already handled/alerted by hook
                             }
                           }}
                           style={{ padding: "5px 12px", borderRadius: "6px", border: "none", background: "#F2A8A8", color: "white", fontSize: "12px", fontWeight: "bold", cursor: "pointer" }}

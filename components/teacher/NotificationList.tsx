@@ -2,38 +2,33 @@
 
 import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/auth/useAuth";
-import { apiFetch } from "@/services/service/auth/auth.service";
+import { useTeacherNotifications, NotificationItem } from "@/hooks/giangvien/useTeacherNotifications";
+import { useTeacherClasses } from "@/hooks/giangvien/useTeacherClasses";
 import styles from "@/app/(dashboard)/teacher/dashboard/teacher-dashboard.module.css";
-
-interface ThongBao {
-  mathongbao: number;
-  mataikhoantao: string;
-  tieude: string;
-  noidung: string;
-  loai: string;
-  doituong: string;
-  malop: string | null;
-  maphancong: number | null;
-  ngayhethan: string | null;
-  ghim: boolean;
-  ngaytao: string;
-  ngaycapnhat: string;
-  dadoc: boolean;
-  thoigiandoc: string | null;
-  taikhoan?: { email: string; vaitro: string };
-  lop?: { tenlop: string };
-}
 
 export function NotificationList() {
   const { user } = useAuth();
-  const [notifications, setNotifications] = useState<ThongBao[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
+  
+  const {
+    notifications,
+    loading,
+    search,
+    setSearch,
+    setLoai,
+    createNotification,
+    updateNotification,
+    deleteNotification,
+    markAsRead,
+    markAllAsRead,
+  } = useTeacherNotifications();
+
+  const { dsLop: teacherClasses } = useTeacherClasses();
+
   const [filterType, setFilterType] = useState("Tất cả thông báo");
   const [markedAll, setMarkedAll] = useState(false);
 
   // Detailed view modal state
-  const [selectedNote, setSelectedNote] = useState<ThongBao | null>(null);
+  const [selectedNote, setSelectedNote] = useState<NotificationItem | null>(null);
 
   // States for inline editing
   const [editingId, setEditingId] = useState<number | null>(null);
@@ -50,61 +45,27 @@ export function NotificationList() {
   const [newMaphancong, setNewMaphancong] = useState("");
   const [newNgayhethan, setNewNgayhethan] = useState("");
   const [newGhim, setNewGhim] = useState(false);
-  const [teacherClasses, setTeacherClasses] = useState<any[]>([]);
 
-  async function fetchNotifications() {
-    setLoading(true);
-    try {
-      let url = "/api/giangvien/notifications?limit=50";
-      if (search) {
-        url += `&search=${encodeURIComponent(search)}`;
-      }
-      if (filterType !== "Tất cả thông báo") {
-        let typeParam = "";
-        if (filterType === "Quan trọng") typeParam = "Khancap";
-        else if (filterType === "Cảnh báo AI") typeParam = "Khancap";
-        else if (filterType === "Lớp học" || filterType === "Học tập") typeParam = "Hoctap";
-        else if (filterType === "Thông báo") typeParam = "Chung";
-        
-        if (typeParam) url += `&loai=${typeParam}`;
-      }
-      const res = await apiFetch(url);
-      const json = await res.json();
-      if (json.success && json.data) {
-        setNotifications(json.data);
-      }
-    } catch (err) {
-      console.error("Lỗi tải thông báo:", err);
-    } finally {
-      setLoading(false);
-    }
-  }
+  // Synchronize local filterType with the hook's loai filter
+  useEffect(() => {
+    let typeParam = "";
+    if (filterType === "Quan trọng") typeParam = "Khancap";
+    else if (filterType === "Cảnh báo AI") typeParam = "Khancap";
+    else if (filterType === "Lớp học" || filterType === "Học tập") typeParam = "Hoctap";
+    else if (filterType === "Thông báo") typeParam = "Chung";
+    setLoai(typeParam);
+  }, [filterType, setLoai]);
 
-  const handleSelectNote = async (note: ThongBao) => {
+  const handleSelectNote = async (note: NotificationItem) => {
     setSelectedNote(note);
     if (!note.dadoc) {
       try {
-        const res = await apiFetch("/api/giangvien/notifications", {
-          method: "PATCH",
-          body: JSON.stringify({ mathongbao: note.mathongbao, dadoc: true }),
-        });
-        const json = await res.json();
-        if (json.success) {
-          setNotifications(prev =>
-            prev.map(n =>
-              n.mathongbao === note.mathongbao ? { ...n, dadoc: true } : n
-            )
-          );
-        }
+        await markAsRead(note.mathongbao, false);
       } catch (err) {
         console.error("Lỗi tự động đánh dấu đã đọc khi xem chi tiết:", err);
       }
     }
   };
-
-  useEffect(() => {
-    fetchNotifications();
-  }, [search, filterType]);
 
   // Tự động mở thông báo khi được chuyển tiếp từ Quả chuông trên Dashboard Giảng viên
   useEffect(() => {
@@ -122,32 +83,9 @@ export function NotificationList() {
     }
   }, [notifications]);
 
-  useEffect(() => {
-    // Fetch classes taught by the teacher to populate target class select
-    apiFetch("/api/giangvien/classes")
-      .then(res => res.json())
-      .then(json => {
-        if (json.success && json.data?.dsLop) {
-          setTeacherClasses(json.data.dsLop);
-        }
-      })
-      .catch(err => console.error("Lỗi tải lớp học:", err));
-  }, []);
-
   const handleMarkAsRead = async (id: number, currentRead: boolean) => {
     try {
-      const res = await apiFetch("/api/giangvien/notifications", {
-        method: "PATCH",
-        body: JSON.stringify({ mathongbao: id, dadoc: !currentRead }),
-      });
-      const json = await res.json();
-      if (json.success) {
-        setNotifications(prev =>
-          prev.map(note =>
-            note.mathongbao === id ? { ...note, dadoc: !currentRead } : note
-          )
-        );
-      }
+      await markAsRead(id, currentRead);
     } catch (err) {
       console.error("Lỗi cập nhật trạng thái đã đọc:", err);
     }
@@ -155,15 +93,8 @@ export function NotificationList() {
 
   const handleMarkAllAsRead = async () => {
     try {
-      const res = await apiFetch("/api/giangvien/notifications", {
-        method: "PATCH",
-        body: JSON.stringify({ all: true }),
-      });
-      const json = await res.json();
-      if (json.success) {
-        setNotifications(prev => prev.map(note => ({ ...note, dadoc: true })));
-        setMarkedAll(true);
-      }
+      await markAllAsRead();
+      setMarkedAll(true);
     } catch (err) {
       console.error("Lỗi đánh dấu đã đọc tất cả:", err);
     }
@@ -172,15 +103,7 @@ export function NotificationList() {
   const handleDelete = async (id: number) => {
     if (!confirm("Bạn có chắc chắn muốn xóa thông báo này?")) return;
     try {
-      const res = await apiFetch(`/api/giangvien/notifications/${id}`, {
-        method: "DELETE",
-      });
-      const json = await res.json();
-      if (json.success) {
-        setNotifications(prev => prev.filter(note => note.mathongbao !== id));
-      } else {
-        alert(json.error || "Không thể xóa thông báo");
-      }
+      await deleteNotification(id);
     } catch (err) {
       console.error("Lỗi xóa thông báo:", err);
     }
@@ -193,44 +116,32 @@ export function NotificationList() {
     }
 
     try {
-      const res = await apiFetch("/api/giangvien/notifications", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          tieude: newTitle.trim(),
-          noidung: newContent.trim(),
-          loai: newLoai,
-          doituong: newDoituong,
-          malop: newMalop || null,
-          maphancong: newMaphancong ? Number(newMaphancong) : null,
-          ngayhethan: newNgayhethan || null,
-          ghim: newGhim,
-        }),
+      await createNotification({
+        tieude: newTitle.trim(),
+        noidung: newContent.trim(),
+        loai: newLoai,
+        doituong: newDoituong,
+        malop: newMalop || null,
+        maphancong: newMaphancong ? Number(newMaphancong) : null,
+        ngayhethan: newNgayhethan || null,
+        ghim: newGhim,
       });
-
-      const json = await res.json();
-      if (json.success && json.data) {
-        // Prepend new notification to the list
-        setNotifications(prev => [json.data, ...prev]);
-        setIsCreateOpen(false);
-        // Reset state
-        setNewTitle("");
-        setNewContent("");
-        setNewLoai("Chung");
-        setNewDoituong("Tatca");
-        setNewMalop("");
-        setNewMaphancong("");
-        setNewNgayhethan("");
-        setNewGhim(false);
-      } else {
-        alert(json.error || "Tạo thông báo thất bại");
-      }
+      setIsCreateOpen(false);
+      // Reset state
+      setNewTitle("");
+      setNewContent("");
+      setNewLoai("Chung");
+      setNewDoituong("Tatca");
+      setNewMalop("");
+      setNewMaphancong("");
+      setNewNgayhethan("");
+      setNewGhim(false);
     } catch (err) {
       console.error("Lỗi tạo thông báo:", err);
     }
   };
 
-  const startEdit = (note: ThongBao) => {
+  const startEdit = (note: NotificationItem) => {
     setEditingId(note.mathongbao);
     setEditTitle(note.tieude);
     setEditContent(note.noidung);
@@ -248,24 +159,11 @@ export function NotificationList() {
       return;
     }
     try {
-      const res = await apiFetch(`/api/giangvien/notifications/${id}`, {
-        method: "PATCH",
-        body: JSON.stringify({
-          tieude: editTitle,
-          noidung: editContent
-        }),
+      await updateNotification(id, {
+        tieude: editTitle,
+        noidung: editContent
       });
-      const json = await res.json();
-      if (json.success && json.data) {
-        setNotifications(prev =>
-          prev.map(note =>
-            note.mathongbao === id ? { ...note, ...json.data } : note
-          )
-        );
-        setEditingId(null);
-      } else {
-        alert(json.error || "Không thể lưu chỉnh sửa");
-      }
+      setEditingId(null);
     } catch (err) {
       console.error("Lỗi lưu chỉnh sửa thông báo:", err);
     }
@@ -286,7 +184,7 @@ export function NotificationList() {
     }
   };
 
-  const getSenderName = (note: ThongBao) => {
+  const getSenderName = (note: NotificationItem) => {
     if (note.taikhoan?.vaitro === "Admin") return "Ban Giám Hiệu";
     if (note.taikhoan?.email) return note.taikhoan.email;
     return "Hệ thống";

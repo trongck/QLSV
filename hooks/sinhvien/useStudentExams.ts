@@ -5,40 +5,40 @@ import { useAuth } from "@/hooks/auth/useAuth";
 import { apiFetch } from "@/services/service/auth/auth.service";
 
 async function fetchExamsApi(): Promise<{
-  success: boolean; data: any[]; message?: string;
+    success: boolean; data: any[]; message?: string;
 }> {
-  const res = await apiFetch("/api/student/exam");
-  if (!res.ok) throw new Error(`Lỗi tải bài thi (${res.status})`);
-  return res.json();
+    const res = await apiFetch("/api/student/exam");
+    if (!res.ok) throw new Error(`Lỗi tải bài thi (${res.status})`);
+    return res.json();
 }
 
 async function fetchExamDetailApi(madethi: number): Promise<{
-  success: boolean; data: any; error?: string;
+    success: boolean; data: any; error?: string;
 }> {
-  const res = await apiFetch(`/api/student/exam/${madethi}`);
-  if (!res.ok) throw new Error(`Lỗi tải đề thi (${res.status})`);
-  return res.json();
+    const res = await apiFetch(`/api/student/exam/${madethi}`);
+    if (!res.ok) throw new Error(`Lỗi tải đề thi (${res.status})`);
+    return res.json();
 }
 
 async function submitExamApi(
-  madethi: number,
-  answers: { macauhoi: number; madapan: number | null; cautraloituluan: string | null }[],
-  cheatCount?: number
+    madethi: number,
+    answers: { macauhoi: number; madapan: number | null; cautraloituluan: string | null }[],
+    cheatCount?: number
 ): Promise<{ success: boolean; data: any; error?: string }> {
-  const res = await apiFetch(`/api/student/exam/${madethi}`, {
-    method: "POST",
-    body: JSON.stringify({ answers, cheatCount }),
-  });
-  if (!res.ok) throw new Error(`Lỗi nộp bài thi (${res.status})`);
-  return res.json();
+    const res = await apiFetch(`/api/student/exam/${madethi}`, {
+        method: "POST",
+        body: JSON.stringify({ answers, cheatCount }),
+    });
+    if (!res.ok) throw new Error(`Lỗi nộp bài thi (${res.status})`);
+    return res.json();
 }
 
 async function fetchExamResultApi(madethi: number): Promise<{
-  success: boolean; data: any; error?: string;
+    success: boolean; data: any; error?: string;
 }> {
-  const res = await apiFetch(`/api/student/exam/${madethi}/result`);
-  if (!res.ok) throw new Error(`Lỗi tải kết quả thi (${res.status})`);
-  return res.json();
+    const res = await apiFetch(`/api/student/exam/${madethi}/result`);
+    if (!res.ok) throw new Error(`Lỗi tải kết quả thi (${res.status})`);
+    return res.json();
 }
 
 export interface Exam {

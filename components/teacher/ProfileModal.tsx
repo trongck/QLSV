@@ -2,30 +2,7 @@
 /* eslint-disable @next/next/no-img-element */
 
 import { useEffect, useState } from "react";
-import { apiFetch } from "@/services/service/auth/auth.service";
-
-
-
-interface ProfileData {
-  magv: string;
-  mataikhoan: string;
-  makhoa: string;
-  hodem: string;
-  ten: string;
-  ngaysinh: string | null;
-  gioitinh: "Nam" | "Nu" | "Khac" | null;
-  hocvi: string | null;
-  chuyennganh: string | null;
-  anhdaidien: string | null;
-  emailtruong: string | null;
-  thanhtuu: string | null;
-  diachi: string | null;
-  sodienthoai: string | null;
-  emailcanhan: string | null;
-  ngayvaotruong: string | null;
-  hesoluong: number | null;
-  hoten: string;
-}
+import { useTeacherProfile } from "@/hooks/giangvien/useTeacherProfile";
 
 interface ProfileModalProps {
   isOpen: boolean;
@@ -33,12 +10,18 @@ interface ProfileModalProps {
 }
 
 export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState("");
-  const [successMsg, setSuccessMsg] = useState("");
-  const [data, setData] = useState<ProfileData | null>(null);
+  const {
+    profile: data,
+    loading,
+    saving,
+    error: profileError,
+    successMsg,
+    fetchProfile,
+    updateProfile,
+  } = useTeacherProfile(isOpen);
+
   const [isEditing, setIsEditing] = useState(false);
+  const [error, setError] = useState("");
 
   // Form states
   const [hoten, setHoten] = useState("");
@@ -53,94 +36,47 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
   const [thanhtuu, setThanhtuu] = useState("");
   const [anhdaidien, setAnhdaidien] = useState("");
 
+  // Sync form fields whenever profile data is loaded
   useEffect(() => {
-    if (!isOpen) return;
-
-    async function fetchProfile() {
-      setLoading(true);
-      setError("");
+    if (!isOpen) {
       setIsEditing(false);
-      try {
-        const res = await apiFetch("/api/giangvien/profile");
-        const json = await res.json();
-        if (json.success && json.data) {
-          const p = json.data as ProfileData;
-          setData(p);
-          setHoten(p.hoten || "");
-          setEmailcanhan(p.emailcanhan || "");
-          setEmailtruong(p.emailtruong || "");
-          setSodienthoai(p.sodienthoai || "");
-          setDiachi(p.diachi || "");
-          setNgaysinh(p.ngaysinh ? p.ngaysinh.split("T")[0] : "");
-          setGioitinh(p.gioitinh || "Nam");
-          setHocvi(p.hocvi || "");
-          setChuyennganh(p.chuyennganh || "");
-          setThanhtuu(p.thanhtuu || "");
-          setAnhdaidien(p.anhdaidien || "");
-        } else {
-          setError(json.error || "Không thể lấy thông tin hồ sơ");
-        }
-      } catch {
-        setError("Lỗi máy chủ khi tải thông tin hồ sơ");
-      } finally {
-        setLoading(false);
-      }
+      return;
     }
+    if (data) {
+      setHoten(data.hoten || "");
+      setEmailcanhan(data.emailcanhan || "");
+      setEmailtruong(data.emailtruong || "");
+      setSodienthoai(data.sodienthoai || "");
+      setDiachi(data.diachi || "");
+      setNgaysinh(data.ngaysinh ? data.ngaysinh.split("T")[0] : "");
+      setGioitinh(data.gioitinh || "Nam");
+      setHocvi(data.hocvi || "");
+      setChuyennganh(data.chuyennganh || "");
+      setThanhtuu(data.thanhtuu || "");
+      setAnhdaidien(data.anhdaidien || "");
+    }
+  }, [isOpen, data]);
 
-    fetchProfile();
-  }, [isOpen]);
+  // Combine hook error and local error
+  const displayError = error || profileError || "";
 
   const handleSave = async () => {
-    setSaving(true);
     setError("");
-    setSuccessMsg("");
-    try {
-      const res = await apiFetch("/api/giangvien/profile", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          hoten,
-          email: emailtruong,
-          ngaysinh: ngaysinh || null,
-          gioitinh,
-          hocvi,
-          chuyennganh,
-          anhdaidien,
-          thanhtuu,
-          diachi,
-          sodienthoai,
-          emailcanhan,
-        }),
-      });
-
-      const json = await res.json();
-      if (json.success) {
-        setSuccessMsg("Cập nhật thông tin hồ sơ cá nhân thành công!");
-        setIsEditing(false);
-        // Refresh local data state
-        if (data) {
-          setData({
-            ...data,
-            hoten,
-            emailcanhan,
-            emailtruong,
-            sodienthoai,
-            diachi,
-            ngaysinh,
-            gioitinh,
-            hocvi,
-            chuyennganh,
-            thanhtuu,
-            anhdaidien,
-          });
-        }
-      } else {
-        setError(json.error || "Cập nhật thất bại");
-      }
-    } catch {
-      setError("Lỗi kết nối máy chủ");
-    } finally {
-      setSaving(false);
+    const success = await updateProfile({
+      hoten,
+      email: emailtruong,
+      ngaysinh: ngaysinh || null,
+      gioitinh,
+      hocvi,
+      chuyennganh,
+      anhdaidien,
+      thanhtuu,
+      diachi,
+      sodienthoai,
+      emailcanhan,
+    });
+    if (success) {
+      setIsEditing(false);
     }
   };
 
@@ -241,9 +177,9 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
                     {successMsg}
                   </div>
                 )}
-                {error && (
+                {displayError && (
                   <div className="p-3 bg-red-50 text-red-800 text-sm font-medium rounded-lg border border-red-200">
-                    {error}
+                    {displayError}
                   </div>
                 )}
 

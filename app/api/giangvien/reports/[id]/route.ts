@@ -23,14 +23,7 @@ export async function PUT(
   }
 
   try {
-    const { getSupabaseClient } = await import("@/lib/utils/supabase/server");
-    const supabase = await getSupabaseClient();
-
-    const { data: gv } = await supabase
-      .from("giangvien")
-      .select("magv")
-      .eq("mataikhoan", payload.mataikhoan)
-      .single();
+    const gv = await giangVienService.getMyProfile(payload.mataikhoan);
 
     if (!gv) {
       return NextResponse.json({ error: "Không tìm thấy giảng viên" }, { status: 404 });
