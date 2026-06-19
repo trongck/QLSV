@@ -207,10 +207,10 @@ export function ExamRoom() {
         {examStep > 0 && (
           <div style={{ display: "flex", gap: "10px" }}>
             <button onClick={openEditTimeModal} style={{ background: "white", border: "1px solid #EAD9CB", color: "#6B4F43", padding: "8px 16px", borderRadius: "8px", fontSize: "13px", fontWeight: "600", cursor: "pointer" }}>
-              ⚙️ Sửa thời gian
+               Sửa thời gian
             </button>
             <button onClick={handleEndExamClick} style={{ background: "#D65D5D", color: "white", padding: "8px 16px", border: "none", borderRadius: "8px", fontSize: "13px", fontWeight: "600", cursor: "pointer" }}>
-              🛑 Kết thúc ca thi
+               Kết thúc ca thi
             </button>
           </div>
         )}
@@ -219,7 +219,7 @@ export function ExamRoom() {
       {/* BƯỚC 0: HOÀN TOÀN CHƯA CÓ CA THI NÀO DIỄN RA */}
       {examStep === 0 && (
         <div style={{ padding: "80px 40px", textAlign: "center", background: "white", border: "1px solid #F0E1D9", borderRadius: "16px", display: "flex", flexDirection: "column", alignItems: "center", gap: "20px" }}>
-          <div style={{ fontSize: "55px" }}>🖥️</div>
+
           <div style={{ maxWidth: "500px" }}>
             <h3 style={{ color: "#6B4F43", margin: "0 0 8px 0", fontSize: "18px", fontWeight: "700" }}>Hiện không có ca thi nào đang xảy ra</h3>
             <p style={{ color: "#8B6F5F", margin: 0, fontSize: "13px", lineHeight: "1.6" }}>
@@ -227,7 +227,7 @@ export function ExamRoom() {
             </p>
           </div>
           <button onClick={() => setShowCreateModal(true)} style={{ background: "linear-gradient(90deg, #F2A8A8 0%, #FFB4B4 100%)", color: "white", padding: "12px 28px", border: "none", borderRadius: "25px", fontWeight: "600", cursor: "pointer", fontSize: "14px", boxShadow: "0 4px 12px rgba(242,168,168,0.4)" }}>
-            + Tạo một ca thi mới ngay
+             Tạo một ca thi mới ngay
           </button>
         </div>
       )}
@@ -236,7 +236,7 @@ export function ExamRoom() {
       {examStep === 1 && currentExam && (
         <div style={{ display: "flex", flexDirection: "column", gap: "15px" }}>
           <button onClick={() => setExamStep(0)} style={{ alignSelf: "flex-start", background: "none", border: "none", color: "#8B6F5F", cursor: "pointer", fontSize: "13px", fontWeight: "600", display: "flex", alignItems: "center", gap: "5px" }}>
-            ← Quay lại màn hình tạo ca thi
+            Quay lại màn hình tạo ca thi
           </button>
 
           <div style={{ padding: "50px 30px", textAlign: "center", background: "white", border: "1px solid #F0E1D9", borderRadius: "16px", display: "flex", flexDirection: "column", alignItems: "center", gap: "15px" }}>
@@ -244,10 +244,10 @@ export function ExamRoom() {
             <h3 style={{ color: "#6B4F43", margin: 0, fontSize: "18px" }}>Ca thi sắp bắt đầu: {currentExam.tieude}</h3>
             <p style={{ color: "#8B6F5F", margin: 0, fontSize: "13px" }}>Lớp tiếp nhận: <strong>{currentExam.tenmon} ({currentExam.tenlop})</strong></p>
             <div style={{ padding: "12px 25px", background: "#FFFBEB", border: "1px solid #FCD34D", borderRadius: "8px", fontSize: "13px", color: "#B7791F", margin: "10px 0" }}>
-              🔔 Sĩ số tiếp nhận: <strong>{currentExam.soluongsv} sinh viên</strong>. Khi danh sách phòng thi ổn định, hãy nhấn nút <strong>Phát đề thi</strong>.
+               Sĩ số tiếp nhận: <strong>{currentExam.soluongsv} sinh viên</strong>. Khi danh sách phòng thi ổn định, hãy nhấn nút <strong>Phát đề thi</strong>.
             </div>
             <button onClick={handleDistributeExam} style={{ background: "#8B6F5F", color: "white", padding: "12px 30px", border: "none", borderRadius: "25px", fontWeight: "600", cursor: "pointer", fontSize: "14px" }}>
-              🚀 Xác nhận danh sách đã đủ & Phát đề thi
+               Xác nhận danh sách đã đủ & Phát đề thi
             </button>
           </div>
         </div>
@@ -257,7 +257,7 @@ export function ExamRoom() {
       {examStep === 2 && currentExam && (
         <div style={{ display: "flex", flexDirection: "column", gap: "15px" }}>
           <button onClick={() => setExamStep(1)} style={{ alignSelf: "flex-start", background: "none", border: "none", color: "#8B6F5F", cursor: "pointer", fontSize: "13px", fontWeight: "600", display: "flex", alignItems: "center", gap: "5px" }}>
-            ← Quay lại kiểm tra phòng chờ sinh viên
+             Quay lại kiểm tra phòng chờ sinh viên
           </button>
 
           <div style={{ width: "100%", background: "white", border: "1px solid #F0E1D9", borderRadius: "16px", padding: "50px 40px", textAlign: "center" }}>
@@ -280,7 +280,7 @@ export function ExamRoom() {
               onClick={() => setExamStep(3)} 
               style={{ background: "#8B6F5F", color: "white", padding: "12px 35px", border: "none", borderRadius: "25px", fontWeight: "600", cursor: "pointer", fontSize: "13px", display: "inline-flex", alignItems: "center", gap: "10px", boxShadow: "0 4px 15px rgba(139,111,95,0.2)" }}
             >
-              🔍 Kích hoạt & Vào phòng giám sát thi
+               Kích hoạt & Vào phòng giám sát thi
             </button>
           </div>
         </div>
@@ -292,10 +292,10 @@ export function ExamRoom() {
           
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "white", padding: "12px 20px", borderRadius: "12px", border: "1px solid #F0E1D9" }}>
             <span style={{ fontSize: "14px", color: "#6B4F43", fontWeight: "600" }}>
-              📌 Đang mở: Màn hình theo dõi Realtime số lượng {currentExam.soluongsv} thí sinh nhận đề
+               Đang mở: Màn hình theo dõi Realtime số lượng {currentExam.soluongsv} thí sinh nhận đề
             </span>
             <button onClick={() => setExamStep(2)} style={{ background: "#8B6F5F", color: "white", padding: "8px 18px", border: "none", borderRadius: "8px", fontSize: "13px", fontWeight: "600", cursor: "pointer" }}>
-              🚪 Thoát giám sát (Quay lại)
+               Thoát giám sát (Quay lại)
             </button>
           </div>
 
@@ -328,9 +328,9 @@ export function ExamRoom() {
             <div style={{ padding: "18px", background: "white", border: "1px solid #F0E1D9", borderRadius: "12px", display: "flex", flexDirection: "column", gap: "12px", height: "fit-content" }}>
               <h4 style={{ margin: 0, fontSize: "14px", color: "#6B4F43", borderBottom: "1px solid #EEE", paddingBottom: "8px" }}>THÔNG TIN CA THI</h4>
               <div style={{ fontSize: "13px", display: "flex", flexDirection: "column", gap: "10px", color: "#6B4F43" }}>
-                <div>✏️ Học phần: <strong>{currentExam.tenmon}</strong></div>
-                <div>🏫 Nguồn: <strong>{currentExam.tenlop}</strong></div>
-                <div>⏱️ Thời gian làm: <strong>{currentExam.thoigianlam} phút</strong></div>
+                <div> Học phần: <strong>{currentExam.tenmon}</strong></div>
+                <div> Nguồn: <strong>{currentExam.tenlop}</strong></div>
+                <div> Thời gian làm: <strong>{currentExam.thoigianlam} phút</strong></div>
               </div>
             </div>
 
@@ -359,7 +359,7 @@ export function ExamRoom() {
                       </td>
                       <td>{st.tiendo}</td>
                       <td style={{ textAlign: "center", fontWeight: "bold", color: st.chuyentab > 0 ? "#D65D5D" : "inherit" }}>
-                        {st.chuyentab} {st.chuyentab > 0 && "⚠️"}
+                        {st.chuyentab}
                       </td>
                     </tr>
                   ))}
@@ -373,7 +373,7 @@ export function ExamRoom() {
               <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                 <div style={{ padding: "10px", background: "#FFFBEB", borderLeft: "4px solid #F2C94C", fontSize: "12px", borderRadius: "4px" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", color: "#B7791F", fontWeight: "bold" }}>
-                    <span>🚨 Chuyển màn hình</span> <span>Vừa xong</span>
+                    <span> Chuyển màn hình</span> <span>Vừa xong</span>
                   </div>
                   <p style={{ margin: "4px 0 0", color: "#2D1B14" }}>Có sinh viên rời khỏi tab làm bài.</p>
                 </div>

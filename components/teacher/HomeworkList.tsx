@@ -177,7 +177,7 @@ export function HomeworkList() {
             onClick={() => setShowCreateModal(true)}
             style={{ padding: "10px 20px", borderRadius: "10px", border: "none", background: "linear-gradient(90deg, #F2A8A8 0%, #FFB4B4 100%)", color: "white", cursor: "pointer", fontWeight: "600", fontSize: "14px" }}
           >
-            + Giao bài tập
+             Giao bài tập
           </button>
         </div>
       </div>

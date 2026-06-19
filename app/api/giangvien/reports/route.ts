@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { verifyToken, extractBearer } from "@/lib/utils/jwt";
 import { VaiTro } from "@/types";
-import { giangVienService } from "@/services/teacher.service";
+import { giangVienService } from "@/services/service/giangvien/teacher.service";
 
 export async function GET(request: Request) {
   const token = extractBearer(request.headers.get("authorization"));

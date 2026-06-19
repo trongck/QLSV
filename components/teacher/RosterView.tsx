@@ -155,7 +155,6 @@ export function RosterView() {
           border: "1px solid #F0E1D9"
         }}>
           <div style={{ display: "flex", alignItems: "center", gap: "10px", flex: 1, maxWidth: "400px" }}>
-            <span style={{ color: "#8B6F5F", fontSize: "14px" }}>🔍</span>
             <input 
               type="text" 
               placeholder="Tìm kiếm mã số hoặc tên..." 
@@ -295,7 +294,7 @@ export function RosterView() {
                   cursor: "pointer"
                 }}
               >
-                ✏️ Chỉnh sửa hồ sơ
+                 Chỉnh sửa hồ sơ
               </button>
             </div>
 

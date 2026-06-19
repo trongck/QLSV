@@ -1,8 +1,37 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
-import { ScanFace, X, CheckCircle, AlertCircle, RefreshCw, Users, ShieldAlert, Sparkles, CircleDot } from "lucide-react";
+
 import * as faceapi from "@vladmandic/face-api";
+
+// Synthesize beep via browser Web Audio API for satisfying user experience
+function playSuccessBeep() {
+  try {
+    const AudioCtx = window.AudioContext || (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    if (!AudioCtx) return;
+    const ctx = new AudioCtx();
+    
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    
+    osc.type = "sine";
+    // Arpeggio sound: low frequency then high frequency
+    osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
+    osc.frequency.setValueAtTime(880.00, ctx.currentTime + 0.08); // A5
+    
+    gain.gain.setValueAtTime(0.1, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+    
+    osc.start(ctx.currentTime);
+    osc.stop(ctx.currentTime + 0.3);
+  } catch (e) {
+    // Audio context might be blocked or unsupported
+    console.log("Audio feedback error:", e);
+  }
+}
 
 interface StudentAttendance {
   mssv: string;
@@ -33,8 +62,7 @@ export function FaceAttendanceModal({ isOpen, onClose, roster, onMarkPresent }: 
   const [scannedHistory, setScannedHistory] = useState<{ mssv: string; name: string; time: string }[]>([]);
   const [currentMatch, setCurrentMatch] = useState<{ name: string; mssv: string; distance: number } | null>(null);
   const [matchStatus, setMatchStatus] = useState<"idle" | "matching" | "success" | "cooldown">("idle");
-  const [lastScannedMssv, setLastScannedMssv] = useState<string | null>(null);
-  const [lastScannedTime, setLastScannedTime] = useState<number>(0);
+
 
   // Filter roster to find students who actually have face registration data
   const registeredStudents = roster.filter(s => s.face_embedding && Array.isArray(s.face_embedding) && s.face_embedding.length > 0);
@@ -102,12 +130,14 @@ export function FaceAttendanceModal({ isOpen, onClose, roster, onMarkPresent }: 
   useEffect(() => {
     if (!isOpen) {
       stopCameraAndScanning();
-      setScannedHistory([]);
-      setCurrentMatch(null);
-      setMatchStatus("idle");
-      setLastScannedMssv(null);
+      const timer = setTimeout(() => {
+        setScannedHistory([]);
+        setCurrentMatch(null);
+        setMatchStatus("idle");
+      }, 0);
       lastScannedMssvRef.current = null;
       lastScannedTimeRef.current = 0;
+      return () => clearTimeout(timer);
     }
   }, [isOpen, stopCameraAndScanning]);
 
@@ -166,7 +196,6 @@ export function FaceAttendanceModal({ isOpen, onClose, roster, onMarkPresent }: 
           distance: minDistance
         });
         setMatchStatus("success");
-        setLastScannedMssv(matchedSv.mssv);
         lastScannedMssvRef.current = matchedSv.mssv;
         lastScannedTimeRef.current = now;
 
@@ -232,7 +261,13 @@ export function FaceAttendanceModal({ isOpen, onClose, roster, onMarkPresent }: 
   // Trigger camera start when models are ready and modal is open
   useEffect(() => {
     if (isOpen && modelsLoaded) {
-      startCameraAndScanning();
+      const timer = setTimeout(() => {
+        startCameraAndScanning();
+      }, 0);
+      return () => {
+        clearTimeout(timer);
+        stopCameraAndScanning();
+      };
     }
     return () => {
       stopCameraAndScanning();
@@ -240,34 +275,7 @@ export function FaceAttendanceModal({ isOpen, onClose, roster, onMarkPresent }: 
   }, [isOpen, modelsLoaded, startCameraAndScanning, stopCameraAndScanning]);
 
 
-  // Synthesize beep via browser Web Audio API for satisfying user experience
-  const playSuccessBeep = () => {
-    try {
-      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
-      if (!AudioCtx) return;
-      const ctx = new AudioCtx();
-      
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      
-      osc.type = "sine";
-      // Arpeggio sound: low frequency then high frequency
-      osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
-      osc.frequency.setValueAtTime(880.00, ctx.currentTime + 0.08); // A5
-      
-      gain.gain.setValueAtTime(0.1, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
-      
-      osc.start(ctx.currentTime);
-      osc.stop(ctx.currentTime + 0.3);
-    } catch (e) {
-      // Audio context might be blocked or unsupported
-      console.log("Audio feedback error:", e);
-    }
-  };
+
 
   if (!isOpen) return null;
 
@@ -283,19 +291,14 @@ export function FaceAttendanceModal({ isOpen, onClose, roster, onMarkPresent }: 
         {/* Close Button */}
         <button
           onClick={() => { stopCameraAndScanning(); onClose(); }}
-          className="absolute top-4 right-4 z-50 w-9 h-9 flex items-center justify-center rounded-full bg-white/80 hover:bg-white text-gray-500 hover:text-gray-800 transition shadow"
-        >
-          <X size={20} />
-        </button>
+          className="absolute top-4 right-4 z-50 w-9 h-9 flex items-center justify-center rounded-full bg-white/80 hover:bg-white text-gray-500 hover:text-gray-800 transition shadow text-lg font-bold"
+        ></button>
 
         {/* LEFT COLUMN: Camera Stream and Real-time matches */}
         <div className="flex-[5] bg-[#FAF5F2] p-6 flex flex-col justify-between border-b md:border-b-0 md:border-r border-[#EAD9CB] min-h-[450px]">
           <div>
             {/* Header */}
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 bg-[#F2A8A8]/20 rounded-2xl flex items-center justify-center">
-                <ScanFace size={22} className="text-primary" />
-              </div>
               <div>
                 <h3 className="text-lg font-bold text-[#6B4F43]">Điểm danh bằng khuôn mặt</h3>
                 <p className="text-xs text-[#8B6F5F]">Quét camera để tự động đối chiếu cơ sở dữ liệu học phần</p>
@@ -343,15 +346,12 @@ export function FaceAttendanceModal({ isOpen, onClose, roster, onMarkPresent }: 
 
               {cameraState === "error" && (
                 <div className="absolute inset-0 bg-red-950/90 flex flex-col items-center justify-center gap-4 text-white p-6 text-center">
-                  <div className="w-14 h-14 bg-red-500/20 rounded-full flex items-center justify-center">
-                    <ShieldAlert size={36} className="text-red-400" />
-                  </div>
                   <p className="text-sm font-semibold max-w-xs">{errorMessage}</p>
                   <button
                     onClick={startCameraAndScanning}
-                    className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5"
+                    className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition"
                   >
-                    <RefreshCw size={14} /> Thử lại
+                    Thử lại
                   </button>
                 </div>
               )}
@@ -365,8 +365,8 @@ export function FaceAttendanceModal({ isOpen, onClose, roster, onMarkPresent }: 
                 className="bg-green-50 border-2 border-green-200 rounded-2xl p-4 flex items-center gap-4 animate-scaleUp"
                 style={{ boxShadow: "0 6px 20px rgba(74, 222, 128, 0.15)" }}
               >
-                <div className="w-12 h-12 bg-green-500 rounded-2xl flex items-center justify-center text-white">
-                  <CheckCircle size={28} />
+                <div className="w-12 h-12 bg-green-500 rounded-2xl flex items-center justify-center text-white text-xl font-bold">
+                  ✓
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center gap-2">
@@ -379,17 +379,14 @@ export function FaceAttendanceModal({ isOpen, onClose, roster, onMarkPresent }: 
               </div>
             ) : matchStatus === "cooldown" ? (
               <div className="bg-amber-50 border border-amber-200 rounded-2xl p-3.5 flex items-center gap-3 text-[#6B4F43] text-sm">
-                <CircleDot size={18} className="text-amber-500 animate-pulse" />
                 <span>Nhận diện sinh viên trùng lặp, hãy chờ vài giây trước khi quét lại.</span>
               </div>
             ) : matchStatus === "matching" ? (
               <div className="bg-blue-50 border border-blue-100 rounded-2xl p-3.5 flex items-center gap-3 text-blue-700 text-sm">
-                <RefreshCw size={16} className="animate-spin text-blue-500" />
                 <span>Đang phân tích và so khớp khuôn mặt...</span>
               </div>
             ) : (
               <div className="bg-[#FFF8F5] border border-[#F0E1D9] rounded-2xl p-3.5 flex items-center gap-3 text-[#8B6F5F] text-sm">
-                <Sparkles size={18} className="text-[#C25450]" />
                 <span>Hãy đưa khuôn mặt sinh viên vào trước camera để bắt đầu điểm danh.</span>
               </div>
             )}
@@ -401,14 +398,9 @@ export function FaceAttendanceModal({ isOpen, onClose, roster, onMarkPresent }: 
           <div>
             {/* Statistics Row */}
             <div className="bg-[#FAF5F2] border border-[#F0E1D9] rounded-2xl p-4 mb-5 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-9 h-9 bg-amber-50 rounded-xl flex items-center justify-center text-amber-600">
-                  <Users size={18} />
-                </div>
-                <div>
-                  <h4 className="text-sm font-bold text-[#6B4F43]">Dữ liệu khuôn mặt</h4>
-                  <p className="text-xs text-[#8B6F5F]">Đã đăng ký hệ thống</p>
-                </div>
+              <div>
+                <h4 className="text-sm font-bold text-[#6B4F43]">Dữ liệu khuôn mặt</h4>
+                <p className="text-xs text-[#8B6F5F]">Đã đăng ký hệ thống</p>
               </div>
               <div className="text-right">
                 <span className="text-xl font-extrabold text-[#C25450]">
@@ -420,7 +412,7 @@ export function FaceAttendanceModal({ isOpen, onClose, roster, onMarkPresent }: 
 
             {/* Scanned Log title */}
             <h4 className="text-sm font-bold text-[#6B4F43] mb-3 flex items-center gap-2">
-              📋 Nhật ký quét vừa rồi ({scannedHistory.length})
+               Nhật ký quét vừa rồi ({scannedHistory.length})
             </h4>
 
             {/* Audit Log list */}
@@ -430,7 +422,6 @@ export function FaceAttendanceModal({ isOpen, onClose, roster, onMarkPresent }: 
             >
               {scannedHistory.length === 0 ? (
                 <div className="border border-dashed border-gray-200 rounded-2xl py-8 text-center text-xs text-gray-400 flex flex-col items-center gap-2">
-                  <ScanFace size={30} className="stroke-[1.5] text-gray-300" />
                   Chưa có sinh viên nào được điểm danh trong ca này.
                 </div>
               ) : (
@@ -461,9 +452,9 @@ export function FaceAttendanceModal({ isOpen, onClose, roster, onMarkPresent }: 
                   stopCameraAndScanning();
                   startCameraAndScanning();
                 }}
-                className="px-4 py-2 border border-[#EAD9CB] hover:bg-[#FAF5F2] text-[#6B4F43] rounded-xl text-xs font-bold transition flex items-center gap-1.5"
+                className="px-4 py-2 border border-[#EAD9CB] hover:bg-[#FAF5F2] text-[#6B4F43] rounded-xl text-xs font-bold transition"
               >
-                <RefreshCw size={13} /> Khởi động lại
+                Khởi động lại
               </button>
             </div>
             

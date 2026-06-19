@@ -428,7 +428,7 @@ export function ReportView() {
       {selectedReportId !== "live" && (
         <div style={{ padding: "12px 20px", borderRadius: "8px", background: "#FFF5E6", border: "1px solid #FFD699", color: "#B36B00", fontSize: "13px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <span>
-            ⚠️ Bạn đang xem báo cáo lưu lịch sử: <strong>{reports.find(r => r.matailieu === selectedReportId)?.tieude}</strong>
+             Bạn đang xem báo cáo lưu lịch sử: <strong>{reports.find(r => r.matailieu === selectedReportId)?.tieude}</strong>
           </span>
           <button 
             onClick={() => handleSelectReport("live")}

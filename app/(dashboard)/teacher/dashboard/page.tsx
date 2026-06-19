@@ -69,7 +69,7 @@ export default function TeacherDashboard() {
             totalStudents: stats.totalStudents ?? 0,
             pendingTasks: stats.pendingTasks ?? 0,
             classSummaries: stats.classSummaries ?? [],
-            thongBao: (stats.thongBao ?? []).map((t: any) => ({
+            thongBao: (stats.thongBao ?? []).map((t: { tieude: string; ngaytao: string }) => ({
               tieude: t.tieude,
               ngaytao: new Date(t.ngaytao).toLocaleDateString("vi-VN"),
             })),
@@ -92,7 +92,7 @@ export default function TeacherDashboard() {
         {/* Greeting */}
         <div>
           <h1 className="text-[22px] font-bold text-fg m-0 mb-1">
-            Chào, {user.hoten?.split(" ").pop()} 👋
+            Chào, {user.hoten?.split(" ").pop()}
           </h1>
           <p className="text-[13px] text-fg-subtle m-0 capitalize">
             {new Date().toLocaleDateString("vi-VN", {

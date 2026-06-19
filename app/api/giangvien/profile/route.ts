@@ -3,7 +3,7 @@ import { cookies } from "next/headers";
 import { getSupabaseClient } from "@/lib/utils/supabase/server";
 import { verifyToken, extractBearer } from "@/lib/utils/jwt";
 import { VaiTro } from "@/types";
-import { giangVienService } from "@/services/teacher.service";
+import { giangVienService } from "@/services/service/giangvien/teacher.service";
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 

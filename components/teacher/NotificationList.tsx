@@ -358,7 +358,7 @@ export function NotificationList() {
             onClick={() => setIsCreateOpen(true)}
             style={{ background: "linear-gradient(90deg, #F2A8A8 0%, #FFB4B4 100%)", padding: "10px 20px" }}
           >
-            ➕ Tạo thông báo mới
+             Tạo thông báo mới
           </button>
         </div>
       </div>

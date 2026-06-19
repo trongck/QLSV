@@ -308,14 +308,14 @@ export function AttendanceView() {
             onClick={() => fetchOverview(false)}
             style={{ padding: "10px 15px", borderRadius: "10px", border: "1px solid #EAD9CB", background: "#FFF", color: "#6B4F43", cursor: "pointer", fontSize: "13px", fontWeight: "600" }}
           >
-            🔄 Làm mới
+             Làm mới
           </button>
           {!selectedBH && selectedPC && (
             <button 
               onClick={handleCreateSession}
               style={{ background: "linear-gradient(90deg, #F2A8A8 0%, #FFB4B4 100%)", padding: "10px 20px", border: "none", borderRadius: "8px", color: "white", fontSize: "13.5px", fontWeight: "600", cursor: "pointer" }}
             >
-              ➕ Tạo ca điểm danh ngày này
+             Tạo ca điểm danh ngày này
             </button>
           )}
         </div>
@@ -348,9 +348,8 @@ export function AttendanceView() {
             placeholder="Tìm kiếm sinh viên..." 
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            style={{ width: "100%", padding: "10px 15px 10px 40px", borderRadius: "8px", border: "1px solid #F0E1D9", outline: "none", fontSize: "13px" }} 
+            style={{ width: "100%", padding: "10px 15px", borderRadius: "8px", border: "1px solid #F0E1D9", outline: "none", fontSize: "13px" }} 
           />
-          <span style={{ position: "absolute", left: "15px", top: "50%", transform: "translateY(-50%)" }}>🔍</span>
         </div>
       </div>
 
@@ -427,7 +426,7 @@ export function AttendanceView() {
                 gap: "6px"
               }}
             >
-              📷 Điểm danh khuôn mặt
+              Điểm danh khuôn mặt
             </button>
           )}
         </div>
@@ -530,7 +529,7 @@ export function AttendanceView() {
                       onClick={handleRefreshQR}
                       style={{ background: "linear-gradient(90deg, #F2A8A8 0%, #FFB4B4 100%)", padding: "8px 20px", border: "none", borderRadius: "8px", color: "white", fontSize: "13.5px", fontWeight: "600", cursor: "pointer" }}
                     >
-                      ⚡ Tạo Mã QR điểm danh
+                      Tạo Mã QR điểm danh
                     </button>
                   </div>
                 );
@@ -561,7 +560,7 @@ export function AttendanceView() {
                         fontWeight: "600", fontSize: "12.5px", cursor: "pointer", display: "flex", alignItems: "center", gap: "6px" 
                       }}
                     >
-                      🔄 Tạo lại Mã QR mới
+                      Tạo lại Mã QR mới
                     </button>
                   </div>
                 </>
@@ -619,7 +618,7 @@ export function AttendanceView() {
                       
                       {req.evidence !== "Khong_co" && (
                         <p style={{ margin: "8px 0 0 0", display: "flex", alignItems: "center", gap: "6px" }}>
-                          📎 <b>Minh chứng đính kèm:</b> 
+                           <b>Minh chứng đính kèm:</b> 
                           <a 
                             href={req.evidence}
                             target="_blank"

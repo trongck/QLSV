@@ -1,9 +1,10 @@
 "use client";
+/* eslint-disable @next/next/no-img-element */
 
 import { useEffect, useState } from "react";
 import { apiFetch } from "@/services/service/auth/auth.service";
-import { useAuth } from "@/hooks/auth/useAuth";
-import { User, Shield, Mail, Phone, MapPin, Award, Calendar, BookOpen, UserCheck, X, Edit3, Save } from "lucide-react";
+
+
 
 interface ProfileData {
   magv: string;
@@ -32,7 +33,6 @@ interface ProfileModalProps {
 }
 
 export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
-  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
@@ -80,7 +80,7 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
         } else {
           setError(json.error || "Không thể lấy thông tin hồ sơ");
         }
-      } catch (err: any) {
+      } catch {
         setError("Lỗi máy chủ khi tải thông tin hồ sơ");
       } finally {
         setLoading(false);
@@ -137,7 +137,7 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
       } else {
         setError(json.error || "Cập nhật thất bại");
       }
-    } catch (err: any) {
+    } catch {
       setError("Lỗi kết nối máy chủ");
     } finally {
       setSaving(false);
@@ -161,9 +161,6 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
         {/* Header */}
         <div className="p-5 border-b border-[#EAD9CB] flex justify-between items-center bg-[#FFF2EB]">
           <div className="flex items-center gap-2.5">
-            <div className="p-2 bg-[#C25450] rounded-xl text-white">
-              <User size={20} />
-            </div>
             <div>
               <h2 className="text-lg font-bold text-[#2D1B14]">Hồ sơ cá nhân Giảng viên</h2>
               <p className="text-xs text-[#8B6F5F]">Quản lý thông tin lý lịch cá nhân và trình độ chuyên môn</p>
@@ -171,9 +168,9 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
           </div>
           <button 
             onClick={onClose} 
-            className="p-1.5 hover:bg-[#F3E5D8] rounded-full text-[#8B6F5F] transition-colors"
+            className="p-1.5 hover:bg-[#F3E5D8] rounded-full text-[#8B6F5F] transition-colors text-lg font-bold"
           >
-            <X size={20} />
+            ✕
           </button>
         </div>
 
@@ -253,16 +250,14 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
                 {/* Main Card */}
                 <div className="bg-white rounded-xl border border-[#EAD9CB] p-6 shadow-sm">
                   <div className="flex justify-between items-center mb-5 pb-3 border-b border-[#F3E5D8]">
-                    <h4 className="font-bold text-[#2D1B14] flex items-center gap-2">
-                      <Shield size={16} className="text-[#C25450]" />
+                    <h4 className="font-bold text-[#2D1B14]">
                       Thông tin chi tiết
                     </h4>
                     {!isEditing ? (
                       <button
                         onClick={() => setIsEditing(true)}
-                        className="btn-secondary flex items-center gap-1.5 text-xs py-1 px-3"
+                        className="btn-secondary text-xs py-1 px-3"
                       >
-                        <Edit3 size={13} />
                         Chỉnh sửa
                       </button>
                     ) : (
@@ -276,10 +271,9 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
                         </button>
                         <button
                           onClick={handleSave}
-                          className="btn-primary flex items-center gap-1.5 text-xs py-1 px-3 bg-[#C25450] hover:bg-[#A9433F] text-white"
+                          className="btn-primary text-xs py-1 px-3 bg-[#C25450] hover:bg-[#A9433F] text-white"
                           disabled={saving}
                         >
-                          <Save size={13} />
                           {saving ? "Đang lưu..." : "Lưu thay đổi"}
                         </button>
                       </div>
@@ -309,8 +303,7 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
 
                     {/* Email trường */}
                     <div className="space-y-1">
-                      <label className="text-xs font-semibold text-[#8B6F5F] flex items-center gap-1">
-                        <Mail size={12} />
+                      <label className="text-xs font-semibold text-[#8B6F5F]">
                         Email trường (Tài khoản)
                       </label>
                       {isEditing ? (
@@ -329,8 +322,7 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
 
                     {/* Số điện thoại */}
                     <div className="space-y-1">
-                      <label className="text-xs font-semibold text-[#8B6F5F] flex items-center gap-1">
-                        <Phone size={12} />
+                      <label className="text-xs font-semibold text-[#8B6F5F]">
                         Số điện thoại
                       </label>
                       {isEditing ? (
@@ -349,8 +341,7 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
 
                     {/* Email cá nhân */}
                     <div className="space-y-1">
-                      <label className="text-xs font-semibold text-[#8B6F5F] flex items-center gap-1">
-                        <Mail size={12} />
+                      <label className="text-xs font-semibold text-[#8B6F5F]">
                         Email cá nhân
                       </label>
                       {isEditing ? (
@@ -369,8 +360,7 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
 
                     {/* Ngày sinh */}
                     <div className="space-y-1">
-                      <label className="text-xs font-semibold text-[#8B6F5F] flex items-center gap-1">
-                        <Calendar size={12} />
+                      <label className="text-xs font-semibold text-[#8B6F5F]">
                         Ngày sinh
                       </label>
                       {isEditing ? (
@@ -389,13 +379,13 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
 
                     {/* Giới tính */}
                     <div className="space-y-1">
-                      <label className="text-xs font-semibold text-[#8B6F5F] flex items-center gap-1">
+                      <label className="text-xs font-semibold text-[#8B6F5F]">
                         Giới tính
                       </label>
                       {isEditing ? (
                         <select
                           value={gioitinh}
-                          onChange={(e) => setGioitinh(e.target.value as any)}
+                          onChange={(e) => setGioitinh(e.target.value as "Nam" | "Nu" | "Khac")}
                           className="w-full text-sm p-2 rounded-lg border border-[#EAD9CB] bg-white text-[#2D1B14] focus:outline-none focus:border-[#C25450]"
                         >
                           <option value="Nam">Nam</option>
@@ -411,8 +401,7 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
 
                     {/* Học vị */}
                     <div className="space-y-1">
-                      <label className="text-xs font-semibold text-[#8B6F5F] flex items-center gap-1">
-                        <BookOpen size={12} />
+                      <label className="text-xs font-semibold text-[#8B6F5F]">
                         Học vị
                       </label>
                       {isEditing ? (
@@ -452,8 +441,7 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
 
                     {/* Địa chỉ */}
                     <div className="sm:col-span-2 space-y-1">
-                      <label className="text-xs font-semibold text-[#8B6F5F] flex items-center gap-1">
-                        <MapPin size={12} />
+                      <label className="text-xs font-semibold text-[#8B6F5F]">
                         Địa chỉ thường trú
                       </label>
                       {isEditing ? (
@@ -490,8 +478,7 @@ export function ProfileModal({ isOpen, onClose }: ProfileModalProps) {
 
                 {/* Achievements Card */}
                 <div className="bg-white rounded-xl border border-[#EAD9CB] p-6 shadow-sm">
-                  <h4 className="font-bold text-[#2D1B14] mb-3 flex items-center gap-2">
-                    <Award size={16} className="text-[#C25450]" />
+                  <h4 className="font-bold text-[#2D1B14] mb-3">
                     Thành tựu & Nghiên cứu khoa học
                   </h4>
                   {isEditing ? (
