@@ -236,25 +236,24 @@ export function NotificationList() {
   };
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+    <div className="flex flex-col gap-5">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 md:gap-0">
         <div>
-          <h2 style={{ fontSize: "20px", fontWeight: "700", color: "#6B4F43", margin: 0 }}>Thông báo hệ thống &amp; lớp học</h2>
-          <p style={{ fontSize: "13px", color: "#8B6F5F", margin: "4px 0 0" }}>Cập nhật tin tức quan trọng từ Nhà trường và các hoạt động giảng dạy</p>
+          <h2 className="text-xl font-bold text-[#6B4F43] m-0">Thông báo hệ thống &amp; lớp học</h2>
+          <p className="text-[13px] text-[#8B6F5F] m-0 mt-1">Cập nhật tin tức quan trọng từ Nhà trường và các hoạt động giảng dạy</p>
         </div>
-        <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
-          <label style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "13px", color: "#8B6F5F", cursor: "pointer" }}>
+        <div className="flex flex-wrap items-center gap-4 w-full md:w-auto">
+          <label className="flex items-center gap-2 text-[13px] text-[#8B6F5F] cursor-pointer">
             <input 
               type="checkbox" 
               checked={markedAll}
               onChange={handleMarkAllAsRead}
-              style={{ accentColor: "#F2A8A8" }} 
+              className="accent-[#F2A8A8]"
             /> Đánh dấu đã đọc tất cả
           </label>
           <button 
-            className={styles.primaryBtn} 
+            className={`flex-1 md:flex-none ${styles.primaryBtn} px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#F2A8A8] to-[#FFB4B4] border-none text-white font-semibold cursor-pointer shadow-sm hover:opacity-90 transition-opacity`} 
             onClick={() => setIsCreateOpen(true)}
-            style={{ background: "linear-gradient(90deg, #F2A8A8 0%, #FFB4B4 100%)", padding: "10px 20px" }}
           >
              Tạo thông báo mới
           </button>
@@ -262,34 +261,34 @@ export function NotificationList() {
       </div>
 
       {/* FILTER TOOLBAR */}
-      <div className="card" style={{ padding: "15px", display: "flex", gap: "15px", alignItems: "center", border: "1px solid #F0E1D9" }}>
+      <div className="bg-white rounded-xl p-4 flex flex-col sm:flex-row gap-4 items-center border border-[#F0E1D9] shadow-sm">
         <select 
           value={filterType}
           onChange={(e) => setFilterType(e.target.value)}
-          style={{ padding: "10px", borderRadius: "8px", border: "1px solid #F0E1D9", outline: "none", width: "200px", color: "#6B4F43" }}
+          className="p-2.5 rounded-lg border border-[#F0E1D9] outline-none w-full sm:w-[200px] text-[#6B4F43] focus:border-[#F2A8A8] transition-colors"
         >
           <option>Tất cả thông báo</option>
           <option>Quan trọng</option>
           <option>Cảnh báo AI</option>
           <option>Lớp học</option>
         </select>
-        <div style={{ flex: 1 }}>
+        <div className="flex-1 w-full">
           <input 
             type="text" 
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Tìm kiếm nội dung thông báo..." 
-            style={{ width: "100%", padding: "10px 15px", borderRadius: "8px", border: "1px solid #F0E1D9", outline: "none", fontSize: "13px" }} 
+            className="w-full px-4 py-2.5 rounded-lg border border-[#F0E1D9] outline-none text-[13px] focus:border-[#F2A8A8] transition-colors" 
           />
         </div>
       </div>
 
       {/* NOTIFICATION LIST VIEWPORT */}
-      <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+      <div className="flex flex-col gap-3">
         {loading ? (
-          <div style={{ padding: "30px", textAlign: "center", color: "#8B6F5F" }}>Đang tải thông báo...</div>
+          <div className="p-8 text-center text-[#8B6F5F]">Đang tải thông báo...</div>
         ) : notifications.length === 0 ? (
-          <div style={{ padding: "30px", textAlign: "center", color: "#8B6F5F" }}>Không tìm thấy thông báo nào.</div>
+          <div className="p-8 text-center text-[#8B6F5F]">Không tìm thấy thông báo nào.</div>
         ) : (
           notifications.map((note) => {
             const details = getLoaiDetails(note.loai);
@@ -298,64 +297,37 @@ export function NotificationList() {
             return (
               <div 
                 key={note.mathongbao} 
-                className="card" 
-                style={{ 
-                  padding: "20px", 
-                  display: "flex", 
-                  flexDirection: "column",
-                  gap: "12px", 
-                  border: "1px solid #F0E1D9",
-                  background: !note.dadoc ? "#FFF9F9" : "#FFF",
-                  transition: "all 0.2s"
-                }}
+                className={`bg-white rounded-xl p-5 flex flex-col gap-3 border border-[#F0E1D9] transition-all duration-200 shadow-sm hover:shadow-md ${!note.dadoc ? "bg-[#FFF9F9]" : "bg-white"}`}
               >
-                <div style={{ display: "flex", alignItems: "center", gap: "20px" }}>
+                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
                   <div 
-                    style={{ flex: 1, cursor: editingId === note.mathongbao ? "default" : "pointer" }}
+                    className={`flex-1 ${editingId === note.mathongbao ? "cursor-default" : "cursor-pointer"}`}
                     onClick={() => editingId !== note.mathongbao && handleSelectNote(note)}
                   >
                     {editingId === note.mathongbao ? (
-                      <div style={{ display: "flex", flexDirection: "column", gap: "8px", width: "100%" }}>
+                      <div className="flex flex-col gap-2 w-full">
                         <input 
                           type="text" 
                           value={editTitle}
                           onChange={(e) => setEditTitle(e.target.value)}
-                          style={{
-                            padding: "8px 12px",
-                            borderRadius: "6px",
-                            border: "1px solid #F0E1D9",
-                            fontSize: "15px",
-                            fontWeight: "700",
-                            color: "#6B4F43",
-                            outline: "none"
-                          }}
+                          className="px-3 py-2 rounded-lg border border-[#F0E1D9] text-[15px] font-bold text-[#6B4F43] outline-none focus:border-[#F2A8A8] transition-colors"
                         />
                         <textarea 
                           value={editContent}
                           onChange={(e) => setEditContent(e.target.value)}
                           rows={3}
-                          style={{
-                            padding: "8px 12px",
-                            borderRadius: "6px",
-                            border: "1px solid #F0E1D9",
-                            fontSize: "13px",
-                            color: "#6B4F43",
-                            outline: "none",
-                            resize: "vertical"
-                          }}
+                          className="px-3 py-2 rounded-lg border border-[#F0E1D9] text-[13px] text-[#6B4F43] outline-none resize-y focus:border-[#F2A8A8] transition-colors"
                         />
-                        <div style={{ display: "flex", gap: "10px" }}>
+                        <div className="flex gap-2.5">
                           <button 
-                            className={styles.primaryBtn} 
+                            className={`px-4 py-1.5 rounded text-xs font-semibold text-white bg-[#6B4F43] border-none cursor-pointer hover:bg-[#523C32] transition-colors`} 
                             onClick={() => saveEdit(note.mathongbao)}
-                            style={{ padding: "6px 15px", fontSize: "12px", background: "#6B4F43" }}
                           >
                             Lưu
                           </button>
                           <button 
-                            className={styles.primaryBtn} 
+                            className={`px-4 py-1.5 rounded text-xs font-semibold text-white bg-[#BDBDBD] border-none cursor-pointer hover:bg-[#A3A3A3] transition-colors`} 
                             onClick={cancelEdit}
-                            style={{ padding: "6px 15px", fontSize: "12px", background: "#BDBDBD" }}
                           >
                             Hủy
                           </button>
@@ -363,54 +335,59 @@ export function NotificationList() {
                       </div>
                     ) : (
                       <>
-                        <h4 style={{ margin: 0, fontSize: "15px", color: "#6B4F43", fontWeight: !note.dadoc ? "700" : "500" }}>
-                          {note.tieude}
-                        </h4>
-                        <div style={{ margin: "4px 0 0", fontSize: "13px", color: "#6B4F43" }}>
+                        <div className="flex items-center gap-3 mb-1">
+                          <h4 className={`m-0 text-[15px] text-[#6B4F43] ${!note.dadoc ? "font-bold" : "font-medium"}`}>
+                            {note.tieude}
+                          </h4>
+                          <span className="px-3 py-1 rounded-md text-[11px] font-semibold whitespace-nowrap hidden sm:inline-block" style={{ background: details.bg, color: details.color }}>
+                            {details.label}
+                          </span>
+                        </div>
+                        <div className="mt-1 text-[13px] text-[#6B4F43] line-clamp-2">
                           {renderContent(note.noidung)}
                         </div>
-                        <p style={{ margin: "6px 0 0", fontSize: "11px", color: "#8B6F5F" }}>
+                        <p className="m-0 mt-1.5 text-[11px] text-[#8B6F5F]">
                           Người gửi: {getSenderName(note)} • {new Date(note.ngaytao).toLocaleDateString("vi-VN")}
                         </p>
                       </>
                     )}
                   </div>
 
-                  <span style={{ 
-                    padding: "5px 12px", borderRadius: "6px", fontSize: "11px", fontWeight: "600",
-                    background: details.bg, color: details.color 
-                  }}>
-                    {details.label}
-                  </span>
-
-                  <div style={{ display: "flex", gap: "10px", marginLeft: "20px" }}>
-                    <button 
-                      onClick={() => handleMarkAsRead(note.mathongbao, note.dadoc)}
-                      style={{ background: "none", border: "none", color: note.dadoc ? "#2D9CDB" : "#BDBDBD", cursor: "pointer", fontSize: "16px" }} 
-                      title={note.dadoc ? "Đánh dấu chưa đọc" : "Đánh dấu đã đọc"}
-                    >
-                      đã đọc
-                    </button>
-                    
-                    {isMyNotification && editingId !== note.mathongbao && (
+                  {/* Actions & Badge on Mobile */}
+                  <div className="flex items-center justify-between sm:justify-end sm:flex-col sm:items-end gap-3 w-full sm:w-auto mt-2 sm:mt-0">
+                     <span className="px-3 py-1 rounded-md text-[11px] font-semibold whitespace-nowrap sm:hidden" style={{ background: details.bg, color: details.color }}>
+                       {details.label}
+                     </span>
+                    <div className="flex gap-2.5">
                       <button 
-                        onClick={() => startEdit(note)}
-                        style={{ background: "none", border: "none", color: "#2D9CDB", cursor: "pointer", fontSize: "16px" }} 
-                        title="Chỉnh sửa thông báo"
+                        onClick={() => handleMarkAsRead(note.mathongbao, note.dadoc)}
+                        className="bg-transparent border-none cursor-pointer text-base p-1 hover:opacity-80 transition-opacity"
+                        style={{ color: note.dadoc ? "#2D9CDB" : "#BDBDBD" }} 
+                        title={note.dadoc ? "Đánh dấu chưa đọc" : "Đánh dấu đã đọc"}
                       >
-                        sửa 
+                        đã đọc
                       </button>
-                    )}
+                      
+                      {isMyNotification && editingId !== note.mathongbao && (
+                        <button 
+                          onClick={() => startEdit(note)}
+                          className="bg-transparent border-none cursor-pointer text-base p-1 text-[#2D9CDB] hover:opacity-80 transition-opacity"
+                          title="Chỉnh sửa thông báo"
+                        >
+                          sửa 
+                        </button>
+                      )}
 
-                    {isMyNotification && (
-                      <button 
-                        onClick={() => handleDelete(note.mathongbao)}
-                        style={{ background: "none", border: "none", cursor: "pointer", color: "#EB5757", fontSize: "16px" }} 
-                        title="Xóa thông báo"
-                      >
-                        xoá 
-                      </button>
-                    )}
+                      {isMyNotification && (
+                        <button 
+                          onClick={() => handleDelete(note.mathongbao)}
+                          className="bg-transparent border-none cursor-pointer text-base p-1 text-[#EB5757] hover:opacity-80 transition-opacity"
+                          title="Xóa thông báo"
+                        >
+                          xoá 
+                        </button>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -604,15 +581,10 @@ export function NotificationList() {
             {/* Modal Body */}
             <div className="p-6 overflow-y-auto flex-1 flex flex-col gap-4">
               <div className="flex justify-between items-start gap-4">
-                <h2 className="text-xl font-bold text-[#6B4F43] leading-snug">
+                <h2 className="text-xl font-bold text-[#6B4F43] leading-snug m-0">
                   {selectedNote.tieude}
                 </h2>
-                <span style={{ 
-                  padding: "6px 12px", 
-                  borderRadius: "6px", 
-                  fontSize: "11px", 
-                  fontWeight: "600",
-                  whiteSpace: "nowrap",
+                <span className="px-3 py-1.5 rounded-lg text-[11px] font-semibold whitespace-nowrap" style={{ 
                   background: getLoaiDetails(selectedNote.loai).bg, 
                   color: getLoaiDetails(selectedNote.loai).color 
                 }}>

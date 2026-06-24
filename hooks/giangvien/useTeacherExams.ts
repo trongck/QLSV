@@ -18,6 +18,39 @@ export interface ExamRoomItem {
   tenmon?: string;
 }
 
+export interface StudentMonitorItem {
+  masv: string;
+  hoten: string;
+  trangthai: "ChuaVao" | "DangLam" | "DaNop" | "HetGio" | "ViPham";
+  socauhoi: number;
+  diemtong: number | null;
+  maketqua: number | null;
+  thoigiannopbai?: string | null;
+}
+
+export interface MonitoringStats {
+  tongSV: number;
+  chuaVao: number;
+  dangLam: number;
+  daNop: number;
+  hetGio: number;
+  viPham: number;
+}
+
+export interface MonitoringData {
+  exam: {
+    madethi: number;
+    tieude: string;
+    thoigianbatdau: string;
+    thoigianketthuc: string;
+    thoigianlam: number;
+    tenmon: string;
+    tenlop: string;
+  };
+  stats: MonitoringStats;
+  students: StudentMonitorItem[];
+}
+
 export function useTeacherExams() {
   const { user } = useAuth();
   const [exams, setExams] = useState<ExamRoomItem[]>([]);
@@ -86,6 +119,50 @@ export function useTeacherExams() {
     }
   };
 
+  const forceEndExam = async (madethi: number) => {
+    try {
+      const res = await apiFetch(`/api/giangvien/exams/${madethi}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "FORCE_END" }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        await fetchExams();
+        return true;
+      } else {
+        throw new Error(json.error || "Không thể kết thúc ca thi");
+      }
+    } catch (err: any) {
+      alert(err.message);
+      throw err;
+    }
+  };
+
+  const getMonitoringData = async (madethi: number): Promise<MonitoringData | null> => {
+    try {
+      const res = await apiFetch(`/api/giangvien/exams/${madethi}`);
+      const json = await res.json();
+      if (json.success) {
+        return json.data as MonitoringData;
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  };
+
+  const getExamHistory = async () => {
+    try {
+      const res = await apiFetch("/api/giangvien/exams/history");
+      const json = await res.json();
+      if (json.success) return json.data;
+      return { upcoming: [], ended: [] };
+    } catch {
+      return { upcoming: [], ended: [] };
+    }
+  };
+
   const updateExamTime = async (
     madethi: number,
     thoigianlam: number,
@@ -140,6 +217,9 @@ export function useTeacherExams() {
     fetchExams,
     createExam,
     endExam,
+    forceEndExam,
+    getMonitoringData,
+    getExamHistory,
     updateExamTime,
     updateExamFull,
   };

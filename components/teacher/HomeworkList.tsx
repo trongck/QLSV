@@ -108,16 +108,16 @@ export function HomeworkList() {
   };
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "20px", position: "relative" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+    <div className="flex flex-col gap-5 relative">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 md:gap-0">
         <div>
-          <h2 style={{ fontSize: "20px", fontWeight: "700", color: "#6B4F43", margin: 0 }}>Quản lý Bài tập Lớp học</h2>
-          <p style={{ fontSize: "13px", color: "#8B6F5F", margin: "4px 0 0" }}>Theo dõi thời hạn nộp bài và chấm điểm bài làm sinh viên</p>
+          <h2 className="text-xl font-bold text-[#6B4F43] m-0">Quản lý Bài tập Lớp học</h2>
+          <p className="text-[13px] text-[#8B6F5F] m-0 mt-1">Theo dõi thời hạn nộp bài và chấm điểm bài làm sinh viên</p>
         </div>
-        <div>
+        <div className="w-full md:w-auto">
           <button 
             onClick={() => setShowCreateModal(true)}
-            style={{ padding: "10px 20px", borderRadius: "10px", border: "none", background: "linear-gradient(90deg, #F2A8A8 0%, #FFB4B4 100%)", color: "white", cursor: "pointer", fontWeight: "600", fontSize: "14px" }}
+            className="w-full md:w-auto px-5 py-2.5 rounded-xl border-none bg-gradient-to-r from-[#F2A8A8] to-[#FFB4B4] text-white cursor-pointer font-semibold text-sm shadow-sm hover:opacity-90 transition-opacity"
           >
              Giao bài tập
           </button>
@@ -125,55 +125,55 @@ export function HomeworkList() {
       </div>
 
       {/* Toolbar */}
-      <div className="card" style={{ padding: "16px", display: "flex", gap: "16px", border: "1px solid #F0E1D9" }}>
+      <div className="bg-white rounded-xl p-4 flex gap-4 border border-[#F0E1D9] shadow-sm">
         <input 
           type="text" 
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           placeholder="Tìm kiếm tên bài tập hoặc chủ đề..." 
-          style={{ flex: 1, padding: "10px 16px", borderRadius: "8px", border: "1px solid #F0E1D9", outline: "none", fontSize: "13px" }}
+          className="flex-1 px-4 py-2.5 rounded-lg border border-[#F0E1D9] outline-none text-[13px] focus:border-[#F2A8A8] transition-colors"
         />
       </div>
 
       {/* Assignments Grid */}
       {loading ? (
-        <p style={{ textAlign: "center", color: "#8B6F5F" }}>Đang tải danh sách bài tập...</p>
+        <p className="text-center text-[#8B6F5F]">Đang tải danh sách bài tập...</p>
       ) : tasks.filter(t => t.title.toLowerCase().includes(searchTerm.toLowerCase())).length === 0 ? (
-        <p style={{ textAlign: "center", color: "#8B6F5F" }}>Chưa có bài tập nào phù hợp.</p>
+        <p className="text-center text-[#8B6F5F]">Chưa có bài tập nào phù hợp.</p>
       ) : (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: "20px" }}>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {tasks.filter(t => t.title.toLowerCase().includes(searchTerm.toLowerCase())).map((item) => (
-            <div key={item.id} className="card" style={{ padding: "20px", display: "flex", flexDirection: "column", gap: "16px", border: "1px solid #F0E1D9" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                <h3 style={{ margin: 0, fontSize: "16px", color: "#2D1B14", fontWeight: "bold" }}>{item.title}</h3>
-                <span style={{ backgroundColor: item.bg, color: item.color, padding: "4px 8px", borderRadius: "4px", fontSize: "12px", fontWeight: "bold", whiteSpace: "nowrap", marginLeft: "10px" }}>{item.label}</span>
+            <div key={item.id} className="bg-white rounded-xl p-5 flex flex-col gap-4 border border-[#F0E1D9] shadow-sm hover:shadow-md transition-shadow">
+              <div className="flex justify-between items-start">
+                <h3 className="m-0 text-base text-[#2D1B14] font-bold">{item.title}</h3>
+                <span className="px-2 py-1 rounded text-xs font-bold whitespace-nowrap ml-2.5" style={{ backgroundColor: item.bg, color: item.color }}>{item.label}</span>
               </div>
-              <div style={{ fontSize: "13px", color: "#8B6F5F" }}>
-                <p style={{ margin: "4px 0" }}><b style={{ color: "#6B4F43" }}>Lớp học:</b> {item.class}</p>
-                <p style={{ margin: "4px 0" }}><b style={{ color: "#6B4F43" }}>Hạn nộp bài:</b> {item.date}</p>
+              <div className="text-[13px] text-[#8B6F5F] space-y-1">
+                <p className="m-0"><b className="text-[#6B4F43]">Lớp học:</b> {item.class}</p>
+                <p className="m-0"><b className="text-[#6B4F43]">Hạn nộp bài:</b> {item.date}</p>
                 {item.filedinhUrl && (
-                  <p style={{ margin: "4px 0" }}>
-                    <a href={getViewerUrl(item.filedinhUrl)} target="_blank" rel="noopener noreferrer" style={{ color: "#178A57", textDecoration: "underline", fontWeight: "bold" }}>Tài liệu đính kèm</a>
+                  <p className="m-0 mt-1">
+                    <a href={getViewerUrl(item.filedinhUrl)} target="_blank" rel="noopener noreferrer" className="text-[#178A57] underline font-bold hover:text-[#065F46]">Tài liệu đính kèm</a>
                   </p>
                 )}
               </div>
-              <div>
-                <div style={{ display: "flex", justifyContent: "space-between", fontSize: "12px", marginBottom: "4px", color: "#8B6F5F" }}>
+              <div className="mt-auto">
+                <div className="flex justify-between text-xs mb-1 text-[#8B6F5F]">
                   <span>Tiến độ sinh viên nộp bài</span>
-                  <span style={{ color: "#F2A8A8", fontWeight: "bold" }}>{item.done}/{item.total}</span>
+                  <span className="text-[#F2A8A8] font-bold">{item.done}/{item.total}</span>
                 </div>
-                <div style={{ height: "6px", backgroundColor: "#F9F9F9", borderRadius: "3px", border: "1px solid #F0E1D9", overflow: "hidden" }}>
-                  <div style={{ width: `${item.total > 0 ? (item.done / item.total) * 100 : 0}%`, height: "100%", backgroundColor: "#F2A8A8" }}></div>
+                <div className="h-1.5 bg-[#F9F9F9] rounded-full border border-[#F0E1D9] overflow-hidden">
+                  <div className="h-full bg-[#F2A8A8]" style={{ width: `${item.total > 0 ? (item.done / item.total) * 100 : 0}%` }}></div>
                 </div>
               </div>
-              <div style={{ display: "flex", gap: "10px", marginTop: "10px" }}>
+              <div className="flex gap-2.5 mt-2">
                 <button 
                   onClick={() => { setEditTask(item); setEditFile(null); }}
-                  style={{ flex: 1, padding: "8px", fontSize: "12px", borderRadius: "6px", border: "1px solid #EAD9CB", background: "white", color: "#6B4F43", cursor: "pointer" }}
+                  className="flex-1 py-2 px-3 text-xs rounded-lg border border-[#EAD9CB] bg-white text-[#6B4F43] cursor-pointer hover:bg-gray-50 transition-colors font-semibold"
                 >Sửa</button>
                 <button 
-                  style={{ flex: 1, padding: "8px", fontSize: "12px", borderRadius: "6px", border: "none", background: "linear-gradient(90deg, #F2A8A8 0%, #FFB4B4 100%)", color: "white", cursor: "pointer", fontWeight: "600" }} 
                   onClick={() => handleViewSubmissions(item)}
+                  className="flex-1 py-2 px-3 text-xs rounded-lg border-none bg-gradient-to-r from-[#F2A8A8] to-[#FFB4B4] text-white cursor-pointer font-bold hover:opacity-90 transition-opacity"
                 >Xem bài nộp</button>
               </div>
             </div>
@@ -183,54 +183,54 @@ export function HomeworkList() {
 
       {/* Edit Modal */}
       {editTask && (
-        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
-          <div style={{ backgroundColor: "#FFF", padding: "24px", borderRadius: "12px", width: "400px", maxWidth: "90%", boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}>
-            <h3 style={{ marginTop: 0, color: "#6B4F43" }}>Chỉnh sửa Bài tập</h3>
-            <form onSubmit={handleEditSubmit} style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[1000] p-4">
+          <div className="bg-white p-6 rounded-2xl w-full max-w-[400px] shadow-lg">
+            <h3 className="mt-0 mb-4 text-lg text-[#6B4F43] font-bold">Chỉnh sửa Bài tập</h3>
+            <form onSubmit={handleEditSubmit} className="flex flex-col gap-3">
               <div>
-                <label style={{ display: "block", fontSize: "13px", color: "#8B6F5F", marginBottom: "4px" }}>Tiêu đề</label>
+                <label className="block text-[13px] text-[#8B6F5F] mb-1 font-semibold">Tiêu đề</label>
                 <input 
                   type="text" 
                   value={editTask.title} 
                   onChange={(e) => setEditTask({...editTask, title: e.target.value})}
                   required
-                  style={{ width: "100%", padding: "8px", borderRadius: "6px", border: "1px solid #EAD9CB", outline: "none" }}
+                  className="w-full p-2.5 rounded-lg border border-[#EAD9CB] outline-none text-[13px] focus:border-[#F2A8A8] transition-colors"
                 />
               </div>
               <div>
-                <label style={{ display: "block", fontSize: "13px", color: "#8B6F5F", marginBottom: "4px" }}>Mô tả</label>
+                <label className="block text-[13px] text-[#8B6F5F] mb-1 font-semibold">Mô tả</label>
                 <textarea 
                   value={editTask.description || ""} 
                   onChange={(e) => setEditTask({...editTask, description: e.target.value})}
                   rows={3}
-                  style={{ width: "100%", padding: "8px", borderRadius: "6px", border: "1px solid #EAD9CB", outline: "none", resize: "vertical" }}
+                  className="w-full p-2.5 rounded-lg border border-[#EAD9CB] outline-none resize-y text-[13px] focus:border-[#F2A8A8] transition-colors"
                 />
               </div>
               <div>
-                <label style={{ display: "block", fontSize: "13px", color: "#8B6F5F", marginBottom: "4px" }}>Hạn nộp</label>
+                <label className="block text-[13px] text-[#8B6F5F] mb-1 font-semibold">Hạn nộp</label>
                 <input 
                   type="datetime-local" 
                   value={editTask.isoDate ? editTask.isoDate.slice(0, 16) : ""} 
                   onChange={(e) => setEditTask({...editTask, isoDate: e.target.value})}
                   required
-                  style={{ width: "100%", padding: "8px", borderRadius: "6px", border: "1px solid #EAD9CB", outline: "none" }}
+                  className="w-full p-2.5 rounded-lg border border-[#EAD9CB] outline-none text-[13px] focus:border-[#F2A8A8] transition-colors"
                 />
               </div>
               
-              <div style={{ background: "#FDF8F5", padding: "10px", borderRadius: "8px", border: "1px solid #F0E1D9" }}>
-                <label style={{ display: "block", fontSize: "13px", color: "#8B6F5F", marginBottom: "4px", fontWeight: "600" }}>File đính kèm thay thế (Tùy chọn)</label>
-                {editTask.filedinhUrl && <div style={{ fontSize: "12px", color: "#F2A8A8", marginBottom: "8px" }}>Bài tập này đang có file đính kèm. Tải file mới lên sẽ thay thế file cũ.</div>}
+              <div className="bg-[#FDF8F5] p-3 rounded-lg border border-[#F0E1D9]">
+                <label className="block text-[13px] text-[#8B6F5F] mb-1 font-bold">File đính kèm thay thế (Tùy chọn)</label>
+                {editTask.filedinhUrl && <div className="text-xs text-[#F2A8A8] mb-2">Bài tập này đang có file đính kèm. Tải file mới lên sẽ thay thế file cũ.</div>}
                 <input 
                   type="file" 
                   accept=".pdf,.doc,.docx,.xlsx,.xls,.ppt,.pptx,.zip,.rar"
                   onChange={(e) => setEditFile(e.target.files ? e.target.files[0] : null)}
-                  style={{ width: "100%", fontSize: "13px", color: "#6B4F43" }}
+                  className="w-full text-[13px] text-[#6B4F43] file:mr-3 file:py-1.5 file:px-3 file:rounded-full file:border-0 file:text-[12px] file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100"
                 />
               </div>
               
-              <div style={{ display: "flex", gap: "10px", marginTop: "10px" }}>
-                <button type="button" onClick={() => setEditTask(null)} disabled={saving} style={{ flex: 1, padding: "10px", borderRadius: "6px", border: "1px solid #EAD9CB", background: "#FFF", cursor: "pointer", color: "#6B4F43" }}>Hủy</button>
-                <button type="submit" disabled={saving} style={{ flex: 1, padding: "10px", borderRadius: "6px", border: "none", background: "#F2A8A8", color: "white", cursor: "pointer", fontWeight: "bold" }}>
+              <div className="flex gap-2.5 mt-2">
+                <button type="button" onClick={() => setEditTask(null)} disabled={saving} className="flex-1 py-2.5 rounded-lg border border-[#EAD9CB] bg-white cursor-pointer text-[#6B4F43] font-semibold hover:bg-gray-50 transition-colors">Hủy</button>
+                <button type="submit" disabled={saving} className={`flex-1 py-2.5 rounded-lg border-none bg-gradient-to-r from-[#F2A8A8] to-[#FFB4B4] text-white cursor-pointer font-bold ${saving ? 'opacity-70' : 'hover:opacity-90'}`}>
                   {saving ? "Đang lưu..." : "Lưu thay đổi"}
                 </button>
               </div>
@@ -241,17 +241,17 @@ export function HomeworkList() {
 
       {/* Create Modal */}
       {showCreateModal && (
-        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
-          <div style={{ backgroundColor: "#FFF", padding: "24px", borderRadius: "12px", width: "400px", maxWidth: "90%", boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}>
-            <h3 style={{ marginTop: 0, color: "#6B4F43" }}>Giao bài tập mới</h3>
-            <form onSubmit={handleCreateSubmit} style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[1000] p-4">
+          <div className="bg-white p-6 rounded-2xl w-full max-w-[400px] shadow-lg">
+            <h3 className="mt-0 mb-4 text-lg text-[#6B4F43] font-bold">Giao bài tập mới</h3>
+            <form onSubmit={handleCreateSubmit} className="flex flex-col gap-3">
               <div>
-                <label style={{ display: "block", fontSize: "13px", color: "#8B6F5F", marginBottom: "4px" }}>Lớp học phần</label>
+                <label className="block text-[13px] text-[#8B6F5F] mb-1 font-semibold">Lớp học phần</label>
                 <select 
                   value={newTaskData.maphancong} 
                   onChange={(e) => setNewTaskData({...newTaskData, maphancong: e.target.value})}
                   required
-                  style={{ width: "100%", padding: "8px", borderRadius: "6px", border: "1px solid #EAD9CB", outline: "none", color: "#6B4F43" }}
+                  className="w-full p-2.5 rounded-lg border border-[#EAD9CB] outline-none text-[13px] text-[#6B4F43] focus:border-[#F2A8A8] transition-colors bg-white"
                 >
                   <option value="">-- Chọn lớp học --</option>
                   {classes.map((c: any) => (
@@ -262,48 +262,48 @@ export function HomeworkList() {
                 </select>
               </div>
               <div>
-                <label style={{ display: "block", fontSize: "13px", color: "#8B6F5F", marginBottom: "4px" }}>Tiêu đề</label>
+                <label className="block text-[13px] text-[#8B6F5F] mb-1 font-semibold">Tiêu đề</label>
                 <input 
                   type="text" 
                   value={newTaskData.tieude} 
                   onChange={(e) => setNewTaskData({...newTaskData, tieude: e.target.value})}
                   required
-                  style={{ width: "100%", padding: "8px", borderRadius: "6px", border: "1px solid #EAD9CB", outline: "none" }}
+                  className="w-full p-2.5 rounded-lg border border-[#EAD9CB] outline-none text-[13px] focus:border-[#F2A8A8] transition-colors"
                 />
               </div>
               <div>
-                <label style={{ display: "block", fontSize: "13px", color: "#8B6F5F", marginBottom: "4px" }}>Mô tả</label>
+                <label className="block text-[13px] text-[#8B6F5F] mb-1 font-semibold">Mô tả</label>
                 <textarea 
                   value={newTaskData.mota} 
                   onChange={(e) => setNewTaskData({...newTaskData, mota: e.target.value})}
                   rows={3}
-                  style={{ width: "100%", padding: "8px", borderRadius: "6px", border: "1px solid #EAD9CB", outline: "none", resize: "vertical" }}
+                  className="w-full p-2.5 rounded-lg border border-[#EAD9CB] outline-none resize-y text-[13px] focus:border-[#F2A8A8] transition-colors"
                 />
               </div>
               <div>
-                <label style={{ display: "block", fontSize: "13px", color: "#8B6F5F", marginBottom: "4px" }}>Hạn nộp</label>
+                <label className="block text-[13px] text-[#8B6F5F] mb-1 font-semibold">Hạn nộp</label>
                 <input 
                   type="datetime-local" 
                   value={newTaskData.hannop} 
                   onChange={(e) => setNewTaskData({...newTaskData, hannop: e.target.value})}
                   required
-                  style={{ width: "100%", padding: "8px", borderRadius: "6px", border: "1px solid #EAD9CB", outline: "none" }}
+                  className="w-full p-2.5 rounded-lg border border-[#EAD9CB] outline-none text-[13px] focus:border-[#F2A8A8] transition-colors"
                 />
               </div>
               
-              <div style={{ background: "#FDF8F5", padding: "10px", borderRadius: "8px", border: "1px solid #F0E1D9" }}>
-                <label style={{ display: "block", fontSize: "13px", color: "#8B6F5F", marginBottom: "4px", fontWeight: "600" }}>Tài liệu đính kèm (Word/PDF...)</label>
+              <div className="bg-[#FDF8F5] p-3 rounded-lg border border-[#F0E1D9]">
+                <label className="block text-[13px] text-[#8B6F5F] mb-2 font-bold">Tài liệu đính kèm (Word/PDF...)</label>
                 <input 
                   type="file" 
                   accept=".pdf,.doc,.docx,.xlsx,.xls,.ppt,.pptx,.zip,.rar"
                   onChange={(e) => setCreateFile(e.target.files ? e.target.files[0] : null)}
-                  style={{ width: "100%", fontSize: "13px", color: "#6B4F43" }}
+                  className="w-full text-[13px] text-[#6B4F43] file:mr-3 file:py-1.5 file:px-3 file:rounded-full file:border-0 file:text-[12px] file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100"
                 />
               </div>
               
-              <div style={{ display: "flex", gap: "10px", marginTop: "10px" }}>
-                <button type="button" onClick={() => setShowCreateModal(false)} disabled={saving} style={{ flex: 1, padding: "10px", borderRadius: "6px", border: "1px solid #EAD9CB", background: "#FFF", cursor: "pointer", color: "#6B4F43" }}>Hủy</button>
-                <button type="submit" disabled={saving} style={{ flex: 1, padding: "10px", borderRadius: "6px", border: "none", background: "#F2A8A8", color: "white", cursor: "pointer", fontWeight: "bold" }}>
+              <div className="flex gap-2.5 mt-2">
+                <button type="button" onClick={() => setShowCreateModal(false)} disabled={saving} className="flex-1 py-2.5 rounded-lg border border-[#EAD9CB] bg-white cursor-pointer text-[#6B4F43] font-semibold hover:bg-gray-50 transition-colors">Hủy</button>
+                <button type="submit" disabled={saving} className={`flex-1 py-2.5 rounded-lg border-none bg-gradient-to-r from-[#F2A8A8] to-[#FFB4B4] text-white cursor-pointer font-bold ${saving ? 'opacity-70' : 'hover:opacity-90'}`}>
                   {saving ? "Đang giao..." : "Giao bài tập"}
                 </button>
               </div>
@@ -314,28 +314,28 @@ export function HomeworkList() {
 
       {/* Submissions Modal */}
       {viewSubmissionsTask && (
-        <div style={{ position: "fixed", top: 0, left: 0, right: 0, bottom: 0, backgroundColor: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
-          <div style={{ backgroundColor: "#FFF", padding: "24px", borderRadius: "12px", width: "600px", maxWidth: "90%", maxHeight: "80vh", display: "flex", flexDirection: "column", boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}>
-            <h3 style={{ marginTop: 0, color: "#6B4F43" }}>Danh sách nộp bài - {viewSubmissionsTask.title}</h3>
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[1000] p-4">
+          <div className="bg-white p-6 rounded-2xl w-full max-w-[600px] max-h-[80vh] flex flex-col shadow-lg">
+            <h3 className="mt-0 mb-4 text-lg text-[#6B4F43] font-bold border-b border-[#F0E1D9] pb-3">Danh sách nộp bài - {viewSubmissionsTask.title}</h3>
             
-            <div style={{ flex: 1, overflowY: "auto", margin: "10px 0", borderTop: "1px solid #F0E1D9", borderBottom: "1px solid #F0E1D9", padding: "10px 0" }}>
+            <div className="flex-1 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-300">
               {loadingSubmissions ? (
-                <p style={{ textAlign: "center", color: "#8B6F5F" }}>Đang tải...</p>
+                <p className="text-center text-[#8B6F5F] py-4">Đang tải...</p>
               ) : submissions.length === 0 ? (
-                <p style={{ textAlign: "center", color: "#8B6F5F" }}>Chưa có sinh viên nào nộp bài.</p>
+                <p className="text-center text-[#8B6F5F] py-4">Chưa có sinh viên nào nộp bài.</p>
               ) : (
-                <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                <div className="flex flex-col gap-3">
                   {submissions.map((sub: any) => (
-                    <div key={sub.manopbai} style={{ padding: "12px", background: "#FDF8F5", borderRadius: "8px", border: "1px solid #F0E1D9" }}>
-                      <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "8px" }}>
-                        <span style={{ fontWeight: "bold", color: "#2D1B14" }}>{sub.hoten} ({sub.masv})</span>
-                        <span style={{ fontSize: "12px", color: "#8B6F5F" }}>
+                    <div key={sub.manopbai} className="p-3 bg-[#FDF8F5] rounded-xl border border-[#F0E1D9]">
+                      <div className="flex justify-between mb-2">
+                        <span className="font-bold text-[#2D1B14] text-sm">{sub.hoten} ({sub.masv})</span>
+                        <span className="text-[12px] text-[#8B6F5F]">
                           {new Date(sub.thoigiannop).toLocaleString("vi-VN")}
                         </span>
                       </div>
                       
                       {sub.noidungnop && (
-                        <div style={{ fontSize: "13px", color: "#6B4F43", marginBottom: "8px", padding: "8px", background: "white", borderRadius: "6px", border: "1px solid #EAD9CB" }}>
+                        <div className="text-[13px] text-[#6B4F43] mb-2 p-2.5 bg-white rounded-lg border border-[#EAD9CB]">
                           {sub.noidungnop}
                         </div>
                       )}
@@ -345,7 +345,7 @@ export function HomeworkList() {
                           href={getViewerUrl(sub.filenop)} 
                           target="_blank" 
                           rel="noopener noreferrer"
-                          style={{ display: "inline-block", fontSize: "12px", color: "#178A57", textDecoration: "none", background: "#EAFDF5", padding: "6px 12px", borderRadius: "6px", fontWeight: "bold" }}
+                          className="inline-block text-[12px] text-[#178A57] no-underline bg-[#EAFDF5] px-3 py-1.5 rounded-lg font-bold hover:bg-[#D1FBE4] transition-colors"
                         >
                           Xem File Nộp
                         </a>
@@ -358,7 +358,7 @@ export function HomeworkList() {
 
             <button 
               onClick={() => setViewSubmissionsTask(null)} 
-              style={{ width: "100%", padding: "10px", borderRadius: "6px", border: "1px solid #EAD9CB", background: "#FFF", cursor: "pointer", color: "#6B4F43", fontWeight: "bold", marginTop: "10px" }}
+              className="w-full mt-4 p-2.5 rounded-lg border border-[#EAD9CB] bg-white cursor-pointer text-[#6B4F43] font-bold hover:bg-gray-50 transition-colors"
             >
               Đóng
             </button>

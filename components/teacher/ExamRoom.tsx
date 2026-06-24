@@ -1,20 +1,212 @@
 "use client";
 
-import { useState } from "react";
-import { useTeacherExams } from "@/hooks/giangvien/useTeacherExams";
+import React, { useState, useEffect, useCallback } from "react";
+import {
+  useTeacherExams,
+  type ExamRoomItem,
+  type MonitoringData,
+  type StudentMonitorItem,
+} from "@/hooks/giangvien/useTeacherExams";
 import { useTeacherClasses } from "@/hooks/giangvien/useTeacherClasses";
 import { apiFetch } from "@/services/service/auth/auth.service";
 
+// ─── Helper ────────────────────────────────────────────────────────────────────
+
+function getStatusBadge(trangthai: StudentMonitorItem["trangthai"]) {
+  const map: Record<string, { label: string; style: string }> = {
+    ChuaVao:  { label: "Chưa vào",  style: "bg-gray-100 text-gray-500" },
+    DangLam:  { label: "Đang làm",  style: "bg-green-100 text-green-700" },
+    DaNop:    { label: "Đã nộp",    style: "bg-blue-100 text-blue-700" },
+    HetGio:   { label: "Hết giờ",   style: "bg-orange-100 text-orange-700" },
+    ViPham:   { label: "Vi phạm",   style: "bg-red-100 text-red-700" },
+  };
+  return map[trangthai] ?? { label: trangthai, style: "bg-gray-100 text-gray-600" };
+}
+
+function formatDateTime(dt: string) {
+  return new Date(dt).toLocaleString("vi-VN", {
+    hour: "2-digit", minute: "2-digit",
+    day: "2-digit", month: "2-digit", year: "numeric",
+  });
+}
+
+function getExamStatus(exam: ExamRoomItem) {
+  const now = new Date();
+  const start = new Date(exam.thoigianbatdau);
+  const end = new Date(exam.thoigianketthuc);
+  if (now < start) return { text: "Sắp tới", color: "#3B82F6", bg: "#EFF6FF" };
+  if (now >= start && now < end) return { text: "Đang diễn ra", color: "#16A34A", bg: "#F0FDF4" };
+  return { text: "Đã kết thúc", color: "#6B7280", bg: "#F9FAFB" };
+}
+
+// ─── Monitoring Panel ─────────────────────────────────────────────────────────
+
+function MonitoringPanel({
+  madethi,
+  onClose,
+  onForceEnd,
+}: {
+  madethi: number;
+  onClose: () => void;
+  onForceEnd: () => void;
+}) {
+  const [data, setData] = useState<MonitoringData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const { getMonitoringData } = useTeacherExams();
+
+  const fetchData = useCallback(async () => {
+    const result = await getMonitoringData(madethi);
+    if (result) setData(result);
+    setLoading(false);
+  }, [madethi]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    fetchData();
+    const interval = setInterval(fetchData, 10000);
+    return () => clearInterval(interval);
+  }, [fetchData]);
+
+  const [timeLeft, setTimeLeft] = useState("");
+  useEffect(() => {
+    if (!data?.exam.thoigianketthuc) return;
+    const update = () => {
+      const diff = new Date(data.exam.thoigianketthuc).getTime() - Date.now();
+      if (diff <= 0) { setTimeLeft("Đã hết giờ"); return; }
+      const h = Math.floor(diff / 3600000);
+      const m = Math.floor((diff % 3600000) / 60000);
+      const s = Math.floor((diff % 60000) / 1000);
+      setTimeLeft(`${h > 0 ? h + "h " : ""}${m}m ${s}s`);
+    };
+    update();
+    const t = setInterval(update, 1000);
+    return () => clearInterval(t);
+  }, [data?.exam.thoigianketthuc]);
+
+  return (
+    <div className="fixed inset-0 z-[200] bg-black/45 backdrop-blur-sm flex items-start justify-center p-4 overflow-y-auto">
+      <div className="bg-white rounded-2xl w-full max-w-[900px] p-6 flex flex-col gap-5 my-4 shadow-[0_20px_60px_rgba(0,0,0,0.2)]">
+        {/* Header */}
+        <div className="flex justify-between items-start flex-wrap gap-3">
+          <div>
+            <h2 className="m-0 text-lg font-bold text-gray-900">
+              📊 Giám sát ca thi
+            </h2>
+            {data && (
+              <p className="m-0 mt-1 text-[13px] text-gray-500">
+                {data.exam.tieude} — {data.exam.tenmon} ({data.exam.tenlop})
+              </p>
+            )}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {timeLeft && (
+              <div className="bg-amber-50 text-amber-700 border border-amber-300 px-3.5 py-1.5 rounded-lg text-[13px] font-bold flex items-center">
+                Còn lại: {timeLeft}
+              </div>
+            )}
+            {data && new Date(data.exam.thoigianketthuc) > new Date() && (
+              <button
+                onClick={onForceEnd}
+                className="bg-red-600 hover:bg-red-700 text-white border-none px-4 py-1.5 rounded-lg text-[13px] font-semibold cursor-pointer transition-colors"
+              >
+                Kết thúc ngay
+              </button>
+            )}
+            <button
+              onClick={onClose}
+              className="bg-gray-100 hover:bg-gray-200 text-gray-700 border-none px-4 py-1.5 rounded-lg text-[13px] font-semibold cursor-pointer transition-colors"
+            >
+              Đóng
+            </button>
+          </div>
+        </div>
+
+        {loading && !data ? (
+          <div style={{ textAlign: "center", padding: "40px 0", color: "#9CA3AF" }}>Đang tải dữ liệu...</div>
+        ) : data ? (
+          <>
+            {/* Stats cards */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
+              {[
+                { label: "Tổng SV", value: data.stats.tongSV, color: "#374151", bg: "#F9FAFB" },
+                { label: "Chưa vào", value: data.stats.chuaVao, color: "#6B7280", bg: "#F3F4F6" },
+                { label: "Đang làm", value: data.stats.dangLam, color: "#16A34A", bg: "#F0FDF4" },
+                { label: "Đã nộp", value: data.stats.daNop, color: "#2563EB", bg: "#EFF6FF" },
+                { label: "Hết giờ", value: data.stats.hetGio, color: "#D97706", bg: "#FFFBEB" },
+                { label: "Vi phạm", value: data.stats.viPham, color: "#DC2626", bg: "#FEF2F2" },
+              ].map((s) => (
+                <div key={s.label} className="rounded-xl p-3 text-center" style={{ background: s.bg }}>
+                  <div className="text-[11px] font-semibold uppercase tracking-wider" style={{ color: s.color }}>{s.label}</div>
+                  <div className="text-2xl font-extrabold mt-1" style={{ color: s.color }}>{s.value}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Students table */}
+            <div className="w-full overflow-x-auto">
+              <table className="w-full min-w-[700px] border-collapse text-[13px]">
+                <thead>
+                  <tr className="border-b-2 border-gray-200 text-left text-gray-500">
+                    <th className="py-2 px-3">Họ tên</th>
+                    <th className="py-2 px-3">Mã SV</th>
+                    <th className="py-2 px-3">Trạng thái</th>
+                    <th className="py-2 px-3 min-w-[160px]">Tiến trình</th>
+                    <th className="py-2 px-3 text-center">T.Gian nộp</th>
+                    <th className="py-2 px-3 text-center">Điểm</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {data.students.map((sv) => {
+                    const badge = getStatusBadge(sv.trangthai);
+                    return (
+                      <tr key={sv.masv} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                        <td className="py-2.5 px-3 font-semibold text-gray-800">{sv.hoten}</td>
+                        <td className="py-2.5 px-3 text-gray-500">{sv.masv}</td>
+                        <td className="py-2.5 px-3">
+                          <span className={`px-2.5 py-1 rounded-full text-[11px] font-bold ${badge.style}`}>
+                            {badge.label}
+                          </span>
+                        </td>
+                        <td className="py-2.5 px-3">
+                          <div className="flex items-center gap-2">
+                            <span className="text-[11px] text-gray-500 whitespace-nowrap">
+                              {sv.trangthai === 'DangLam' ? 'Đang làm...' : ''}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="py-2.5 px-3 text-center text-gray-500 text-[12px]">
+                          {sv.thoigiannopbai ? formatDateTime(sv.thoigiannopbai) : "–"}
+                        </td>
+                        <td className={`py-2.5 px-3 text-center font-bold ${sv.diemtong != null ? "text-green-600" : "text-gray-400"}`}>
+                          {sv.diemtong != null ? sv.diemtong : "–"}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </>
+        ) : (
+          <div className="text-center text-gray-400 py-10">Không có dữ liệu</div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ─── ExamRoom main ────────────────────────────────────────────────────────────
+
 export function ExamRoom() {
-  const { 
-    exams: _exams, 
+  const {
     loading: examsLoading,
+    exams,
+    fetchExams,
     createExam,
     endExam,
-    updateExamTime
+    forceEndExam,
   } = useTeacherExams();
   const { dsLop: teacherClasses, loading: classesLoading } = useTeacherClasses();
-  
+
   const loading = examsLoading || classesLoading;
 
   const classes = teacherClasses.map((c) => ({
@@ -22,53 +214,48 @@ export function ExamRoom() {
     tenmon: c.tenmon ?? "",
     tenlop: c.tenlop ?? "",
     soluongsv: c.soSinhVien ?? 0,
-    students: [],
   }));
 
-  // Quản lý các bước tuyến tính của ca thi:
-  // 0: Chưa có ca thi | 1: Đã tạo ca thi (Chờ SV ổn định) | 2: Đã phát đề thành công | 3: Đang mở tab giám sát chi tiết
-  const [examStep, setExamStep] = useState<number>(0);
-
-  // Lưu thông tin dữ liệu của ca thi sau khi tạo thành công
-  const [currentExam, setCurrentExam] = useState<any>(null);
-
-  // Khai báo điều khiển Trạng thái Modal Form
+  // ── UI State ──────────────────────────────────────────────────────────────────
+  const [activeTab, setActiveTab] = useState<"upcoming" | "ended">("upcoming");
+  const [monitoringExamId, setMonitoringExamId] = useState<number | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditTimeModal, setShowEditTimeModal] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [updatingTime, setUpdatingTime] = useState(false);
-
-  // --- THÀNH PHẦN MỞ RỘNG: QUAN LÝ NGUỒN DANH SÁCH SINH VIÊN ---
-  // "system": Lấy tự động sinh viên của lớp đang dạy | "excel": Tải danh sách riêng từ máy tính
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [studentSource, setStudentSource] = useState<"system" | "excel">("system");
   const [excelFile, setExcelFile] = useState<File | null>(null);
+  const [editingExam, setEditingExam] = useState<ExamRoomItem | null>(null);
+  const [showForceEndModal, setShowForceEndModal] = useState(false);
+  const [forceEndReason, setForceEndReason] = useState("");
 
-  // Form chứa thông tin tạo ca thi mới
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 3500);
+  };
+
+  // Form state
   const [newExamData, setNewExamData] = useState({
-    maphancong: "",
-    tieude: "",
-    mota: "",
-    thoigianlam: 60,
-    thoigianbatdau: "",
-    thoigianketthuc: "",
-    matkhau: ""
+    maphancong: "", tieude: "", mota: "",
+    thoigianlam: 60, thoigianbatdau: "", thoigianketthuc: "", matkhau: ""
   });
   const [uploadFile, setUploadFile] = useState<File | null>(null);
 
-  // Form chứa thông tin chỉnh sửa thời gian
   const [editTimeData, setEditTimeData] = useState({
-    thoigianlam: 60,
-    thoigianbatdau: "",
-    thoigianketthuc: ""
+    thoigianlam: 60, thoigianbatdau: "", thoigianketthuc: ""
   });
 
-  // Xử lý gửi dữ liệu Form lên API tạo ca thi (Bước 0 -> Bước 1)
+  // ── Phân loại ca thi ─────────────────────────────────────────────────────────
+  const now = new Date();
+  const upcomingExams = exams.filter((e) => new Date(e.thoigianketthuc) > now);
+  const endedExams = exams.filter((e) => new Date(e.thoigianketthuc) <= now);
 
+  // ── Handlers ──────────────────────────────────────────────────────────────────
   const handleCreateExamSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newExamData.maphancong) return alert("Vui lòng lựa chọn lớp thi tiếp nhận!");
-    if (!uploadFile) return alert("Vui lòng đính kèm tập tin đề thi!");
-    if (studentSource === "excel" && !excelFile) return alert("Vui lòng tải lên file danh sách sinh viên!");
+    if (!newExamData.maphancong) return showToast("Vui lòng chọn lớp học!");
+    if (!uploadFile) return showToast("Vui lòng đính kèm tập tin đề thi!");
 
     setSubmitting(true);
     try {
@@ -81,439 +268,412 @@ export function ExamRoom() {
       formData.append("thoigianketthuc", newExamData.thoigianketthuc);
       formData.append("matkhau", newExamData.matkhau || "");
       formData.append("file", uploadFile);
-      
-      // Gửi thêm thông tin về nguồn sinh viên lên backend
       formData.append("studentSource", studentSource);
-      if (studentSource === "excel" && excelFile) {
-        formData.append("excelFile", excelFile);
-      }
+      if (studentSource === "excel" && excelFile) formData.append("excelFile", excelFile);
 
-      // Đẩy dữ liệu thực tế lên API Backend qua hook
-      const createdExam = await createExam(formData);
-
-      const selectedClass = classes.find(c => c.maphancong === newExamData.maphancong);
-      
-      // BIẾN XỬ LÝ LOGIC ĐẾM SĨ SỐ THEO THIẾT LẬP CỦA BẠN
-      let finalStudentsList: any[] = [];
-      let totalStudentsCount = 0;
-
-      if (studentSource === "system") {
-        // Lấy danh sách đang dạy đồng bộ từ lớp hệ thống
-        try {
-          const rosterRes = await apiFetch(`/api/giangvien/students?maphancong=${newExamData.maphancong}`);
-          const rosterJson = await rosterRes.json();
-          if (rosterJson.success && rosterJson.data) {
-            finalStudentsList = rosterJson.data.map((s: any) => ({
-              masv: s.mssv,
-              tensv: s.name,
-              trangthai: "Đang làm",
-              tiendo: "0/35",
-              phantram: 0,
-              chuyentab: 0
-            }));
-            totalStudentsCount = finalStudentsList.length;
-          }
-        } catch (rosterErr) {
-          console.error("Lỗi lấy danh sách sinh viên:", rosterErr);
-        }
-      } else {
-        // Lấy danh sách từ file Excel upload
-        finalStudentsList = [
-          { masv: "EXCEL-01", tensv: "Sinh viên từ file máy tính A", trangthai: "Đang làm", tiendo: "0/35", phantram: 0, chuyentab: 0 },
-          { masv: "EXCEL-02", tensv: "Sinh viên từ file máy tính B", trangthai: "Đang làm", tiendo: "0/35", phantram: 0, chuyentab: 0 }
-        ];
-        totalStudentsCount = finalStudentsList.length;
-      }
-
-      setCurrentExam({
-        id: createdExam.madethi,
-        tieude: newExamData.tieude,
-        tenmon: selectedClass?.tenmon || "Môn học phần",
-        tenlop: studentSource === "system" ? (selectedClass?.tenlop || "Lớp thi") : "Danh sách tải lên từ máy",
-        thoigianlam: newExamData.thoigianlam,
-        thoigianbatdau: newExamData.thoigianbatdau,
-        thoigianketthuc: newExamData.thoigianketthuc,
-        soluongsv: totalStudentsCount, // Hệ thống biết được tổng số sinh viên tham gia ca này
-        ketquathi: finalStudentsList   // Phát đề đúng và biết được sinh viên nào đang làm bài
-      });
-
+      await createExam(formData);
       setShowCreateModal(false);
-      setExamStep(1); // Chuyển sang Bước 1: Màn hình danh sách ca thi chờ SV vào phòng
-    } catch (err) {
-      // Báo lỗi nếu việc khởi tạo qua API thất bại
+      showToast("Tạo ca thi thành công! Thông báo đã được gửi tới sinh viên.");
+      setNewExamData({ maphancong: "", tieude: "", mota: "", thoigianlam: 60, thoigianbatdau: "", thoigianketthuc: "", matkhau: "" });
+      setUploadFile(null);
+    } catch {
+      // error shown by hook
     } finally {
       setSubmitting(false);
     }
   };
 
-  // Hành động chuẩn bị dữ liệu cũ và mở Modal sửa thời gian
-  const openEditTimeModal = () => {
-    if (currentExam) {
-      setEditTimeData({
-        thoigianlam: currentExam.thoigianlam,
-        thoigianbatdau: currentExam.thoigianbatdau ? currentExam.thoigianbatdau.slice(0, 16) : "",
-        thoigianketthuc: currentExam.thoigianketthuc ? currentExam.thoigianketthuc.slice(0, 16) : ""
-      });
+  const handleEndExam = async (exam: ExamRoomItem) => {
+    if (confirm(`Bạn có chắc chắn muốn kết thúc ca thi "${exam.tieude}"?`)) {
+      try {
+        await endExam(exam.madethi);
+        showToast("Ca thi đã kết thúc.");
+      } catch { /* handled by hook */ }
     }
+  };
+
+  const handleForceEnd = async () => {
+    if (!monitoringExamId) return;
+    if (!forceEndReason.trim()) {
+      showToast("Vui lòng nhập lý do kết thúc ca thi!");
+      return;
+    }
+    
+    try {
+      const res = await apiFetch(`/api/giangvien/exams/${monitoringExamId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "FORCE_END", lydo: forceEndReason.trim() }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        await fetchExams();
+        setMonitoringExamId(null);
+        setShowForceEndModal(false);
+        setForceEndReason("");
+        showToast("Đã kết thúc ca thi ngay lập tức.");
+      } else {
+        showToast(json.error || "Không thể kết thúc ca thi");
+      }
+    } catch {
+      showToast("Lỗi khi yêu cầu kết thúc ca thi");
+    }
+  };
+
+  const openEditTimeModal = (exam: ExamRoomItem) => {
+    setEditingExam(exam);
+    setEditTimeData({
+      thoigianlam: exam.thoigianlam,
+      thoigianbatdau: exam.thoigianbatdau ? exam.thoigianbatdau.slice(0, 16) : "",
+      thoigianketthuc: exam.thoigianketthuc ? exam.thoigianketthuc.slice(0, 16) : "",
+    });
     setShowEditTimeModal(true);
   };
 
-  // Hành động cập nhật sửa đổi thời gian (Gửi API)
   const handleEditTimeSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!currentExam) return;
+    if (!editingExam) return;
     setUpdatingTime(true);
     try {
-      await updateExamTime(
-        currentExam.id,
-        editTimeData.thoigianlam,
-        editTimeData.thoigianbatdau,
-        editTimeData.thoigianketthuc
-      );
-
-      setCurrentExam((prev: any) => ({
-        ...prev,
-        thoigianlam: editTimeData.thoigianlam,
-        thoigianbatdau: editTimeData.thoigianbatdau,
-        thoigianketthuc: editTimeData.thoigianketthuc
-      }));
-
-      alert("Cập nhật thay đổi thời gian ca thi thành công!");
-      setShowEditTimeModal(false);
-    } catch (err) {
-      // error handled by hook
-    } finally {
+      const res = await apiFetch(`/api/giangvien/exams/${editingExam.madethi}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "UPDATE_TIME",
+          thoigianlam: editTimeData.thoigianlam,
+          thoigianbatdau: editTimeData.thoigianbatdau,
+          thoigianketthuc: editTimeData.thoigianketthuc,
+        }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        await fetchExams();
+        showToast("Cập nhật thời gian thành công!");
+        setShowEditTimeModal(false);
+      }
+    } catch { /* handled */ } finally {
       setUpdatingTime(false);
     }
   };
 
-  // Hành động Phát đề cho sinh viên (Bước 1 -> Bước 2)
-  const handleDistributeExam = () => {
-    alert("Hệ thống phát thông báo đẩy trực tiếp! Sinh viên hiện tại đã có thể vào làm bài.");
-    setExamStep(2); // Bước 2: Xuất hiện nút vào phòng giám sát
-  };
+  // ── Render helpers ────────────────────────────────────────────────────────────
 
-  // Hành động kết thúc ca thi sớm
-  const handleEndExamClick = async () => {
-    if (!currentExam) return;
-    if (confirm("Bạn có chắc chắn muốn kết thúc sớm ca thi này?")) {
-      try {
-        await endExam(currentExam.id);
-        setExamStep(0);
-        setCurrentExam(null);
-        alert("Ca thi đã được kết thúc thành công.");
-      } catch (err) {
-        // error handled by hook
-      }
-    }
-  };
-
-  if (loading) return <div style={{ padding: "20px", color: "#8B6F5F" }}>Đang đồng bộ dữ liệu hệ thống...</div>;
-
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "20px", background: "#FAF6F0", minHeight: "100vh", padding: "20px" }}>
-      
-      {/* KHU VỰC HEADER TỔNG */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-        <div>
-          <h2 style={{ fontSize: "20px", fontWeight: "700", color: "#6B4F43", margin: 0 }}>Hệ thống Quản lý & Giám sát Thi</h2>
-          <p style={{ fontSize: "13px", color: "#8B6F5F", margin: "4px 0 0" }}>Luồng khởi tạo ca thi, phát thông báo đề và giám sát AI Proctor</p>
+  const renderExamCard = (exam: ExamRoomItem, isUpcoming: boolean) => {
+    const status = getExamStatus(exam);
+    const isActive = status.text === "Đang diễn ra";
+    return (
+      <div
+        className="bg-white rounded-2xl p-4 md:p-5 border border-gray-200 flex flex-col gap-3 shadow-sm hover:shadow-md transition-shadow"
+      >
+        {/* Top row */}
+        <div className="flex justify-between items-start gap-3 flex-wrap">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h3 className="m-0 text-[15px] font-bold text-gray-900 leading-tight">{exam.tieude}</h3>
+              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold" style={{ background: status.bg, color: status.color }}>
+                {status.text}
+              </span>
+              {isActive && (
+                <span className="inline-flex items-center gap-1 text-[11px]">
+                  <span className="w-1.5 h-1.5 rounded-full bg-green-600 inline-block animate-pulse" />
+                  <span className="text-green-600 font-semibold">Live</span>
+                </span>
+              )}
+            </div>
+            <p className="m-0 mt-1 text-[12px] text-gray-500">
+              {exam.tenmon} • {exam.tenlop} • {exam.thoigianlam} phút
+            </p>
+          </div>
+          <div className="text-[12px] text-gray-400 text-left md:text-right shrink-0 w-full md:w-auto mt-2 md:mt-0">
+            <div>{formatDateTime(exam.thoigianbatdau)}</div>
+            <div>→ {formatDateTime(exam.thoigianketthuc)}</div>
+          </div>
         </div>
 
-        {examStep > 0 && (
-          <div style={{ display: "flex", gap: "10px" }}>
-            <button onClick={openEditTimeModal} style={{ background: "white", border: "1px solid #EAD9CB", color: "#6B4F43", padding: "8px 16px", borderRadius: "8px", fontSize: "13px", fontWeight: "600", cursor: "pointer" }}>
-               Sửa thời gian
+        {/* Actions */}
+        {isUpcoming && (
+          <div className="flex gap-2 flex-wrap mt-2">
+            {isActive && (
+              <button
+                onClick={() => setMonitoringExamId(exam.madethi)}
+                className="px-3.5 py-1.5 bg-green-50 text-green-600 border border-green-200 rounded-lg text-[12px] font-semibold cursor-pointer hover:bg-green-100 transition-colors"
+              >
+                📊 Xem thống kê
+              </button>
+            )}
+            <button
+              onClick={() => openEditTimeModal(exam)}
+              className="px-3.5 py-1.5 bg-gray-50 text-gray-700 border border-gray-200 rounded-lg text-[12px] font-semibold cursor-pointer hover:bg-gray-100 transition-colors"
+            >
+              Sửa thời gian
             </button>
-            <button onClick={handleEndExamClick} style={{ background: "#D65D5D", color: "white", padding: "8px 16px", border: "none", borderRadius: "8px", fontSize: "13px", fontWeight: "600", cursor: "pointer" }}>
-               Kết thúc ca thi
+            <button
+              onClick={() => handleEndExam(exam)}
+              className="px-3.5 py-1.5 bg-red-50 text-red-600 border border-red-200 rounded-lg text-[12px] font-semibold cursor-pointer hover:bg-red-100 transition-colors"
+            >
+              Kết thúc sớm
             </button>
           </div>
         )}
       </div>
+    );
+  };
 
-      {/* BƯỚC 0: HOÀN TOÀN CHƯA CÓ CA THI NÀO DIỄN RA */}
-      {examStep === 0 && (
-        <div style={{ padding: "80px 40px", textAlign: "center", background: "white", border: "1px solid #F0E1D9", borderRadius: "16px", display: "flex", flexDirection: "column", alignItems: "center", gap: "20px" }}>
+  // ── UI ────────────────────────────────────────────────────────────────────────
 
-          <div style={{ maxWidth: "500px" }}>
-            <h3 style={{ color: "#6B4F43", margin: "0 0 8px 0", fontSize: "18px", fontWeight: "700" }}>Hiện không có ca thi nào đang xảy ra</h3>
-            <p style={{ color: "#8B6F5F", margin: 0, fontSize: "13px", lineHeight: "1.6" }}>
-              Hệ thống giám sát đang trống. Hãy thiết lập và mở một ca thi mới bằng cách click vào nút phía bên dưới để phân phối đề cho sinh viên.
+  if (loading) {
+    return <div className="p-6 text-gray-500 text-center">Đang tải dữ liệu...</div>;
+  }
+
+  return (
+    <div className="bg-gray-50 min-h-screen relative p-0">
+
+      {/* Toast */}
+      {toastMessage && (
+        <div className="fixed bottom-5 right-5 bg-gray-800 text-white px-5 py-3 rounded-xl z-[9999] shadow-lg text-sm max-w-[360px] animate-fadeInUp">
+          {toastMessage}
+        </div>
+      )}
+
+      {/* Monitoring Panel */}
+      {monitoringExamId && (
+        <MonitoringPanel
+          madethi={monitoringExamId}
+          onClose={() => setMonitoringExamId(null)}
+          onForceEnd={() => setShowForceEndModal(true)}
+        />
+      )}
+
+      {/* Force End Reason Modal */}
+      {showForceEndModal && (
+        <div className="fixed inset-0 z-[300] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl w-full max-w-[400px] p-6 shadow-2xl flex flex-col gap-4">
+            <h3 className="m-0 text-lg font-bold text-red-600 flex items-center gap-2">
+              ⚠️ Yêu cầu kết thúc ca thi
+            </h3>
+            <p className="m-0 text-[13.5px] text-gray-600">
+              Bạn đang yêu cầu đóng ca thi này ngay lập tức. Tất cả bài thi đang làm sẽ bị ép buộc nộp. Vui lòng nhập lý do.
             </p>
+            <textarea
+              value={forceEndReason}
+              onChange={(e) => setForceEndReason(e.target.value)}
+              placeholder="Nhập lý do kết thúc (VD: Phát hiện gian lận hàng loạt...)"
+              className="w-full p-3 border border-red-200 rounded-xl outline-none focus:border-red-500 min-h-[100px] text-[13px]"
+              autoFocus
+            />
+            <div className="flex justify-end gap-3 mt-2">
+              <button
+                onClick={() => {
+                  setShowForceEndModal(false);
+                  setForceEndReason("");
+                }}
+                className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-xl text-[13px]"
+              >
+                Hủy
+              </button>
+              <button
+                onClick={handleForceEnd}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl shadow-md shadow-red-100 text-[13px]"
+              >
+                Xác nhận kết thúc
+              </button>
+            </div>
           </div>
-          <button onClick={() => setShowCreateModal(true)} style={{ background: "linear-gradient(90deg, #F2A8A8 0%, #FFB4B4 100%)", color: "white", padding: "12px 28px", border: "none", borderRadius: "25px", fontWeight: "600", cursor: "pointer", fontSize: "14px", boxShadow: "0 4px 12px rgba(242,168,168,0.4)" }}>
-             Tạo một ca thi mới ngay
-          </button>
         </div>
       )}
 
-      {/* BƯỚC 1: ĐÃ TẠO CA THI -> CHỜ SINH VIÊN VÀO PHÒNG */}
-      {examStep === 1 && currentExam && (
-        <div style={{ display: "flex", flexDirection: "column", gap: "15px" }}>
-          <button onClick={() => setExamStep(0)} style={{ alignSelf: "flex-start", background: "none", border: "none", color: "#8B6F5F", cursor: "pointer", fontSize: "13px", fontWeight: "600", display: "flex", alignItems: "center", gap: "5px" }}>
-            Quay lại màn hình tạo ca thi
-          </button>
-
-          <div style={{ padding: "50px 30px", textAlign: "center", background: "white", border: "1px solid #F0E1D9", borderRadius: "16px", display: "flex", flexDirection: "column", alignItems: "center", gap: "15px" }}>
-            <div style={{ fontSize: "50px" }}>🖥️</div>
-            <h3 style={{ color: "#6B4F43", margin: 0, fontSize: "18px" }}>Ca thi sắp bắt đầu: {currentExam.tieude}</h3>
-            <p style={{ color: "#8B6F5F", margin: 0, fontSize: "13px" }}>Lớp tiếp nhận: <strong>{currentExam.tenmon} ({currentExam.tenlop})</strong></p>
-            <div style={{ padding: "12px 25px", background: "#FFFBEB", border: "1px solid #FCD34D", borderRadius: "8px", fontSize: "13px", color: "#B7791F", margin: "10px 0" }}>
-               Sĩ số tiếp nhận: <strong>{currentExam.soluongsv} sinh viên</strong>. Khi danh sách phòng thi ổn định, hãy nhấn nút <strong>Phát đề thi</strong>.
-            </div>
-            <button onClick={handleDistributeExam} style={{ background: "#8B6F5F", color: "white", padding: "12px 30px", border: "none", borderRadius: "25px", fontWeight: "600", cursor: "pointer", fontSize: "14px" }}>
-               Xác nhận danh sách đã đủ & Phát đề thi
-            </button>
-          </div>
+      {/* Header */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-5 gap-3 md:gap-0">
+        <div>
+          <h2 className="m-0 text-xl font-bold text-gray-900">Quản lý & Giám sát Thi</h2>
+          <p className="m-0 mt-1 text-[13px] text-gray-500">Tạo ca thi, phát đề, giám sát sinh viên realtime</p>
         </div>
-      )}
+        <button
+          onClick={() => setShowCreateModal(true)}
+          className="w-full md:w-auto bg-gradient-to-r from-indigo-500 to-purple-500 text-white px-5 py-2.5 rounded-xl font-bold text-sm cursor-pointer shadow-md hover:opacity-90 transition-opacity border-none"
+        >
+          + Tạo ca thi mới
+        </button>
+      </div>
 
-      {/* BƯỚC 2: ĐÃ PHÁT ĐỀ XONG -> GIAO DIỆN CHỜ KÍCH HOẠT GIÁM SÁT */}
-      {examStep === 2 && currentExam && (
-        <div style={{ display: "flex", flexDirection: "column", gap: "15px" }}>
-          <button onClick={() => setExamStep(1)} style={{ alignSelf: "flex-start", background: "none", border: "none", color: "#8B6F5F", cursor: "pointer", fontSize: "13px", fontWeight: "600", display: "flex", alignItems: "center", gap: "5px" }}>
-             Quay lại kiểm tra phòng chờ sinh viên
+      {/* Tabs */}
+      <div className="flex border-b-2 border-gray-200 mb-5 overflow-x-auto gap-0 scrollbar-hide">
+        {([
+          { key: "upcoming", label: `Sắp tới & Đang diễn ra (${upcomingExams.length})` },
+          { key: "ended", label: `Đã kết thúc (${endedExams.length})` },
+        ] as const).map((tab) => (
+          <button
+            key={tab.key}
+            onClick={() => setActiveTab(tab.key)}
+            className={`px-5 py-2.5 bg-transparent border-none cursor-pointer text-[13px] font-bold whitespace-nowrap mb-[-2px] transition-colors ${
+              activeTab === tab.key ? "text-indigo-500 border-b-2 border-indigo-500" : "text-gray-500 border-b-2 border-transparent hover:text-gray-700"
+            }`}
+          >
+            {tab.label}
           </button>
+        ))}
+      </div>
 
-          <div style={{ width: "100%", background: "white", border: "1px solid #F0E1D9", borderRadius: "16px", padding: "50px 40px", textAlign: "center" }}>
-            <div style={{ width: "70px", height: "70px", background: "#FDF8F5", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px", border: "1px solid #F2A8A8" }}>
-              <span style={{ fontSize: "32px", color: "#F2A8A8" }}>⚡</span>
+      {/* Tab content */}
+      <div className="flex flex-col gap-3">
+        {activeTab === "upcoming" && (
+          upcomingExams.length === 0 ? (
+            <div className="bg-white rounded-2xl py-12 px-6 text-center border border-dashed border-gray-200">
+              <div className="text-4xl mb-3">📋</div>
+              <p className="text-gray-500 m-0 text-sm">Không có ca thi sắp tới. Hãy tạo ca thi mới!</p>
             </div>
+          ) : upcomingExams.map((exam) => (
+            <React.Fragment key={exam.madethi}>
+              {renderExamCard(exam, true)}
+            </React.Fragment>
+          ))
+        )}
 
-            <h2 style={{ color: "#6B4F43", fontSize: "22px", fontWeight: "700", margin: "0 0 12px 0" }}>
-              Đang tiến hành ca thi: <span style={{ color: "#D65D5D" }}>{currentExam.tieude}</span>
-            </h2>
-
-            <div style={{ display: "flex", justifyContent: "center", gap: "12px", marginBottom: "20px" }}>
-              <span style={{ background: "#EAFDF5", color: "#178A57", padding: "6px 14px", borderRadius: "20px", fontSize: "13px", fontWeight: "600", display: "flex", alignItems: "center", gap: "6px" }}>
-                <span style={{ width: "6px", height: "6px", background: "#178A57", borderRadius: "50%" }}></span>
-                Đề thi đã được phân phối tự động ({currentExam.soluongsv} SV)
-              </span>
+        {activeTab === "ended" && (
+          endedExams.length === 0 ? (
+            <div className="bg-white rounded-2xl py-12 px-6 text-center border border-dashed border-gray-200">
+              <p className="text-gray-500 m-0 text-sm">Chưa có ca thi nào đã kết thúc.</p>
             </div>
-
-            <button 
-              onClick={() => setExamStep(3)} 
-              style={{ background: "#8B6F5F", color: "white", padding: "12px 35px", border: "none", borderRadius: "25px", fontWeight: "600", cursor: "pointer", fontSize: "13px", display: "inline-flex", alignItems: "center", gap: "10px", boxShadow: "0 4px 15px rgba(139,111,95,0.2)" }}
+          ) : endedExams.map((exam) => (
+            <div
+              key={exam.madethi}
+              className="bg-white rounded-2xl p-4 md:p-5 border border-gray-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-3"
             >
-               Kích hoạt & Vào phòng giám sát thi
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* BƯỚC 3: GIAO DIỆN PHÒNG GIÁM SÁT CHI TIẾT (3 CỘT REALTIME) */}
-      {examStep === 3 && currentExam && (
-        <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-          
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "white", padding: "12px 20px", borderRadius: "12px", border: "1px solid #F0E1D9" }}>
-            <span style={{ fontSize: "14px", color: "#6B4F43", fontWeight: "600" }}>
-               Đang mở: Màn hình theo dõi Realtime số lượng {currentExam.soluongsv} thí sinh nhận đề
-            </span>
-            <button onClick={() => setExamStep(2)} style={{ background: "#8B6F5F", color: "white", padding: "8px 18px", border: "none", borderRadius: "8px", fontSize: "13px", fontWeight: "600", cursor: "pointer" }}>
-               Thoát giám sát (Quay lại)
-            </button>
-          </div>
-
-          {/* Hàng Khối Số Liệu Thống Kê Tổng Quan */}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: "15px" }}>
-            <div style={{ padding: "15px", background: "white", border: "1px solid #F0E1D9", borderRadius: "8px" }}>
-              <div style={{ fontSize: "12px", color: "#8B6F5F" }}>Tổng sinh viên</div>
-              <div style={{ fontSize: "22px", fontWeight: "700", color: "#2D1B14", marginTop: "4px" }}>{currentExam.soluongsv}</div>
-            </div>
-            <div style={{ padding: "15px", background: "#EAFDF5", border: "1px solid #F0E1D9", borderRadius: "8px" }}>
-              <div style={{ fontSize: "12px", color: "#178A57", fontWeight: "600" }}>Đang làm bài</div>
-              <div style={{ fontSize: "22px", fontWeight: "700", color: "#178A57", marginTop: "4px" }}>{currentExam.ketquathi?.length}</div>
-            </div>
-            <div style={{ padding: "15px", background: "white", border: "1px solid #F0E1D9", borderRadius: "8px" }}>
-              <div style={{ fontSize: "12px", color: "#8B6F5F" }}>Đã nộp bài</div>
-              <div style={{ fontSize: "22px", fontWeight: "700", color: "#6B4F43", marginTop: "4px" }}>0</div>
-            </div>
-            <div style={{ padding: "15px", background: "white", border: "1px solid #F0E1D9", borderRadius: "8px" }}>
-              <div style={{ fontSize: "12px", color: "#8B6F5F" }}>Chưa bắt đầu</div>
-              <div style={{ fontSize: "22px", fontWeight: "700", color: "#B7791F", marginTop: "4px" }}>0</div>
-            </div>
-            <div style={{ padding: "15px", background: "#FDF3F3", border: "1px solid #F2A8A8", borderRadius: "8px" }}>
-              <div style={{ fontSize: "12px", color: "#D65D5D", fontWeight: "600" }}>Cảnh báo AI</div>
-              <div style={{ fontSize: "22px", fontWeight: "700", color: "#D65D5D", marginTop: "4px" }}>1</div>
-            </div>
-          </div>
-
-          <div style={{ display: "grid", gridTemplateColumns: "1.1fr 2.5fr 1.2fr", gap: "20px" }}>
-            {/* Cột 1: Chi tiết Phòng ca thi */}
-            <div style={{ padding: "18px", background: "white", border: "1px solid #F0E1D9", borderRadius: "12px", display: "flex", flexDirection: "column", gap: "12px", height: "fit-content" }}>
-              <h4 style={{ margin: 0, fontSize: "14px", color: "#6B4F43", borderBottom: "1px solid #EEE", paddingBottom: "8px" }}>THÔNG TIN CA THI</h4>
-              <div style={{ fontSize: "13px", display: "flex", flexDirection: "column", gap: "10px", color: "#6B4F43" }}>
-                <div> Học phần: <strong>{currentExam.tenmon}</strong></div>
-                <div> Nguồn: <strong>{currentExam.tenlop}</strong></div>
-                <div> Thời gian làm: <strong>{currentExam.thoigianlam} phút</strong></div>
+              <div>
+                <h3 className="m-0 text-sm font-bold text-gray-700">{exam.tieude}</h3>
+                <p className="m-0 mt-1 text-[12px] text-gray-400">
+                  {exam.tenmon} • {exam.tenlop} • {formatDateTime(exam.thoigianketthuc)}
+                </p>
+              </div>
+              <div className="flex items-center gap-2 self-start md:self-auto">
+                <button
+                  onClick={() => setMonitoringExamId(exam.madethi)}
+                  className="px-3.5 py-1.5 bg-gray-50 text-gray-700 border border-gray-200 rounded-lg text-[12px] font-semibold cursor-pointer hover:bg-gray-100 transition-colors"
+                >
+                  📊 Xem thống kê
+                </button>
+                <span className="px-2.5 py-1 bg-gray-100 text-gray-500 rounded-full text-[11px] font-bold">Đã kết thúc</span>
               </div>
             </div>
+          ))
+        )}
+      </div>
 
-            {/* Cột 2: Bảng Danh Sách Theo Dõi Realtime */}
-            <div style={{ padding: "20px", background: "white", border: "1px solid #F0E1D9", borderRadius: "12px" }}>
-              <h4 style={{ margin: "0 0 15px 0", fontSize: "14px", color: "#6B4F43" }}>TIẾN ĐỘ VÀ TRẠNG THÁI SINH VIÊN</h4>
-              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "13px" }}>
-                <thead>
-                  <tr style={{ textAlign: "left", color: "#8B6F5F", borderBottom: "2px solid #F0E1D9" }}>
-                    <th style={{ padding: "8px" }}>Họ tên sinh viên</th>
-                    <th>Mã số SV</th>
-                    <th>Trạng thái</th>
-                    <th>Tiến độ</th>
-                    <th style={{ textAlign: "center" }}>Rời tab</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {currentExam.ketquathi?.map((st: any) => (
-                    <tr key={st.masv} style={{ borderBottom: "1px solid #FDF8F5" }}>
-                      <td style={{ padding: "12px 8px", fontWeight: "600", color: "#2D1B14" }}>{st.tensv}</td>
-                      <td style={{ color: "#8B6F5F" }}>{st.masv}</td>
-                      <td>
-                        <span style={{ fontSize: "11px", padding: "2px 6px", borderRadius: "10px", background: st.chuyentab > 0 ? "#FFFBEB" : "#EAFDF5", color: st.chuyentab > 0 ? "#B7791F" : "#178A57" }}>
-                          {st.chuyentab > 0 ? "Cảnh báo" : "Đang làm"}
-                        </span>
-                      </td>
-                      <td>{st.tiendo}</td>
-                      <td style={{ textAlign: "center", fontWeight: "bold", color: st.chuyentab > 0 ? "#D65D5D" : "inherit" }}>
-                        {st.chuyentab}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Cột 3: Nhật ký phát hiện gian lận AI */}
-            <div style={{ padding: "18px", background: "white", border: "1px solid #F0E1D9", borderRadius: "12px" }}>
-              <h4 style={{ margin: "0 0 15px 0", fontSize: "14px", color: "#6B4F43" }}>NHẬT KÝ AI PROCTOR</h4>
-              <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                <div style={{ padding: "10px", background: "#FFFBEB", borderLeft: "4px solid #F2C94C", fontSize: "12px", borderRadius: "4px" }}>
-                  <div style={{ display: "flex", justifyContent: "space-between", color: "#B7791F", fontWeight: "bold" }}>
-                    <span> Chuyển màn hình</span> <span>Vừa xong</span>
-                  </div>
-                  <p style={{ margin: "4px 0 0", color: "#2D1B14" }}>Có sinh viên rời khỏi tab làm bài.</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* --- FORM HỘP THOẠI MODAL KHỞI TẠO CA THI MỚI (TÍCH HỢP QUẢN LÝ LUỒNG SINH VIÊN) --- */}
+      {/* ── Create Modal ─────────────────────────────────────────────────────── */}
       {showCreateModal && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(45, 27, 20, 0.4)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000 }}>
-          <form onSubmit={handleCreateExamSubmit} style={{ background: "white", padding: "30px", borderRadius: "16px", width: "480px", display: "flex", flexDirection: "column", gap: "15px", border: "1px solid #F0E1D9", maxHeight: "90vh", overflowY: "auto" }}>
-            <h3 style={{ margin: 0, color: "#6B4F43", fontWeight: "bold", fontSize: "18px" }}>Thiết lập thông số Ca thi mới</h3>
-            
-            <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-              <label style={{ fontSize: "12px", fontWeight: "600", color: "#6B4F43" }}>Lớp học tiếp nhận đề thi *</label>
-              <select required value={newExamData.maphancong} onChange={e => setNewExamData({ ...newExamData, maphancong: e.target.value })} style={{ padding: "10px", borderRadius: "8px", border: "1px solid #EAD9CB", fontSize: "13px" }}>
-                <option value="">-- Chọn lớp học --</option>
-                {classes.map((c: any) => (
+        <div className="fixed inset-0 z-[1000] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+          <form
+            onSubmit={handleCreateExamSubmit}
+            className="bg-white p-6 md:p-7 rounded-2xl w-full max-w-[480px] flex flex-col gap-4 my-4"
+          >
+            <h3 className="m-0 text-lg font-bold text-gray-900">Thiết lập Ca thi mới</h3>
+
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[12px] font-semibold text-gray-700">Lớp học phần *</label>
+              <select required value={newExamData.maphancong} onChange={(e) => setNewExamData({ ...newExamData, maphancong: e.target.value })} className="p-2.5 rounded-lg border border-gray-300 text-[13px] outline-none focus:border-indigo-500 bg-white">
+                <option value="">-- Chọn lớp --</option>
+                {classes.map((c) => (
                   <option key={c.maphancong} value={c.maphancong}>{c.tenmon} - {c.tenlop}</option>
                 ))}
               </select>
             </div>
 
-            {/* CẢI TIẾN THÊM: KHỐI CHỌN DANH SÁCH THÍ SINH NHẬN ĐỀ TỰ ĐỘNG/ FILE EXCEL */}
-            <div style={{ background: "#FAF6F0", padding: "15px", borderRadius: "8px", border: "1px solid #EAD9CB", display: "flex", flexDirection: "column", gap: "10px" }}>
-              <label style={{ fontSize: "12px", fontWeight: "700", color: "#6B4F43" }}>Nguồn danh sách sinh viên phát đề:</label>
-              
-              <div style={{ display: "flex", gap: "20px", fontSize: "13px" }}>
-                <label style={{ display: "flex", alignItems: "center", gap: "6px", cursor: "pointer", color: "#2D1B14" }}>
+            <div className="bg-gray-50 p-3.5 rounded-lg border border-gray-200">
+              <label className="text-[12px] font-bold text-gray-700 block mb-2">Nguồn danh sách sinh viên:</label>
+              <div className="flex flex-col sm:flex-row gap-2 sm:gap-5 text-[13px]">
+                <label className="flex items-center gap-1.5 cursor-pointer">
                   <input type="radio" name="studentSource" checked={studentSource === "system"} onChange={() => setStudentSource("system")} />
                   Học sinh thuộc lớp mặc định
                 </label>
-                <label style={{ display: "flex", alignItems: "center", gap: "6px", cursor: "pointer", color: "#2D1B14" }}>
+                <label className="flex items-center gap-1.5 cursor-pointer">
                   <input type="radio" name="studentSource" checked={studentSource === "excel"} onChange={() => setStudentSource("excel")} />
-                  Tải danh sách riêng lên (.xlsx)
+                  Tải danh sách riêng (.xlsx)
                 </label>
               </div>
-
-              {studentSource === "system" ? (
-                <div style={{ fontSize: "12px", color: "#178A57", fontWeight: "500", marginTop: "2px" }}>
-                  ✓ Tự động lấy danh sách sinh viên hiện có của lớp được chọn từ hệ thống để phát đề đúng đối tượng.
-                </div>
-              ) : (
-                <div style={{ display: "flex", flexDirection: "column", gap: "5px", marginTop: "4px" }}>
-                  <label style={{ fontSize: "11px", fontWeight: "600", color: "#8B6F5F" }}>Chọn tệp tin Excel từ máy tính:</label>
-                  <input type="file" required accept=".xlsx, .xls" onChange={e => setExcelFile(e.target.files ? e.target.files[0] : null)} style={{ fontSize: "12px" }} />
+              {studentSource === "excel" && (
+                <div className="mt-2">
+                  <input type="file" required accept=".xlsx,.xls" onChange={(e) => setExcelFile(e.target.files?.[0] ?? null)} className="text-[12px] file:mr-4 file:py-1.5 file:px-3 file:rounded-full file:border-0 file:text-[12px] file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" />
                 </div>
               )}
             </div>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-              <label style={{ fontSize: "12px", fontWeight: "600", color: "#6B4F43" }}>Tiêu đề ca thi kiểm tra *</label>
-              <input type="text" required placeholder="Ví dụ: Kiểm tra giữa kỳ - Lập trình Web" value={newExamData.tieude} onChange={e => setNewExamData({ ...newExamData, tieude: e.target.value })} style={{ padding: "10px", borderRadius: "8px", border: "1px solid #EAD9CB", fontSize: "13px" }} />
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[12px] font-semibold text-gray-700">Tiêu đề ca thi *</label>
+              <input required type="text" placeholder="Ví dụ: Kiểm tra giữa kỳ - Lập trình Web" value={newExamData.tieude} onChange={(e) => setNewExamData({ ...newExamData, tieude: e.target.value })} className="p-2.5 rounded-lg border border-gray-300 text-[13px] outline-none focus:border-indigo-500" />
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
-              <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                <label style={{ fontSize: "12px", fontWeight: "600", color: "#6B4F43" }}>Thời lượng (phút) *</label>
-                <input type="number" required min={5} value={newExamData.thoigianlam} onChange={e => setNewExamData({ ...newExamData, thoigianlam: Number(e.target.value) })} style={{ padding: "10px", borderRadius: "8px", border: "1px solid #EAD9CB", fontSize: "13px" }} />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[12px] font-semibold text-gray-700">Thời lượng (phút) *</label>
+                <input required type="number" min={5} value={newExamData.thoigianlam} onChange={(e) => setNewExamData({ ...newExamData, thoigianlam: Number(e.target.value) })} className="p-2.5 rounded-lg border border-gray-300 text-[13px] outline-none focus:border-indigo-500" />
               </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-                <label style={{ fontSize: "12px", fontWeight: "600", color: "#6B4F43" }}>Mật khẩu phòng</label>
-                <input type="text" placeholder="Bỏ trống nếu tự do" onChange={e => setNewExamData({ ...newExamData, matkhau: e.target.value })} style={{ padding: "10px", borderRadius: "8px", border: "1px solid #EAD9CB", fontSize: "13px" }} />
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[12px] font-semibold text-gray-700">Mật khẩu phòng</label>
+                <input type="text" placeholder="Bỏ trống nếu không cần" value={newExamData.matkhau} onChange={(e) => setNewExamData({ ...newExamData, matkhau: e.target.value })} className="p-2.5 rounded-lg border border-gray-300 text-[13px] outline-none focus:border-indigo-500" />
               </div>
             </div>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-              <label style={{ fontSize: "12px", fontWeight: "600", color: "#6B4F43" }}>Thời điểm mở phòng đề thi *</label>
-              <input type="datetime-local" required value={newExamData.thoigianbatdau} onChange={e => setNewExamData({ ...newExamData, thoigianbatdau: e.target.value })} style={{ padding: "10px", borderRadius: "8px", border: "1px solid #EAD9CB", fontSize: "13px" }} />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[12px] font-semibold text-gray-700">Giờ bắt đầu *</label>
+                <input required type="datetime-local" value={newExamData.thoigianbatdau} onChange={(e) => setNewExamData({ ...newExamData, thoigianbatdau: e.target.value })} className="p-2.5 rounded-lg border border-gray-300 text-[13px] outline-none focus:border-indigo-500" />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-[12px] font-semibold text-gray-700">Giờ kết thúc *</label>
+                <input required type="datetime-local" value={newExamData.thoigianketthuc} onChange={(e) => setNewExamData({ ...newExamData, thoigianketthuc: e.target.value })} className="p-2.5 rounded-lg border border-gray-300 text-[13px] outline-none focus:border-indigo-500" />
+              </div>
             </div>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-              <label style={{ fontSize: "12px", fontWeight: "600", color: "#6B4F43" }}>Thời điểm đóng đề thi *</label>
-              <input type="datetime-local" required value={newExamData.thoigianketthuc} onChange={e => setNewExamData({ ...newExamData, thoigianketthuc: e.target.value })} style={{ padding: "10px", borderRadius: "8px", border: "1px solid #EAD9CB", fontSize: "13px" }} />
+            <div className="flex flex-col gap-1.5">
+              <label className="text-[12px] font-semibold text-gray-700">File đề thi (Word, PDF, Ảnh) *</label>
+              <input required type="file" accept=".docx,.pdf,.txt,image/*" onChange={(e) => setUploadFile(e.target.files?.[0] ?? null)} className="text-[13px] file:mr-4 file:py-1.5 file:px-3 file:rounded-full file:border-0 file:text-[12px] file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" />
             </div>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-              <label style={{ fontSize: "12px", fontWeight: "600", color: "#6B4F43" }}>Tập tin file đề thi (Word, PDF, Txt hoặc Ảnh câu hỏi) *</label>
-              <input type="file" required accept=".docx,.pdf,.txt,image/*" onChange={e => setUploadFile(e.target.files ? e.target.files[0] : null)} style={{ fontSize: "13px" }} />
-            </div>
-
-            <div style={{ display: "flex", gap: "10px", marginTop: "10px", justifyContent: "flex-end" }}>
-              <button type="button" onClick={() => setShowCreateModal(false)} style={{ background: "#F5F5F5", border: "1px solid #EAD9CB", padding: "8px 16px", borderRadius: "8px", fontSize: "13px", cursor: "pointer" }}>Hủy bỏ</button>
-              <button type="submit" disabled={submitting} style={{ background: "linear-gradient(90deg, #F2A8A8 0%, #FFB4B4 100%)", border: "none", color: "white", padding: "8px 20px", borderRadius: "8px", fontWeight: "600", fontSize: "13px", cursor: "pointer" }}>
-                {submitting ? "Đang xử lý..." : "Khởi tạo ca thi"}
+            <div className="flex gap-2.5 justify-end mt-2">
+              <button type="button" onClick={() => setShowCreateModal(false)} className="px-4 py-2 rounded-lg border border-gray-200 bg-gray-50 text-gray-700 text-[13px] cursor-pointer hover:bg-gray-100 transition-colors">Hủy</button>
+              <button type="submit" disabled={submitting} className={`px-5 py-2 rounded-lg border-none bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-bold text-[13px] cursor-pointer transition-opacity ${submitting ? 'opacity-70' : 'hover:opacity-90'}`}>
+                {submitting ? "Đang xử lý AI..." : "Khởi tạo ca thi"}
               </button>
             </div>
           </form>
         </div>
       )}
 
-      {/* --- FORM HỘP THOẠI MODAL SỬA THỜI GIAN CA THI --- */}
+      {/* ── Edit Time Modal ──────────────────────────────────────────────────── */}
       {showEditTimeModal && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(45, 27, 20, 0.4)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 2000 }}>
-          <form onSubmit={handleEditTimeSubmit} style={{ background: "white", padding: "25px", borderRadius: "12px", width: "420px", display: "flex", flexDirection: "column", gap: "15px", border: "1px solid #F0E1D9" }}>
-            <h3 style={{ margin: "0 0 5px", color: "#6B4F43", fontSize: "16px", fontWeight: "700" }}>Điều chỉnh thông số thời gian</h3>
-            
-            <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
-              <label style={{ fontSize: "12px", fontWeight: "600", color: "#6B4F43" }}>Thời gian làm bài (Phút):</label>
-              <input type="number" required value={editTimeData.thoigianlam} onChange={e => setEditTimeData({ ...editTimeData, thoigianlam: Number(e.target.value) })} style={{ padding: "8px", borderRadius: "6px", border: "1px solid #EAD9CB", fontSize: "13px" }} />
-            </div>
+        <div className="fixed inset-0 z-[2000] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+          <form
+            onSubmit={handleEditTimeSubmit}
+            className="bg-white p-6 rounded-2xl w-full max-w-[420px] flex flex-col gap-4"
+          >
+            <h3 className="m-0 text-base font-bold text-gray-900">Điều chỉnh thời gian thi</h3>
 
-            <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
-              <label style={{ fontSize: "12px", fontWeight: "600", color: "#6B4F43" }}>Thời điểm mở đề:</label>
-              <input type="datetime-local" value={editTimeData.thoigianbatdau} onChange={e => setEditTimeData({ ...editTimeData, thoigianbatdau: e.target.value })} style={{ padding: "8px", borderRadius: "6px", border: "1px solid #EAD9CB", fontSize: "13px" }} />
-            </div>
+            {[
+              { label: "Thời gian làm (phút)", key: "thoigianlam", type: "number" },
+              { label: "Giờ bắt đầu", key: "thoigianbatdau", type: "datetime-local" },
+              { label: "Giờ kết thúc", key: "thoigianketthuc", type: "datetime-local" },
+            ].map((f) => (
+              <div key={f.key} className="flex flex-col gap-1.5">
+                <label className="text-[12px] font-semibold text-gray-700">{f.label}</label>
+                <input
+                  required
+                  type={f.type}
+                  value={(editTimeData as any)[f.key]}
+                  onChange={(e) => setEditTimeData({ ...editTimeData, [f.key]: f.type === "number" ? Number(e.target.value) : e.target.value })}
+                  className="p-2.5 rounded-lg border border-gray-300 text-[13px] outline-none focus:border-indigo-500"
+                />
+              </div>
+            ))}
 
-            <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
-              <label style={{ fontSize: "12px", fontWeight: "600", color: "#6B4F43" }}>Thời điểm khóa đề:</label>
-              <input type="datetime-local" value={editTimeData.thoigianketthuc} onChange={e => setEditTimeData({ ...editTimeData, thoigianketthuc: e.target.value })} style={{ padding: "8px", borderRadius: "6px", border: "1px solid #EAD9CB", fontSize: "13px" }} />
-            </div>
-
-            <div style={{ display: "flex", gap: "10px", justifyContent: "flex-end", marginTop: "10px" }}>
-              <button type="button" onClick={() => setShowEditTimeModal(false)} style={{ padding: "6px 14px", borderRadius: "6px", cursor: "pointer", border: "1px solid #EAD9CB", background: "none", color: "#6B4F43", fontSize: "13px" }}>Hủy bỏ</button>
-              <button type="submit" disabled={updatingTime} style={{ background: "linear-gradient(90deg, #F2A8A8 0%, #FFB4B4 100%)", color: "white", padding: "6px 18px", border: "none", borderRadius: "6px", cursor: "pointer", fontWeight: "600", fontSize: "13px" }}>
-                {updatingTime ? "Đang cập nhật..." : "Cập nhật ngay"}
+            <div className="flex gap-2.5 justify-end mt-2">
+              <button type="button" onClick={() => setShowEditTimeModal(false)} className="px-4 py-2 rounded-lg border border-gray-200 bg-gray-50 text-[13px] cursor-pointer hover:bg-gray-100 transition-colors text-gray-700">Hủy</button>
+              <button type="submit" disabled={updatingTime} className={`px-5 py-2 rounded-lg border-none bg-indigo-500 text-white font-bold text-[13px] cursor-pointer transition-colors ${updatingTime ? 'opacity-70' : 'hover:bg-indigo-600'}`}>
+                {updatingTime ? "Đang lưu..." : "Cập nhật"}
               </button>
             </div>
           </form>
         </div>
       )}
-
     </div>
   );
 }

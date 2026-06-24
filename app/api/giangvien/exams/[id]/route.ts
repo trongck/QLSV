@@ -2,6 +2,50 @@ import { NextResponse } from "next/server";
 import { verifyToken, extractBearer } from "@/lib/utils/jwt";
 import { VaiTro } from "@/types";
 import { giangVienService } from "@/services/service/giangvien/teacher.service";
+import { examRepo } from "@/services/repositories/giangvien/exam.repo";
+
+export async function GET(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const token = extractBearer(request.headers.get("authorization"));
+  if (!token) {
+    return NextResponse.json({ error: "Chưa cung cấp token" }, { status: 401 });
+  }
+
+  let payload: any;
+  try {
+    payload = await verifyToken(token);
+    if (payload.vaitro !== VaiTro.GiangVien) {
+      return NextResponse.json({ error: "Không có quyền truy cập" }, { status: 403 });
+    }
+  } catch (err: any) {
+    return NextResponse.json({ error: "Phiên đăng nhập hết hạn hoặc không hợp lệ" }, { status: 401 });
+  }
+
+  try {
+    const gv = await giangVienService.getMyProfile(payload.mataikhoan);
+    if (!gv) {
+      return NextResponse.json({ error: "Không tìm thấy giảng viên" }, { status: 404 });
+    }
+
+    const { id } = await params;
+    const madethi = Number(id);
+    if (isNaN(madethi)) {
+      return NextResponse.json({ error: "ID đề thi không hợp lệ" }, { status: 400 });
+    }
+
+    // Trả về monitoring data (danh sách SV + trạng thái)
+    const data = await giangVienService.getExamMonitoringData(gv.magv, madethi);
+    return NextResponse.json({ success: true, data });
+  } catch (err: any) {
+    console.error("Lỗi GET /api/giangvien/exams/[id]:", err.message);
+    return NextResponse.json(
+      { error: err.message || "Lỗi lấy dữ liệu giám sát" },
+      { status: 500 }
+    );
+  }
+}
 
 export async function PUT(
   request: Request,
@@ -110,7 +154,6 @@ export async function PUT(
           } else if (fileExtension === "doc") {
             throw new Error("Hệ thống chỉ hỗ trợ tệp Word định dạng mới (.docx). Vui lòng chuyển đổi tệp .doc của bạn sang .docx và thử lại.");
           } else if (fileExtension === "pdf") {
-            // Đưa trực tiếp PDF base64 cho Gemini xử lý
             inlineDataPart = {
               inlineData: {
                 data: fileBuffer.toString("base64"),
@@ -137,7 +180,6 @@ export async function PUT(
           const prompt = "Hãy đọc tài liệu kiểm tra này và trích xuất ra toàn bộ danh sách câu hỏi trắc nghiệm cùng đáp án. Mỗi câu hỏi cần ghi nhận rõ đáp án đúng (ladapandung: true). Điểm mặc định cho mỗi câu là 0.2 nếu không được chỉ rõ.";
           let resultText = "";
           try {
-            // Đầu tiên thử gemini-2.5-flash
             const model = getModelInstance("gemini-2.5-flash");
             let result;
             if (inlineDataPart) {
@@ -148,7 +190,6 @@ export async function PUT(
             resultText = result.response.text();
           } catch (err: any) {
             console.warn("Lỗi khi dùng gemini-2.5-flash, thử chuyển sang gemini-1.5-flash:", err.message);
-            // Fallback sang gemini-1.5-flash cực kỳ ổn định
             try {
               const modelFallback = getModelInstance("gemini-1.5-flash");
               let result;
@@ -178,9 +219,30 @@ export async function PUT(
       }
     } else {
       const body = await request.json();
+
       if (body.action === "END_EXAM") {
         await giangVienService.endExam(gv.magv, madethi);
         return NextResponse.json({ success: true, message: "Đã kết thúc ca thi" });
+      }
+
+      if (body.action === "FORCE_END") {
+        const lydo = body.lydo as string;
+        await giangVienService.forceEndExam(gv.magv, madethi);
+        
+        // Cập nhật lý do kết thúc vào mô tả đề thi
+        if (lydo) {
+          const { data: examInfo } = await examRepo.getExamCheck(madethi);
+          if (examInfo) {
+            const { data: fullExam } = await examRepo.getExamWithPhanCong(madethi);
+            if (fullExam) {
+              const currentMota = (fullExam as any).mota || "";
+              const updatedMota = currentMota + `\n\n[ĐÃ KẾT THÚC KHẨN CẤP. Lý do: ${lydo}]`;
+              await examRepo.updateExamInfo(madethi, { mota: updatedMota });
+            }
+          }
+        }
+        
+        return NextResponse.json({ success: true, message: "Đã kết thúc ca thi ngay lập tức" });
       }
 
       if (body.action === "UPDATE_TIME") {

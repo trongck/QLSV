@@ -1,0 +1,307 @@
+BÀI KIỂM TRA MÔN: CƠ SỞ DỮ LIỆU
+Thời gian làm bài: 45 phút
+Học kỳ I - Năm học 2025-2026
+
+========================================
+PHẦN TRẮC NGHIỆM (50 câu - mỗi câu 0.2 điểm)
+========================================
+
+Câu 1: Mô hình dữ liệu nào dưới đây là phổ biến nhất trong các hệ quản trị cơ sở dữ liệu hiện đại?
+A. Mô hình phân cấp
+B. Mô hình quan hệ (Đáp án đúng)
+C. Mô hình mạng
+D. Mô hình hướng đối tượng
+
+Câu 2: Ngôn ngữ truy vấn chuẩn dùng để thao tác với cơ sở dữ liệu quan hệ là gì?
+A. HTML
+B. XML
+C. SQL (Đáp án đúng)
+D. JSON
+
+Câu 3: Khóa chính (Primary Key) trong cơ sở dữ liệu quan hệ có tính chất gì?
+A. Cho phép giá trị NULL
+B. Có thể trùng lặp giữa các bản ghi
+C. Duy nhất và không được phép NULL (Đáp án đúng)
+D. Chỉ được tạo trên một cột duy nhất
+
+Câu 4: Phép toán nào trong đại số quan hệ dùng để kết hợp hai quan hệ theo điều kiện?
+A. Union (Hội)
+B. Projection (Chiếu)
+C. Join (Kết nối) (Đáp án đúng)
+D. Difference (Hiệu)
+
+Câu 5: Dạng chuẩn nào loại bỏ các phụ thuộc hàm bộ phận?
+A. Dạng chuẩn 1 (1NF)
+B. Dạng chuẩn 2 (2NF) (Đáp án đúng)
+C. Dạng chuẩn 3 (3NF)
+D. Dạng chuẩn Boyce-Codd (BCNF)
+
+Câu 6: Từ khóa nào trong SQL được dùng để lọc các bản ghi theo điều kiện?
+A. GROUP BY
+B. ORDER BY
+C. WHERE (Đáp án đúng)
+D. HAVING
+
+Câu 7: Câu lệnh SQL nào dùng để thêm một bản ghi mới vào bảng?
+A. UPDATE
+B. INSERT INTO (Đáp án đúng)
+C. SELECT INTO
+D. ADD INTO
+
+Câu 8: Chỉ mục (Index) trong cơ sở dữ liệu có tác dụng gì chính?
+A. Giảm dung lượng lưu trữ
+B. Tăng tốc độ truy vấn dữ liệu (Đáp án đúng)
+C. Bảo mật dữ liệu
+D. Tự động sao lưu dữ liệu
+
+Câu 9: Giao dịch (Transaction) trong cơ sở dữ liệu cần đảm bảo tính chất nào?
+A. CRUD
+B. ACID (Đáp án đúng)
+C. REST
+D. SOAP
+
+Câu 10: Lệnh SQL nào dùng để xóa toàn bộ dữ liệu trong một bảng nhưng giữ lại cấu trúc bảng?
+A. DROP TABLE
+B. DELETE FROM (không có WHERE) (Đáp án đúng)
+C. REMOVE TABLE
+D. CLEAR TABLE
+
+Câu 11: Ràng buộc FOREIGN KEY dùng để làm gì?
+A. Đảm bảo giá trị không trùng lặp
+B. Ngăn giá trị NULL
+C. Đảm bảo tính toàn vẹn tham chiếu giữa hai bảng (Đáp án đúng)
+D. Tạo chỉ mục tự động
+
+Câu 12: Câu lệnh nào trong SQL dùng để tạo một bảng mới?
+A. MAKE TABLE
+B. BUILD TABLE
+C. CREATE TABLE (Đáp án đúng)
+D. NEW TABLE
+
+Câu 13: Hàm tổng hợp nào trong SQL dùng để đếm số lượng bản ghi?
+A. SUM()
+B. AVG()
+C. COUNT() (Đáp án đúng)
+D. MAX()
+
+Câu 14: Mệnh đề nào trong SQL dùng để sắp xếp kết quả truy vấn?
+A. SORT BY
+B. ORDER BY (Đáp án đúng)
+C. GROUP BY
+D. ARRANGE BY
+
+Câu 15: Toán tử nào trong SQL dùng để kiểm tra xem một giá trị có thuộc một tập hợp cụ thể không?
+A. BETWEEN
+B. LIKE
+C. IN (Đáp án đúng)
+D. EXISTS
+
+Câu 16: Dạng quan hệ 1:N (Một - nhiều) nghĩa là gì?
+A. Một bản ghi ở bảng A tương ứng với đúng một bản ghi ở bảng B
+B. Một bản ghi ở bảng A tương ứng với nhiều bản ghi ở bảng B (Đáp án đúng)
+C. Nhiều bản ghi ở bảng A tương ứng với nhiều bản ghi ở bảng B
+D. Không có bản ghi nào tương ứng
+
+Câu 17: Lệnh COMMIT trong quản lý giao dịch có nghĩa là gì?
+A. Hủy bỏ giao dịch hiện tại
+B. Bắt đầu một giao dịch mới
+C. Xác nhận và lưu vĩnh viễn các thay đổi (Đáp án đúng)
+D. Tạm dừng giao dịch
+
+Câu 18: Lệnh ROLLBACK dùng để làm gì?
+A. Xác nhận giao dịch
+B. Hoàn tác các thay đổi chưa được COMMIT (Đáp án đúng)
+C. Bắt đầu giao dịch mới
+D. Xóa tất cả dữ liệu
+
+Câu 19: Kiểu dữ liệu nào phù hợp để lưu trữ số nguyên lớn trong SQL?
+A. VARCHAR
+B. FLOAT
+C. BIGINT (Đáp án đúng)
+D. BOOLEAN
+
+Câu 20: Câu lệnh SELECT DISTINCT dùng để làm gì?
+A. Chọn tất cả các bản ghi
+B. Chọn bản ghi đầu tiên
+C. Loại bỏ các giá trị trùng lặp trong kết quả (Đáp án đúng)
+D. Chọn bản ghi cuối cùng
+
+Câu 21: Trong SQL, mệnh đề HAVING khác WHERE ở điểm nào?
+A. HAVING nhanh hơn WHERE
+B. HAVING lọc sau khi GROUP BY, WHERE lọc trước khi nhóm (Đáp án đúng)
+C. WHERE chỉ dùng với SELECT, HAVING dùng với UPDATE
+D. Không có sự khác biệt
+
+Câu 22: View (khung nhìn) trong cơ sở dữ liệu là gì?
+A. Một bảng vật lý được lưu trên đĩa
+B. Một bản sao của bảng dữ liệu
+C. Một truy vấn được lưu trữ như một bảng ảo (Đáp án đúng)
+D. Một chỉ mục đặc biệt
+
+Câu 23: Stored Procedure là gì?
+A. Một loại chỉ mục đặc biệt
+B. Một tập hợp các câu lệnh SQL được lưu và thực thi trên máy chủ (Đáp án đúng)
+C. Một kiểu dữ liệu đặc biệt
+D. Một ràng buộc toàn vẹn
+
+Câu 24: Trigger trong cơ sở dữ liệu được kích hoạt khi nào?
+A. Khi khởi động máy chủ
+B. Khi người dùng đăng nhập
+C. Khi có sự kiện INSERT, UPDATE hoặc DELETE xảy ra trên bảng (Đáp án đúng)
+D. Theo lịch cố định
+
+Câu 25: NoSQL khác SQL ở điểm gì chính?
+A. NoSQL chậm hơn SQL
+B. NoSQL không hỗ trợ ACID
+C. NoSQL không yêu cầu schema cố định và linh hoạt hơn (Đáp án đúng)
+D. NoSQL chỉ dùng cho dữ liệu nhỏ
+
+Câu 26: Chuẩn hóa cơ sở dữ liệu (Normalization) nhằm mục đích gì?
+A. Tăng tốc độ truy vấn
+B. Giảm dư thừa dữ liệu và phụ thuộc bất thường (Đáp án đúng)
+C. Tạo thêm bảng mới
+D. Xóa các chỉ mục không cần thiết
+
+Câu 27: Phép JOIN nào trả về tất cả bản ghi từ cả hai bảng kể cả khi không khớp?
+A. INNER JOIN
+B. LEFT JOIN
+C. RIGHT JOIN
+D. FULL OUTER JOIN (Đáp án đúng)
+
+Câu 28: Hệ quản trị CSDL nào dưới đây là mã nguồn mở?
+A. Oracle
+B. MS SQL Server
+C. MySQL (Đáp án đúng)
+D. IBM DB2
+
+Câu 29: Tính chất Atomicity trong ACID nghĩa là gì?
+A. Giao dịch phải được thực hiện toàn bộ hoặc không thực hiện gì cả (Đáp án đúng)
+B. Giao dịch phải thực hiện nhanh nhất có thể
+C. Dữ liệu phải nhất quán sau giao dịch
+D. Giao dịch độc lập với các giao dịch khác
+
+Câu 30: Thuật ngữ "Schema" trong cơ sở dữ liệu dùng để chỉ gì?
+A. Dữ liệu thực tế trong bảng
+B. Cấu trúc và định nghĩa của cơ sở dữ liệu (Đáp án đúng)
+C. Kết quả của một truy vấn
+D. Một loại chỉ mục
+
+Câu 31: Câu lệnh nào dùng để thay đổi cấu trúc một bảng đã có?
+A. MODIFY TABLE
+B. CHANGE TABLE
+C. ALTER TABLE (Đáp án đúng)
+D. UPDATE TABLE
+
+Câu 32: Kiểu dữ liệu VARCHAR khác CHAR ở điểm gì?
+A. VARCHAR nhanh hơn CHAR
+B. VARCHAR có độ dài cố định, CHAR có độ dài biến đổi
+C. VARCHAR có độ dài biến đổi, CHAR có độ dài cố định (Đáp án đúng)
+D. Không có sự khác biệt
+
+Câu 33: Toán tử LIKE trong SQL dùng ký tự đại diện nào để khớp với một chuỗi bất kỳ?
+A. *
+B. ?
+C. % (Đáp án đúng)
+D. #
+
+Câu 34: Câu lệnh SQL nào xóa hoàn toàn một bảng (cả cấu trúc lẫn dữ liệu)?
+A. DELETE TABLE
+B. REMOVE TABLE
+C. DROP TABLE (Đáp án đúng)
+D. TRUNCATE TABLE
+
+Câu 35: Tính chất Isolation trong ACID nghĩa là gì?
+A. Giao dịch không ảnh hưởng đến dữ liệu
+B. Các giao dịch đồng thời không ảnh hưởng lẫn nhau (Đáp án đúng)
+C. Dữ liệu được sao lưu tự động
+D. Giao dịch chỉ đọc dữ liệu
+
+Câu 36: Hàm nào trong SQL trả về giá trị lớn nhất trong một cột?
+A. TOP()
+B. LARGEST()
+C. MAX() (Đáp án đúng)
+D. HIGH()
+
+Câu 37: Câu lệnh UPDATE trong SQL dùng để làm gì?
+A. Thêm bản ghi mới
+B. Xóa bản ghi
+C. Sửa đổi dữ liệu trong các bản ghi hiện có (Đáp án đúng)
+D. Tạo bảng mới
+
+Câu 38: Ràng buộc UNIQUE đảm bảo điều gì?
+A. Giá trị trong cột không được NULL
+B. Giá trị trong cột là duy nhất, không trùng lặp (Đáp án đúng)
+C. Cột được dùng làm khóa chính
+D. Cột có giá trị mặc định
+
+Câu 39: Trong mô hình quan hệ, "Tuple" là gì?
+A. Một cột trong bảng
+B. Một bảng trong cơ sở dữ liệu
+C. Một hàng (bản ghi) trong bảng (Đáp án đúng)
+D. Một chỉ mục
+
+Câu 40: Deadlock trong CSDL xảy ra khi nào?
+A. Khi máy chủ bị tắt đột ngột
+B. Khi hai giao dịch chờ nhau giải phóng tài nguyên tạo thành vòng lặp (Đáp án đúng)
+C. Khi có quá nhiều người dùng đăng nhập
+D. Khi dữ liệu bị hỏng
+
+Câu 41: Lệnh nào dùng để cấp quyền truy cập cho người dùng trong SQL?
+A. PERMIT
+B. ALLOW
+C. GRANT (Đáp án đúng)
+D. ENABLE
+
+Câu 42: Lệnh REVOKE dùng để làm gì?
+A. Cấp thêm quyền cho người dùng
+B. Thu hồi quyền đã được cấp (Đáp án đúng)
+C. Tạo người dùng mới
+D. Xóa người dùng
+
+Câu 43: Backup (sao lưu) cơ sở dữ liệu quan trọng vì lý do gì?
+A. Tăng hiệu năng truy vấn
+B. Giảm dung lượng lưu trữ
+C. Phục hồi dữ liệu khi có sự cố (Đáp án đúng)
+D. Cải thiện bảo mật
+
+Câu 44: Kiến trúc 3 tầng (Three-tier architecture) trong CSDL gồm các tầng nào?
+A. Phần cứng, phần mềm, mạng
+B. Presentation, Business Logic, Data (Đáp án đúng)
+C. Client, Server, Cloud
+D. Frontend, Backend, Database là sai tên gọi chuẩn
+
+Câu 45: Hàm GROUP BY trong SQL dùng để làm gì?
+A. Sắp xếp dữ liệu theo thứ tự
+B. Nhóm các bản ghi có cùng giá trị để áp dụng hàm tổng hợp (Đáp án đúng)
+C. Lọc các bản ghi theo điều kiện
+D. Kết hợp hai bảng
+
+Câu 46: Kiểu dữ liệu nào dùng để lưu ngày và giờ trong SQL?
+A. STRING
+B. TEXT
+C. DATETIME (Đáp án đúng)
+D. TIME_STAMP
+
+Câu 47: Subquery (truy vấn con) là gì?
+A. Một bảng tạm thời
+B. Một truy vấn SQL được lồng bên trong truy vấn khác (Đáp án đúng)
+C. Một loại chỉ mục đặc biệt
+D. Một stored procedure
+
+Câu 48: Khóa ngoại (Foreign Key) có thể có giá trị gì?
+A. Chỉ các giá trị tồn tại trong bảng tham chiếu hoặc NULL (Đáp án đúng)
+B. Bất kỳ giá trị nào
+C. Chỉ giá trị duy nhất
+D. Không được phép NULL
+
+Câu 49: ERD (Entity-Relationship Diagram) dùng để làm gì?
+A. Viết câu lệnh SQL
+B. Mô hình hóa cấu trúc dữ liệu của hệ thống (Đáp án đúng)
+C. Theo dõi hiệu năng CSDL
+D. Quản lý người dùng
+
+Câu 50: Hệ quản trị CSDL nào được phát triển bởi Microsoft?
+A. MySQL
+B. PostgreSQL
+C. Microsoft SQL Server (Đáp án đúng)
+D. SQLite

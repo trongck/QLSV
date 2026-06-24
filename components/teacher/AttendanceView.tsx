@@ -53,30 +53,30 @@ export function AttendanceView() {
 
   if (loading) {
     return (
-      <div style={{ padding: "40px", textAlign: "center", color: "#8B6F5F" }}>
+      <div className="p-10 text-center text-[#8B6F5F]">
         Đang tải dữ liệu điểm danh...
       </div>
     );
   }
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+    <div className="flex flex-col gap-5">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h2 style={{ fontSize: "20px", fontWeight: "700", color: "#6B4F43", margin: 0 }}>Quản lý Điểm danh lớp học</h2>
-          <p style={{ fontSize: "13px", color: "#8B6F5F", margin: "4px 0 0" }}>Ghi nhận trạng thái tham gia lớp học phần và duyệt phép vắng học</p>
+          <h2 className="text-xl font-bold text-[#6B4F43] m-0">Quản lý Điểm danh lớp học</h2>
+          <p className="text-[13px] text-[#8B6F5F] mt-1 mb-0">Ghi nhận trạng thái tham gia lớp học phần và duyệt phép vắng học</p>
         </div>
-        <div style={{ display: "flex", gap: "10px" }}>
+        <div className="flex gap-2.5 w-full md:w-auto">
           <button 
             onClick={() => fetchOverview(false)}
-            style={{ padding: "10px 15px", borderRadius: "10px", border: "1px solid #EAD9CB", background: "#FFF", color: "#6B4F43", cursor: "pointer", fontSize: "13px", fontWeight: "600" }}
+            className="flex-1 md:flex-none px-4 py-2.5 rounded-lg border border-[#EAD9CB] bg-white text-[#6B4F43] cursor-pointer text-[13px] font-semibold hover:bg-gray-50 transition-colors"
           >
              Làm mới
           </button>
           {!selectedBH && selectedPC && (
             <button 
               onClick={handleCreateSession}
-              style={{ background: "linear-gradient(90deg, #F2A8A8 0%, #FFB4B4 100%)", padding: "10px 20px", border: "none", borderRadius: "8px", color: "white", fontSize: "13.5px", fontWeight: "600", cursor: "pointer" }}
+              className="flex-1 md:flex-none bg-gradient-to-r from-[#F2A8A8] to-[#FFB4B4] px-5 py-2.5 border-none rounded-lg text-white text-[13.5px] font-semibold cursor-pointer hover:opacity-90 transition-opacity whitespace-nowrap"
             >
              Tạo ca điểm danh ngày này
             </button>
@@ -85,11 +85,11 @@ export function AttendanceView() {
       </div>
 
       {/* FILTER TOOLBAR */}
-      <div className="card" style={{ padding: "15px", display: "flex", gap: "15px", alignItems: "center", border: "1px solid #F0E1D9" }}>
+      <div className="card p-4 flex flex-col md:flex-row gap-4 items-center border border-[#F0E1D9]">
         <select 
           value={selectedPC || ""} 
           onChange={(e) => setSelectedPC(Number(e.target.value))}
-          style={{ padding: "10px", borderRadius: "8px", border: "1px solid #F0E1D9", width: "260px", outline: "none", color: "#6B4F43", fontSize: "13px" }}
+          className="w-full md:w-[260px] p-2.5 rounded-lg border border-[#F0E1D9] outline-none text-[#6B4F43] text-[13px] focus:border-[#F2A8A8] transition-colors bg-white"
         >
           {classes.map((c) => (
             <option key={c.maphancong} value={c.maphancong}>
@@ -102,70 +102,51 @@ export function AttendanceView() {
           type="date" 
           value={selectedDate}
           onChange={(e) => setSelectedDate(e.target.value)}
-          style={{ padding: "10px", borderRadius: "8px", border: "1px solid #F0E1D9", outline: "none", color: "#6B4F43" }}
+          className="w-full md:w-auto p-2.5 rounded-lg border border-[#F0E1D9] outline-none text-[#6B4F43] focus:border-[#F2A8A8] transition-colors"
         />
         
-        <div style={{ flex: 1, position: "relative" }}>
+        <div className="flex-1 w-full relative">
           <input 
             type="text" 
             placeholder="Tìm kiếm sinh viên..." 
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            style={{ width: "100%", padding: "10px 15px", borderRadius: "8px", border: "1px solid #F0E1D9", outline: "none", fontSize: "13px" }} 
+            className="w-full px-4 py-2.5 rounded-lg border border-[#F0E1D9] outline-none text-[13px] focus:border-[#F2A8A8] transition-colors" 
           />
         </div>
       </div>
 
       {/* ATTENDANCE SHEET TABLE & TABS CARD */}
-      <section className="card" style={{ padding: "0", overflow: "hidden", border: "1px solid #F0E1D9" }}>
+      <section className="card p-0 overflow-hidden border border-[#F0E1D9]">
         
         {/* Navigation Tabs Header */}
-        <div style={{ padding: "15px 20px", display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #F0E1D9", background: "#FDF8F5" }}>
-          <div style={{ display: "flex", gap: "10px" }}>
+        <div className="px-5 py-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-[#F0E1D9] bg-[#FDF8F5]">
+          <div className="flex flex-wrap gap-2.5 w-full md:w-auto">
             <button 
               onClick={() => setSubTab("list")}
-              style={{ 
-                padding: "8px 18px", borderRadius: "6px", 
-                border: subTab === "list" ? "none" : "1px solid #EAD9CB", 
-                background: subTab === "list" ? "#F2A8A8" : "white", 
-                color: subTab === "list" ? "white" : "#6B4F43", 
-                fontSize: "13px", fontWeight: "600", cursor: "pointer",
-                transition: "all 0.2s"
-              }}
+              className={`px-4 py-2 rounded-md text-[13px] font-semibold cursor-pointer transition-all ${
+                subTab === "list" ? "bg-[#F2A8A8] text-white border-none" : "bg-white text-[#6B4F43] border border-[#EAD9CB]"
+              }`}
             >
               Danh sách điểm danh
             </button>
             <button 
               onClick={() => setSubTab("qrcode")}
-              style={{ 
-                padding: "8px 18px", borderRadius: "6px", 
-                border: subTab === "qrcode" ? "none" : "1px solid #EAD9CB", 
-                background: subTab === "qrcode" ? "#F2A8A8" : "white", 
-                color: subTab === "qrcode" ? "white" : "#6B4F43", 
-                fontSize: "13px", fontWeight: "600", cursor: "pointer",
-                transition: "all 0.2s"
-              }}
+              className={`px-4 py-2 rounded-md text-[13px] font-semibold cursor-pointer transition-all ${
+                subTab === "qrcode" ? "bg-[#F2A8A8] text-white border-none" : "bg-white text-[#6B4F43] border border-[#EAD9CB]"
+              }`}
             >
               QR Code
             </button>
             <button 
               onClick={() => setSubTab("leave_requests")}
-              style={{ 
-                padding: "8px 18px", borderRadius: "6px", 
-                border: subTab === "leave_requests" ? "none" : "1px solid #EAD9CB", 
-                background: subTab === "leave_requests" ? "#F2A8A8" : "white", 
-                color: subTab === "leave_requests" ? "white" : "#6B4F43", 
-                fontSize: "13px", fontWeight: "600", cursor: "pointer",
-                display: "flex", alignItems: "center", gap: "8px",
-                transition: "all 0.2s"
-              }}
+              className={`px-4 py-2 rounded-md text-[13px] font-semibold cursor-pointer flex items-center gap-2 transition-all ${
+                subTab === "leave_requests" ? "bg-[#F2A8A8] text-white border-none" : "bg-white text-[#6B4F43] border border-[#EAD9CB]"
+              }`}
             >
               Đơn xin nghỉ học
               {leaveRequests.filter(r => r.status === "Chờ duyệt").length > 0 && (
-                <span style={{ 
-                  background: "#EB5757", color: "white", fontSize: "10px", 
-                  padding: "1px 6px", borderRadius: "10px", fontWeight: "bold" 
-                }}>
+                <span className="bg-[#EB5757] text-white text-[10px] px-1.5 py-px rounded-full font-bold">
                   {leaveRequests.filter(r => r.status === "Chờ duyệt").length}
                 </span>
               )}
@@ -174,20 +155,7 @@ export function AttendanceView() {
           {subTab === "list" && selectedBH && (
             <button
               onClick={() => setIsFaceModalOpen(true)}
-              style={{
-                padding: "8px 16px",
-                borderRadius: "8px",
-                border: "none",
-                background: "linear-gradient(90deg, #F2A8A8 0%, #FFB4B4 100%)",
-                color: "#2D1B14",
-                fontSize: "13px",
-                fontWeight: "bold",
-                cursor: "pointer",
-                boxShadow: "0 4px 12px rgba(242, 168, 168, 0.3)",
-                display: "flex",
-                alignItems: "center",
-                gap: "6px"
-              }}
+              className="w-full md:w-auto px-4 py-2 rounded-lg border-none bg-gradient-to-r from-[#F2A8A8] to-[#FFB4B4] text-[#2D1B14] text-[13px] font-bold cursor-pointer shadow-[0_4px_12px_rgba(242,168,168,0.3)] flex items-center justify-center gap-1.5 hover:opacity-90 transition-opacity whitespace-nowrap"
             >
               Điểm danh khuôn mặt
             </button>
@@ -196,89 +164,77 @@ export function AttendanceView() {
 
         {/* ================= VIEW 1: ACTIVE STUDENT CHECKLIST ================= */}
         {subTab === "list" && (
-          <div style={{ padding: "10px 20px" }}>
+          <div className="p-2.5 md:p-5">
             {!selectedBH ? (
-              <div style={{ padding: "40px", textAlign: "center", color: "#8B6F5F" }}>
-                <p style={{ margin: 0, fontSize: "14px", fontWeight: "600" }}>Ngày này chưa có ca học nào được kích hoạt.</p>
+              <div className="p-10 text-center text-[#8B6F5F]">
+                <p className="m-0 text-sm font-semibold">Ngày này chưa có ca học nào được kích hoạt.</p>
                 <button 
                   onClick={handleCreateSession}
-                  style={{ marginTop: "15px", padding: "10px 20px", background: "#F2A8A8", color: "white", border: "none", borderRadius: "8px", fontWeight: "600", cursor: "pointer" }}
+                  className="mt-4 px-5 py-2.5 bg-[#F2A8A8] text-white border-none rounded-lg font-semibold cursor-pointer hover:bg-[#eb9d9d] transition-colors"
                 >
                   Kích hoạt ca điểm danh mới
                 </button>
               </div>
             ) : filteredRoster.length === 0 ? (
-              <p style={{ textAlign: "center", padding: "30px", color: "#8B6F5F" }}>Không tìm thấy sinh viên nào</p>
+              <p className="text-center p-8 text-[#8B6F5F]">Không tìm thấy sinh viên nào</p>
             ) : (
-              <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
-                <thead>
-                  <tr style={{ borderBottom: "1px solid #F0E1D9" }}>
-                    <th style={{ padding: "12px", fontSize: "13px", color: "#8B6F5F" }}>Mã SV</th>
-                    <th style={{ padding: "12px", fontSize: "13px", color: "#8B6F5F" }}>Họ và tên</th>
-                    <th style={{ padding: "12px", fontSize: "13px", color: "#8B6F5F" }}>Trạng thái điểm danh</th>
-                    <th style={{ padding: "12px", fontSize: "13px", color: "#8B6F5F" }}>Thời gian</th>
-                    <th style={{ padding: "12px", fontSize: "13px", color: "#8B6F5F" }}>Ghi chú nhanh</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredRoster.map((row) => (
-                    <tr key={row.mssv} style={{ borderBottom: "1px solid #F9F9F9" }}>
-                      <td style={{ padding: "12px", fontSize: "13px" }}>{row.mssv}</td>
-                      <td style={{ padding: "12px", fontSize: "14px", fontWeight: "600", color: "#6B4F43" }}>{row.name}</td>
-                      <td style={{ padding: "12px" }}>
-                        <select
-                          value={row.status}
-                          onChange={(e) => handleStatusChange(row.mssv, e.target.value)}
-                          style={{
-                            padding: "6px 12px",
-                            borderRadius: "6px",
-                            border: "1.5px solid",
-                            borderColor: row.type === "red" ? "#FCD4D4" : row.type === "orange" ? "#FFEAD2" : "#D1F7E9",
-                            background: row.type === "red" ? "#FFF5F5" : row.type === "orange" ? "#FFFBF7" : "#F4FDF9",
-                            color: row.type === "red" ? "#EB5757" : row.type === "orange" ? "#F2994A" : "#178A57",
-                            fontWeight: "bold",
-                            fontSize: "12px",
-                            outline: "none",
-                            cursor: "pointer"
-                          }}
-                        >
-                          <option value="Có mặt">Có mặt</option>
-                          <option value="Vắng">Vắng</option>
-                          <option value="Đi muộn">Đi muộn</option>
-                          <option value="Vắng có phép">Vắng có phép</option>
-                        </select>
-                      </td>
-                      <td style={{ padding: "12px", fontSize: "13px" }}>{row.time}</td>
-                      <td style={{ padding: "12px" }}>
-                        <input
-                          type="text"
-                          value={row.note === "-" ? "" : row.note}
-                          placeholder="Nhập ghi chú..."
-                          onChange={(e) => handleNoteChange(row.mssv, e.target.value || "-")}
-                          style={{
-                            width: "200px",
-                            padding: "6px 10px",
-                            borderRadius: "6px",
-                            border: "1px solid #EAD9CB",
-                            fontSize: "12.5px",
-                            outline: "none"
-                          }}
-                        />
-                      </td>
+              <div className="w-full overflow-x-auto">
+                <table className="w-full min-w-[700px] text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-[#F0E1D9]">
+                      <th className="p-3 text-[13px] text-[#8B6F5F]">Mã SV</th>
+                      <th className="p-3 text-[13px] text-[#8B6F5F]">Họ và tên</th>
+                      <th className="p-3 text-[13px] text-[#8B6F5F]">Trạng thái điểm danh</th>
+                      <th className="p-3 text-[13px] text-[#8B6F5F]">Thời gian</th>
+                      <th className="p-3 text-[13px] text-[#8B6F5F]">Ghi chú nhanh</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {filteredRoster.map((row) => (
+                      <tr key={row.mssv} className="border-b border-[#F9F9F9] hover:bg-gray-50/50 transition-colors">
+                        <td className="p-3 text-[13px]">{row.mssv}</td>
+                        <td className="p-3 text-sm font-semibold text-[#6B4F43]">{row.name}</td>
+                        <td className="p-3">
+                          <select
+                            value={row.status}
+                            onChange={(e) => handleStatusChange(row.mssv, e.target.value)}
+                            className={`px-3 py-1.5 rounded-md border-[1.5px] font-bold text-xs outline-none cursor-pointer ${
+                              row.type === "red" ? "border-[#FCD4D4] bg-[#FFF5F5] text-[#EB5757]" : 
+                              row.type === "orange" ? "border-[#FFEAD2] bg-[#FFFBF7] text-[#F2994A]" : 
+                              "border-[#D1F7E9] bg-[#F4FDF9] text-[#178A57]"
+                            }`}
+                          >
+                            <option value="Có mặt">Có mặt</option>
+                            <option value="Vắng">Vắng</option>
+                            <option value="Đi muộn">Đi muộn</option>
+                            <option value="Vắng có phép">Vắng có phép</option>
+                          </select>
+                        </td>
+                        <td className="p-3 text-[13px]">{row.time}</td>
+                        <td className="p-3">
+                          <input
+                            type="text"
+                            value={row.note === "-" ? "" : row.note}
+                            placeholder="Nhập ghi chú..."
+                            onChange={(e) => handleNoteChange(row.mssv, e.target.value || "-")}
+                            className="w-[180px] md:w-[200px] px-2.5 py-1.5 rounded-md border border-[#EAD9CB] text-[12.5px] outline-none focus:border-[#F2A8A8] transition-colors bg-white"
+                          />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             )}
           </div>
         )}
 
         {/* ================= VIEW 2: DYNAMIC QR CODE SIMULATOR ================= */}
         {subTab === "qrcode" && (
-          <div style={{ padding: "40px 20px", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "15px" }}>
+          <div className="py-10 px-5 flex flex-col items-center justify-center gap-4">
             {!selectedBH ? (
-              <div style={{ padding: "20px", textAlign: "center", color: "#8B6F5F" }}>
-                <p style={{ margin: 0, fontSize: "14px", fontWeight: "600" }}>Vui lòng kích hoạt ca điểm danh cho ngày này trước khi sử dụng mã QR.</p>
+              <div className="p-5 text-center text-[#8B6F5F]">
+                <p className="m-0 text-sm font-semibold">Vui lòng kích hoạt ca điểm danh cho ngày này trước khi sử dụng mã QR.</p>
               </div>
             ) : (() => {
               const currentSession = allSessions.find(s => s.mabuoihoc === selectedBH);
@@ -286,11 +242,11 @@ export function AttendanceView() {
               
               if (!qrSecret) {
                 return (
-                  <div style={{ padding: "20px", textAlign: "center", color: "#8B6F5F", display: "flex", flexDirection: "column", gap: "12px", alignItems: "center" }}>
-                    <p style={{ margin: 0, fontSize: "14px", fontWeight: "600" }}>Buổi học này chưa được tạo mã QR điểm danh.</p>
+                  <div className="p-5 text-center text-[#8B6F5F] flex flex-col gap-3 items-center">
+                    <p className="m-0 text-sm font-semibold">Buổi học này chưa được tạo mã QR điểm danh.</p>
                     <button 
                       onClick={handleRefreshQR}
-                      style={{ background: "linear-gradient(90deg, #F2A8A8 0%, #FFB4B4 100%)", padding: "8px 20px", border: "none", borderRadius: "8px", color: "white", fontSize: "13.5px", fontWeight: "600", cursor: "pointer" }}
+                      className="bg-gradient-to-r from-[#F2A8A8] to-[#FFB4B4] px-5 py-2 border-none rounded-lg text-white text-[13.5px] font-semibold cursor-pointer hover:opacity-90 transition-opacity"
                     >
                       Tạo Mã QR điểm danh
                     </button>
@@ -303,25 +259,21 @@ export function AttendanceView() {
 
               return (
                 <>
-                  <div style={{ padding: "20px", background: "white", border: "1.5px solid #F0E1D9", borderRadius: "15px", boxShadow: "0 6px 18px rgba(0,0,0,0.05)", display: "flex", justifyContent: "center", alignItems: "center" }}>
+                  <div className="p-5 bg-white border-[1.5px] border-[#F0E1D9] rounded-xl shadow-[0_6px_18px_rgba(0,0,0,0.05)] flex justify-center items-center">
                     <img 
                       src={qrUrl} 
                       alt="Attendance QR Code" 
-                      style={{ width: "180px", height: "180px", display: "block" }} 
+                      className="w-[180px] h-[180px] block" 
                     />
                   </div>
-                  <div style={{ textAlign: "center", display: "flex", flexDirection: "column", gap: "8px", alignItems: "center" }}>
-                    <h4 style={{ margin: "5px 0", color: "#6B4F43", fontWeight: "bold" }}>Mã QR quét điểm danh lớp học</h4>
-                    <p style={{ margin: 0, fontSize: "12.5px", color: "#8B6F5F" }}>
+                  <div className="text-center flex flex-col gap-2 items-center">
+                    <h4 className="my-1 text-[#6B4F43] font-bold">Mã QR quét điểm danh lớp học</h4>
+                    <p className="m-0 text-[12.5px] text-[#8B6F5F]">
                       Mã QR điểm danh cố định được lưu trữ bảo mật trên hệ thống.
                     </p>
                     <button 
                       onClick={handleRefreshQR}
-                      style={{ 
-                        marginTop: "8px", padding: "8px 16px", borderRadius: "8px", 
-                        border: "1.5px solid #EAD9CB", background: "white", color: "#6B4F43", 
-                        fontWeight: "600", fontSize: "12.5px", cursor: "pointer", display: "flex", alignItems: "center", gap: "6px" 
-                      }}
+                      className="mt-2 px-4 py-2 rounded-lg border-[1.5px] border-[#EAD9CB] bg-white text-[#6B4F43] font-semibold text-[12.5px] cursor-pointer flex items-center gap-1.5 hover:bg-gray-50 transition-colors"
                     >
                       Tạo lại Mã QR mới
                     </button>
@@ -334,61 +286,52 @@ export function AttendanceView() {
 
         {/* ================= VIEW 3: LEAVE REQUESTS INBOX ================= */}
         {subTab === "leave_requests" && (
-          <div style={{ padding: "20px", display: "flex", flexDirection: "column", gap: "15px" }}>
+          <div className="p-5 flex flex-col gap-4">
             
             {leaveRequests.length === 0 ? (
-              <div style={{ padding: "30px", textAlign: "center", color: "#8B6F5F" }}>
+              <div className="p-8 text-center text-[#8B6F5F]">
                 Không có đơn xin nghỉ học nào.
               </div>
             ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+              <div className="flex flex-col gap-4">
                 {leaveRequests.map((req) => (
                   <div 
                     key={req.id} 
-                    className="card" 
-                    style={{ 
-                      padding: "20px", 
-                      border: "1px solid #F0E1D9", 
-                      background: req.status === "Chờ duyệt" ? "#FFFDFB" : "#FFF",
-                      display: "flex", 
-                      flexDirection: "column", 
-                      gap: "12px",
-                      transition: "all 0.2s"
-                    }}
+                    className={`card p-5 border border-[#F0E1D9] flex flex-col gap-3 transition-colors ${
+                      req.status === "Chờ duyệt" ? "bg-[#FFFDFB]" : "bg-white"
+                    }`}
                   >
                     
                     {/* Header Row */}
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", borderBottom: "1px solid #F0E1D9", paddingBottom: "10px" }}>
+                    <div className="flex justify-between items-start border-b border-[#F0E1D9] pb-2.5">
                       <div>
-                        <span style={{ fontSize: "11px", fontWeight: "bold", color: "#8B6F5F", textTransform: "uppercase" }}>MSSV: {req.mssv} • {req.class}</span>
-                        <h4 style={{ margin: "4px 0 0 0", fontSize: "16px", color: "#6B4F43", fontWeight: "bold" }}>{req.name}</h4>
+                        <span className="text-[11px] font-bold text-[#8B6F5F] uppercase">MSSV: {req.mssv} • {req.class}</span>
+                        <h4 className="m-0 mt-1 text-base text-[#6B4F43] font-bold">{req.name}</h4>
                       </div>
                       
                       {/* Status Tag */}
-                      <span style={{ 
-                        fontSize: "11.5px", padding: "4px 10px", borderRadius: "5px", fontWeight: "bold",
-                        background: req.status === "Chờ duyệt" ? "#FFF8F0" : req.status === "Đã duyệt" ? "#EAFDF5" : "#FFEAEA",
-                        color: req.status === "Chờ duyệt" ? "#F2994A" : req.status === "Đã duyệt" ? "#178A57" : "#EB5757"
-                      }}>
+                      <span className={`text-[11.5px] px-2.5 py-1 rounded-md font-bold ${
+                        req.status === "Chờ duyệt" ? "bg-[#FFF8F0] text-[#F2994A]" : 
+                        req.status === "Đã duyệt" ? "bg-[#EAFDF5] text-[#178A57]" : 
+                        "bg-[#FFEAEA] text-[#EB5757]"
+                      }`}>
                         {req.status}
                       </span>
                     </div>
 
                     {/* Details Body */}
-                    <div style={{ fontSize: "13.5px", color: "#6B4F43", lineHeight: "1.5" }}>
-                      <p style={{ margin: "4px 0" }}>📅 <b>Ngày xin nghỉ học:</b> <span style={{ color: "#EB5757", fontWeight: "bold" }}>{req.dateRequested}</span></p>
-                      <p style={{ margin: "4px 0" }}>✍️ <b>Lý do xin phép:</b> {req.reason}</p>
+                    <div className="text-[13.5px] text-[#6B4F43] leading-relaxed">
+                      <p className="my-1">📅 <b>Ngày xin nghỉ học:</b> <span className="text-[#EB5757] font-bold">{req.dateRequested}</span></p>
+                      <p className="my-1">✍️ <b>Lý do xin phép:</b> {req.reason}</p>
                       
                       {req.evidence !== "Khong_co" && (
-                        <p style={{ margin: "8px 0 0 0", display: "flex", alignItems: "center", gap: "6px" }}>
+                        <p className="mt-2 mb-0 flex items-center gap-1.5">
                            <b>Minh chứng đính kèm:</b> 
                           <a 
                             href={req.evidence}
                             target="_blank"
                             rel="noopener noreferrer"
-                            style={{ 
-                              color: "#039BE5", textDecoration: "underline", cursor: "pointer", fontWeight: "600" 
-                            }}
+                            className="text-[#039BE5] underline cursor-pointer font-semibold"
                           >
                             Xem minh chứng
                           </a>
@@ -398,25 +341,16 @@ export function AttendanceView() {
 
                     {/* Action buttons */}
                     {req.status === "Chờ duyệt" && (
-                      <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", borderTop: "1px solid #F5EAE1", paddingTop: "12px", marginTop: "4px" }}>
+                      <div className="flex justify-end gap-2.5 border-t border-[#F5EAE1] pt-3 mt-1">
                         <button 
                           onClick={() => handleRejectLeave(req.id)}
-                          style={{ 
-                            background: "#FFF4F4", color: "#EB5757", border: "1px solid #FCD4D4", 
-                            padding: "8px 16px", borderRadius: "6px", fontSize: "13px", fontWeight: "bold", cursor: "pointer",
-                            transition: "all 0.2s"
-                          }}
+                          className="bg-[#FFF4F4] text-[#EB5757] border border-[#FCD4D4] px-4 py-2 rounded-md text-[13px] font-bold cursor-pointer transition-colors hover:bg-[#ffeaea]"
                         >
                           ✕ Từ chối đơn
                         </button>
                         <button 
                           onClick={() => handleApproveLeave(req.id, req.mssv)}
-                          style={{ 
-                            background: "linear-gradient(90deg, #6FCF97 0%, #27AE60 100%)", color: "white", border: "none",
-                            padding: "8px 18px", borderRadius: "6px", fontSize: "13px", fontWeight: "bold", cursor: "pointer",
-                            boxShadow: "0 4px 10px rgba(111, 207, 151, 0.3)",
-                            transition: "all 0.2s"
-                          }}
+                          className="bg-gradient-to-r from-[#6FCF97] to-[#27AE60] text-white border-none px-4 py-2 rounded-md text-[13px] font-bold cursor-pointer shadow-[0_4px_10px_rgba(111,207,151,0.3)] transition-transform hover:-translate-y-px"
                         >
                           ✓ Duyệt phép vắng
                         </button>
@@ -424,7 +358,7 @@ export function AttendanceView() {
                     )}
                     
                     {/* Timestamp Footer */}
-                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: "11px", color: "#8B6F5F", marginTop: "4px" }}>
+                    <div className="flex justify-between text-[11px] text-[#8B6F5F] mt-1">
                       <span>Thời gian nộp đơn: {req.dateSubmitted}</span>
                     </div>
 
