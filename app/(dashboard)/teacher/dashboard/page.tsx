@@ -113,10 +113,16 @@ export default function TeacherDashboard() {
 
         {/* Classes table */}
         <section className="card" aria-labelledby="classes-table">
-          <div className="p-[16px_20px_12px] border-b border-border">
+          <div className="p-[16px_20px_12px] border-b border-border flex items-center justify-between">
             <h2 id="classes-table" className="text-sm font-bold text-fg m-0">
               Lớp học đang phụ trách
             </h2>
+            <button
+              className="text-[12px] text-primary font-semibold bg-transparent border-none cursor-pointer hover:underline"
+              onClick={() => router.push("/teacher/classes")}
+            >
+              Xem tất cả →
+            </button>
           </div>
           {fetching ? (
             <p className="p-5 text-[13px] text-fg-subtle text-center m-0">Đang tải…</p>
@@ -156,7 +162,13 @@ export default function TeacherDashboard() {
                         ) : "—"}
                       </td>
                       <td>
-                        <button className="btn-secondary text-[12px] py-1 px-3">Chi tiết</button>
+                        <button
+                          className="btn-secondary text-[12px] py-1 px-3"
+                          onClick={() => router.push("/teacher/classes")}
+                          title={`Xem chi tiết lớp ${c.tenlop}`}
+                        >
+                          Chi tiết
+                        </button>
                       </td>
                     </tr>
                   ))}
@@ -168,10 +180,16 @@ export default function TeacherDashboard() {
 
         {/* Thông báo đã gửi */}
         <section className="card" aria-labelledby="my-notifications">
-          <div className="p-[16px_20px_12px] border-b border-border">
+          <div className="p-[16px_20px_12px] border-b border-border flex items-center justify-between">
             <h2 id="my-notifications" className="text-sm font-bold text-fg m-0">
               Thông báo đã gửi
             </h2>
+            <button
+              className="text-[12px] text-primary font-semibold bg-transparent border-none cursor-pointer hover:underline"
+              onClick={() => router.push("/teacher/notification")}
+            >
+              Xem tất cả →
+            </button>
           </div>
           {fetching ? (
             <p className="p-5 text-[13px] text-fg-subtle text-center m-0">Đang tải…</p>
@@ -180,7 +198,14 @@ export default function TeacherDashboard() {
           ) : (
             <ul className="list-none p-0 px-4 m-0 flex flex-col" role="list">
               {data.thongBao.map((tb, i) => (
-                <li key={i} className="flex items-start gap-3 p-[12px_4px] border-b border-border last:border-b-0">
+                <li
+                  key={i}
+                  className="flex items-start gap-3 p-[12px_4px] border-b border-border last:border-b-0 cursor-pointer rounded-lg hover:bg-[#fff8f5] transition-colors"
+                  onClick={() => router.push("/teacher/notification")}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => e.key === "Enter" && router.push("/teacher/notification")}
+                >
                   <div className="w-2 h-2 rounded-full bg-blue-500 shrink-0 mt-1.5" aria-hidden />
                   <div>
                     <p className="text-[13px] font-semibold text-fg m-0 mb-1">{tb.tieude}</p>

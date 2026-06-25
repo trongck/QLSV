@@ -111,6 +111,20 @@ export function useTeacherAttendance() {
     }
   }, [selectedBH, selectedPC, fetchRoster]);
 
+  // Auto-refresh roster mỗi 10 giây khi buổi học đang điểm danh
+  useEffect(() => {
+    if (!selectedBH || !selectedPC) return;
+
+    const activeSession = allSessions.find((s) => s.mabuoihoc === selectedBH);
+    if (activeSession?.trangthai !== "DangDiemdanh") return;
+
+    const interval = setInterval(() => {
+      fetchRoster(selectedBH, selectedPC);
+    }, 10000);
+
+    return () => clearInterval(interval);
+  }, [selectedBH, selectedPC, allSessions, fetchRoster]);
+
   // Automatically find matching session when class or date changes
   useEffect(() => {
     if (!selectedPC) return;

@@ -1,11 +1,13 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/auth/useAuth";
 import { DashboardShell } from "@/components/dashboard/DashboardShell";
 import { useStudentDashboard } from "@/hooks/sinhvien/useStudentDashboard";
 import { StatCard } from "@/components/student/StatCardDashboard";
 
 export default function StudentDashboard() {
+  const router = useRouter();
   const { user } = useAuth();
   const {
     data,
@@ -71,10 +73,16 @@ export default function StudentDashboard() {
         <div className="grid grid-cols-2 gap-3.5 max-lg:grid-cols-1">
           {/* Lịch hôm nay */}
           <section className="card" aria-labelledby="schedule-today">
-            <div className="p-[16px_20px_12px] border-b border-border">
+            <div className="p-[16px_20px_12px] border-b border-border flex items-center justify-between">
               <h2 id="schedule-today" className="text-sm font-bold text-fg m-0">
                 Lịch học hôm nay
               </h2>
+              <button
+                className="text-[12px] text-primary font-semibold bg-transparent border-none cursor-pointer hover:underline"
+                onClick={() => router.push("/sinhvien/schedule")}
+              >
+                Xem lịch đầy đủ →
+              </button>
             </div>
             {fetching ? (
               <p className="p-5 text-[13px] text-fg-subtle text-center m-0">Đang tải…</p>
@@ -83,7 +91,14 @@ export default function StudentDashboard() {
             ) : (
               <ul className="list-none p-[12px_16px] m-0 flex flex-col gap-2.5" role="list">
                 {data.lichHocHomNay.map((item: any, i: number) => (
-                  <li key={i} className="flex items-center gap-3 p-[10px_12px] rounded-xl bg-[#fff8f5] border border-border">
+                  <li
+                    key={i}
+                    className="flex items-center gap-3 p-[10px_12px] rounded-xl bg-[#fff8f5] border border-border cursor-pointer hover:border-primary hover:shadow-sm transition-all"
+                    onClick={() => router.push("/sinhvien/schedule")}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={(e) => e.key === "Enter" && router.push("/sinhvien/schedule")}
+                  >
                     <div className="flex items-center gap-1 text-xs font-semibold text-primary shrink-0 min-w-[64px]">
                       <span>T{item.tietbatdau}</span>
                       <span className="text-border">—</span>
@@ -164,10 +179,16 @@ export default function StudentDashboard() {
 
         {/* Thông báo */}
         <section className="card" aria-labelledby="notifications">
-          <div className="p-[16px_20px_12px] border-b border-border">
+          <div className="p-[16px_20px_12px] border-b border-border flex items-center justify-between">
             <h2 id="notifications" className="text-sm font-bold text-fg m-0">
               Thông báo gần đây
             </h2>
+            <button
+              className="text-[12px] text-primary font-semibold bg-transparent border-none cursor-pointer hover:underline"
+              onClick={() => router.push("/sinhvien/notifications")}
+            >
+              Xem tất cả →
+            </button>
           </div>
           {fetching ? (
             <p className="p-5 text-[13px] text-fg-subtle text-center m-0">Đang tải…</p>
@@ -176,7 +197,14 @@ export default function StudentDashboard() {
           ) : (
             <ul className="list-none p-[12px_16px] m-0 flex flex-col" role="list">
               {data.thongBaoGanDay.map((tb: any, i: number) => (
-                <li key={i} className="flex items-start gap-3 p-[12px_4px] border-b border-border last:border-b-0">
+                <li
+                  key={i}
+                  className="flex items-start gap-3 p-[12px_4px] border-b border-border last:border-b-0 cursor-pointer rounded-lg hover:bg-[#fff8f5] transition-colors"
+                  onClick={() => router.push("/sinhvien/notifications")}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => e.key === "Enter" && router.push("/sinhvien/notifications")}
+                >
                   <div className="w-2 h-2 rounded-full bg-primary shrink-0 mt-1.5" aria-hidden />
                   <div className="flex flex-col gap-0.5">
                     <span className="text-[13px] font-semibold text-fg">{tb.tieude}</span>
