@@ -102,5 +102,102 @@ export const examRepo = {
       .insert(payload)
       .select("madethi")
       .single();
+  },
+
+  async getStudentsByPhanCong(maphancong: number) {
+    const supabase = await getSupabaseClient();
+    return await supabase
+      .from("sinhvienmonhoc")
+      .select("sinhvien(masv, hodem, ten, mataikhoan)")
+      .eq("maphancong", maphancong);
+  },
+
+  async getKetQuaThiByExam(madethi: number) {
+    const supabase = await getSupabaseClient();
+    return await supabase
+      .from("ketquathi")
+      .select("*, sinhvien(masv, hodem, ten)")
+      .eq("madethi", madethi);
+  },
+
+  async forceEndAllActive(maphancongIds: number[], timeStr: string) {
+    const supabase = await getSupabaseClient();
+    return await supabase
+      .from("dethi")
+      .update({ thoigianketthuc: timeStr })
+      .in("maphancong", maphancongIds)
+      .is("thoigianketthuc", null);
+  },
+
+  /** Force-end tất cả ketquathi đang DangLam của 1 đề thi */
+  async forceEndAllActiveBai(madethi: number) {
+    const supabase = await getSupabaseClient();
+    return await supabase
+      .from("ketquathi")
+      .update({ trangthai: "HetGio" })
+      .eq("madethi", madethi)
+      .eq("trangthai", "DangLam");
+  },
+
+  /** Insert ketquathi khi SV bắt đầu làm bài */
+  async insertKetQuaDangLam(payload: {
+    madethi: number;
+    masv: string;
+    lanthi: number;
+    thoigianvaothi: string;
+    trangthai: string;
+  }) {
+    const supabase = await getSupabaseClient();
+    return await supabase
+      .from("ketquathi")
+      .insert({
+        ...payload,
+        diemtong: 0,
+        socandung: 0,
+        thoigiannopbai: payload.thoigianvaothi,
+        ghichu: null,
+      })
+      .select("maketqua")
+      .single();
+  },
+
+  /** Check xem SV đã có ketquathi cho đề thi này chưa */
+  async checkKetQua(masv: string, madethi: number) {
+    const supabase = await getSupabaseClient();
+    return await supabase
+      .from("ketquathi")
+      .select("maketqua, trangthai")
+      .eq("masv", masv)
+      .eq("madethi", madethi)
+      .maybeSingle();
+  },
+
+  /** Cập nhật trangthai=ViPham */
+  async markCheat(maketqua: number) {
+    const supabase = await getSupabaseClient();
+    return await supabase
+      .from("ketquathi")
+      .update({ trangthai: "ViPham" })
+      .eq("maketqua", maketqua)
+      .eq("trangthai", "DangLam");
+  },
+
+
+
+  async getExamsByTeacherFull(magv: string) {
+    const supabase = await getSupabaseClient();
+    return await supabase
+      .from("dethi")
+      .select("*, phancong!inner(magv, monhoc(*), lop(*))")
+      .eq("phancong.magv", magv);
+  },
+
+  async getExamWithPhanCong(madethi: number) {
+    const supabase = await getSupabaseClient();
+    return await supabase
+      .from("dethi")
+      .select("*, phancong(*, monhoc(*), lop(*))")
+      .eq("madethi", madethi)
+      .single();
   }
 };

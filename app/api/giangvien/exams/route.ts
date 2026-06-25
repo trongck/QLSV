@@ -149,39 +149,49 @@ export async function POST(request: Request) {
     }
 
     const prompt = "Hãy đọc tài liệu kiểm tra này và trích xuất ra toàn bộ danh sách câu hỏi trắc nghiệm cùng đáp án. Mỗi câu hỏi cần ghi nhận rõ đáp án đúng (ladapandung: true). Điểm mặc định cho mỗi câu là 0.2 nếu không được chỉ rõ.";
-    
+
+    // Danh sách model fallback theo thứ tự ưu tiên
+    const MODEL_FALLBACK_LIST = [
+      "gemini-2.5-flash",
+      "gemini-2.0-flash",
+      "gemini-1.5-flash",
+      "gemini-1.5-pro",
+    ];
+
+    const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
     let resultText = "";
-    try {
-      // Đầu tiên thử gemini-2.5-flash
-      const model = getModelInstance("gemini-2.5-flash");
-      let result;
-      if (inlineDataPart) {
-        result = await model.generateContent([inlineDataPart, prompt]);
-      } else {
-        result = await model.generateContent([textToParse, prompt]);
-      }
-      resultText = result.response.text();
-    } catch (err: any) {
-      console.warn("Lỗi khi dùng gemini-2.5-flash, thử chuyển sang gemini-1.5-flash:", err.message);
-      // Fallback sang gemini-1.5-flash cực kỳ ổn định
+    let lastError: any = null;
+
+    for (const modelName of MODEL_FALLBACK_LIST) {
       try {
-        const modelFallback = getModelInstance("gemini-1.5-flash");
+        console.log(`[Exams] Đang thử model: ${modelName}`);
+        const model = getModelInstance(modelName);
         let result;
         if (inlineDataPart) {
-          result = await modelFallback.generateContent([inlineDataPart, prompt]);
+          result = await model.generateContent([inlineDataPart, prompt]);
         } else {
-          result = await modelFallback.generateContent([textToParse, prompt]);
+          result = await model.generateContent([textToParse, prompt]);
         }
         resultText = result.response.text();
-      } catch (fallbackErr: any) {
-        console.error("Lỗi cả model fallback gemini-1.5-flash:", fallbackErr.message);
-        throw new Error("Dịch vụ phân tích đề thi bằng AI đang quá tải (Lỗi 503). Vui lòng thử lại sau vài giây.");
+        console.log(`[Exams] Thành công với model: ${modelName}`);
+        break; // Thành công, thoát vòng lặp
+      } catch (err: any) {
+        lastError = err;
+        console.warn(`[Exams] Model ${modelName} thất bại: ${err.message}`);
+        // Chờ 2 giây trước khi thử model tiếp theo
+        await sleep(2000);
       }
+    }
+
+    if (!resultText) {
+      console.error("[Exams] Tất cả model đều thất bại:", lastError?.message);
+      throw new Error("Dịch vụ phân tích đề thi bằng AI tạm thời không khả dụng. Vui lòng thử lại sau ít phút.");
     }
 
     const parsedQuestions = JSON.parse(resultText);
 
-    const createdExam = await giangVienService.createExamWithQuestions(gv.magv, {
+    const createdExam = await giangVienService.createExamAndNotify(gv.magv, payload.mataikhoan, {
       maphancong,
       tieude,
       mota: mota || "",

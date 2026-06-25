@@ -1,6 +1,7 @@
 // services/service/sinhvien/exam.service.ts
 // Service layer: chứa business logic, validate dữ liệu, gọi examRepo.
 import { examRepo } from '@/services/repositories/sinhvien/exam.repo';
+import { studentRepo } from '@/services/repositories/sinhvien/student.repo';
 
 export const examService = {
 
@@ -8,7 +9,11 @@ export const examService = {
     getExams: async (masv: string) => {
         if (!masv?.trim()) throw new Error('Mã sinh viên không hợp lệ');
 
-        const { data: exams, error: examErr } = await examRepo.getExams();
+        // Lấy danh sách môn học sinh viên đang học
+        const { data: monHocData } = await studentRepo.getMonHocDangHoc(masv);
+        const maphancongList = (monHocData || []).map((item: any) => item.maphancong);
+
+        const { data: exams, error: examErr } = await examRepo.getExams(maphancongList);
         if (examErr) throw new Error(examErr.message);
 
         const { data: results, error: resErr } = await examRepo.getExamResultsByStudent(masv);
@@ -145,4 +150,68 @@ export const examService = {
 
         return { ketqua, details };
     },
+
+    /**
+     * Bắt đầu làm bài: validate thời gian, check đã có record, insert DangLam
+     * Trả về effectiveTimeSec (timer thực tế)
+     */
+    startExam: async (masv: string, madethi: number) => {
+        if (!masv?.trim()) throw new Error('Mã sinh viên không hợp lệ');
+        if (!madethi || madethi <= 0) throw new Error('Mã đề thi không hợp lệ');
+
+        // Lấy thông tin đề thi
+        const { data: exam, error: examErr } = await examRepo.getExamDetail(madethi);
+        if (examErr || !exam) throw new Error('Không tìm thấy đề thi');
+
+        const now = Date.now();
+        const startMs = new Date(exam.thoigianbatdau).getTime();
+        const endMs = new Date(exam.thoigianketthuc).getTime();
+
+        if (now < startMs) {
+            throw new Error('Ca thi chưa bắt đầu');
+        }
+        if (now >= endMs) {
+            throw new Error('Ca thi đã kết thúc, không thể vào làm bài');
+        }
+
+        // Kiểm tra đã có kết quả chưa
+        const { data: existing } = await examRepo.checkKetQua(masv, madethi);
+        if (existing) {
+            throw new Error(
+                existing.trangthai === 'ViPham'
+                    ? 'Bạn đã vi phạm quy chế thi, không thể vào lại'
+                    : 'Bạn đã tham gia ca thi này, không thể vào lại'
+            );
+        }
+
+        // Tính effectiveTimeSec
+        const fullDurationSec = (exam as any).thoigianlam * 60;
+        const timeRemainingToEnd = Math.floor((endMs - now) / 1000);
+        const effectiveTimeSec = Math.min(fullDurationSec, timeRemainingToEnd);
+
+        if (effectiveTimeSec <= 0) {
+            throw new Error('Ca thi đã kết thúc, không thể vào làm bài');
+        }
+
+        const vnNow = new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString().replace('Z', '');
+        const { data: record, error: insertErr } = await examRepo.startExamRecord({
+            masv,
+            madethi,
+            lanthi: 1,
+            thoigianvaothi: vnNow,
+        });
+        if (insertErr || !record) throw new Error(insertErr?.message ?? 'Không thể bắt đầu ca thi');
+
+        return { effectiveTimeSec, maketqua: record.maketqua };
+    },
+
+    /**
+     * Đánh dấu vi phạm khi SV rời tab
+     */
+    markCheat: async (masv: string, madethi: number) => {
+        if (!masv?.trim() || !madethi) return;
+        await examRepo.markCheat(masv, madethi);
+    },
+
+
 };

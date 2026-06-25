@@ -8,7 +8,7 @@ import { DashboardShell } from "@/components/dashboard/DashboardShell";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
-type SubTab = "classes" | "schedule" | "materials";
+type SubTab = "classes" | "schedule";
 
 interface LichItem {
   thutrongtuan: number; // 2=T2 ... 8=CN
@@ -42,25 +42,11 @@ interface LichTuanItem {
   } | null;
 }
 
-interface TaiLieuItem {
-  matailieu: number;
-  tieude: string;
-  loai: string;
-  duongdan: string;
-  dungluong: number | null;
-  luotxem: number;
-  chopheptai: boolean;
-  ngaytao: string;
-  phancong: {
-    monhoc: { tenmon: string } | null;
-    lop: { tenlop: string } | null;
-  } | null;
-}
+
 
 interface ClassesData {
   dsLop: LopItem[];
   lichTuan: LichTuanItem[];
-  dsTaiLieu: TaiLieuItem[];
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -80,17 +66,7 @@ function tietToTime(tiet: number): string {
   return `${h}:${m}`;
 }
 
-const LOAI_COLOR: Record<string, string> = {
-  File: "bg-[#2D9CDB]", Video: "bg-[#9B51E0]", Link: "bg-[#F2994A]", Slide: "bg-[#EB5757]",
-};
 
-const LOAI_EXT: Record<string, string> = {
-  File: "FILE", Video: "VIDEO", Link: "LINK", Slide: "PPT",
-};
-
-function fmtDate(iso: string) {
-  return new Date(iso).toLocaleDateString("vi-VN");
-}
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
@@ -138,9 +114,8 @@ export default function TeacherClasses() {
         {/* Sub-tabs */}
         <div className="flex border-b border-[#F0E1D9] mb-5 gap-6">
           {[
-            { key: "classes",   label: "Lớp học phần" },
-            { key: "schedule",  label: "Lịch dạy học" },
-            { key: "materials", label: "Kho bài giảng" },
+            { key: "classes",  label: "Lớp học phần" },
+            { key: "schedule", label: "Lịch dạy học" },
           ].map((item) => (
             <button
               key={item.key}
@@ -205,12 +180,6 @@ export default function TeacherClasses() {
                           onClick={() => router.push("/teacher/students")}
                         >
                           Sinh viên
-                        </button>
-                        <button
-                          className="flex-1 py-2 text-[12px] rounded-lg border-none bg-linear-to-r from-[#F2A8A8] to-[#FFB4B4] text-white font-bold hover:opacity-95 transition-opacity cursor-pointer"
-                          onClick={() => setTab("materials")}
-                        >
-                          Bài giảng
                         </button>
                       </div>
                     </div>
@@ -290,69 +259,7 @@ export default function TeacherClasses() {
           </div>
         )}
 
-        {/* ═══ TAB: KHO BÀI GIẢNG ════════════════════════════════════════ */}
-        {tab === "materials" && (
-          <div className="flex flex-col gap-5">
-            <div className="flex justify-between items-center">
-              <div>
-                <h2 className="text-[20px] font-bold text-fg-muted m-0">
-                  Kho bài giảng & Học liệu
-                </h2>
-                <p className="text-[13px] text-fg-subtle mt-1 mb-0">
-                  Tài liệu từ tất cả lớp học phần đang giảng dạy
-                </p>
-              </div>
-            </div>
 
-            {!data?.dsTaiLieu?.length ? (
-              <p className="text-center text-fg-subtle p-10 m-0">
-                Chưa có tài liệu nào được tải lên
-              </p>
-            ) : (
-              <div className="grid grid-cols-5 gap-3.5 max-xl:grid-cols-3 max-md:grid-cols-2 max-sm:grid-cols-1">
-                {data.dsTaiLieu.map((f) => {
-                  const color = LOAI_COLOR[f.loai] ?? "bg-[#8B6F5F]";
-                  const ext = LOAI_EXT[f.loai] ?? f.loai;
-                  return (
-                    <div key={f.matailieu} className="card p-3.5 border border-[#F0E1D9] flex flex-col gap-2.5">
-                      <div className={`w-10 h-[50px] ${color} rounded flex items-center justify-center color-white text-white font-bold text-[10px]`}>
-                        {ext}
-                      </div>
-                      <h4 className="text-[13px] text-fg-muted m-0 font-bold overflow-hidden text-ellipsis whitespace-nowrap">
-                        {f.tieude}
-                      </h4>
-                      <div className="text-[11px] text-fg-subtle">
-                        {f.phancong?.monhoc?.tenmon ?? ""} &bull; {fmtDate(f.ngaytao)}
-                      </div>
-                      <div className="text-[11px] text-fg-subtle">
-                        {f.luotxem} lượt xem{f.dungluong ? ` | ${Math.round(f.dungluong / 1024)} KB` : ""}
-                      </div>
-                      <div className="flex gap-2">
-                        <a
-                          href={f.duongdan}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex-1 py-1.5 text-[11px] rounded-lg border border-[#EAD9CB] bg-white text-fg-muted text-center no-underline font-semibold hover:bg-gray-50 transition-colors cursor-pointer"
-                        >
-                          Xem
-                        </a>
-                        {f.chopheptai && (
-                          <a
-                            href={f.duongdan}
-                            download
-                            className="flex-1 py-1.5 text-[11px] rounded-lg border-none bg-linear-to-r from-[#F2A8A8] to-[#FFB4B4] text-white text-center no-underline font-bold hover:opacity-95 transition-opacity cursor-pointer"
-                          >
-                            Tải
-                          </a>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        )}
 
       </div>
     </DashboardShell>

@@ -27,7 +27,10 @@ export const notificationSVService = {
         if (svError || !sv) throw new Error('Không tìm thấy thông tin sinh viên');
         const { masv, malop } = sv;
 
-        const { data, error } = await notificationRepo.getNotificationsForStudent(mataikhoan, malop);
+        const { data: monHocData } = await studentRepo.getMonHocDangHoc(masv);
+        const maphancongList = (monHocData || []).map((item: any) => item.maphancong);
+
+        const { data, error } = await notificationRepo.getNotificationsForStudent(mataikhoan, malop, maphancongList);
         if (error) throw new Error(error.message);
 
         const now = new Date();
@@ -103,7 +106,10 @@ export const notificationSVService = {
         const { data: sv, error: svError } = await studentRepo.getBasicInfoByAccount(mataikhoan);
         if (svError || !sv) throw new Error('Không tìm thấy thông tin sinh viên');
 
-        const { error } = await notificationRepo.markAllAsRead(mataikhoan, sv.malop);
+        const { data: monHocData } = await studentRepo.getMonHocDangHoc(sv.masv);
+        const maphancongList = (monHocData || []).map((item: any) => item.maphancong);
+
+        const { error } = await notificationRepo.markAllAsRead(mataikhoan, sv.malop, maphancongList);
         if (error) throw new Error(error.message);
         return { success: true };
     },

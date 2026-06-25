@@ -159,27 +159,26 @@ export function GradeSheet() {
   });
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+    <div className="flex flex-col gap-5 p-0">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 md:gap-0">
         <div>
-          <h2 style={{ fontSize: "20px", fontWeight: "700", color: "#6B4F43", margin: 0 }}>Nhập điểm &amp; Đánh giá kết quả</h2>
-          <p style={{ fontSize: "13px", color: "#8B6F5F", margin: "4px 0 0" }}>Cập nhật điểm chuyên cần, giữa kỳ và cuối kỳ trực tiếp của sinh viên</p>
+          <h2 className="text-xl font-bold text-[#6B4F43] m-0">Nhập điểm &amp; Đánh giá kết quả</h2>
+          <p className="text-[13px] text-[#8B6F5F] m-0 mt-1">Cập nhật điểm chuyên cần, giữa kỳ và cuối kỳ trực tiếp của sinh viên</p>
         </div>
-        <div style={{ display: "flex", gap: "10px" }}>
+        <div className="flex flex-wrap gap-2.5 w-full md:w-auto">
           <button
             onClick={() => {
               if (selectedPC) {
                 fetchGrades(Number(selectedPC));
               }
             }}
-            className={styles.primaryBtn}
-            style={{ padding: "10px 20px", borderRadius: "10px", fontSize: "14px", background: "linear-gradient(90deg, #F2A8A8 0%, #FFB4B4 100%)", display: "flex", alignItems: "center", gap: "8px", border: "none", cursor: "pointer", color: "white", fontWeight: "600" }}
+            className={`flex-1 md:flex-none ${styles.primaryBtn} px-5 py-2.5 rounded-xl text-sm bg-gradient-to-r from-[#F2A8A8] to-[#FFB4B4] flex items-center justify-center gap-2 border-none cursor-pointer text-white font-semibold shadow-sm hover:opacity-90 transition-opacity`}
           >
             Lưu bảng điểm
           </button>
           <button 
             onClick={handleExportExcel}
-            style={{ border: "1px solid #EAD9CB", background: "white", padding: "10px 20px", borderRadius: "10px", fontSize: "14px", cursor: "pointer", color: "#6B4F43", fontWeight: "600" }}
+            className="flex-1 md:flex-none border border-[#EAD9CB] bg-white px-5 py-2.5 rounded-xl text-sm cursor-pointer text-[#6B4F43] font-semibold hover:bg-gray-50 transition-colors"
           >
             Xuất Excel
           </button>
@@ -187,7 +186,7 @@ export function GradeSheet() {
       </div>
 
       {/* Bộ lọc và Tìm kiếm */}
-      <div style={{ display: "flex", gap: "15px", alignItems: "center", flexWrap: "wrap" }}>
+      <div className="flex gap-3 items-center flex-wrap">
         <select
           value={selectedHocKy}
           onChange={(e) => {
@@ -200,7 +199,7 @@ export function GradeSheet() {
               setSelectedPC("");
             }
           }}
-          style={{ padding: "8px 12px", borderRadius: "8px", border: "1px solid #EAD9CB", outline: "none", color: "#6B4F43", background: "white" }}
+          className="p-2 rounded-lg border border-[#EAD9CB] outline-none text-[#6B4F43] bg-white text-sm focus:border-[#F2A8A8] transition-colors w-full sm:w-auto"
         >
           <option value="all">Tất cả học kỳ</option>
           {Array.from(new Map(classes.map(c => [c.hocky?.mahocky, c.hocky])).values())
@@ -216,7 +215,7 @@ export function GradeSheet() {
         <select
           value={selectedPC ?? ""}
           onChange={(e) => setSelectedPC(Number(e.target.value))}
-          style={{ padding: "8px 12px", borderRadius: "8px", border: "1px solid #EAD9CB", outline: "none", color: "#6B4F43", background: "white" }}
+          className="p-2 rounded-lg border border-[#EAD9CB] outline-none text-[#6B4F43] bg-white text-sm focus:border-[#F2A8A8] transition-colors w-full sm:w-auto"
         >
           {(selectedHocKy === "all" ? classes : classes.filter(c => c.hocky?.mahocky?.toString() === selectedHocKy)).map((cls) => (
             <option key={cls.maphancong} value={cls.maphancong}>
@@ -230,44 +229,37 @@ export function GradeSheet() {
           placeholder="Tìm kiếm mã SV hoặc họ tên..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          style={{
-            padding: "8px 12px",
-            borderRadius: "8px",
-            border: "1px solid #EAD9CB",
-            outline: "none",
-            color: "#6B4F43",
-            width: "250px",
-          }}
+          className="p-2 rounded-lg border border-[#EAD9CB] outline-none text-[#6B4F43] w-full sm:w-[250px] text-sm focus:border-[#F2A8A8] transition-colors"
         />
       </div>
 
       {/* Bảng nhập điểm */}
-      <section className="card" style={{ padding: "0", overflow: "hidden", border: "1px solid #F0E1D9" }}>
-        <div className={styles.tableWrap}>
-          <table className={styles.table} style={{ width: "100%", borderCollapse: "collapse" }}>
+      <section className="bg-white rounded-xl border border-[#F0E1D9] overflow-hidden shadow-sm">
+        <div className="w-full overflow-x-auto">
+          <table className="w-full min-w-[800px] border-collapse">
             <thead>
-              <tr style={{ background: "#FDF8F5" }}>
-                <th style={{ padding: "12px", textAlign: "left", fontSize: "13px", color: "#8B6F5F" }}>STT</th>
-                <th style={{ padding: "12px", textAlign: "left", fontSize: "13px", color: "#8B6F5F" }}>Mã SV</th>
-                <th style={{ padding: "12px", textAlign: "left", fontSize: "13px", color: "#8B6F5F" }}>Họ và tên</th>
-                <th style={{ padding: "12px", textAlign: "center", fontSize: "13px", color: "#8B6F5F", width: "120px" }}>Chuyên cần (10%)</th>
-                <th style={{ padding: "12px", textAlign: "center", fontSize: "13px", color: "#8B6F5F", width: "120px" }}>Giữa kỳ (30%)</th>
-                <th style={{ padding: "12px", textAlign: "center", fontSize: "13px", color: "#8B6F5F", width: "120px" }}>Cuối kỳ (60%)</th>
-                <th style={{ padding: "12px", textAlign: "center", fontSize: "13px", color: "#8B6F5F" }}>Tổng kết</th>
-                <th style={{ padding: "12px", textAlign: "center", fontSize: "13px", color: "#8B6F5F" }}>Thao tác</th>
+              <tr className="bg-[#FDF8F5]">
+                <th className="p-3 text-left text-[13px] text-[#8B6F5F]">STT</th>
+                <th className="p-3 text-left text-[13px] text-[#8B6F5F]">Mã SV</th>
+                <th className="p-3 text-left text-[13px] text-[#8B6F5F]">Họ và tên</th>
+                <th className="p-3 text-center text-[13px] text-[#8B6F5F] w-[120px]">Chuyên cần (10%)</th>
+                <th className="p-3 text-center text-[13px] text-[#8B6F5F] w-[120px]">Giữa kỳ (30%)</th>
+                <th className="p-3 text-center text-[13px] text-[#8B6F5F] w-[120px]">Cuối kỳ (60%)</th>
+                <th className="p-3 text-center text-[13px] text-[#8B6F5F]">Tổng kết</th>
+                <th className="p-3 text-center text-[13px] text-[#8B6F5F]">Thao tác</th>
               </tr>
             </thead>
 
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={8} style={{ padding: "40px", textAlign: "center", color: "#8B6F5F", fontWeight: "bold" }}>
+                  <td colSpan={8} className="p-10 text-center text-[#8B6F5F] font-bold">
                     Đang tải dữ liệu bảng điểm...
                   </td>
                 </tr>
               ) : filteredStudents.length === 0 ? (
                 <tr>
-                  <td colSpan={8} style={{ padding: "40px", textAlign: "center", color: "#8B6F5F" }}>
+                  <td colSpan={8} className="p-10 text-center text-[#8B6F5F]">
                     Không tìm thấy sinh viên nào trong lớp này.
                   </td>
                 </tr>
@@ -278,20 +270,19 @@ export function GradeSheet() {
                   const inputs = tempGrades[row.masv] || { ChuyenCan: "", BaiTap: "", GiuaKy: "", CuoiKy: "" };
 
                   return (
-                    <tr key={row.masv} style={{ borderBottom: "1px solid #F0E1D9" }}>
-                      <td style={{ padding: "12px" }}>{row.stt}</td>
-                      <td style={{ padding: "12px" }}>{row.masv}</td>
-                      <td style={{ padding: "12px", fontWeight: "600", color: "#6B4F43" }}>{row.hoten}</td>
+                    <tr key={row.masv} className="border-b border-[#F0E1D9] hover:bg-gray-50 transition-colors">
+                      <td className="p-3 text-sm">{row.stt}</td>
+                      <td className="p-3 text-sm text-gray-500">{row.masv}</td>
+                      <td className="p-3 text-sm font-semibold text-[#6B4F43]">{row.hoten}</td>
                       
                       {/* Chuyên cần */}
-                      <td style={{ padding: "12px", textAlign: "center" }}>
+                      <td className="p-3 text-center">
                         {isEditing ? (
                           <input
                             type="text"
                             value={inputs.ChuyenCan}
                             onChange={(e) => handleGradeChange(row.masv, "ChuyenCan", e.target.value)}
-                            className={styles.gradeInput}
-                            style={{ width: "60px", textAlign: "center", border: "1px solid #EAD9CB", borderRadius: "6px", padding: "6px" }}
+                            className="w-[60px] text-center border border-[#EAD9CB] rounded-md p-1.5 outline-none focus:border-[#F2A8A8]"
                           />
                         ) : (
                           row.diemChuyenCan?.giatri?.toFixed(1) || "—"
@@ -299,14 +290,13 @@ export function GradeSheet() {
                       </td>
 
                       {/* Giữa kỳ */}
-                      <td style={{ padding: "12px", textAlign: "center" }}>
+                      <td className="p-3 text-center">
                         {isEditing ? (
                           <input
                             type="text"
                             value={inputs.GiuaKy}
                             onChange={(e) => handleGradeChange(row.masv, "GiuaKy", e.target.value)}
-                            className={styles.gradeInput}
-                            style={{ width: "60px", textAlign: "center", border: "1px solid #EAD9CB", borderRadius: "6px", padding: "6px" }}
+                            className="w-[60px] text-center border border-[#EAD9CB] rounded-md p-1.5 outline-none focus:border-[#F2A8A8]"
                           />
                         ) : (
                           row.diemGiuaKy?.giatri?.toFixed(1) || "—"
@@ -314,14 +304,13 @@ export function GradeSheet() {
                       </td>
 
                       {/* Cuối kỳ */}
-                      <td style={{ padding: "12px", textAlign: "center" }}>
+                      <td className="p-3 text-center">
                         {isEditing ? (
                           <input
                             type="text"
                             value={inputs.CuoiKy}
                             onChange={(e) => handleGradeChange(row.masv, "CuoiKy", e.target.value)}
-                            className={styles.gradeInput}
-                            style={{ width: "60px", textAlign: "center", border: "1px solid #EAD9CB", borderRadius: "6px", padding: "6px" }}
+                            className="w-[60px] text-center border border-[#EAD9CB] rounded-md p-1.5 outline-none focus:border-[#F2A8A8]"
                           />
                         ) : (
                           row.diemCuoiKy?.giatri?.toFixed(1) || "—"
@@ -329,12 +318,12 @@ export function GradeSheet() {
                       </td>
 
                       {/* Tổng kết */}
-                      <td style={{ padding: "12px", textAlign: "center", fontWeight: "700", color: "#6B4F43" }}>
+                      <td className="p-3 text-center font-bold text-[#6B4F43]">
                         {isEditing ? (
-                          <span style={{ color: "#8B6F5F" }}>{calculateTempFinal(row.masv)}</span>
+                          <span className="text-[#8B6F5F]">{calculateTempFinal(row.masv)}</span>
                         ) : (
                           (row.tongKet && typeof row.tongKet.diemtongket === "number") ? (
-                            <span style={{ color: row.tongKet.diemtongket >= 4.0 ? "#065F46" : "#991B1B" }}>
+                            <span className={row.tongKet.diemtongket >= 4.0 ? "text-green-700" : "text-red-700"}>
                               {row.tongKet.diemtongket.toFixed(2)} ({row.tongKet.diemchu})
                             </span>
                           ) : (
@@ -343,40 +332,21 @@ export function GradeSheet() {
                         )}
                       </td>
 
-
                       {/* Thao tác */}
-                      <td style={{ padding: "12px", textAlign: "center" }}>
+                      <td className="p-3 text-center">
                         {isEditing ? (
-                          <div style={{ display: "flex", gap: "6px", justifyContent: "center" }}>
+                          <div className="flex gap-1.5 justify-center">
                             <button
                               onClick={() => handleSaveRow(row.masv)}
                               disabled={isSaving}
-                              style={{
-                                background: "#065F46",
-                                border: "none",
-                                color: "white",
-                                padding: "6px 12px",
-                                borderRadius: "6px",
-                                cursor: "pointer",
-                                fontSize: "12px",
-                                fontWeight: "bold",
-                              }}
+                              className="bg-[#065F46] hover:bg-[#047857] border-none text-white px-3 py-1.5 rounded-md cursor-pointer text-xs font-bold disabled:opacity-70 transition-colors"
                             >
                               {isSaving ? "Lưu..." : "Lưu"}
                             </button>
                             <button
                               onClick={() => handleCancelClick(row.masv)}
                               disabled={isSaving}
-                              style={{
-                                background: "#EAD9CB",
-                                border: "none",
-                                color: "#6B4F43",
-                                padding: "6px 12px",
-                                borderRadius: "6px",
-                                cursor: "pointer",
-                                fontSize: "12px",
-                                fontWeight: "bold",
-                              }}
+                              className="bg-[#EAD9CB] hover:bg-[#D5C2B3] border-none text-[#6B4F43] px-3 py-1.5 rounded-md cursor-pointer text-xs font-bold disabled:opacity-70 transition-colors"
                             >
                               Hủy
                             </button>
@@ -384,16 +354,7 @@ export function GradeSheet() {
                         ) : (
                           <button
                             onClick={() => handleEditClick(row.masv)}
-                            style={{
-                              background: "none",
-                              border: "1px solid #F2A8A8",
-                              color: "#C25450",
-                              padding: "6px 14px",
-                              borderRadius: "6px",
-                              cursor: "pointer",
-                              fontSize: "12px",
-                              fontWeight: "bold",
-                            }}
+                            className="bg-transparent border border-[#F2A8A8] hover:bg-red-50 text-[#C25450] px-3 py-1.5 rounded-md cursor-pointer text-xs font-bold transition-colors"
                           >
                             Sửa
                           </button>
@@ -409,8 +370,8 @@ export function GradeSheet() {
 
         {/* Thông tin thống kê dòng hiển thị */}
         {!loading && filteredStudents.length > 0 && (
-          <div style={{ display: "flex", justifyContent: "space-between", padding: "15px 20px", borderTop: "1px solid #F0E1D9" }}>
-            <span style={{ fontSize: "13px", color: "#8B6F5F" }}>
+          <div className="flex justify-between p-4 border-t border-[#F0E1D9]">
+            <span className="text-[13px] text-[#8B6F5F]">
               Hiển thị {filteredStudents.length} của {students.length} sinh viên học lớp này
             </span>
           </div>

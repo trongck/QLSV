@@ -11,8 +11,11 @@ export const examRepo = {
     /**
      * Lấy danh sách đề thi (raw data)
      */
-    getExams: async () => {
+    getExams: async (maphancongList: number[]) => {
         const supabase = await getSupabase();
+        if (!maphancongList || maphancongList.length === 0) {
+            return { data: [], error: null };
+        }
         const { data, error } = await supabase
             .from('dethi')
             .select(`
@@ -21,6 +24,7 @@ export const examRepo = {
                     monhoc:mamon ( tenmon )
                 )
             `)
+            .in('maphancong', maphancongList)
             .order('thoigianbatdau', { ascending: false });
 
         return { data, error };
@@ -185,4 +189,61 @@ export const examRepo = {
 
         return { data, error };
     },
+
+    /**
+     * Insert ketquathi khi SV bắt đầu làm bài (trangthai=DangLam)
+     */
+    startExamRecord: async (payload: {
+      masv: string;
+      madethi: number;
+      lanthi: number;
+      thoigianvaothi: string;
+    }) => {
+      const supabase = await getSupabase();
+      const { data, error } = await supabase
+        .from('ketquathi')
+        .insert({
+          ...payload,
+          trangthai: 'DangLam',
+          diemtong: 0,
+          socandung: 0,
+          thoigiannopbai: payload.thoigianvaothi,
+          ghichu: null,
+        })
+        .select('maketqua')
+        .single();
+      return { data, error };
+    },
+
+    /**
+     * Kiểm tra xem SV đã có kết quả thi cho đề thi này chưa
+     */
+    checkKetQua: async (masv: string, madethi: number) => {
+      const supabase = await getSupabase();
+      const { data, error } = await supabase
+        .from('ketquathi')
+        .select('maketqua, trangthai')
+        .eq('masv', masv)
+        .eq('madethi', madethi)
+        .maybeSingle();
+      return { data, error };
+    },
+
+    /**
+     * Đánh dấu vi phạm (chuyển trangthai = ViPham)
+     */
+    markCheat: async (masv: string, madethi: number) => {
+      const supabase = await getSupabase();
+      const { data, error } = await supabase
+        .from('ketquathi')
+        .update({ trangthai: 'ViPham' })
+        .eq('masv', masv)
+        .eq('madethi', madethi)
+        .eq('trangthai', 'DangLam')
+        .select('maketqua')
+        .maybeSingle();
+      return { data, error };
+    },
+
+
 };

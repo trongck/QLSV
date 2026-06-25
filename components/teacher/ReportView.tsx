@@ -191,14 +191,14 @@ export function ReportView() {
   };
 
   if (loading && classes.length === 0) {
-    return <div style={{ padding: "20px", color: "#8B6F5F" }}>Đang tải dữ liệu báo cáo...</div>;
+    return <div className="p-5 text-[#8B6F5F]">Đang tải dữ liệu báo cáo...</div>;
   }
 
   if (classes.length === 0) {
     return (
-      <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-        <h2 style={{ fontSize: "20px", fontWeight: "700", color: "#6B4F43", margin: 0 }}>Phân tích &amp; Thống kê kết quả học tập</h2>
-        <div className="card" style={{ padding: "40px", textAlign: "center", color: "#8B6F5F", border: "1px solid #F0E1D9" }}>
+      <div className="flex flex-col gap-5">
+        <h2 className="text-xl font-bold text-[#6B4F43] m-0">Phân tích &amp; Thống kê kết quả học tập</h2>
+        <div className="bg-white rounded-xl p-10 text-center text-[#8B6F5F] border border-[#F0E1D9] shadow-sm">
           Bạn chưa được phân công giảng dạy lớp học phần nào có hiệu lực.
         </div>
       </div>
@@ -215,38 +215,16 @@ export function ReportView() {
   const backgroundGradient = `conic-gradient(#6FCF97 0% ${pA}%, #F2C94C ${pA}% ${pB}%, #EB5757 ${pB}% ${pC}%, #2D9CDB ${pC}% 100%)`;
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-      <style>{`
-        @media (max-width: 900px) {
-          .report-filter-grid { grid-template-columns: 1fr 1fr !important; }
-          .report-kpi-grid { grid-template-columns: 1fr !important; }
-          .report-charts-grid { grid-template-columns: 1fr !important; }
-        }
-        @media (max-width: 560px) {
-          .report-filter-grid { grid-template-columns: 1fr !important; }
-          .report-header-row { flex-direction: column !important; align-items: flex-start !important; gap: 12px !important; }
-          .report-header-btns { width: 100% !important; }
-          .report-header-btns button { flex: 1 !important; }
-        }
-      `}</style>
-      <div className="report-header-row" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "12px" }}>
+    <div className="flex flex-col gap-5">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
         <div>
-          <h2 style={{ fontSize: "20px", fontWeight: "700", color: "#6B4F43", margin: 0 }}>Phân tích &amp; Thống kê kết quả học tập</h2>
-          <p style={{ fontSize: "13px", color: "#8B6F5F", margin: "4px 0 0" }}>Nhận thông tin trực quan về kết quả và tình hình tham gia của sinh viên</p>
+          <h2 className="text-xl font-bold text-[#6B4F43] m-0">Phân tích &amp; Thống kê kết quả học tập</h2>
+          <p className="text-[13px] text-[#8B6F5F] m-0 mt-1">Nhận thông tin trực quan về kết quả và tình hình tham gia của sinh viên</p>
         </div>
-        <div className="report-header-btns" style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+        <div className="flex gap-2.5 flex-wrap w-full sm:w-auto">
           <button
             onClick={handleOpenCreateModal}
-            style={{
-              background: "linear-gradient(90deg, #F2A8A8 0%, #FFB4B4 100%)",
-              padding: "10px 20px",
-              fontWeight: "600",
-              cursor: "pointer",
-              border: "none",
-              color: "white",
-              borderRadius: "8px",
-              fontSize: "13px"
-            }}
+            className="w-full sm:w-auto bg-gradient-to-r from-[#F2A8A8] to-[#FFB4B4] px-5 py-2.5 font-semibold cursor-pointer border-none text-white rounded-xl text-[13px] shadow-sm hover:opacity-90 transition-opacity"
           >
             Tạo báo cáo mới
           </button>
@@ -254,15 +232,15 @@ export function ReportView() {
       </div>
 
       {/* Filter Box */}
-      <section className="card" style={{ padding: "20px", border: "1px solid #F0E1D9" }}>
-        <div className="report-filter-grid" style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr 1fr 1fr", gap: "16px", alignItems: "flex-end" }}>
+      <section className="bg-white rounded-xl p-5 border border-[#F0E1D9] shadow-sm">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 items-end">
           {/* Năm học */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-            <label style={{ fontSize: "11px", fontWeight: "700", color: "#8B6F5F", textTransform: "uppercase" }}>Năm học</label>
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[11px] font-bold text-[#8B6F5F] uppercase">Năm học</label>
             <select
               value={selectedYear}
               onChange={(e) => setSelectedYear(e.target.value)}
-              style={{ padding: "10px", borderRadius: "8px", border: "1px solid #F0E1D9", color: "#6B4F43", outline: "none", fontSize: "13px", background: "white", cursor: "pointer" }}
+              className="p-2.5 rounded-lg border border-[#F0E1D9] text-[#6B4F43] outline-none text-[13px] bg-white cursor-pointer focus:border-[#F2A8A8] transition-colors"
             >
               <option value="Tất cả">Tất cả năm học</option>
               {yearOptions.map((y) => (
@@ -272,12 +250,12 @@ export function ReportView() {
           </div>
 
           {/* Học kỳ */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-            <label style={{ fontSize: "11px", fontWeight: "700", color: "#8B6F5F", textTransform: "uppercase" }}>Học kỳ</label>
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[11px] font-bold text-[#8B6F5F] uppercase">Học kỳ</label>
             <select
               value={selectedSemester}
               onChange={(e) => setSelectedSemester(e.target.value)}
-              style={{ padding: "10px", borderRadius: "8px", border: "1px solid #F0E1D9", color: "#6B4F43", outline: "none", fontSize: "13px", background: "white", cursor: "pointer" }}
+              className="p-2.5 rounded-lg border border-[#F0E1D9] text-[#6B4F43] outline-none text-[13px] bg-white cursor-pointer focus:border-[#F2A8A8] transition-colors"
             >
               <option value="Tất cả">Tất cả học kỳ</option>
               {semesterOptions.map((s) => (
@@ -287,13 +265,13 @@ export function ReportView() {
           </div>
 
           {/* Chọn lớp */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "6px", gridColumn: "span 1" }}>
-            <label style={{ fontSize: "11px", fontWeight: "700", color: "#8B6F5F", textTransform: "uppercase" }}>Chọn lớp giảng dạy</label>
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[11px] font-bold text-[#8B6F5F] uppercase">Chọn lớp giảng dạy</label>
             <select
               value={selectedPC}
               onChange={(e) => setSelectedPC(Number(e.target.value))}
               disabled={filteredClasses.length === 0}
-              style={{ padding: "10px", borderRadius: "8px", border: "1px solid #F0E1D9", color: filteredClasses.length === 0 ? "#bbb" : "#6B4F43", outline: "none", fontSize: "13px", background: "white", cursor: filteredClasses.length === 0 ? "not-allowed" : "pointer" }}
+              className={`p-2.5 rounded-lg border border-[#F0E1D9] outline-none text-[13px] bg-white focus:border-[#F2A8A8] transition-colors ${filteredClasses.length === 0 ? 'text-gray-400 cursor-not-allowed' : 'text-[#6B4F43] cursor-pointer'}`}
             >
               {filteredClasses.length === 0 ? (
                 <option value="">— Không có lớp phù hợp —</option>
@@ -308,9 +286,9 @@ export function ReportView() {
           </div>
 
           {/* Số tín chỉ (static) */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-            <label style={{ fontSize: "11px", fontWeight: "700", color: "#8B6F5F", textTransform: "uppercase" }}>Số tín chỉ</label>
-            <div style={{ padding: "10px", borderRadius: "8px", border: "1px solid #FDF8F5", background: "#FDF8F5", color: "#6B4F43", fontSize: "13px", fontWeight: "600" }}>
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[11px] font-bold text-[#8B6F5F] uppercase">Số tín chỉ</label>
+            <div className="p-2.5 rounded-lg border border-[#FDF8F5] bg-[#FDF8F5] text-[#6B4F43] text-[13px] font-semibold">
               {selectedClass?.monhoc?.sotinchi || "—"} tín chỉ
             </div>
           </div>
@@ -319,20 +297,20 @@ export function ReportView() {
 
       {/* Empty filter message */}
       {filteredClasses.length === 0 && (
-        <div style={{ padding: "20px", borderRadius: "10px", border: "1px solid #F0E1D9", background: "#FDF8F5", color: "#8B6F5F", textAlign: "center", fontSize: "14px" }}>
+        <div className="p-5 rounded-xl border border-[#F0E1D9] bg-[#FDF8F5] text-[#8B6F5F] text-center text-sm">
           Không tìm thấy lớp học phần nào phù hợp với bộ lọc đã chọn.
         </div>
       )}
 
       {/* Warning showing we are looking at an old report */}
       {selectedReportId !== "live" && (
-        <div style={{ padding: "12px 20px", borderRadius: "8px", background: "#FFF5E6", border: "1px solid #FFD699", color: "#B36B00", fontSize: "13px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div className="p-3 px-5 rounded-lg bg-[#FFF5E6] border border-[#FFD699] text-[#B36B00] text-[13px] flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
           <span>
              Bạn đang xem báo cáo lưu lịch sử: <strong>{reports.find(r => r.matailieu === selectedReportId)?.tieude}</strong>
           </span>
           <button 
             onClick={() => handleSelectReport("live")}
-            style={{ border: "none", background: "none", color: "#6B4F43", textDecoration: "underline", fontWeight: "bold", cursor: "pointer" }}
+            className="border-none bg-transparent text-[#6B4F43] underline font-bold cursor-pointer hover:text-[#2D1B14] transition-colors"
           >
             Quay lại báo cáo hiện tại
           </button>
@@ -341,66 +319,55 @@ export function ReportView() {
 
       {/* KPI statistics cards */}
       {filteredClasses.length > 0 && (
-      <div className="report-kpi-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "16px" }}>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {[
           { title: "Tỷ lệ điểm danh trung bình", value: `${stats.avgAttendance}%`, sub: "Dựa trên số buổi điểm danh" },
           { title: "Tỷ lệ đạt học phần (>=4.0)", value: `${stats.passRate}%`, sub: "Dựa trên điểm tổng kết hiện tại" },
           { title: "Điểm tích lũy trung bình", value: stats.avgGpa.toString(), sub: "Thang điểm 10 học phần" }
         ].map((card, i) => (
-          <div key={i} className="card" style={{ padding: "20px", border: "1px solid #F0E1D9" }}>
-            <div style={{ color: "#8B6F5F", fontSize: "13px" }}>{card.title}</div>
-            <div style={{ fontSize: "28px", fontWeight: "800", color: "#2D1B14", margin: "8px 0" }}>{card.value}</div>
-            <div style={{ fontSize: "12px", color: "#8B6F5F", fontWeight: "600" }}>{card.sub}</div>
+          <div key={i} className="bg-white rounded-xl p-5 border border-[#F0E1D9] shadow-sm hover:shadow-md transition-shadow">
+            <div className="text-[#8B6F5F] text-[13px] font-semibold">{card.title}</div>
+            <div className="text-[28px] font-extrabold text-[#2D1B14] my-2">{card.value}</div>
+            <div className="text-xs text-[#8B6F5F] font-semibold">{card.sub}</div>
           </div>
         ))}
       </div>
       )}
 
       {filteredClasses.length > 0 && (
-      <div className="report-charts-grid" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         
         {/* Pie chart (Donut) */}
-        <section className="card" style={{ padding: "20px", border: "1px solid #F0E1D9", display: "flex", flexDirection: "column", gap: "15px" }}>
-          <h3 style={{ fontSize: "15px", color: "#6B4F43", fontWeight: "bold", margin: 0 }}>Phân bổ điểm số</h3>
-          <div style={{ display: "flex", justifyContent: "center", alignItems: "center", flex: 1, padding: "10px 0" }}>
-            <div style={{ position: "relative", width: "130px", height: "130px", borderRadius: "50%", background: backgroundGradient }}>
-              <div style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: "70px", height: "70px", background: "white", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "11px", fontWeight: "bold", color: "#6B4F43" }}>GPA</div>
+        <section className="bg-white rounded-xl p-5 border border-[#F0E1D9] flex flex-col gap-4 shadow-sm">
+          <h3 className="text-[15px] text-[#6B4F43] font-bold m-0">Phân bổ điểm số</h3>
+          <div className="flex justify-center items-center flex-1 py-2.5">
+            <div className="relative w-[130px] h-[130px] rounded-full" style={{ background: backgroundGradient }}>
+              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[70px] h-[70px] bg-white rounded-full flex items-center justify-center text-[11px] font-bold text-[#6B4F43]">GPA</div>
             </div>
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", fontSize: "11px" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "5px" }}><div style={{ width: "8px", height: "8px", background: "#6FCF97" }}></div> Điểm A ({dist.A}%)</div>
-            <div style={{ display: "flex", alignItems: "center", gap: "5px" }}><div style={{ width: "8px", height: "8px", background: "#F2C94C" }}></div> Điểm B ({dist.B}%)</div>
-            <div style={{ display: "flex", alignItems: "center", gap: "5px" }}><div style={{ width: "8px", height: "8px", background: "#EB5757" }}></div> Điểm C ({dist.C}%)</div>
-            <div style={{ display: "flex", alignItems: "center", gap: "5px" }}><div style={{ width: "8px", height: "8px", background: "#2D9CDB" }}></div> Điểm D/F ({dist.DF}%)</div>
+          <div className="grid grid-cols-2 gap-2 text-[11px] font-semibold text-[#6B4F43]">
+            <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-sm bg-[#6FCF97]"></div> Điểm A ({dist.A}%)</div>
+            <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-sm bg-[#F2C94C]"></div> Điểm B ({dist.B}%)</div>
+            <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-sm bg-[#EB5757]"></div> Điểm C ({dist.C}%)</div>
+            <div className="flex items-center gap-1.5"><div className="w-2 h-2 rounded-sm bg-[#2D9CDB]"></div> Điểm D/F ({dist.DF}%)</div>
           </div>
         </section>
 
         {/* Notes block */}
-        <section className="card" style={{ padding: "20px", border: "1px solid #F0E1D9", display: "flex", flexDirection: "column" }}>
-          <h3 style={{ fontSize: "15px", color: "#6B4F43", fontWeight: "bold", margin: "0 0 10px 0" }}>
+        <section className="bg-white rounded-xl p-5 border border-[#F0E1D9] flex flex-col shadow-sm">
+          <h3 className="text-[15px] text-[#6B4F43] font-bold m-0 mb-2.5">
             {selectedReportId === "live" ? "Nhận xét nháp" : "Nhận xét lưu trữ"}
           </h3>
           <textarea 
             placeholder="Ghi chú nhận xét chung về lớp học phần..."
             value={comments}
             onChange={(e) => setComments(e.target.value)}
-            style={{ flex: 1, padding: "12px", borderRadius: "8px", border: "1px solid #F0E1D9", background: "#FDF8F5", fontSize: "13px", resize: "none", outline: "none", color: "#6B4F43" }}
+            className="flex-1 p-3 rounded-lg border border-[#F0E1D9] bg-[#FDF8F5] text-[13px] resize-none outline-none text-[#6B4F43] focus:border-[#F2A8A8] transition-colors"
           />
           <button 
             onClick={handleSaveComment}
             disabled={saving}
-            style={{ 
-              marginTop: "10px", 
-              width: "100%", 
-              background: "#6B4F43", 
-              color: "white", 
-              border: "none", 
-              padding: "10px", 
-              borderRadius: "6px", 
-              cursor: "pointer", 
-              fontSize: "13px", 
-              fontWeight: "bold" 
-            }}
+            className={`mt-2.5 w-full bg-[#6B4F43] text-white border-none p-2.5 rounded-lg cursor-pointer text-[13px] font-bold transition-colors ${saving ? 'opacity-70' : 'hover:bg-[#523C32]'}`}
           >
             {selectedReportId === "live" ? "Ghi nhận xét nháp" : (saving ? "Đang lưu..." : "Lưu nhận xét")}
           </button>
@@ -411,39 +378,22 @@ export function ReportView() {
 
       {/* Saved Reports Panel — luôn hiển thị khi đã chọn lớp */}
       {filteredClasses.length > 0 && (
-        <section className="card" style={{ padding: "20px", border: "1px solid #F0E1D9" }}>
-          <h3 style={{ fontSize: "15px", color: "#6B4F43", fontWeight: "bold", margin: "0 0 14px 0" }}>
+        <section className="bg-white rounded-xl p-5 border border-[#F0E1D9] shadow-sm">
+          <h3 className="text-[15px] text-[#6B4F43] font-bold m-0 mb-3.5">
             Báo cáo đã lưu {reports.length > 0 ? `(${reports.length})` : ""}
           </h3>
 
           {reports.length === 0 ? (
-            <div style={{
-              textAlign: "center",
-              padding: "30px 20px",
-              color: "#8B6F5F",
-              fontSize: "13px",
-              background: "#FDF8F5",
-              borderRadius: "10px",
-              border: "1px dashed #F0E1D9"
-            }}>
+            <div className="text-center p-8 text-[#8B6F5F] text-[13px] bg-[#FDF8F5] rounded-xl border border-dashed border-[#F0E1D9]">
               Chưa có báo cáo nào được lưu cho lớp học phần này.<br/>
-              <span style={{ fontSize: "12px", color: "#BFADA7" }}>Nhấn "Tạo báo cáo mới" ở góc trên phải để lưu thống kê hiện tại vào cơ sở dữ liệu.</span>
+              <span className="text-[12px] text-[#BFADA7]">Nhấn "Tạo báo cáo mới" ở góc trên phải để lưu thống kê hiện tại vào cơ sở dữ liệu.</span>
             </div>
           ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+            <div className="flex flex-col gap-2">
               {/* Live entry */}
               <div
                 onClick={() => handleSelectReport("live")}
-                style={{
-                  padding: "10px 14px",
-                  borderRadius: "8px",
-                  border: `2px solid ${selectedReportId === "live" ? "#F2A8A8" : "#F0E1D9"}`,
-                  background: selectedReportId === "live" ? "#FFF5F5" : "white",
-                  cursor: "pointer",
-                  fontSize: "13px",
-                  fontWeight: selectedReportId === "live" ? "700" : "400",
-                  color: "#6B4F43"
-                }}
+                className={`px-3.5 py-2.5 rounded-lg border-2 cursor-pointer text-[13px] ${selectedReportId === "live" ? 'border-[#F2A8A8] bg-[#FFF5F5] font-bold text-[#6B4F43]' : 'border-[#F0E1D9] bg-white font-normal text-[#6B4F43] hover:bg-gray-50'}`}
               >
                 ✓ Xem dữ liệu hiện tại (Live)
               </div>
@@ -452,40 +402,25 @@ export function ReportView() {
               {reports.map((rep) => (
                 <div
                   key={rep.matailieu}
-                  style={{
-                    borderRadius: "8px",
-                    border: `2px solid ${selectedReportId === rep.matailieu ? "#F2A8A8" : "#F0E1D9"}`,
-                    background: selectedReportId === rep.matailieu ? "#FFF5F5" : "white",
-                    overflow: "hidden",
-                    transition: "all 0.15s"
-                  }}
+                  className={`rounded-lg border-2 overflow-hidden transition-all duration-150 ${selectedReportId === rep.matailieu ? 'border-[#F2A8A8] bg-[#FFF5F5]' : 'border-[#F0E1D9] bg-white'}`}
                 >
                   {editingReportId === rep.matailieu ? (
                     /* Inline edit mode */
-                    <div style={{ padding: "10px 14px", display: "flex", flexDirection: "column", gap: "8px" }}>
+                    <div className="p-3 flex flex-col gap-2">
                       <input
                         value={editingTitle}
                         onChange={(e) => setEditingTitle(e.target.value)}
                         autoFocus
                         onClick={(e) => e.stopPropagation()}
-                        style={{
-                          padding: "6px 10px",
-                          borderRadius: "6px",
-                          border: "1px solid #F2A8A8",
-                          fontSize: "13px",
-                          color: "#6B4F43",
-                          outline: "none",
-                          width: "100%",
-                          boxSizing: "border-box"
-                        }}
+                        className="p-1.5 px-2.5 rounded-md border border-[#F2A8A8] text-[13px] text-[#6B4F43] outline-none w-full box-border"
                       />
-                      <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end" }}>
+                      <div className="flex gap-2 justify-end">
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
                             setEditingReportId(null);
                           }}
-                          style={{ padding: "5px 12px", borderRadius: "6px", border: "1px solid #F0E1D9", background: "white", color: "#6B4F43", fontSize: "12px", cursor: "pointer" }}
+                          className="py-1 px-3 rounded-md border border-[#F0E1D9] bg-white text-[#6B4F43] text-xs cursor-pointer hover:bg-gray-50 transition-colors"
                         >
                           Hủy
                         </button>
@@ -503,7 +438,7 @@ export function ReportView() {
                               // error already handled/alerted by hook
                             }
                           }}
-                          style={{ padding: "5px 12px", borderRadius: "6px", border: "none", background: "#F2A8A8", color: "white", fontSize: "12px", fontWeight: "bold", cursor: "pointer" }}
+                          className="py-1 px-3 rounded-md border-none bg-gradient-to-r from-[#F2A8A8] to-[#FFB4B4] text-white text-xs font-bold cursor-pointer hover:opacity-90 transition-opacity"
                         >
                           {saving ? "Đang lưu..." : "Lưu"}
                         </button>
@@ -512,12 +447,12 @@ export function ReportView() {
                   ) : (
                     /* View mode */
                     <div
-                      style={{ padding: "10px 14px", display: "flex", justifyContent: "space-between", alignItems: "center", cursor: "pointer" }}
+                      className="p-3 flex justify-between items-center cursor-pointer hover:bg-gray-50 transition-colors"
                       onClick={() => handleSelectReport(rep)}
                     >
                       <div>
-                        <div style={{ fontWeight: "bold", color: "#6B4F43", fontSize: "13px" }}>{rep.tieude}</div>
-                        <div style={{ fontSize: "11px", color: "#8B6F5F", marginTop: "3px" }}>
+                        <div className="font-bold text-[#6B4F43] text-[13px]">{rep.tieude}</div>
+                        <div className="text-[11px] text-[#8B6F5F] mt-1">
                           Lưu lúc: {new Date(rep.ngaytao).toLocaleDateString("vi-VN", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" })}
                         </div>
                       </div>
@@ -528,17 +463,7 @@ export function ReportView() {
                           setEditingTitle(rep.tieude);
                         }}
                         title="Chỉnh sửa tên báo cáo"
-                        style={{
-                          padding: "4px 10px",
-                          borderRadius: "6px",
-                          border: "1px solid #F0E1D9",
-                          background: "white",
-                          color: "#8B6F5F",
-                          fontSize: "11px",
-                          cursor: "pointer",
-                          flexShrink: 0,
-                          marginLeft: "8px"
-                        }}
+                        className="py-1 px-2.5 rounded-md border border-[#F0E1D9] bg-white text-[#8B6F5F] text-[11px] cursor-pointer flex-shrink-0 ml-2 hover:bg-gray-50 transition-colors"
                       >
                         Sửa
                       </button>
@@ -550,22 +475,10 @@ export function ReportView() {
           )}
         </section>
       )}
-      <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "10px" }}>
+      <div className="flex justify-end mt-2.5">
         <button 
           onClick={handleDownloadCSV}
-          style={{ 
-            display: "flex", 
-            alignItems: "center", 
-            gap: "8px", 
-            background: "#178A57", 
-            color: "white", 
-            border: "none", 
-            padding: "12px 25px", 
-            borderRadius: "10px", 
-            fontWeight: "600", 
-            cursor: "pointer", 
-            fontSize: "14px" 
-          }}
+          className="flex items-center gap-2 bg-[#178A57] text-white border-none px-6 py-3 rounded-xl font-semibold cursor-pointer text-sm shadow-sm hover:bg-[#065F46] transition-colors"
         >
           Tải xuống báo cáo học phần (.csv)
         </button>
@@ -573,23 +486,23 @@ export function ReportView() {
 
       {/* Create Modal */}
       {showCreateModal && (
-        <div style={{ position: "fixed", top: 0, left: 0, width: "100%", height: "100%", backgroundColor: "rgba(0,0,0,0.4)", display: "flex", justifyContent: "center", alignItems: "center", zIndex: 1000 }}>
-          <form onSubmit={handleCreateReportSubmit} className="card" style={{ background: "white", padding: "30px", borderRadius: "16px", width: "400px", maxWidth: "90%", border: "1px solid #EAD9CB", display: "flex", flexDirection: "column", gap: "15px" }}>
-            <h3 style={{ fontSize: "18px", fontWeight: "bold", color: "#6B4F43", margin: 0 }}>Tạo báo cáo mới</h3>
-            <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-              <label style={{ fontSize: "12px", fontWeight: "bold", color: "#8B6F5F" }}>Tên báo cáo *</label>
+        <div className="fixed inset-0 bg-black/40 flex justify-center items-center z-[1000] p-4">
+          <form onSubmit={handleCreateReportSubmit} className="bg-white p-6 rounded-2xl w-full max-w-[400px] border border-[#EAD9CB] flex flex-col gap-4 shadow-lg">
+            <h3 className="text-lg font-bold text-[#6B4F43] m-0">Tạo báo cáo mới</h3>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-bold text-[#8B6F5F]">Tên báo cáo *</label>
               <input 
                 type="text" 
                 value={newReportTitle}
                 onChange={(e) => setNewReportTitle(e.target.value)}
                 placeholder="Ví dụ: Báo cáo học phần Lập trình Web"
                 required
-                style={{ padding: "10px", borderRadius: "8px", border: "1px solid #F0E1D9", color: "#6B4F43", outline: "none", fontSize: "13px" }}
+                className="p-2.5 rounded-lg border border-[#F0E1D9] text-[#6B4F43] outline-none text-[13px] focus:border-[#F2A8A8] transition-colors"
               />
             </div>
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", marginTop: "10px" }}>
-              <button type="button" onClick={() => setShowCreateModal(false)} style={{ padding: "8px 16px", borderRadius: "6px", border: "1px solid #EAD9CB", background: "white", color: "#6B4F43", cursor: "pointer" }}>Hủy</button>
-              <button type="submit" disabled={saving} style={{ padding: "8px 16px", borderRadius: "6px", background: "linear-gradient(90deg, #F2A8A8 0%, #FFB4B4 100%)", color: "white", border: "none", fontWeight: "bold", cursor: "pointer" }}>
+            <div className="flex justify-end gap-2.5 mt-2.5">
+              <button type="button" onClick={() => setShowCreateModal(false)} className="py-2 px-4 rounded-lg border border-[#EAD9CB] bg-white text-[#6B4F43] font-semibold cursor-pointer hover:bg-gray-50 transition-colors">Hủy</button>
+              <button type="submit" disabled={saving} className="py-2 px-4 rounded-lg bg-gradient-to-r from-[#F2A8A8] to-[#FFB4B4] text-white border-none font-bold cursor-pointer hover:opacity-90 transition-opacity disabled:opacity-70">
                 {saving ? "Đang tạo..." : "Xác nhận"}
               </button>
             </div>
