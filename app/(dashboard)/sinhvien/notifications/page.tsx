@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   useStudentNotifications,
   Notification,
@@ -19,6 +20,8 @@ import { NotificationDetailModal } from "@/components/student/notifications/Noti
 
 // ─── Component ────────────────────────────────────────────────────────────────
 export default function StudentNotificationsPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const {
     notifications,
     loading,
@@ -32,27 +35,21 @@ export default function StudentNotificationsPage() {
   const [activeTab, setActiveTab] = useState<string>("Tất cả");
   const [selectedNotification, setSelectedNotification] = useState<Notification | null>(null);
 
-  const hasProcessedRef = useRef(false);
-
   // Tự động mở thông báo khi được điều hướng từ Quả chuông Dashboard
   useEffect(() => {
-    if (notifications.length > 0 && !hasProcessedRef.current) {
-      const params = new URLSearchParams(window.location.search);
-      const selectId = params.get("id");
-      if (selectId) {
-        const target = notifications.find((n) => n.mathongbao === Number(selectId));
-        if (target) {
-          hasProcessedRef.current = true;
-          setSelectedNotification(target);
-          if (!target.dadoc) {
-            markAsRead(target.mathongbao);
-          }
-          // Xóa query param để khi reload không bị mở lại
-          window.history.replaceState(null, "", window.location.pathname);
+    const selectId = searchParams.get("id");
+    if (selectId && notifications.length > 0) {
+      const target = notifications.find((n) => n.mathongbao === Number(selectId));
+      if (target) {
+        setSelectedNotification(target);
+        if (!target.dadoc) {
+          markAsRead(target.mathongbao);
         }
+        // Xóa query param để không bị lặp lại khi reload
+        router.replace("/sinhvien/notifications");
       }
     }
-  }, [notifications, markAsRead]);
+  }, [searchParams, notifications, markAsRead, router]);
 
   // ── Filter ──────────────────────────────────────────────────────────────────
   const tabs = ["Tất cả", ...Object.values(LOAI_LABEL)];

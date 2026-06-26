@@ -88,6 +88,7 @@ export function useStudentNotifications() {
           ),
         );
         setUnreadCount((c) => Math.max(0, c - 1));
+        window.dispatchEvent(new CustomEvent("student-notification-read", { detail: { mathongbao } }));
       }
     } catch (err) {
       console.error("Lỗi đánh dấu đã đọc:", err);
@@ -101,6 +102,7 @@ export function useStudentNotifications() {
       if (json.success) {
         setNotifications((prev) => prev.map((n) => ({ ...n, dadoc: true })));
         setUnreadCount(0);
+        window.dispatchEvent(new CustomEvent("student-notification-read-all"));
       }
     } catch (err) {
       console.error("Lỗi đánh dấu tất cả đã đọc:", err);
