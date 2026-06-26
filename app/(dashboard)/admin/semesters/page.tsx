@@ -178,20 +178,12 @@ export default function AdminSemestersPage() {
                 </thead>
                 <tbody>
                   {list.map((hk) => {
-                    const activeHK = list.find((item) => item.danghieuluc);
-                    let isOld = false;
-                    let isFuture = false;
                     const isCurrent = hk.danghieuluc;
-
-                    if (activeHK) {
-                      const currentVal = activeHK.namhoc * 10 + activeHK.ky;
-                      const targetVal = hk.namhoc * 10 + hk.ky;
-                      if (targetVal < currentVal) isOld = true;
-                      else if (targetVal > currentVal) isFuture = true;
-                    } else {
-                      // Nếu chưa có kỳ nào kích hoạt, coi tất cả là có thể sửa/xóa/kích hoạt
-                      isFuture = true;
-                    }
+                    const today = new Date();
+                    today.setHours(0, 0, 0, 0);
+                    const startDate = hk.ngaybatdau ? new Date(hk.ngaybatdau) : null;
+                    const isFuture = !isCurrent && startDate !== null && startDate > today;
+                    const isOld = !isCurrent && !isFuture;
 
                     return (
                       <tr key={hk.mahocky}>

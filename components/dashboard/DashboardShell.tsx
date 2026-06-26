@@ -108,6 +108,11 @@ function DesktopProfileDropdown({
   );
 }
 
+// ─── Client-side Cache for Notifications to survive route transitions ─────────
+let cachedStudentNotifications: { bells: any[]; unreadCount: number; timestamp: number } | null = null;
+let cachedTeacherNotifications: { bells: any[]; unreadCount: number; timestamp: number } | null = null;
+const CACHE_TTL = 30000; // 30 seconds
+
 // ─── Main shell ───────────────────────────────────────────────────────────────
 
 export function DashboardShell({ children, pageTitle, fullWidth }: DashboardShellProps) {
@@ -129,8 +134,18 @@ export function DashboardShell({ children, pageTitle, fullWidth }: DashboardShel
 
   useEffect(() => {
     if (isStudent && user) {
+      // Use cached data instantly if it is fresh
+      if (cachedStudentNotifications) {
+        setBellNotifications(cachedStudentNotifications.bells);
+        setUnreadBellCount(cachedStudentNotifications.unreadCount);
+        if (Date.now() - cachedStudentNotifications.timestamp < CACHE_TTL) {
+          return;
+        }
+      }
+
       fetchStudentDashboardNotifications()
         .then(({ bells, unreadCount }) => {
+          cachedStudentNotifications = { bells, unreadCount, timestamp: Date.now() };
           setBellNotifications(bells);
           setUnreadBellCount(unreadCount);
         })
@@ -142,8 +157,10 @@ export function DashboardShell({ children, pageTitle, fullWidth }: DashboardShel
     try {
       const res = await fetch("/api/student/notifications/unread", { method: "PUT" });
       if (res.ok) {
-        setBellNotifications(prev => prev.map(n => ({ ...n, dadoc: true })));
+        const updated = bellNotifications.map(n => ({ ...n, dadoc: true }));
+        setBellNotifications(updated);
         setUnreadBellCount(0);
+        cachedStudentNotifications = { bells: updated, unreadCount: 0, timestamp: Date.now() };
       }
     } catch (err) {
       console.error(err);
@@ -156,12 +173,24 @@ export function DashboardShell({ children, pageTitle, fullWidth }: DashboardShel
 
   useEffect(() => {
     if (isTeacher && user) {
+      // Use cached data instantly if it is fresh
+      if (cachedTeacherNotifications) {
+        setTeacherBells(cachedTeacherNotifications.bells);
+        setTeacherUnread(cachedTeacherNotifications.unreadCount);
+        if (Date.now() - cachedTeacherNotifications.timestamp < CACHE_TTL) {
+          return;
+        }
+      }
+
       apiFetch("/api/giangvien/notifications?limit=5")
         .then(res => res.json())
         .then(json => {
           if (json.success && json.data) {
-            setTeacherBells(json.data.slice(0, 5));
-            setTeacherUnread(json.data.filter((n: any) => !n.dadoc).length);
+            const bells = json.data.slice(0, 5);
+            const unreadCount = json.data.filter((n: any) => !n.dadoc).length;
+            cachedTeacherNotifications = { bells, unreadCount, timestamp: Date.now() };
+            setTeacherBells(bells);
+            setTeacherUnread(unreadCount);
           }
         })
         .catch(err => console.error("Failed to fetch teacher notifications:", err));
@@ -177,8 +206,10 @@ export function DashboardShell({ children, pageTitle, fullWidth }: DashboardShel
       });
       const json = await res.json();
       if (json.success) {
-        setTeacherBells(prev => prev.map(n => ({ ...n, dadoc: true })));
+        const updated = teacherBells.map(n => ({ ...n, dadoc: true }));
+        setTeacherBells(updated);
         setTeacherUnread(0);
+        cachedTeacherNotifications = { bells: updated, unreadCount: 0, timestamp: Date.now() };
       }
     } catch (err) {
       console.error(err);

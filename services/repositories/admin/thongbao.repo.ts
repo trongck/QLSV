@@ -14,7 +14,8 @@ export async function getThongbaoListRepo(
 ) {
   let query = supabase
     .from("thongbao")
-    .select("*, taikhoan:mataikhoantao(email, vaitro), lop:malop(tenlop)", { count: "exact" })
+    .select("*, taikhoan:mataikhoantao!inner(email, vaitro), lop:malop(tenlop)", { count: "exact" })
+    .eq("taikhoan.vaitro", "Admin")
     .order("ghim", { ascending: false })
     .order("ngaytao", { ascending: false })
     .range(params.from, params.to);

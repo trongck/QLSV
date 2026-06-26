@@ -45,7 +45,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   // Khởi tạo: hiển thị cached user ngay, rồi verify với server trong background
   useEffect(() => {
     const cached = authService.getCachedUser();
-    if (cached) setUser(cached);
+    if (cached) {
+      setUser(cached);
+      setLoading(false);
+    }
 
     authService
       .getCurrentUser()

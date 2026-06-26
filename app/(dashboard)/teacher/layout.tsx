@@ -1,5 +1,4 @@
 "use client";
-import { AuthProvider } from "@/context/AuthContext";
 import FloatingChat from "@/components/layout/FloatingChat";
 
 export default function TeacherLayout({
@@ -8,10 +7,9 @@ export default function TeacherLayout({
   children: React.ReactNode;
 }) {
   return (
-    <AuthProvider>
+    <>
       {children}
       <FloatingChat />
-    </AuthProvider>
+    </>
   );
 }
-
