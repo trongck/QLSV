@@ -138,10 +138,42 @@ export function DashboardShell({ children, pageTitle, fullWidth }: DashboardShel
     }
   }, [isStudent, user]);
 
+  useEffect(() => {
+    if (!isStudent) return;
+
+    const handleRead = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (detail && typeof detail.mathongbao === "number") {
+        setBellNotifications(prev =>
+          prev.map(n => (n.mathongbao === detail.mathongbao ? { ...n, dadoc: true } : n))
+        );
+        setUnreadBellCount(c => Math.max(0, c - 1));
+      }
+    };
+
+    const handleReadAll = () => {
+      setBellNotifications(prev => prev.map(n => ({ ...n, dadoc: true })));
+      setUnreadBellCount(0);
+    };
+
+    window.addEventListener("student-notification-read", handleRead as EventListener);
+    window.addEventListener("student-notification-read-all", handleReadAll);
+
+    return () => {
+      window.removeEventListener("student-notification-read", handleRead as EventListener);
+      window.removeEventListener("student-notification-read-all", handleReadAll);
+    };
+  }, [isStudent]);
+
   const handleStudentMarkAllRead = async () => {
     try {
-      const res = await fetch("/api/student/notifications/unread", { method: "PUT" });
-      if (res.ok) {
+      const res = await apiFetch("/api/student/notifications", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ all: true }),
+      });
+      const json = await res.json();
+      if (json.success) {
         setBellNotifications(prev => prev.map(n => ({ ...n, dadoc: true })));
         setUnreadBellCount(0);
       }

@@ -623,7 +623,26 @@ export const sinhVienService = {
         const { data: thongBao, error } = await studentRepo.getThongBao(conditions);
         if (error) throw error;
 
-        const mathongbaoIds = (thongBao ?? []).map((t) => t.mathongbao);
+        // Bổ sung lọc thời gian (ngaytao <= now và ngayhethan >= now) để đồng bộ với trang danh sách thông báo chính
+        const now = new Date();
+        const parseToVNTimeMs = (dateInput: string | Date) => {
+            if (dateInput instanceof Date) return dateInput.getTime();
+            let str = dateInput.trim().replace(' ', 'T');
+            if (!str.includes('Z') && !str.includes('+') && !/-\d{2}:\d{2}$/.test(str)) {
+                str = str + '+07:00';
+            }
+            return new Date(str).getTime();
+        };
+
+        const filteredThongBao = (thongBao ?? []).filter((tb: any) => {
+            const ngaytaoTime = tb.ngaytao ? parseToVNTimeMs(tb.ngaytao) : 0;
+            const ngayhethanTime = tb.ngayhethan ? parseToVNTimeMs(tb.ngayhethan) : null;
+            if (ngaytaoTime > now.getTime()) return false;
+            if (ngayhethanTime !== null && ngayhethanTime < now.getTime()) return false;
+            return true;
+        });
+
+        const mathongbaoIds = filteredThongBao.map((t) => t.mathongbao);
         let readMap: Record<number, boolean> = {};
         if (mathongbaoIds.length > 0) {
             const { data: readRows } = await studentRepo.getDaDocThongBao(masv, mathongbaoIds);
@@ -632,7 +651,7 @@ export const sinhVienService = {
             }
         }
 
-        return (thongBao ?? []).map((tb) => ({ ...tb, dadoc: readMap[tb.mathongbao] ?? false }));
+        return filteredThongBao.map((tb) => ({ ...tb, dadoc: readMap[tb.mathongbao] ?? false }));
     },
 
     async markNotificationRead(masv: string, mathongbao: number) {
