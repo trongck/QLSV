@@ -81,6 +81,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: true, data: { qr_secret: secret } });
     }
 
+    if (action === "endSession") {
+      if (payload.vaitro !== VaiTro.GiangVien) {
+        return NextResponse.json({ error: "Không có quyền truy cập" }, { status: 403 });
+      }
+      const session = await giangVienService.endAttendanceSession(Number(mabuoihoc));
+      return NextResponse.json({ success: true, data: session });
+    }
+
     // Hành động dành cho Sinh viên: Điểm danh qua QR kèm định vị GPS
     if (action === "studentCheckin") {
       if (payload.vaitro !== VaiTro.SinhVien) {

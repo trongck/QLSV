@@ -460,7 +460,7 @@ export function FaceAttendanceModal({ isOpen, onClose, roster, onMarkPresent }: 
             
             <button
               onClick={() => { stopCameraAndScanning(); onClose(); }}
-              className="px-5 py-2.5 bg-gradient-to-r from-[#F2A8A8] to-[#FFB4B4] text-[#2D1B14] font-bold rounded-xl text-xs shadow-md shadow-[#F2A8A8]/30 hover:scale-95 transition"
+              className="px-5 py-2.5 btn-teacher text-white font-bold rounded-xl text-xs shadow-md shadow-red-900/30 hover:scale-95 transition"
             >
               Hoàn tất điểm danh
             </button>

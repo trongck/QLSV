@@ -172,7 +172,7 @@ export function GradeSheet() {
                 fetchGrades(Number(selectedPC));
               }
             }}
-            className={`flex-1 md:flex-none ${styles.primaryBtn} px-5 py-2.5 rounded-xl text-sm bg-gradient-to-r from-[#F2A8A8] to-[#FFB4B4] flex items-center justify-center gap-2 border-none cursor-pointer text-white font-semibold shadow-sm hover:opacity-90 transition-opacity`}
+            className={`flex-1 md:flex-none ${styles.primaryBtn} px-5 py-2.5 rounded-xl text-sm btn-teacher flex items-center justify-center gap-2 border-none cursor-pointer text-white font-semibold shadow-sm hover:opacity-90 transition-opacity`}
           >
             Lưu bảng điểm
           </button>

@@ -37,7 +37,7 @@ export const gradeRepo = {
         malop,
         danghieuluc,
         monhoc:mamon ( tenmon, sotinchi ),
-        hocky:mahocky ( mahocky, tenhocky, namhoc, ky ),
+        hocky:mahocky ( mahocky, tenhocky, namhoc, ky, danghieuluc ),
         lop:malop ( tenlop )
       `)
       .eq("magv", magv)

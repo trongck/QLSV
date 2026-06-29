@@ -10,6 +10,7 @@ export interface LopItem {
   tenmon: string;
   mamon: string;
   tenlop: string;
+  lichDay?: number[];
 }
 
 export interface BuoiHocItem {
@@ -141,6 +142,18 @@ export function useTeacherAttendance() {
   // Create attendance session
   const createSession = async () => {
     if (!selectedPC) return;
+
+    // Ràng buộc kiểm tra lịch dạy học phần trong ngày chọn
+    const activeClass = classes.find(c => c.maphancong === selectedPC);
+    if (activeClass && activeClass.lichDay && activeClass.lichDay.length > 0) {
+      const jsDay = new Date(selectedDate).getDay();
+      const dbDay = jsDay === 0 ? 8 : jsDay + 1;
+      if (!activeClass.lichDay.includes(dbDay)) {
+        alert("Lớp học phần này không có lịch dạy vào thứ được chọn!");
+        return;
+      }
+    }
+
     setLoading(true);
     try {
       const res = await apiFetch("/api/giangvien/attendance", {
@@ -333,6 +346,33 @@ export function useTeacherAttendance() {
     }
   };
 
+  // End attendance session
+  const endSession = async () => {
+    if (!selectedBH) return;
+    setLoading(true);
+    try {
+      const res = await apiFetch("/api/giangvien/attendance", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "endSession",
+          mabuoihoc: selectedBH,
+        }),
+      });
+      const json = await res.json();
+      if (json.success) {
+        await fetchOverview(false);
+      } else {
+        throw new Error(json.error || "Không thể kết thúc ca điểm danh");
+      }
+    } catch (err: any) {
+      setError(err.message);
+      alert(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return {
     loading,
     error,
@@ -353,5 +393,6 @@ export function useTeacherAttendance() {
     updateNote,
     approveLeave,
     rejectLeave,
+    endSession,
   };
 }

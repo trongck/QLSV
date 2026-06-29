@@ -36,7 +36,17 @@ export function AttendanceView() {
     updateNote: handleNoteChange,
     approveLeave: handleApproveLeave,
     rejectLeave: handleRejectLeave,
+    endSession,
   } = useTeacherAttendance();
+
+  // Kiểm tra ngày chọn có lịch dạy không
+  const activeClass = classes.find(c => c.maphancong === selectedPC);
+  const isScheduledDay = (() => {
+    if (!activeClass || !activeClass.lichDay || activeClass.lichDay.length === 0) return true; // fallback
+    const jsDay = new Date(selectedDate).getDay();
+    const dbDay = jsDay === 0 ? 8 : jsDay + 1;
+    return activeClass.lichDay.includes(dbDay);
+  })();
 
   // Filter sessions matching selected class (maphancong)
   const classSessions = allSessions.filter((s) => {
@@ -76,44 +86,72 @@ export function AttendanceView() {
           {!selectedBH && selectedPC && (
             <button 
               onClick={handleCreateSession}
-              className="flex-1 md:flex-none bg-gradient-to-r from-[#F2A8A8] to-[#FFB4B4] px-5 py-2.5 border-none rounded-lg text-white text-[13.5px] font-semibold cursor-pointer hover:opacity-90 transition-opacity whitespace-nowrap"
+              disabled={!isScheduledDay}
+              className={`flex-1 md:flex-none px-5 py-2.5 border-none rounded-lg text-white text-[13.5px] font-semibold transition-opacity whitespace-nowrap ${
+                isScheduledDay 
+                  ? "btn-teacher cursor-pointer hover:opacity-90" 
+                  : "bg-gray-300 cursor-not-allowed opacity-60"
+              }`}
             >
              Tạo ca điểm danh ngày này
             </button>
+          )}
+          {selectedBH && (
+            (() => {
+              const currentSession = allSessions.find(s => s.mabuoihoc === selectedBH);
+              if (currentSession && currentSession.trangthai !== "Hoanthanh") {
+                return (
+                  <button 
+                    onClick={() => endSession()}
+                    className="flex-1 md:flex-none bg-gradient-to-r from-red-500 to-rose-600 px-5 py-2.5 border-none rounded-lg text-white text-[13.5px] font-semibold cursor-pointer hover:opacity-90 transition-opacity whitespace-nowrap"
+                  >
+                   Kết thúc ca điểm danh
+                  </button>
+                );
+              }
+              return null;
+            })()
           )}
         </div>
       </div>
 
       {/* FILTER TOOLBAR */}
-      <div className="card p-4 flex flex-col md:flex-row gap-4 items-center border border-[#F0E1D9]">
-        <select 
-          value={selectedPC || ""} 
-          onChange={(e) => setSelectedPC(Number(e.target.value))}
-          className="w-full md:w-[260px] p-2.5 rounded-lg border border-[#F0E1D9] outline-none text-[#6B4F43] text-[13px] focus:border-[#F2A8A8] transition-colors bg-white"
-        >
-          {classes.map((c) => (
-            <option key={c.maphancong} value={c.maphancong}>
-              {c.malophoc} - {c.tenmon} ({c.tenlop})
-            </option>
-          ))}
-        </select>
-        
-        <input 
-          type="date" 
-          value={selectedDate}
-          onChange={(e) => setSelectedDate(e.target.value)}
-          className="w-full md:w-auto p-2.5 rounded-lg border border-[#F0E1D9] outline-none text-[#6B4F43] focus:border-[#F2A8A8] transition-colors"
-        />
-        
-        <div className="flex-1 w-full relative">
+      <div className="flex flex-col gap-2">
+        <div className="card p-4 flex flex-col md:flex-row gap-4 items-center border border-[#F0E1D9]">
+          <select 
+            value={selectedPC || ""} 
+            onChange={(e) => setSelectedPC(Number(e.target.value))}
+            className="w-full md:w-[260px] p-2.5 rounded-lg border border-[#F0E1D9] outline-none text-[#6B4F43] text-[13px] focus:border-[#F2A8A8] transition-colors bg-white"
+          >
+            {classes.map((c) => (
+              <option key={c.maphancong} value={c.maphancong}>
+                {c.malophoc} - {c.tenmon} ({c.tenlop})
+              </option>
+            ))}
+          </select>
+          
           <input 
-            type="text" 
-            placeholder="Tìm kiếm sinh viên..." 
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full px-4 py-2.5 rounded-lg border border-[#F0E1D9] outline-none text-[13px] focus:border-[#F2A8A8] transition-colors" 
+            type="date" 
+            value={selectedDate}
+            onChange={(e) => setSelectedDate(e.target.value)}
+            className="w-full md:w-auto p-2.5 rounded-lg border border-[#F0E1D9] outline-none text-[#6B4F43] focus:border-[#F2A8A8] transition-colors"
           />
+          
+          <div className="flex-1 w-full relative">
+            <input 
+              type="text" 
+              placeholder="Tìm kiếm sinh viên..." 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full px-4 py-2.5 rounded-lg border border-[#F0E1D9] outline-none text-[13px] focus:border-[#F2A8A8] transition-colors" 
+            />
+          </div>
         </div>
+        {!isScheduledDay && (
+          <p className="text-red-500 text-xs m-0 px-2 font-semibold">
+             Lớp học phần này không có lịch dạy vào thứ được chọn. Bạn không thể tạo ca điểm danh cho ngày này.
+          </p>
+        )}
       </div>
 
       {/* ATTENDANCE SHEET TABLE & TABS CARD */}
@@ -155,7 +193,7 @@ export function AttendanceView() {
           {subTab === "list" && selectedBH && (
             <button
               onClick={() => setIsFaceModalOpen(true)}
-              className="w-full md:w-auto px-4 py-2 rounded-lg border-none bg-gradient-to-r from-[#F2A8A8] to-[#FFB4B4] text-[#2D1B14] text-[13px] font-bold cursor-pointer shadow-[0_4px_12px_rgba(242,168,168,0.3)] flex items-center justify-center gap-1.5 hover:opacity-90 transition-opacity whitespace-nowrap"
+              className="w-full md:w-auto px-4 py-2 rounded-lg border-none btn-teacher text-[#2D1B14] text-[13px] font-bold cursor-pointer shadow-[0_4px_12px_rgba(242,168,168,0.3)] flex items-center justify-center gap-1.5 hover:opacity-90 transition-opacity whitespace-nowrap"
             >
               Điểm danh khuôn mặt
             </button>
@@ -167,13 +205,19 @@ export function AttendanceView() {
           <div className="p-2.5 md:p-5">
             {!selectedBH ? (
               <div className="p-10 text-center text-[#8B6F5F]">
-                <p className="m-0 text-sm font-semibold">Ngày này chưa có ca học nào được kích hoạt.</p>
-                <button 
-                  onClick={handleCreateSession}
-                  className="mt-4 px-5 py-2.5 bg-[#F2A8A8] text-white border-none rounded-lg font-semibold cursor-pointer hover:bg-[#eb9d9d] transition-colors"
-                >
-                  Kích hoạt ca điểm danh mới
-                </button>
+                <p className="m-0 text-sm font-semibold">
+                  {isScheduledDay 
+                    ? "Ngày này chưa có ca học nào được kích hoạt." 
+                    : "Lớp học phần này không có lịch dạy học vào ngày này."}
+                </p>
+                {isScheduledDay && (
+                  <button 
+                    onClick={handleCreateSession}
+                    className="mt-4 px-5 py-2.5 bg-[#F2A8A8] text-white border-none rounded-lg font-semibold cursor-pointer hover:bg-[#eb9d9d] transition-colors"
+                  >
+                    Kích hoạt ca điểm danh mới
+                  </button>
+                )}
               </div>
             ) : filteredRoster.length === 0 ? (
               <p className="text-center p-8 text-[#8B6F5F]">Không tìm thấy sinh viên nào</p>
@@ -246,7 +290,7 @@ export function AttendanceView() {
                     <p className="m-0 text-sm font-semibold">Buổi học này chưa được tạo mã QR điểm danh.</p>
                     <button 
                       onClick={handleRefreshQR}
-                      className="bg-gradient-to-r from-[#F2A8A8] to-[#FFB4B4] px-5 py-2 border-none rounded-lg text-white text-[13.5px] font-semibold cursor-pointer hover:opacity-90 transition-opacity"
+                      className="btn-teacher px-5 py-2 border-none rounded-lg text-white text-[13.5px] font-semibold cursor-pointer hover:opacity-90 transition-opacity"
                     >
                       Tạo Mã QR điểm danh
                     </button>

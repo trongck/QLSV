@@ -20,6 +20,7 @@ export interface GradeClassInfo {
     tenhocky: string;
     namhoc: string;
     ky: number;
+    danghieuluc?: boolean;
   };
 }
 

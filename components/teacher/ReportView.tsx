@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 
 import { useTeacherReports, ReportData } from "@/hooks/giangvien/useTeacherReports";
-import { useTeacherClasses } from "@/hooks/giangvien/useTeacherClasses";
+import { useTeacherGrades } from "@/hooks/giangvien/useTeacherGrades";
 
 interface ClassInfo {
   maphancong: number;
@@ -30,23 +30,30 @@ export function ReportView() {
     setStats,
     selectedPC,
     setSelectedPC,
-    loading,
+    loading: reportsLoading,
     saving,
     fetchLiveStats,
     createReport,
     updateReport,
   } = useTeacherReports();
 
-  // Classes come from the classes hook (same grades endpoint)
-  const { dsLop: rawClasses } = useTeacherClasses();
+  // Classes come from the grades hook
+  const { classes: rawClasses, loading: classesLoading } = useTeacherGrades();
   // Normalise to the local ClassInfo shape used by this view
   const classes: ClassInfo[] = rawClasses.map((c) => ({
     maphancong: c.maphancong,
     malophoc: c.malophoc,
     malop: c.malop,
-    monhoc: { tenmon: c.tenmon, sotinchi: c.sotinchi },
-    lop: { tenlop: c.tenlop },
+    monhoc: c.monhoc,
+    lop: c.lop,
+    hocky: c.hocky ? {
+      tenhocky: c.hocky.tenhocky,
+      namhoc: Number(c.hocky.namhoc),
+      ky: c.hocky.ky
+    } : undefined
   }));
+
+  const loading = reportsLoading || classesLoading;
 
   // Filters for Semester and Academic Year
   const [selectedYear, setSelectedYear] = useState<string>("Tất cả");
@@ -224,7 +231,7 @@ export function ReportView() {
         <div className="flex gap-2.5 flex-wrap w-full sm:w-auto">
           <button
             onClick={handleOpenCreateModal}
-            className="w-full sm:w-auto bg-gradient-to-r from-[#F2A8A8] to-[#FFB4B4] px-5 py-2.5 font-semibold cursor-pointer border-none text-white rounded-xl text-[13px] shadow-sm hover:opacity-90 transition-opacity"
+            className="w-full sm:w-auto btn-teacher px-5 py-2.5 font-semibold cursor-pointer border-none text-white rounded-xl text-[13px] shadow-sm hover:opacity-90 transition-opacity"
           >
             Tạo báo cáo mới
           </button>
@@ -438,7 +445,7 @@ export function ReportView() {
                               // error already handled/alerted by hook
                             }
                           }}
-                          className="py-1 px-3 rounded-md border-none bg-gradient-to-r from-[#F2A8A8] to-[#FFB4B4] text-white text-xs font-bold cursor-pointer hover:opacity-90 transition-opacity"
+                          className="py-1 px-3 rounded-md border-none btn-teacher text-white text-xs font-bold cursor-pointer hover:opacity-90 transition-opacity"
                         >
                           {saving ? "Đang lưu..." : "Lưu"}
                         </button>
@@ -502,7 +509,7 @@ export function ReportView() {
             </div>
             <div className="flex justify-end gap-2.5 mt-2.5">
               <button type="button" onClick={() => setShowCreateModal(false)} className="py-2 px-4 rounded-lg border border-[#EAD9CB] bg-white text-[#6B4F43] font-semibold cursor-pointer hover:bg-gray-50 transition-colors">Hủy</button>
-              <button type="submit" disabled={saving} className="py-2 px-4 rounded-lg bg-gradient-to-r from-[#F2A8A8] to-[#FFB4B4] text-white border-none font-bold cursor-pointer hover:opacity-90 transition-opacity disabled:opacity-70">
+              <button type="submit" disabled={saving} className="py-2 px-4 rounded-lg btn-teacher text-white border-none font-bold cursor-pointer hover:opacity-90 transition-opacity disabled:opacity-70">
                 {saving ? "Đang tạo..." : "Xác nhận"}
               </button>
             </div>

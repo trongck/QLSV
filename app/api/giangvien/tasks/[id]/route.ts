@@ -95,3 +95,29 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     );
   }
 }
+
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
+  const token = extractBearer(request.headers.get("authorization"));
+  if (!token) {
+    return NextResponse.json({ error: "Chưa cung cấp token" }, { status: 401 });
+  }
+
+  try {
+    const payload = await verifyToken(token) as any;
+    if (payload.vaitro !== VaiTro.GiangVien) {
+      return NextResponse.json({ error: "Không có quyền truy cập" }, { status: 403 });
+    }
+
+    const { id } = await params;
+    const mabaitap = parseInt(id, 10);
+    if (isNaN(mabaitap)) {
+      return NextResponse.json({ error: "ID bài tập không hợp lệ" }, { status: 400 });
+    }
+
+    await giangVienService.deleteTask(mabaitap);
+    return NextResponse.json({ success: true, message: "Xóa bài tập thành công" });
+  } catch (err: any) {
+    console.error("Lỗi DELETE /api/giangvien/tasks/[id]:", err.message);
+    return NextResponse.json({ error: "Lỗi khi xóa bài tập" }, { status: 500 });
+  }
+}

@@ -127,11 +127,11 @@ export function RosterView() {
         </div>
       </div>
 
-      {/* Bố cục hàng dọc trải dài theo chuẩn trang xanh */}
-      <div className="flex flex-col gap-6">
+      {/* Bố cục chia cột: Bảng bên trái, Chi tiết cố định bên phải */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 items-start gap-6">
         
-        {/* Khối 1: Bảng danh sách sinh viên Full Width */}
-        <section className="bg-white p-0 overflow-hidden border border-[#F0E1D9] rounded-xl shadow-sm">
+        {/* Khối 1: Bảng danh sách sinh viên */}
+        <section className="bg-white p-0 overflow-hidden border border-[#F0E1D9] rounded-xl shadow-sm lg:col-span-2">
           <div className="py-4 px-5 border-b border-[#F0E1D9] bg-[#FFFBF9]">
             <h3 className="m-0 text-[15px] text-[#6B4F43] font-bold">Danh Sách Lớp Học</h3>
           </div>
@@ -183,73 +183,61 @@ export function RosterView() {
           </div>
         </section>
 
-        {/* Khối 2: Chi tiết thông tin sinh viên nằm ngang dải đều bên dưới */}
-        {currentStudent ? (
-          <section className="bg-white border border-[#F0E1D9] rounded-xl p-5 flex flex-col gap-5 shadow-sm">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-[#F0E1D9] pb-4 gap-4">
-              <div className="flex items-center gap-4">
-                <div className="w-[55px] h-[55px] shrink-0 rounded-full bg-[#F2A8A8] flex items-center justify-center text-white text-[22px] font-bold">
-                  {(currentStudent?.name ? currentStudent.name.charAt(0) : "?")}
+        {/* Khối 2: Chi tiết thông tin sinh viên cố định ở bên phải */}
+        <div className="lg:sticky lg:top-6 lg:col-span-1 w-full lg:max-h-[calc(100vh-80px)] lg:overflow-y-auto">
+          {currentStudent ? (
+            <section className="bg-white border border-[#F0E1D9] rounded-xl p-5 flex flex-col gap-5 shadow-sm">
+              <div className="flex flex-col justify-between items-start border-b border-[#F0E1D9] pb-4 gap-4">
+                <div className="flex items-center gap-4 w-full">
+                  <div className="w-[55px] h-[55px] shrink-0 rounded-full bg-[#F2A8A8] flex items-center justify-center text-white text-[22px] font-bold">
+                    {(currentStudent?.name ? currentStudent.name.charAt(0) : "?")}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="m-0 text-base text-[#6B4F43] font-bold truncate">{currentStudent?.name}</h3>
+                    <p className="m-0 mt-1 text-[12px] text-[#8B6F5F]">Mã số sinh viên: <strong>{currentStudent?.mssv}</strong></p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="m-0 text-lg text-[#6B4F43] font-bold">{currentStudent?.name}</h3>
-                  <p className="m-0 mt-1 text-[13px] text-[#8B6F5F]">Mã số sinh viên: <strong>{currentStudent?.mssv}</strong></p>
-                </div>
-              </div>
-              <button 
-                type="button"
-                onClick={() => handleOpenEdit(currentStudent)}
-                className="w-full sm:w-auto py-2 px-4 rounded-lg border border-[#EAD9CB] bg-[#FFF8F5] text-[#6B4F43] text-[13px] font-semibold cursor-pointer hover:bg-[#FFF2EC] transition-colors"
-              >
-                 Chỉnh sửa hồ sơ
-              </button>
-            </div>
-
-            {/* Grid thông tin chia cột gọn gàng giống khối thông tin phụ trang xanh */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              <div className="flex flex-col gap-3 bg-[#FAF5F2] p-4 rounded-lg">
-                <h4 className="m-0 mb-1 text-[#8B6F5F] text-[13.5px] uppercase tracking-[0.5px]">Thông tin liên lạc</h4>
-                <div className="flex justify-between text-[13.5px] gap-2">
-                  <span className="text-[#8B6F5F]">Lớp sinh hoạt:</span> <strong className="text-[#6B4F43] text-right">{currentStudent?.class}</strong>
-                </div>
-                <div className="flex justify-between text-[13.5px] gap-2">
-                  <span className="text-[#8B6F5F]">Số điện thoại:</span> <strong className="text-[#6B4F43] text-right">{currentStudent?.phone}</strong>
-                </div>
-                <div className="flex justify-between text-[13.5px] gap-2">
-                  <span className="text-[#8B6F5F]">Địa chỉ Email:</span> <strong className="text-[#6B4F43] text-right break-all">{currentStudent?.email}</strong>
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-3 bg-[#FAF5F2] p-4 rounded-lg">
-                <h4 className="m-0 mb-1 text-[#8B6F5F] text-[13.5px] uppercase tracking-[0.5px]">Thông tin gia đình & Cư trú</h4>
-                <div className="flex justify-between text-[13.5px] gap-2">
-                  <span className="text-[#8B6F5F]">Phụ huynh:</span> <strong className="text-[#6B4F43] text-right">{currentStudent?.parent}</strong>
-                </div>
-                <div className="flex flex-col gap-1 text-[13.5px]">
-                  <span className="text-[#8B6F5F]">Địa chỉ thường trú:</span> <strong className="text-[#6B4F43] leading-relaxed">{currentStudent?.address}</strong>
-                </div>
-              </div>
-            </div>
-
-            {/* Vùng gửi thông báo tin nhắn nhanh */}
-            <div className="border-t border-[#F0E1D9] pt-5 flex flex-col gap-3">
-              <h4 className="m-0 text-sm text-[#6B4F43] font-bold">Gửi thông báo nhanh tới phụ huynh / sinh viên</h4>
-              <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-end">
-                <textarea 
-                  placeholder="Nhập lời nhắc học tập, thông báo chuyên cần..."
-                  className="flex-1 p-3 rounded-lg border border-[#F0E1D9] bg-[#FFFDFD] h-[50px] resize-none outline-none text-[13px] text-[#6B4F43] focus:border-[#F2A8A8] transition-colors"
-                />
-                <button className={`w-full sm:w-auto bg-gradient-to-r from-[#F2A8A8] to-[#FFB4B4] font-semibold border-none py-3 px-6 h-[50px] rounded-lg text-white cursor-pointer whitespace-nowrap shadow-sm hover:opacity-90 transition-opacity ${styles.primaryBtn}`}>
-                  Gửi tin nhắn liên lạc
+                <button 
+                  type="button"
+                  onClick={() => handleOpenEdit(currentStudent)}
+                  className="w-full py-2 px-4 rounded-lg border border-[#EAD9CB] bg-[#FFF8F5] text-[#6B4F43] text-[13px] font-semibold cursor-pointer hover:bg-[#FFF2EC] transition-colors"
+                >
+                   Chỉnh sửa hồ sơ
                 </button>
               </div>
+
+              {/* Grid thông tin xếp dọc gọn gàng để vừa với cột bên phải */}
+              <div className="flex flex-col gap-4">
+                <div className="flex flex-col gap-2.5 bg-[#FAF5F2] p-4 rounded-lg">
+                  <h4 className="m-0 mb-1 text-[#8B6F5F] text-[12px] font-bold uppercase tracking-[0.5px]">Thông tin liên lạc</h4>
+                  <div className="flex justify-between text-[13px] gap-2">
+                    <span className="text-[#8B6F5F]">Lớp sinh hoạt:</span> <strong className="text-[#6B4F43] text-right">{currentStudent?.class}</strong>
+                  </div>
+                  <div className="flex justify-between text-[13px] gap-2">
+                    <span className="text-[#8B6F5F]">Số điện thoại:</span> <strong className="text-[#6B4F43] text-right">{currentStudent?.phone}</strong>
+                  </div>
+                  <div className="flex justify-between text-[13px] gap-2">
+                    <span className="text-[#8B6F5F]">Địa chỉ Email:</span> <strong className="text-[#6B4F43] text-right break-all">{currentStudent?.email}</strong>
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-2.5 bg-[#FAF5F2] p-4 rounded-lg">
+                  <h4 className="m-0 mb-1 text-[#8B6F5F] text-[12px] font-bold uppercase tracking-[0.5px]">Thông tin gia đình &amp; Cư trú</h4>
+                  <div className="flex justify-between text-[13px] gap-2">
+                    <span className="text-[#8B6F5F]">Phụ huynh:</span> <strong className="text-[#6B4F43] text-right">{currentStudent?.parent}</strong>
+                  </div>
+                  <div className="flex flex-col gap-1 text-[13px]">
+                    <span className="text-[#8B6F5F]">Địa chỉ thường trú:</span> <strong className="text-[#6B4F43] leading-relaxed">{currentStudent?.address}</strong>
+                  </div>
+                </div>
+              </div>
+            </section>
+          ) : (
+            <div className="py-10 px-5 text-center text-[#8B6F5F] bg-white rounded-xl border border-[#F0E1D9] shadow-sm">
+              Hãy chọn một sinh viên để xem chi tiết
             </div>
-          </section>
-        ) : (
-          <div className="py-10 px-5 text-center text-[#8B6F5F] bg-white rounded-xl border border-[#F0E1D9] shadow-sm">
-            Hãy chọn một sinh viên để xem chi tiết
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {/* Backdrop-blurred Student Edit Modal Overlay */}
@@ -354,7 +342,7 @@ export function RosterView() {
                 <button 
                   type="submit" 
                   disabled={isSaving}
-                  className="py-2.5 px-5 rounded-lg border-none bg-gradient-to-r from-[#F2A8A8] to-[#FFB4B4] text-white text-[13.5px] font-bold cursor-pointer shadow-[0_4px_12px_rgba(242,168,168,0.4)] hover:opacity-90 transition-opacity disabled:opacity-70"
+                  className="py-2.5 px-5 rounded-lg border-none btn-teacher text-white text-[13.5px] font-bold cursor-pointer shadow-[0_4px_12px_rgba(242,168,168,0.4)] hover:opacity-90 transition-opacity disabled:opacity-70"
                 >
                   {isSaving ? "Đang lưu..." : "Lưu thay đổi"}
                 </button>

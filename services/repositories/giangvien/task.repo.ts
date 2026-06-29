@@ -109,5 +109,20 @@ export const taskRepo = {
       .getPublicUrl(fileName);
       
     return publicUrlData.publicUrl;
+  },
+
+  async deleteTask(mabaitap: number) {
+    const supabase = await getSupabaseClient();
+    // 1. Xóa các bài nộp liên quan trước
+    await supabase
+      .from("nopbai")
+      .delete()
+      .eq("mabaitap", mabaitap);
+      
+    // 2. Xóa bài tập
+    return await supabase
+      .from("baitap")
+      .delete()
+      .eq("mabaitap", mabaitap);
   }
 };

@@ -135,6 +135,24 @@ export function useTeacherTasks() {
     }
   };
 
+  const deleteTask = async (taskId: number) => {
+    if (!confirm("Bạn có chắc chắn muốn xóa bài tập này?")) return;
+    try {
+      const res = await apiFetch(`/api/giangvien/tasks/${taskId}`, {
+        method: "DELETE",
+      });
+      const json = await res.json();
+      if (json.success) {
+        await fetchTasks();
+      } else {
+        throw new Error(json.error || "Không thể xóa bài tập");
+      }
+    } catch (err: any) {
+      alert(err.message);
+      throw err;
+    }
+  };
+
   return {
     tasks,
     submissions,
@@ -146,5 +164,6 @@ export function useTeacherTasks() {
     createTask,
     updateTask,
     gradeSubmission,
+    deleteTask,
   };
 }

@@ -252,7 +252,7 @@ export function NotificationList() {
             /> Đánh dấu đã đọc tất cả
           </label>
           <button 
-            className={`flex-1 md:flex-none ${styles.primaryBtn} px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#F2A8A8] to-[#FFB4B4] border-none text-white font-semibold cursor-pointer shadow-sm hover:opacity-90 transition-opacity`} 
+            className={`flex-1 md:flex-none ${styles.primaryBtn} px-5 py-2.5 rounded-xl btn-teacher border-none text-white font-semibold cursor-pointer shadow-sm hover:opacity-90 transition-opacity`} 
             onClick={() => setIsCreateOpen(true)}
           >
              Tạo thông báo mới

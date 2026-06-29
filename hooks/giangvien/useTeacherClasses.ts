@@ -86,6 +86,43 @@ export function useTeacherClasses() {
     }
   }, [user, fetchClassesData]);
 
+  const uploadDocument = async (formData: FormData) => {
+    try {
+      const res = await apiFetch("/api/giangvien/classes/documents", {
+        method: "POST",
+        body: formData,
+      });
+      const json = await res.json();
+      if (json.success) {
+        await fetchClassesData();
+        return json.data;
+      } else {
+        throw new Error(json.error || "Không thể tải lên tài liệu");
+      }
+    } catch (err: any) {
+      alert(err.message);
+      throw err;
+    }
+  };
+
+  const deleteDocument = async (matailieu: number) => {
+    if (!confirm("Bạn có chắc chắn muốn xóa tài liệu này?")) return;
+    try {
+      const res = await apiFetch(`/api/giangvien/classes/documents/${matailieu}`, {
+        method: "DELETE",
+      });
+      const json = await res.json();
+      if (json.success) {
+        await fetchClassesData();
+      } else {
+        throw new Error(json.error || "Không thể xóa tài liệu");
+      }
+    } catch (err: any) {
+      alert(err.message);
+      throw err;
+    }
+  };
+
   return {
     dsLop,
     lichTuan,
@@ -93,5 +130,7 @@ export function useTeacherClasses() {
     loading,
     error,
     fetchClassesData,
+    uploadDocument,
+    deleteDocument,
   };
 }

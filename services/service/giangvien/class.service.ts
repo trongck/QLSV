@@ -1,4 +1,5 @@
 import { classRepo } from "@/services/repositories/giangvien/class.repo";
+import { taskRepo } from "@/services/repositories/giangvien/task.repo";
 
 interface ClassesPhanCong {
   maphancong: number;
@@ -55,9 +56,25 @@ export const classService = {
    *  - Tab 2: Lịch dạy theo từng thứ trong tuần (7 ngày)
    *  - Tab 3: Tài liệu của tất cả lớp đang dạy
    */
-  async getClassesData(magv: string) {
-    // ── 1. Phân công đang hiệu lực ───────────────────────────────────────────
-    const { data: phancongList } = await classRepo.getClassesPhanCong(magv);
+  async getClassesData(magv: string, mahocky?: number | null) {
+    // Lấy danh sách học kỳ
+    const { data: hockyList } = await classRepo.getHocKyList();
+
+    // Xác định học kỳ đang chọn
+    let selectedHockyId: number | null = null;
+    if (mahocky) {
+      selectedHockyId = mahocky;
+    } else {
+      const activeHocky = (hockyList as any[] ?? []).find(h => h.danghieuluc === true);
+      if (activeHocky) {
+        selectedHockyId = activeHocky.mahocky;
+      } else if (hockyList && hockyList.length > 0) {
+        selectedHockyId = hockyList[0].mahocky;
+      }
+    }
+
+    // ── 1. Phân công trong học kỳ được chọn ──────────────────────────────────
+    const { data: phancongList } = await classRepo.getClassesPhanCong(magv, selectedHockyId);
 
     const maphancongIds = (phancongList as unknown as ClassesPhanCong[] ?? []).map(p => p.maphancong);
 
@@ -108,6 +125,59 @@ export const classService = {
       dsTaiLieu = (tailieu as unknown as ClassesTaiLieuItem[]) ?? [];
     }
 
-    return { dsLop, lichTuan, dsTaiLieu };
+    return {
+      dsLop,
+      lichTuan,
+      dsTaiLieu,
+      hockyList: hockyList ?? [],
+      selectedHockyId
+    };
   },
+
+  async createTaiLieu(
+    magv: string,
+    data: {
+      maphancong: number;
+      tieude: string;
+      fileBuffer: ArrayBuffer;
+      fileName: string;
+      contentType: string;
+      size: number;
+    }
+  ) {
+    const { data: pc } = await classRepo.checkPhanCongBelongsToTeacher(data.maphancong, magv);
+    if (!pc) {
+      throw new Error("Phân công không hợp lệ hoặc bạn không có quyền");
+    }
+
+    // Upload file using taskRepo storage function
+    const publicUrl = await taskRepo.uploadAttachment(data.fileName, data.fileBuffer, data.contentType);
+
+    const { data: taiLieu, error } = await classRepo.createTaiLieu({
+      maphancong: data.maphancong,
+      tieude: data.tieude,
+      loai: "Slide",
+      duongdan: publicUrl,
+      dungluong: data.size,
+      luotxem: 0,
+      chopheptai: true,
+      ngaytao: new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString().replace("Z", ""),
+      ngaycapnhat: new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString().replace("Z", "")
+    });
+
+    if (error) throw error;
+    return taiLieu;
+  },
+
+  async deleteTaiLieu(magv: string, matailieu: number) {
+    const { data: tl } = await classRepo.checkTaiLieuBelongsToTeacher(matailieu, magv);
+    const typedTl = tl as any;
+    if (!typedTl || typedTl.phancong?.magv !== magv) {
+      throw new Error("Tài liệu không tồn tại hoặc bạn không có quyền xóa");
+    }
+
+    const { error } = await classRepo.deleteTaiLieu(matailieu);
+    if (error) throw error;
+    return true;
+  }
 };

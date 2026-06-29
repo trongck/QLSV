@@ -6,19 +6,21 @@ export const diemdanhRepo = {
     return await supabase
       .from("phancong")
       .select(`
-        maphancong, malop, malophoc,
+        maphancong, malop, malophoc, ngaybatdau, ngayketthuc,
         monhoc ( mamon, tenmon ),
-        lop ( tenlop )
+        lop ( tenlop ),
+        hocky:mahocky!inner ( danghieuluc )
       `)
       .eq("magv", magv)
-      .eq("danghieuluc", true);
+      .eq("danghieuluc", true)
+      .eq("hocky.danghieuluc", true);
   },
 
   async getLichHocList(maphancongIds: number[]) {
     const supabase = await getSupabaseClient();
     return await supabase
       .from("lichhoc")
-      .select("malichhoc, maphancong")
+      .select("malichhoc, maphancong, thutrongtuan")
       .in("maphancong", maphancongIds);
   },
 
@@ -166,6 +168,19 @@ export const diemdanhRepo = {
         lichhoc ( maphong )
       `)
       .eq("mabuoihoc", mabuoihoc)
+      .single();
+  },
+
+  async endBuoiHoc(mabuoihoc: number) {
+    const supabase = await getSupabaseClient();
+    return await supabase
+      .from("buoihoc")
+      .update({
+        trangthai: "Hoanthanh",
+        qr_secret: null
+      })
+      .eq("mabuoihoc", mabuoihoc)
+      .select("mabuoihoc, trangthai")
       .single();
   }
 };

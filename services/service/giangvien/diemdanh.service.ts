@@ -49,13 +49,23 @@ export const diemDanhService = {
     // A. Lấy danh sách phân công đang hiệu lực
     const { data: phancongList } = await diemdanhRepo.getAttendancePhanCong(magv);
 
-    const maphancongIds = (phancongList as unknown as AttendancePhanCong[] ?? []).map(p => p.maphancong);
+    // Lấy ngày hiện tại (múi giờ GMT+7)
+    const todayStr = new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
+
+    // Lọc bỏ những phân công đã kết thúc hoặc chưa bắt đầu
+    const activePhanCongList = (phancongList as any[] ?? []).filter(p => {
+      if (p.ngayketthuc && todayStr > p.ngayketthuc) return false;
+      if (p.ngaybatdau && todayStr < p.ngaybatdau) return false;
+      return true;
+    });
+
+    const maphancongIds = activePhanCongList.map(p => p.maphancong);
 
     // B. Lấy tất cả lịch học tương ứng
-    let lichhocList: { malichhoc: number; maphancong: number }[] = [];
+    let lichhocList: { malichhoc: number; maphancong: number; thutrongtuan: number }[] = [];
     if (maphancongIds.length > 0) {
       const { data: lichAll } = await diemdanhRepo.getLichHocList(maphancongIds);
-      lichhocList = (lichAll as { malichhoc: number; maphancong: number }[] ?? []);
+      lichhocList = (lichAll as { malichhoc: number; maphancong: number; thutrongtuan: number }[] ?? []);
     }
     const maphantramIds = lichhocList.map(l => l.malichhoc);
 
@@ -90,7 +100,7 @@ export const diemDanhService = {
       // Gắn thông tin lớp & môn cho đơn
       const buoiHocMap = new Map(buoiHocList.map(b => [b.mabuoihoc, b]));
       const lichhocMap = new Map(lichhocList.map(l => [l.malichhoc, l]));
-      const phancongMap = new Map((phancongList as unknown as AttendancePhanCong[] ?? []).map(p => [p.maphancong, p]));
+      const phancongMap = new Map(activePhanCongList.map(p => [p.maphancong, p]));
 
       dsDonXinNghi = (donList as unknown as AttendanceDonXinNghi[] ?? []).map(don => {
         const bh = buoiHocMap.get(don.mabuoihoc);
@@ -113,13 +123,18 @@ export const diemDanhService = {
     }
 
     return {
-      dsLop: (phancongList as unknown as AttendancePhanCong[] ?? []).map(p => ({
-        maphancong: p.maphancong,
-        malophoc: p.malophoc ?? p.malop,
-        tenmon: p.monhoc?.tenmon ?? "—",
-        mamon: p.monhoc?.mamon ?? "—",
-        tenlop: p.lop?.tenlop ?? "—",
-      })),
+      dsLop: activePhanCongList.map(p => {
+        const classSchedules = lichhocList.filter(l => l.maphancong === p.maphancong);
+        const lichDay = classSchedules.map(l => l.thutrongtuan);
+        return {
+          maphancong: p.maphancong,
+          malophoc: p.malophoc ?? p.malop,
+          tenmon: p.monhoc?.tenmon ?? "—",
+          mamon: p.monhoc?.mamon ?? "—",
+          tenlop: p.lop?.tenlop ?? "—",
+          lichDay,
+        };
+      }),
       buoiHocList,
       dsDonXinNghi
     };
@@ -417,5 +432,11 @@ export const diemDanhService = {
       maphong,
       thoigiandiemdanh
     };
+  },
+
+  async endAttendanceSession(mabuoihoc: number) {
+    const { data, error } = await diemdanhRepo.endBuoiHoc(mabuoihoc);
+    if (error) throw error;
+    return data;
   },
 };

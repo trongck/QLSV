@@ -28,7 +28,12 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Không tìm thấy giảng viên" }, { status: 404 });
     }
 
-    const data = await giangVienService.getClassesData(gv.magv);
+    const { searchParams } = new URL(request.url);
+    const mahockyParam = searchParams.get("mahocky");
+    const mahocky = mahockyParam ? parseInt(mahockyParam, 10) : null;
+    const validMahocky = (mahocky !== null && !isNaN(mahocky)) ? mahocky : null;
+
+    const data = await giangVienService.getClassesData(gv.magv, validMahocky);
 
     return NextResponse.json({ success: true, data });
   } catch (err: any) {

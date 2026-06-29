@@ -182,5 +182,11 @@ export const taskService = {
    */
   async uploadAttachment(fileName: string, fileBuffer: ArrayBuffer, contentType: string) {
     return await taskRepo.uploadAttachment(fileName, fileBuffer, contentType);
+  },
+
+  async deleteTask(mabaitap: number) {
+    const { error } = await taskRepo.deleteTask(mabaitap);
+    if (error) throw error;
+    return true;
   }
 };

@@ -7,7 +7,7 @@ import {
   type MonitoringData,
   type StudentMonitorItem,
 } from "@/hooks/giangvien/useTeacherExams";
-import { useTeacherClasses } from "@/hooks/giangvien/useTeacherClasses";
+import { useTeacherGrades } from "@/hooks/giangvien/useTeacherGrades";
 import { apiFetch } from "@/services/service/auth/auth.service";
 
 // ─── Helper ────────────────────────────────────────────────────────────────────
@@ -83,37 +83,37 @@ function MonitoringPanel({
   }, [data?.exam.thoigianketthuc]);
 
   return (
-    <div className="fixed inset-0 z-[200] bg-black/45 backdrop-blur-sm flex items-start justify-center p-4 overflow-y-auto">
-      <div className="bg-white rounded-2xl w-full max-w-[900px] p-6 flex flex-col gap-5 my-4 shadow-[0_20px_60px_rgba(0,0,0,0.2)]">
+    <div className="fixed inset-0 z-[200] bg-[#2D1B14]/40 backdrop-blur-sm flex items-start justify-center p-4 overflow-y-auto">
+      <div className="bg-white rounded-xl w-full max-w-[900px] p-6 flex flex-col gap-5 my-4 border border-[#F0E1D9] shadow-lg">
         {/* Header */}
         <div className="flex justify-between items-start flex-wrap gap-3">
           <div>
-            <h2 className="m-0 text-lg font-bold text-gray-900">
-              📊 Giám sát ca thi
+            <h2 className="m-0 text-lg font-bold text-[#6B4F43]">
+              Giám sát ca thi
             </h2>
             {data && (
-              <p className="m-0 mt-1 text-[13px] text-gray-500">
+              <p className="m-0 mt-1 text-[13px] text-[#8B6F5F]">
                 {data.exam.tieude} — {data.exam.tenmon} ({data.exam.tenlop})
               </p>
             )}
           </div>
           <div className="flex flex-wrap gap-2">
             {timeLeft && (
-              <div className="bg-amber-50 text-amber-700 border border-amber-300 px-3.5 py-1.5 rounded-lg text-[13px] font-bold flex items-center">
+              <div className="bg-[#FFF8F0] text-[#F2994A] border border-[#FFEAD2] px-3.5 py-1.5 rounded-lg text-[13px] font-bold flex items-center">
                 Còn lại: {timeLeft}
               </div>
             )}
             {data && new Date(data.exam.thoigianketthuc) > new Date() && (
               <button
                 onClick={onForceEnd}
-                className="bg-red-600 hover:bg-red-700 text-white border-none px-4 py-1.5 rounded-lg text-[13px] font-semibold cursor-pointer transition-colors"
+                className="bg-[#EB5757] hover:bg-red-700 text-white border-none px-4 py-1.5 rounded-lg text-[13px] font-semibold cursor-pointer transition-colors"
               >
                 Kết thúc ngay
               </button>
             )}
             <button
               onClick={onClose}
-              className="bg-gray-100 hover:bg-gray-200 text-gray-700 border-none px-4 py-1.5 rounded-lg text-[13px] font-semibold cursor-pointer transition-colors"
+              className="bg-white hover:bg-gray-50 text-[#6B4F43] border border-[#EAD9CB] px-4 py-1.5 rounded-lg text-[13px] font-semibold cursor-pointer transition-colors"
             >
               Đóng
             </button>
@@ -205,15 +205,16 @@ export function ExamRoom() {
     endExam,
     forceEndExam,
   } = useTeacherExams();
-  const { dsLop: teacherClasses, loading: classesLoading } = useTeacherClasses();
+  const { classes: teacherClasses, loading: classesLoading } = useTeacherGrades();
 
   const loading = examsLoading || classesLoading;
 
   const classes = teacherClasses.map((c) => ({
     maphancong: String(c.maphancong),
-    tenmon: c.tenmon ?? "",
-    tenlop: c.tenlop ?? "",
-    soluongsv: c.soSinhVien ?? 0,
+    tenmon: c.monhoc?.tenmon ?? "",
+    tenlop: c.lop?.tenlop ?? "",
+    soluongsv: 0,
+    hocky: c.hocky
   }));
 
   // ── UI State ──────────────────────────────────────────────────────────────────
@@ -363,13 +364,13 @@ export function ExamRoom() {
     const isActive = status.text === "Đang diễn ra";
     return (
       <div
-        className="bg-white rounded-2xl p-4 md:p-5 border border-gray-200 flex flex-col gap-3 shadow-sm hover:shadow-md transition-shadow"
+        className="bg-white rounded-xl p-4 md:p-5 border border-[#F0E1D9] flex flex-col gap-3 shadow-sm hover:shadow-md transition-shadow"
       >
         {/* Top row */}
         <div className="flex justify-between items-start gap-3 flex-wrap">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">
-              <h3 className="m-0 text-[15px] font-bold text-gray-900 leading-tight">{exam.tieude}</h3>
+              <h3 className="m-0 text-[15px] font-bold text-[#6B4F43] leading-tight">{exam.tieude}</h3>
               <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold" style={{ background: status.bg, color: status.color }}>
                 {status.text}
               </span>
@@ -380,7 +381,7 @@ export function ExamRoom() {
                 </span>
               )}
             </div>
-            <p className="m-0 mt-1 text-[12px] text-gray-500">
+            <p className="m-0 mt-1 text-[12px] text-[#8B6F5F]">
               {exam.tenmon} • {exam.tenlop} • {exam.thoigianlam} phút
             </p>
           </div>
@@ -396,14 +397,14 @@ export function ExamRoom() {
             {isActive && (
               <button
                 onClick={() => setMonitoringExamId(exam.madethi)}
-                className="px-3.5 py-1.5 bg-green-50 text-green-600 border border-green-200 rounded-lg text-[12px] font-semibold cursor-pointer hover:bg-green-100 transition-colors"
+                className="px-3.5 py-1.5 bg-white hover:bg-gray-50 border border-[#EAD9CB] text-[#6B4F43] rounded-lg text-[12px] font-semibold cursor-pointer transition-colors"
               >
-                📊 Xem thống kê
+                Xem thống kê
               </button>
             )}
             <button
               onClick={() => openEditTimeModal(exam)}
-              className="px-3.5 py-1.5 bg-gray-50 text-gray-700 border border-gray-200 rounded-lg text-[12px] font-semibold cursor-pointer hover:bg-gray-100 transition-colors"
+              className="px-3.5 py-1.5 bg-gray-50 text-[#6B4F43] border border-[#EAD9CB] rounded-lg text-[12px] font-semibold cursor-pointer hover:bg-gray-100 transition-colors"
             >
               Sửa thời gian
             </button>
@@ -426,7 +427,7 @@ export function ExamRoom() {
   }
 
   return (
-    <div className="bg-gray-50 min-h-screen relative p-0">
+    <div className="flex flex-col gap-5 relative">
 
       {/* Toast */}
       {toastMessage && (
@@ -446,19 +447,19 @@ export function ExamRoom() {
 
       {/* Force End Reason Modal */}
       {showForceEndModal && (
-        <div className="fixed inset-0 z-[300] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl w-full max-w-[400px] p-6 shadow-2xl flex flex-col gap-4">
+        <div className="fixed inset-0 z-[300] bg-[#2D1B14]/40 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl w-full max-w-[400px] p-6 border border-[#F0E1D9] shadow-xl flex flex-col gap-4">
             <h3 className="m-0 text-lg font-bold text-red-600 flex items-center gap-2">
-              ⚠️ Yêu cầu kết thúc ca thi
+              Yêu cầu kết thúc ca thi
             </h3>
-            <p className="m-0 text-[13.5px] text-gray-600">
+            <p className="m-0 text-[13.5px] text-[#8B6F5F]">
               Bạn đang yêu cầu đóng ca thi này ngay lập tức. Tất cả bài thi đang làm sẽ bị ép buộc nộp. Vui lòng nhập lý do.
             </p>
             <textarea
               value={forceEndReason}
               onChange={(e) => setForceEndReason(e.target.value)}
               placeholder="Nhập lý do kết thúc (VD: Phát hiện gian lận hàng loạt...)"
-              className="w-full p-3 border border-red-200 rounded-xl outline-none focus:border-red-500 min-h-[100px] text-[13px]"
+              className="w-full p-3 border border-red-200 rounded-lg outline-none focus:border-red-500 min-h-[100px] text-[13px] text-[#6B4F43]"
               autoFocus
             />
             <div className="flex justify-end gap-3 mt-2">
@@ -467,13 +468,13 @@ export function ExamRoom() {
                   setShowForceEndModal(false);
                   setForceEndReason("");
                 }}
-                className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold rounded-xl text-[13px]"
+                className="px-4 py-2 bg-white hover:bg-gray-50 border border-[#EAD9CB] text-[#6B4F43] font-semibold rounded-lg text-[13px] cursor-pointer"
               >
                 Hủy
               </button>
               <button
                 onClick={handleForceEnd}
-                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl shadow-md shadow-red-100 text-[13px]"
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg text-[13px] border-none cursor-pointer"
               >
                 Xác nhận kết thúc
               </button>
@@ -485,19 +486,19 @@ export function ExamRoom() {
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-5 gap-3 md:gap-0">
         <div>
-          <h2 className="m-0 text-xl font-bold text-gray-900">Quản lý & Giám sát Thi</h2>
-          <p className="m-0 mt-1 text-[13px] text-gray-500">Tạo ca thi, phát đề, giám sát sinh viên realtime</p>
+          <h2 className="m-0 text-xl font-bold text-[#6B4F43]">Quản lý &amp; Giám sát Thi</h2>
+          <p className="m-0 mt-1 text-[13px] text-[#8B6F5F]">Tạo ca thi, phát đề, giám sát sinh viên realtime</p>
         </div>
         <button
           onClick={() => setShowCreateModal(true)}
-          className="w-full md:w-auto bg-gradient-to-r from-indigo-500 to-purple-500 text-white px-5 py-2.5 rounded-xl font-bold text-sm cursor-pointer shadow-md hover:opacity-90 transition-opacity border-none"
+          className="w-full md:w-auto btn-teacher text-white px-5 py-2.5 rounded-xl font-bold text-sm cursor-pointer shadow-md hover:opacity-90 transition-opacity border-none"
         >
-          + Tạo ca thi mới
+          Tạo ca thi mới
         </button>
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b-2 border-gray-200 mb-5 overflow-x-auto gap-0 scrollbar-hide">
+      <div className="flex border-b-2 border-[#F0E1D9] mb-5 overflow-x-auto gap-0 scrollbar-hide">
         {([
           { key: "upcoming", label: `Sắp tới & Đang diễn ra (${upcomingExams.length})` },
           { key: "ended", label: `Đã kết thúc (${endedExams.length})` },
@@ -506,7 +507,7 @@ export function ExamRoom() {
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
             className={`px-5 py-2.5 bg-transparent border-none cursor-pointer text-[13px] font-bold whitespace-nowrap mb-[-2px] transition-colors ${
-              activeTab === tab.key ? "text-indigo-500 border-b-2 border-indigo-500" : "text-gray-500 border-b-2 border-transparent hover:text-gray-700"
+              activeTab === tab.key ? "text-[#F2A8A8] border-b-2 border-[#F2A8A8]" : "text-[#8B6F5F] border-b-2 border-transparent hover:text-[#6B4F43]"
             }`}
           >
             {tab.label}
@@ -518,9 +519,8 @@ export function ExamRoom() {
       <div className="flex flex-col gap-3">
         {activeTab === "upcoming" && (
           upcomingExams.length === 0 ? (
-            <div className="bg-white rounded-2xl py-12 px-6 text-center border border-dashed border-gray-200">
-              <div className="text-4xl mb-3">📋</div>
-              <p className="text-gray-500 m-0 text-sm">Không có ca thi sắp tới. Hãy tạo ca thi mới!</p>
+            <div className="bg-white rounded-xl py-12 px-6 text-center border border-dashed border-[#F0E1D9]">
+              <p className="text-[#8B6F5F] m-0 text-sm">Không có ca thi sắp tới. Hãy tạo ca thi mới!</p>
             </div>
           ) : upcomingExams.map((exam) => (
             <React.Fragment key={exam.madethi}>
@@ -531,26 +531,26 @@ export function ExamRoom() {
 
         {activeTab === "ended" && (
           endedExams.length === 0 ? (
-            <div className="bg-white rounded-2xl py-12 px-6 text-center border border-dashed border-gray-200">
-              <p className="text-gray-500 m-0 text-sm">Chưa có ca thi nào đã kết thúc.</p>
+            <div className="bg-white rounded-xl py-12 px-6 text-center border border-dashed border-[#F0E1D9]">
+              <p className="text-[#8B6F5F] m-0 text-sm">Chưa có ca thi nào đã kết thúc.</p>
             </div>
           ) : endedExams.map((exam) => (
             <div
               key={exam.madethi}
-              className="bg-white rounded-2xl p-4 md:p-5 border border-gray-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-3"
+              className="bg-white rounded-xl p-4 md:p-5 border border-[#F0E1D9] flex flex-col md:flex-row justify-between items-start md:items-center gap-3 shadow-sm hover:shadow-md transition-shadow"
             >
               <div>
-                <h3 className="m-0 text-sm font-bold text-gray-700">{exam.tieude}</h3>
-                <p className="m-0 mt-1 text-[12px] text-gray-400">
+                <h3 className="m-0 text-sm font-bold text-[#6B4F43]">{exam.tieude}</h3>
+                <p className="m-0 mt-1 text-[12px] text-[#8B6F5F]">
                   {exam.tenmon} • {exam.tenlop} • {formatDateTime(exam.thoigianketthuc)}
                 </p>
               </div>
               <div className="flex items-center gap-2 self-start md:self-auto">
                 <button
                   onClick={() => setMonitoringExamId(exam.madethi)}
-                  className="px-3.5 py-1.5 bg-gray-50 text-gray-700 border border-gray-200 rounded-lg text-[12px] font-semibold cursor-pointer hover:bg-gray-100 transition-colors"
+                  className="px-3.5 py-1.5 bg-white hover:bg-gray-50 border border-[#EAD9CB] text-[#6B4F43] rounded-lg text-[12px] font-semibold cursor-pointer transition-colors"
                 >
-                  📊 Xem thống kê
+                  Xem thống kê
                 </button>
                 <span className="px-2.5 py-1 bg-gray-100 text-gray-500 rounded-full text-[11px] font-bold">Đã kết thúc</span>
               </div>
@@ -561,78 +561,78 @@ export function ExamRoom() {
 
       {/* ── Create Modal ─────────────────────────────────────────────────────── */}
       {showCreateModal && (
-        <div className="fixed inset-0 z-[1000] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
+        <div className="fixed inset-0 z-[1000] bg-[#2D1B14]/40 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto">
           <form
             onSubmit={handleCreateExamSubmit}
-            className="bg-white p-6 md:p-7 rounded-2xl w-full max-w-[480px] flex flex-col gap-4 my-4"
+            className="bg-white p-6 md:p-7 rounded-xl w-full max-w-[480px] flex flex-col gap-4 my-4 border border-[#F0E1D9] shadow-xl"
           >
-            <h3 className="m-0 text-lg font-bold text-gray-900">Thiết lập Ca thi mới</h3>
+            <h3 className="m-0 text-lg font-bold text-[#6B4F43]">Thiết lập Ca thi mới</h3>
 
             <div className="flex flex-col gap-1.5">
-              <label className="text-[12px] font-semibold text-gray-700">Lớp học phần *</label>
-              <select required value={newExamData.maphancong} onChange={(e) => setNewExamData({ ...newExamData, maphancong: e.target.value })} className="p-2.5 rounded-lg border border-gray-300 text-[13px] outline-none focus:border-indigo-500 bg-white">
+              <label className="text-[12px] font-semibold text-[#8B6F5F]">Lớp học phần *</label>
+              <select required value={newExamData.maphancong} onChange={(e) => setNewExamData({ ...newExamData, maphancong: e.target.value })} className="p-2.5 rounded-lg border border-[#F0E1D9] text-[13px] outline-none focus:border-[#F2A8A8] bg-white text-[#6B4F43] cursor-pointer">
                 <option value="">-- Chọn lớp --</option>
-                {classes.map((c) => (
+                {classes.filter(c => c.hocky?.danghieuluc).map((c) => (
                   <option key={c.maphancong} value={c.maphancong}>{c.tenmon} - {c.tenlop}</option>
                 ))}
               </select>
             </div>
 
-            <div className="bg-gray-50 p-3.5 rounded-lg border border-gray-200">
-              <label className="text-[12px] font-bold text-gray-700 block mb-2">Nguồn danh sách sinh viên:</label>
-              <div className="flex flex-col sm:flex-row gap-2 sm:gap-5 text-[13px]">
+            <div className="bg-[#FFF8F5] p-3.5 rounded-lg border border-[#F0E1D9]">
+              <label className="text-[12px] font-bold text-[#6B4F43] block mb-2">Nguồn danh sách sinh viên:</label>
+              <div className="flex flex-col sm:flex-row gap-2 sm:gap-5 text-[13px] text-[#6B4F43]">
                 <label className="flex items-center gap-1.5 cursor-pointer">
-                  <input type="radio" name="studentSource" checked={studentSource === "system"} onChange={() => setStudentSource("system")} />
+                  <input type="radio" name="studentSource" checked={studentSource === "system"} onChange={() => setStudentSource("system")} className="accent-[#F2A8A8]" />
                   Học sinh thuộc lớp mặc định
                 </label>
                 <label className="flex items-center gap-1.5 cursor-pointer">
-                  <input type="radio" name="studentSource" checked={studentSource === "excel"} onChange={() => setStudentSource("excel")} />
+                  <input type="radio" name="studentSource" checked={studentSource === "excel"} onChange={() => setStudentSource("excel")} className="accent-[#F2A8A8]" />
                   Tải danh sách riêng (.xlsx)
                 </label>
               </div>
               {studentSource === "excel" && (
                 <div className="mt-2">
-                  <input type="file" required accept=".xlsx,.xls" onChange={(e) => setExcelFile(e.target.files?.[0] ?? null)} className="text-[12px] file:mr-4 file:py-1.5 file:px-3 file:rounded-full file:border-0 file:text-[12px] file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" />
+                  <input type="file" required accept=".xlsx,.xls" onChange={(e) => setExcelFile(e.target.files?.[0] ?? null)} className="text-[12px] file:mr-4 file:py-1.5 file:px-3 file:rounded-full file:border-0 file:text-[12px] file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100" />
                 </div>
               )}
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label className="text-[12px] font-semibold text-gray-700">Tiêu đề ca thi *</label>
-              <input required type="text" placeholder="Ví dụ: Kiểm tra giữa kỳ - Lập trình Web" value={newExamData.tieude} onChange={(e) => setNewExamData({ ...newExamData, tieude: e.target.value })} className="p-2.5 rounded-lg border border-gray-300 text-[13px] outline-none focus:border-indigo-500" />
+              <label className="text-[12px] font-semibold text-[#8B6F5F]">Tiêu đề ca thi *</label>
+              <input required type="text" placeholder="Ví dụ: Kiểm tra giữa kỳ - Lập trình Web" value={newExamData.tieude} onChange={(e) => setNewExamData({ ...newExamData, tieude: e.target.value })} className="p-2.5 rounded-lg border border-[#F0E1D9] text-[13px] outline-none focus:border-[#F2A8A8] text-[#6B4F43]" />
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="flex flex-col gap-1.5">
-                <label className="text-[12px] font-semibold text-gray-700">Thời lượng (phút) *</label>
-                <input required type="number" min={5} value={newExamData.thoigianlam} onChange={(e) => setNewExamData({ ...newExamData, thoigianlam: Number(e.target.value) })} className="p-2.5 rounded-lg border border-gray-300 text-[13px] outline-none focus:border-indigo-500" />
+                <label className="text-[12px] font-semibold text-[#8B6F5F]">Thời lượng (phút) *</label>
+                <input required type="number" min={5} value={newExamData.thoigianlam} onChange={(e) => setNewExamData({ ...newExamData, thoigianlam: Number(e.target.value) })} className="p-2.5 rounded-lg border border-[#F0E1D9] text-[13px] outline-none focus:border-[#F2A8A8] text-[#6B4F43]" />
               </div>
               <div className="flex flex-col gap-1.5">
-                <label className="text-[12px] font-semibold text-gray-700">Mật khẩu phòng</label>
-                <input type="text" placeholder="Bỏ trống nếu không cần" value={newExamData.matkhau} onChange={(e) => setNewExamData({ ...newExamData, matkhau: e.target.value })} className="p-2.5 rounded-lg border border-gray-300 text-[13px] outline-none focus:border-indigo-500" />
+                <label className="text-[12px] font-semibold text-[#8B6F5F]">Mật khẩu phòng</label>
+                <input type="text" placeholder="Bỏ trống nếu không cần" value={newExamData.matkhau} onChange={(e) => setNewExamData({ ...newExamData, matkhau: e.target.value })} className="p-2.5 rounded-lg border border-[#F0E1D9] text-[13px] outline-none focus:border-[#F2A8A8] text-[#6B4F43]" />
               </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="flex flex-col gap-1.5">
-                <label className="text-[12px] font-semibold text-gray-700">Giờ bắt đầu *</label>
-                <input required type="datetime-local" value={newExamData.thoigianbatdau} onChange={(e) => setNewExamData({ ...newExamData, thoigianbatdau: e.target.value })} className="p-2.5 rounded-lg border border-gray-300 text-[13px] outline-none focus:border-indigo-500" />
+                <label className="text-[12px] font-semibold text-[#8B6F5F]">Giờ bắt đầu *</label>
+                <input required type="datetime-local" value={newExamData.thoigianbatdau} onChange={(e) => setNewExamData({ ...newExamData, thoigianbatdau: e.target.value })} className="p-2.5 rounded-lg border border-[#F0E1D9] text-[13px] outline-none focus:border-[#F2A8A8] text-[#6B4F43]" />
               </div>
               <div className="flex flex-col gap-1.5">
-                <label className="text-[12px] font-semibold text-gray-700">Giờ kết thúc *</label>
-                <input required type="datetime-local" value={newExamData.thoigianketthuc} onChange={(e) => setNewExamData({ ...newExamData, thoigianketthuc: e.target.value })} className="p-2.5 rounded-lg border border-gray-300 text-[13px] outline-none focus:border-indigo-500" />
+                <label className="text-[12px] font-semibold text-[#8B6F5F]">Giờ kết thúc *</label>
+                <input required type="datetime-local" value={newExamData.thoigianketthuc} onChange={(e) => setNewExamData({ ...newExamData, thoigianketthuc: e.target.value })} className="p-2.5 rounded-lg border border-[#F0E1D9] text-[13px] outline-none focus:border-[#F2A8A8] text-[#6B4F43]" />
               </div>
             </div>
 
             <div className="flex flex-col gap-1.5">
-              <label className="text-[12px] font-semibold text-gray-700">File đề thi (Word, PDF, Ảnh) *</label>
-              <input required type="file" accept=".docx,.pdf,.txt,image/*" onChange={(e) => setUploadFile(e.target.files?.[0] ?? null)} className="text-[13px] file:mr-4 file:py-1.5 file:px-3 file:rounded-full file:border-0 file:text-[12px] file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100" />
+              <label className="text-[12px] font-semibold text-[#8B6F5F]">File đề thi (Word, PDF, Ảnh) *</label>
+              <input required type="file" accept=".docx,.pdf,.txt,image/*" onChange={(e) => setUploadFile(e.target.files?.[0] ?? null)} className="text-[13px] file:mr-4 file:py-1.5 file:px-3 file:rounded-full file:border-0 file:text-[12px] file:font-semibold file:bg-orange-50 file:text-orange-700 hover:file:bg-orange-100" />
             </div>
 
             <div className="flex gap-2.5 justify-end mt-2">
-              <button type="button" onClick={() => setShowCreateModal(false)} className="px-4 py-2 rounded-lg border border-gray-200 bg-gray-50 text-gray-700 text-[13px] cursor-pointer hover:bg-gray-100 transition-colors">Hủy</button>
-              <button type="submit" disabled={submitting} className={`px-5 py-2 rounded-lg border-none bg-gradient-to-r from-indigo-500 to-purple-500 text-white font-bold text-[13px] cursor-pointer transition-opacity ${submitting ? 'opacity-70' : 'hover:opacity-90'}`}>
-                {submitting ? "Đang xử lý AI..." : "Khởi tạo ca thi"}
+              <button type="button" onClick={() => setShowCreateModal(false)} className="px-4 py-2 rounded-lg border border-[#EAD9CB] bg-white text-[#6B4F43] text-[13px] cursor-pointer hover:bg-[#FFF2EC] transition-colors">Hủy</button>
+              <button type="submit" disabled={submitting} className={`px-5 py-2 rounded-lg border-none btn-teacher text-white font-bold text-[13px] cursor-pointer transition-opacity ${submitting ? 'opacity-70' : 'hover:opacity-90'}`}>
+                {submitting ? "Đang tạo..." : "Khởi tạo ca thi"}
               </button>
             </div>
           </form>
@@ -641,12 +641,12 @@ export function ExamRoom() {
 
       {/* ── Edit Time Modal ──────────────────────────────────────────────────── */}
       {showEditTimeModal && (
-        <div className="fixed inset-0 z-[2000] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[2000] bg-[#2D1B14]/40 backdrop-blur-sm flex items-center justify-center p-4">
           <form
             onSubmit={handleEditTimeSubmit}
-            className="bg-white p-6 rounded-2xl w-full max-w-[420px] flex flex-col gap-4"
+            className="bg-white p-6 rounded-xl w-full max-w-[420px] flex flex-col gap-4 border border-[#F0E1D9] shadow-xl"
           >
-            <h3 className="m-0 text-base font-bold text-gray-900">Điều chỉnh thời gian thi</h3>
+            <h3 className="m-0 text-base font-bold text-[#6B4F43]">Điều chỉnh thời gian thi</h3>
 
             {[
               { label: "Thời gian làm (phút)", key: "thoigianlam", type: "number" },
@@ -654,20 +654,20 @@ export function ExamRoom() {
               { label: "Giờ kết thúc", key: "thoigianketthuc", type: "datetime-local" },
             ].map((f) => (
               <div key={f.key} className="flex flex-col gap-1.5">
-                <label className="text-[12px] font-semibold text-gray-700">{f.label}</label>
+                <label className="text-[12px] font-semibold text-[#8B6F5F]">{f.label}</label>
                 <input
                   required
                   type={f.type}
                   value={(editTimeData as any)[f.key]}
                   onChange={(e) => setEditTimeData({ ...editTimeData, [f.key]: f.type === "number" ? Number(e.target.value) : e.target.value })}
-                  className="p-2.5 rounded-lg border border-gray-300 text-[13px] outline-none focus:border-indigo-500"
+                  className="p-2.5 rounded-lg border border-[#F0E1D9] text-[13px] outline-none focus:border-[#F2A8A8] text-[#6B4F43]"
                 />
               </div>
             ))}
 
             <div className="flex gap-2.5 justify-end mt-2">
-              <button type="button" onClick={() => setShowEditTimeModal(false)} className="px-4 py-2 rounded-lg border border-gray-200 bg-gray-50 text-[13px] cursor-pointer hover:bg-gray-100 transition-colors text-gray-700">Hủy</button>
-              <button type="submit" disabled={updatingTime} className={`px-5 py-2 rounded-lg border-none bg-indigo-500 text-white font-bold text-[13px] cursor-pointer transition-colors ${updatingTime ? 'opacity-70' : 'hover:bg-indigo-600'}`}>
+              <button type="button" onClick={() => setShowEditTimeModal(false)} className="px-4 py-2 rounded-lg border border-[#EAD9CB] bg-white text-[13px] cursor-pointer hover:bg-[#FFF2EC] transition-colors text-[#6B4F43]">Hủy</button>
+              <button type="submit" disabled={updatingTime} className={`px-5 py-2 rounded-lg border-none btn-teacher text-white font-bold text-[13px] cursor-pointer transition-colors ${updatingTime ? 'opacity-70' : 'hover:opacity-90'}`}>
                 {updatingTime ? "Đang lưu..." : "Cập nhật"}
               </button>
             </div>

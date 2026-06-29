@@ -24,6 +24,7 @@ export function HomeworkList() {
     createTask,
     updateTask,
     fetchSubmissions,
+    deleteTask,
   } = useTeacherTasks();
 
   const {
@@ -117,7 +118,7 @@ export function HomeworkList() {
         <div className="w-full md:w-auto">
           <button 
             onClick={() => setShowCreateModal(true)}
-            className="w-full md:w-auto px-5 py-2.5 rounded-xl border-none bg-gradient-to-r from-[#F2A8A8] to-[#FFB4B4] text-white cursor-pointer font-semibold text-sm shadow-sm hover:opacity-90 transition-opacity"
+            className="w-full md:w-auto px-5 py-2.5 rounded-xl border-none btn-teacher text-white cursor-pointer font-semibold text-sm shadow-sm hover:opacity-90 transition-opacity"
           >
              Giao bài tập
           </button>
@@ -166,15 +167,19 @@ export function HomeworkList() {
                   <div className="h-full bg-[#F2A8A8]" style={{ width: `${item.total > 0 ? (item.done / item.total) * 100 : 0}%` }}></div>
                 </div>
               </div>
-              <div className="flex gap-2.5 mt-2">
+              <div className="flex gap-2 mt-2">
                 <button 
                   onClick={() => { setEditTask(item); setEditFile(null); }}
-                  className="flex-1 py-2 px-3 text-xs rounded-lg border border-[#EAD9CB] bg-white text-[#6B4F43] cursor-pointer hover:bg-gray-50 transition-colors font-semibold"
+                  className="flex-1 py-2 px-2 text-xs rounded-lg border border-[#EAD9CB] bg-white text-[#6B4F43] cursor-pointer hover:bg-gray-50 transition-colors font-semibold"
                 >Sửa</button>
                 <button 
                   onClick={() => handleViewSubmissions(item)}
-                  className="flex-1 py-2 px-3 text-xs rounded-lg border-none bg-gradient-to-r from-[#F2A8A8] to-[#FFB4B4] text-white cursor-pointer font-bold hover:opacity-90 transition-opacity"
+                  className="flex-1 py-2 px-2 text-xs rounded-lg border-none btn-teacher text-white cursor-pointer font-bold hover:opacity-90 transition-opacity"
                 >Xem bài nộp</button>
+                <button 
+                  onClick={() => deleteTask(item.id)}
+                  className="py-2 px-2.5 text-xs rounded-lg border border-red-200 bg-white text-red-500 cursor-pointer hover:bg-red-50 transition-colors font-semibold"
+                >Xóa</button>
               </div>
             </div>
           ))}
@@ -230,7 +235,7 @@ export function HomeworkList() {
               
               <div className="flex gap-2.5 mt-2">
                 <button type="button" onClick={() => setEditTask(null)} disabled={saving} className="flex-1 py-2.5 rounded-lg border border-[#EAD9CB] bg-white cursor-pointer text-[#6B4F43] font-semibold hover:bg-gray-50 transition-colors">Hủy</button>
-                <button type="submit" disabled={saving} className={`flex-1 py-2.5 rounded-lg border-none bg-gradient-to-r from-[#F2A8A8] to-[#FFB4B4] text-white cursor-pointer font-bold ${saving ? 'opacity-70' : 'hover:opacity-90'}`}>
+                <button type="submit" disabled={saving} className={`flex-1 py-2.5 rounded-lg border-none btn-teacher text-white cursor-pointer font-bold ${saving ? 'opacity-70' : 'hover:opacity-90'}`}>
                   {saving ? "Đang lưu..." : "Lưu thay đổi"}
                 </button>
               </div>
@@ -254,7 +259,7 @@ export function HomeworkList() {
                   className="w-full p-2.5 rounded-lg border border-[#EAD9CB] outline-none text-[13px] text-[#6B4F43] focus:border-[#F2A8A8] transition-colors bg-white"
                 >
                   <option value="">-- Chọn lớp học --</option>
-                  {classes.map((c: any) => (
+                  {classes.filter((c: any) => c.hocky?.danghieuluc).map((c: any) => (
                     <option key={c.maphancong} value={c.maphancong}>
                       {c.lop?.tenlop} - {c.monhoc?.tenmon}
                     </option>
@@ -303,7 +308,7 @@ export function HomeworkList() {
               
               <div className="flex gap-2.5 mt-2">
                 <button type="button" onClick={() => setShowCreateModal(false)} disabled={saving} className="flex-1 py-2.5 rounded-lg border border-[#EAD9CB] bg-white cursor-pointer text-[#6B4F43] font-semibold hover:bg-gray-50 transition-colors">Hủy</button>
-                <button type="submit" disabled={saving} className={`flex-1 py-2.5 rounded-lg border-none bg-gradient-to-r from-[#F2A8A8] to-[#FFB4B4] text-white cursor-pointer font-bold ${saving ? 'opacity-70' : 'hover:opacity-90'}`}>
+                <button type="submit" disabled={saving} className={`flex-1 py-2.5 rounded-lg border-none btn-teacher text-white cursor-pointer font-bold ${saving ? 'opacity-70' : 'hover:opacity-90'}`}>
                   {saving ? "Đang giao..." : "Giao bài tập"}
                 </button>
               </div>
