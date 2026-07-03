@@ -75,6 +75,34 @@ export const diemdanhRepo = {
       .single();
   },
 
+  async getPhanCongInfo(maphancong: number) {
+    const supabase = await getSupabaseClient();
+    return await supabase
+      .from("phancong")
+      .select("maphancong, ngaybatdau, ngayketthuc, danghieuluc")
+      .eq("maphancong", maphancong)
+      .single();
+  },
+
+  async getLichHocByPhanCongAndDay(maphancong: number, thutrongtuan: number) {
+    const supabase = await getSupabaseClient();
+    return await supabase
+      .from("lichhoc")
+      .select("malichhoc, thutrongtuan")
+      .eq("maphancong", maphancong)
+      .eq("thutrongtuan", thutrongtuan);
+  },
+
+  async getExistingBuoiHoc(malichhoc: number, ngayhoc: string) {
+    const supabase = await getSupabaseClient();
+    return await supabase
+      .from("buoihoc")
+      .select("mabuoihoc")
+      .eq("malichhoc", malichhoc)
+      .eq("ngayhoc", ngayhoc)
+      .maybeSingle();
+  },
+
   async createBuoiHoc(payload: any) {
     const supabase = await getSupabaseClient();
     return await supabase

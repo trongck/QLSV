@@ -8,10 +8,12 @@ export const dashboardRepo = {
       .select(`
         maphancong,
         monhoc ( tenmon ),
-        lop ( tenlop )
+        lop ( tenlop ),
+        hocky:mahocky!inner ( danghieuluc )
       `)
       .eq("magv", magv)
-      .eq("danghieuluc", true);
+      .eq("danghieuluc", true)
+      .eq("hocky.danghieuluc", true);
   },
 
   async getSinhVienMonHocCounts(maphancongIds: number[]) {

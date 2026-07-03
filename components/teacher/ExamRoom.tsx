@@ -507,7 +507,7 @@ export function ExamRoom() {
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
             className={`px-5 py-2.5 bg-transparent border-none cursor-pointer text-[13px] font-bold whitespace-nowrap mb-[-2px] transition-colors ${
-              activeTab === tab.key ? "text-[#F2A8A8] border-b-2 border-[#F2A8A8]" : "text-[#8B6F5F] border-b-2 border-transparent hover:text-[#6B4F43]"
+              activeTab === tab.key ? "text-[#cc5c5c] border-b-2 border-[#F2A8A8]" : "text-[#8B6F5F] border-b-2 border-transparent hover:text-[#6B4F43]"
             }`}
           >
             {tab.label}

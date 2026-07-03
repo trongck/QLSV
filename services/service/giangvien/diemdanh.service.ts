@@ -49,15 +49,8 @@ export const diemDanhService = {
     // A. Lấy danh sách phân công đang hiệu lực
     const { data: phancongList } = await diemdanhRepo.getAttendancePhanCong(magv);
 
-    // Lấy ngày hiện tại (múi giờ GMT+7)
-    const todayStr = new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
-
-    // Lọc bỏ những phân công đã kết thúc hoặc chưa bắt đầu
-    const activePhanCongList = (phancongList as any[] ?? []).filter(p => {
-      if (p.ngayketthuc && todayStr > p.ngayketthuc) return false;
-      if (p.ngaybatdau && todayStr < p.ngaybatdau) return false;
-      return true;
-    });
+    // Không lọc bỏ phân công đã kết thúc để giảng viên vẫn chọn được lớp xem lịch sử/điểm danh bù
+    const activePhanCongList = phancongList as any[] ?? [];
 
     const maphancongIds = activePhanCongList.map(p => p.maphancong);
 
@@ -133,6 +126,8 @@ export const diemDanhService = {
           mamon: p.monhoc?.mamon ?? "—",
           tenlop: p.lop?.tenlop ?? "—",
           lichDay,
+          ngaybatdau: p.ngaybatdau ?? null,
+          ngayketthuc: p.ngayketthuc ?? null,
         };
       }),
       buoiHocList,
@@ -192,16 +187,54 @@ export const diemDanhService = {
 
   /**
    * Tạo ca điểm danh (buoihoc) mới cho một phân công vào ngày cụ thể
+   * Ràng buộc:
+   * - Ngày điểm danh phải <= ngày hôm nay (chỉ điểm danh trong quá khứ hoặc hôm nay)
+   * - Lớp học phần chưa kết thúc (ngayketthuc >= ngày chọn)
+   * - Ngày chọn phải là ngày có lịch dạy (thutrongtuan khớp)
+   * - Chưa có buổi học nào được tạo cho ngày đó
    */
   async createAttendanceSession(maphancong: number, dateStr: string) {
-    // 1. Tìm lịch học tương ứng với phân công này
-    const { data: lichhoc } = await diemdanhRepo.getLichHocSingle(maphancong);
-
-    if (!lichhoc) {
-      throw new Error("Lớp học phần chưa được lập lịch dạy học");
+    // 0. Kiểm tra ngày không được ở tương lai
+    const todayStr = new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
+    if (dateStr > todayStr) {
+      throw new Error("Không thể tạo ca điểm danh cho ngày trong tương lai. Chỉ được điểm danh vào ngày hôm nay hoặc các ngày trước đó.");
     }
 
-    // 2. Tạo bản ghi buổi học mới trên DB
+    // 1. Kiểm tra phân công còn hiệu lực
+    const { data: pcInfo } = await diemdanhRepo.getPhanCongInfo(maphancong);
+    if (!pcInfo) {
+      throw new Error("Không tìm thấy thông tin phân công giảng dạy.");
+    }
+
+    // Kiểm tra lớp đã kết thúc chưa
+    if (pcInfo.ngayketthuc && dateStr > pcInfo.ngayketthuc) {
+      throw new Error("Lớp học phần này đã kết thúc lịch dạy. Không thể tạo ca điểm danh mới.");
+    }
+
+    // Kiểm tra lớp đã bắt đầu chưa
+    if (pcInfo.ngaybatdau && dateStr < pcInfo.ngaybatdau) {
+      throw new Error("Lớp học phần này chưa bắt đầu. Không thể tạo ca điểm danh.");
+    }
+
+    // 2. Kiểm tra ngày chọn có đúng lịch dạy không
+    const jsDay = new Date(dateStr + "T00:00:00").getDay();
+    const dbDay = jsDay === 0 ? 8 : jsDay + 1; // 2=T2, 3=T3, ..., 8=CN
+
+    const { data: lichhocList } = await diemdanhRepo.getLichHocByPhanCongAndDay(maphancong, dbDay);
+
+    if (!lichhocList || lichhocList.length === 0) {
+      throw new Error("Lớp học phần này không có lịch dạy vào thứ được chọn!");
+    }
+
+    const lichhoc = lichhocList[0];
+
+    // 3. Kiểm tra đã tồn tại buổi học cho ngày này chưa
+    const { data: existingSession } = await diemdanhRepo.getExistingBuoiHoc(lichhoc.malichhoc, dateStr);
+    if (existingSession) {
+      throw new Error("Ngày này đã có ca điểm danh được tạo trước đó. Vui lòng chọn ngày khác.");
+    }
+
+    // 4. Tạo bản ghi buổi học mới trên DB
     const { data: buoihoc, error: bhError } = await diemdanhRepo.createBuoiHoc({
       malichhoc: lichhoc.malichhoc,
       ngayhoc: dateStr,
@@ -210,7 +243,7 @@ export const diemDanhService = {
 
     if (bhError) throw bhError;
 
-    // 3. Tự động khởi tạo bản ghi điểm danh trạng thái "Vắng" cho tất cả sinh viên trong lớp học phần
+    // 5. Tự động khởi tạo bản ghi điểm danh trạng thái "Vắng" cho tất cả sinh viên trong lớp học phần
     const { data: svMonHoc } = await diemdanhRepo.getSinhVienMonHocListBasic(maphancong);
 
     if (svMonHoc && svMonHoc.length > 0) {

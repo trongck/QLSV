@@ -136,14 +136,14 @@ export function RosterView() {
             <h3 className="m-0 text-[15px] text-[#6B4F43] font-bold">Danh Sách Lớp Học</h3>
           </div>
           <div className="overflow-x-auto w-full">
-            <table className="w-full border-collapse text-left min-w-[800px]">
+            <table className="w-full border-collapse text-left">
               <thead>
                 <tr className="border-b border-[#F0E1D9] bg-[#FFFDFD]">
-                  <th className="py-3.5 px-5 text-[13px] text-[#8B6F5F] font-semibold">Mã SV</th>
-                  <th className="py-3.5 px-5 text-[13px] text-[#8B6F5F] font-semibold">Họ và tên</th>
-                  <th className="py-3.5 px-5 text-[13px] text-[#8B6F5F] font-semibold">Lớp sinh hoạt</th>
-                  <th className="py-3.5 px-5 text-[13px] text-[#8B6F5F] font-semibold">Số điện thoại</th>
-                  <th className="py-3.5 px-5 text-[13px] text-[#8B6F5F] font-semibold text-right">Thao tác</th>
+                  <th className="py-3.5 px-3 text-[13px] text-[#8B6F5F] font-semibold whitespace-nowrap">Mã SV</th>
+                  <th className="py-3.5 px-3 text-[13px] text-[#8B6F5F] font-semibold">Họ và tên</th>
+                  <th className="py-3.5 px-3 text-[13px] text-[#8B6F5F] font-semibold whitespace-nowrap hidden md:table-cell">Lớp sinh hoạt</th>
+                  <th className="py-3.5 px-3 text-[13px] text-[#8B6F5F] font-semibold whitespace-nowrap hidden sm:table-cell">Số điện thoại</th>
+                  <th className="py-3.5 px-3 text-[13px] text-[#8B6F5F] font-semibold text-right whitespace-nowrap" style={{ textAlign: 'center' }}>Thao tác</th>
                 </tr>
               </thead>
               <tbody>
@@ -166,11 +166,11 @@ export function RosterView() {
                       onClick={() => setSelectedStudent(std?.mssv)}
                       className={`border-b border-[#FDF3EE] cursor-pointer transition-colors duration-200 ${selectedStudent === std?.mssv ? "bg-[#FFF2F2]" : "bg-transparent hover:bg-gray-50"}`}
                     >
-                      <td className="py-3.5 px-5 text-[13.5px] font-medium">{std?.mssv}</td>
-                      <td className="py-3.5 px-5 text-sm font-semibold text-[#6B4F43]">{std?.name}</td>
-                      <td className="py-3.5 px-5 text-[13.5px] text-[#8B6F5F]">{std?.class}</td>
-                      <td className="py-3.5 px-5 text-[13.5px] text-[#6B4F43]">{std?.phone || "---"}</td>
-                      <td className="py-3.5 px-5 text-right">
+                      <td className="py-3.5 px-3 text-[13.5px] font-medium whitespace-nowrap">{std?.mssv}</td>
+                      <td className="py-3.5 px-3 text-sm font-semibold text-[#6B4F43]">{std?.name}</td>
+                      <td className="py-3.5 px-3 text-[13.5px] text-[#8B6F5F] hidden md:table-cell">{std?.class}</td>
+                      <td className="py-3.5 px-3 text-[13.5px] text-[#6B4F43] hidden sm:table-cell">{std?.phone || "---"}</td>
+                      <td className="py-3.5 px-3 text-right whitespace-nowrap">
                         <span className={`text-[12.5px] font-bold border py-1 px-2.5 rounded-md ${selectedStudent === std?.mssv ? "text-[#C25450] border-[#C25450] bg-white" : "text-[#8B6F5F] border-[#8B6F5F] bg-[#FFFDFD]"}`}>
                           {selectedStudent === std?.mssv ? "Đang xem" : "Xem chi tiết"}
                         </span>

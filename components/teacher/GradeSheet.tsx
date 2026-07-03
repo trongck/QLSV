@@ -1,7 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useTeacherGrades, StudentGradeRow } from "@/hooks/giangvien/useTeacherGrades";
+import {
+  useTeacherGrades,
+  StudentGradeRow,
+} from "@/hooks/giangvien/useTeacherGrades";
 import styles from "@/app/(dashboard)/teacher/dashboard/teacher-dashboard.module.css";
 import * as XLSX from "xlsx";
 
@@ -19,7 +22,9 @@ export function GradeSheet() {
 
   const [savingRow, setSavingRow] = useState<string | null>(null);
   const [editingRows, setEditingRows] = useState<Record<string, boolean>>({});
-  const [tempGrades, setTempGrades] = useState<Record<string, { ChuyenCan: string; GiuaKy: string; CuoiKy: string }>>({});
+  const [tempGrades, setTempGrades] = useState<
+    Record<string, { ChuyenCan: string; GiuaKy: string; CuoiKy: string }>
+  >({});
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedHocKy, setSelectedHocKy] = useState<string>("all");
 
@@ -38,7 +43,11 @@ export function GradeSheet() {
     }
   }, [students]);
 
-  const handleGradeChange = (masv: string, type: "ChuyenCan" | "GiuaKy" | "CuoiKy", val: string) => {
+  const handleGradeChange = (
+    masv: string,
+    type: "ChuyenCan" | "GiuaKy" | "CuoiKy",
+    val: string,
+  ) => {
     if (val !== "" && !/^[0-9]*\.?[0-9]*$/.test(val)) return;
     const num = parseFloat(val);
     if (!isNaN(num) && num > 10) return;
@@ -117,36 +126,48 @@ export function GradeSheet() {
       return;
     }
 
-    const currentClass = classes.find(c => c.maphancong === Number(selectedPC));
-    const className = currentClass ? `${currentClass.lop?.tenlop ?? ""} - ${currentClass.monhoc?.tenmon ?? ""}` : "Bảng điểm";
+    const currentClass = classes.find(
+      (c) => c.maphancong === Number(selectedPC),
+    );
+    const className = currentClass
+      ? `${currentClass.lop?.tenlop ?? ""} - ${currentClass.monhoc?.tenmon ?? ""}`
+      : "Bảng điểm";
 
-    const exportData = students.map(s => {
-      const inputs = tempGrades[s.masv] || { ChuyenCan: "", GiuaKy: "", CuoiKy: "" };
-      const cc = inputs.ChuyenCan || (s.diemChuyenCan?.giatri?.toString() ?? "");
+    const exportData = students.map((s) => {
+      const inputs = tempGrades[s.masv] || {
+        ChuyenCan: "",
+        GiuaKy: "",
+        CuoiKy: "",
+      };
+      const cc =
+        inputs.ChuyenCan || (s.diemChuyenCan?.giatri?.toString() ?? "");
       const gk = inputs.GiuaKy || (s.diemGiuaKy?.giatri?.toString() ?? "");
       const ck = inputs.CuoiKy || (s.diemCuoiKy?.giatri?.toString() ?? "");
-      
-      const tk = (s.tongKet && typeof s.tongKet.diemtongket === "number") ? `${s.tongKet.diemtongket.toFixed(2)} (${s.tongKet.diemchu})` : "—";
+
+      const tk =
+        s.tongKet && typeof s.tongKet.diemtongket === "number"
+          ? `${s.tongKet.diemtongket.toFixed(2)} (${s.tongKet.diemchu})`
+          : "—";
 
       return {
-        "STT": s.stt,
+        STT: s.stt,
         "Mã SV": s.masv,
         "Họ và tên": s.hoten,
-        "Lớp": s.malop,
+        Lớp: s.malop,
         "Chuyên cần (10%)": cc,
         "Giữa kỳ (30%)": gk,
         "Cuối kỳ (60%)": ck,
-        "Tổng kết": tk
+        "Tổng kết": tk,
       };
     });
 
     const worksheet = XLSX.utils.json_to_sheet(exportData);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Bảng Điểm");
-    
+
     // Auto-size columns
     const maxWidths = [5, 12, 30, 10, 15, 15, 15, 15, 15];
-    worksheet["!cols"] = maxWidths.map(w => ({ wch: w }));
+    worksheet["!cols"] = maxWidths.map((w) => ({ wch: w }));
 
     XLSX.writeFile(workbook, `BangDiem_${className.replace(/\s+/g, "_")}.xlsx`);
   };
@@ -155,15 +176,21 @@ export function GradeSheet() {
   const filteredStudents = students.filter((s) => {
     const q = searchQuery.toLowerCase().trim();
     if (!q) return true;
-    return s.masv.toLowerCase().includes(q) || s.hoten.toLowerCase().includes(q);
+    return (
+      s.masv.toLowerCase().includes(q) || s.hoten.toLowerCase().includes(q)
+    );
   });
 
   return (
     <div className="flex flex-col gap-5 p-0">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-3 md:gap-0">
         <div>
-          <h2 className="text-xl font-bold text-[#6B4F43] m-0">Nhập điểm &amp; Đánh giá kết quả</h2>
-          <p className="text-[13px] text-[#8B6F5F] m-0 mt-1">Cập nhật điểm chuyên cần, giữa kỳ và cuối kỳ trực tiếp của sinh viên</p>
+          <h2 className="text-xl font-bold text-[#6B4F43] m-0">
+            Nhập điểm &amp; Đánh giá kết quả
+          </h2>
+          <p className="text-[13px] text-[#8B6F5F] m-0 mt-1">
+            Cập nhật điểm chuyên cần, giữa kỳ và cuối kỳ trực tiếp của sinh viên
+          </p>
         </div>
         <div className="flex flex-wrap gap-2.5 w-full md:w-auto">
           <button
@@ -176,7 +203,7 @@ export function GradeSheet() {
           >
             Lưu bảng điểm
           </button>
-          <button 
+          <button
             onClick={handleExportExcel}
             className="flex-1 md:flex-none border border-[#EAD9CB] bg-white px-5 py-2.5 rounded-xl text-sm cursor-pointer text-[#6B4F43] font-semibold hover:bg-gray-50 transition-colors"
           >
@@ -192,7 +219,10 @@ export function GradeSheet() {
           onChange={(e) => {
             const newHk = e.target.value;
             setSelectedHocKy(newHk);
-            const filtered = newHk === "all" ? classes : classes.filter(c => c.hocky?.mahocky?.toString() === newHk);
+            const filtered =
+              newHk === "all"
+                ? classes
+                : classes.filter((c) => c.hocky?.mahocky?.toString() === newHk);
             if (filtered.length > 0) {
               setSelectedPC(filtered[0].maphancong);
             } else {
@@ -202,14 +232,15 @@ export function GradeSheet() {
           className="p-2 rounded-lg border border-[#EAD9CB] outline-none text-[#6B4F43] bg-white text-sm focus:border-[#F2A8A8] transition-colors w-full sm:w-auto"
         >
           <option value="all">Tất cả học kỳ</option>
-          {Array.from(new Map(classes.map(c => [c.hocky?.mahocky, c.hocky])).values())
+          {Array.from(
+            new Map(classes.map((c) => [c.hocky?.mahocky, c.hocky])).values(),
+          )
             .filter(Boolean)
             .map((hk: any) => (
               <option key={hk.mahocky} value={hk.mahocky.toString()}>
                 {hk.tenhocky} - Năm học {hk.namhoc}
               </option>
-            ))
-          }
+            ))}
         </select>
 
         <select
@@ -217,9 +248,15 @@ export function GradeSheet() {
           onChange={(e) => setSelectedPC(Number(e.target.value))}
           className="p-2 rounded-lg border border-[#EAD9CB] outline-none text-[#6B4F43] bg-white text-sm focus:border-[#F2A8A8] transition-colors w-full sm:w-auto"
         >
-          {(selectedHocKy === "all" ? classes : classes.filter(c => c.hocky?.mahocky?.toString() === selectedHocKy)).map((cls) => (
+          {(selectedHocKy === "all"
+            ? classes
+            : classes.filter(
+                (c) => c.hocky?.mahocky?.toString() === selectedHocKy,
+              )
+          ).map((cls) => (
             <option key={cls.maphancong} value={cls.maphancong}>
-              Lớp: {cls.lop?.tenlop ?? cls.malop} - Môn: {cls.monhoc?.tenmon} ({cls.malophoc || "Chưa chia nhóm"})
+              Lớp: {cls.lop?.tenlop ?? cls.malop} - Môn: {cls.monhoc?.tenmon} (
+              {cls.malophoc || "Chưa chia nhóm"})
             </option>
           ))}
         </select>
@@ -229,7 +266,7 @@ export function GradeSheet() {
           placeholder="Tìm kiếm mã SV hoặc họ tên..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="p-2 rounded-lg border border-[#EAD9CB] outline-none text-[#6B4F43] w-full sm:w-[250px] text-sm focus:border-[#F2A8A8] transition-colors"
+          className="p-2 rounded-lg border border-[#ffd2bf] bg-white   outline-none text-[#6B4F43] w-full sm:w-[250px] text-sm focus:border-[#6B4F43] transition-colors"
         />
       </div>
 
@@ -239,21 +276,40 @@ export function GradeSheet() {
           <table className="w-full min-w-[800px] border-collapse">
             <thead>
               <tr className="bg-[#FDF8F5]">
-                <th className="p-3 text-left text-[13px] text-[#8B6F5F]">STT</th>
-                <th className="p-3 text-left text-[13px] text-[#8B6F5F]">Mã SV</th>
-                <th className="p-3 text-left text-[13px] text-[#8B6F5F]">Họ và tên</th>
-                <th className="p-3 text-center text-[13px] text-[#8B6F5F] w-[120px]">Chuyên cần (10%)</th>
-                <th className="p-3 text-center text-[13px] text-[#8B6F5F] w-[120px]">Giữa kỳ (30%)</th>
-                <th className="p-3 text-center text-[13px] text-[#8B6F5F] w-[120px]">Cuối kỳ (60%)</th>
-                <th className="p-3 text-center text-[13px] text-[#8B6F5F]">Tổng kết</th>
-                <th className="p-3 text-center text-[13px] text-[#8B6F5F]">Thao tác</th>
+                <th className="p-3 text-left text-[13px] text-[#8B6F5F]">
+                  STT
+                </th>
+                <th className="p-3 text-left text-[13px] text-[#8B6F5F]">
+                  Mã SV
+                </th>
+                <th className="p-3 text-left text-[13px] text-[#8B6F5F]">
+                  Họ và tên
+                </th>
+                <th className="p-3 text-center text-[13px] text-[#8B6F5F] w-[120px]">
+                  Chuyên cần (10%)
+                </th>
+                <th className="p-3 text-center text-[13px] text-[#8B6F5F] w-[120px]">
+                  Giữa kỳ (30%)
+                </th>
+                <th className="p-3 text-center text-[13px] text-[#8B6F5F] w-[120px]">
+                  Cuối kỳ (60%)
+                </th>
+                <th className="p-3 text-center text-[13px] text-[#8B6F5F]">
+                  Tổng kết
+                </th>
+                <th className="p-3 text-center text-[13px] text-[#8B6F5F]">
+                  Thao tác
+                </th>
               </tr>
             </thead>
 
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={8} className="p-10 text-center text-[#8B6F5F] font-bold">
+                  <td
+                    colSpan={8}
+                    className="p-10 text-center text-[#8B6F5F] font-bold"
+                  >
                     Đang tải dữ liệu bảng điểm...
                   </td>
                 </tr>
@@ -267,21 +323,37 @@ export function GradeSheet() {
                 filteredStudents.map((row) => {
                   const isEditing = editingRows[row.masv] === true;
                   const isSaving = savingRow === row.masv;
-                  const inputs = tempGrades[row.masv] || { ChuyenCan: "", BaiTap: "", GiuaKy: "", CuoiKy: "" };
+                  const inputs = tempGrades[row.masv] || {
+                    ChuyenCan: "",
+                    BaiTap: "",
+                    GiuaKy: "",
+                    CuoiKy: "",
+                  };
 
                   return (
-                    <tr key={row.masv} className="border-b border-[#F0E1D9] hover:bg-gray-50 transition-colors">
+                    <tr
+                      key={row.masv}
+                      className="border-b border-[#F0E1D9] hover:bg-gray-50 transition-colors"
+                    >
                       <td className="p-3 text-sm">{row.stt}</td>
                       <td className="p-3 text-sm text-gray-500">{row.masv}</td>
-                      <td className="p-3 text-sm font-semibold text-[#6B4F43]">{row.hoten}</td>
-                      
+                      <td className="p-3 text-sm font-semibold text-[#6B4F43]">
+                        {row.hoten}
+                      </td>
+
                       {/* Chuyên cần */}
                       <td className="p-3 text-center">
                         {isEditing ? (
                           <input
                             type="text"
                             value={inputs.ChuyenCan}
-                            onChange={(e) => handleGradeChange(row.masv, "ChuyenCan", e.target.value)}
+                            onChange={(e) =>
+                              handleGradeChange(
+                                row.masv,
+                                "ChuyenCan",
+                                e.target.value,
+                              )
+                            }
                             className="w-[60px] text-center border border-[#EAD9CB] rounded-md p-1.5 outline-none focus:border-[#F2A8A8]"
                           />
                         ) : (
@@ -295,7 +367,13 @@ export function GradeSheet() {
                           <input
                             type="text"
                             value={inputs.GiuaKy}
-                            onChange={(e) => handleGradeChange(row.masv, "GiuaKy", e.target.value)}
+                            onChange={(e) =>
+                              handleGradeChange(
+                                row.masv,
+                                "GiuaKy",
+                                e.target.value,
+                              )
+                            }
                             className="w-[60px] text-center border border-[#EAD9CB] rounded-md p-1.5 outline-none focus:border-[#F2A8A8]"
                           />
                         ) : (
@@ -309,7 +387,13 @@ export function GradeSheet() {
                           <input
                             type="text"
                             value={inputs.CuoiKy}
-                            onChange={(e) => handleGradeChange(row.masv, "CuoiKy", e.target.value)}
+                            onChange={(e) =>
+                              handleGradeChange(
+                                row.masv,
+                                "CuoiKy",
+                                e.target.value,
+                              )
+                            }
                             className="w-[60px] text-center border border-[#EAD9CB] rounded-md p-1.5 outline-none focus:border-[#F2A8A8]"
                           />
                         ) : (
@@ -320,15 +404,23 @@ export function GradeSheet() {
                       {/* Tổng kết */}
                       <td className="p-3 text-center font-bold text-[#6B4F43]">
                         {isEditing ? (
-                          <span className="text-[#8B6F5F]">{calculateTempFinal(row.masv)}</span>
+                          <span className="text-[#8B6F5F]">
+                            {calculateTempFinal(row.masv)}
+                          </span>
+                        ) : row.tongKet &&
+                          typeof row.tongKet.diemtongket === "number" ? (
+                          <span
+                            className={
+                              row.tongKet.diemtongket >= 4.0
+                                ? "text-green-700"
+                                : "text-red-700"
+                            }
+                          >
+                            {row.tongKet.diemtongket.toFixed(2)} (
+                            {row.tongKet.diemchu})
+                          </span>
                         ) : (
-                          (row.tongKet && typeof row.tongKet.diemtongket === "number") ? (
-                            <span className={row.tongKet.diemtongket >= 4.0 ? "text-green-700" : "text-red-700"}>
-                              {row.tongKet.diemtongket.toFixed(2)} ({row.tongKet.diemchu})
-                            </span>
-                          ) : (
-                            "—"
-                          )
+                          "—"
                         )}
                       </td>
 
@@ -372,7 +464,8 @@ export function GradeSheet() {
         {!loading && filteredStudents.length > 0 && (
           <div className="flex justify-between p-4 border-t border-[#F0E1D9]">
             <span className="text-[13px] text-[#8B6F5F]">
-              Hiển thị {filteredStudents.length} của {students.length} sinh viên học lớp này
+              Hiển thị {filteredStudents.length} của {students.length} sinh viên
+              học lớp này
             </span>
           </div>
         )}

@@ -163,14 +163,19 @@ export const examService = {
         const { data: exam, error: examErr } = await examRepo.getExamDetail(madethi);
         if (examErr || !exam) throw new Error('Không tìm thấy đề thi');
 
-        const now = Date.now();
-        const startMs = new Date(exam.thoigianbatdau).getTime();
-        const endMs = new Date(exam.thoigianketthuc).getTime();
+        // Sử dụng thời gian Việt Nam (GMT+7) để so sánh
+        // DB lưu thời gian theo múi giờ Việt Nam (không có suffix Z)
+        const vnNowMs = Date.now() + 7 * 60 * 60 * 1000;
+        const vnNowISO = new Date(vnNowMs).toISOString().replace('Z', '');
 
-        if (now < startMs) {
+        // Parse thời gian từ DB (đã là giờ VN) - so sánh string trực tiếp
+        const startTimeStr = exam.thoigianbatdau;
+        const endTimeStr = exam.thoigianketthuc;
+
+        if (vnNowISO < startTimeStr) {
             throw new Error('Ca thi chưa bắt đầu');
         }
-        if (now >= endMs) {
+        if (vnNowISO >= endTimeStr) {
             throw new Error('Ca thi đã kết thúc, không thể vào làm bài');
         }
 
@@ -184,21 +189,23 @@ export const examService = {
             );
         }
 
-        // Tính effectiveTimeSec
+        // Tính effectiveTimeSec dựa trên giờ VN
         const fullDurationSec = (exam as any).thoigianlam * 60;
-        const timeRemainingToEnd = Math.floor((endMs - now) / 1000);
+        // Parse endTime as UTC (vì đã cộng 7h vào vnNowMs) để tính khoảng cách
+        const endMs = new Date(endTimeStr + 'Z').getTime(); // Treat as UTC for arithmetic
+        const nowMs = new Date(vnNowISO + 'Z').getTime();
+        const timeRemainingToEnd = Math.floor((endMs - nowMs) / 1000);
         const effectiveTimeSec = Math.min(fullDurationSec, timeRemainingToEnd);
 
         if (effectiveTimeSec <= 0) {
             throw new Error('Ca thi đã kết thúc, không thể vào làm bài');
         }
 
-        const vnNow = new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString().replace('Z', '');
         const { data: record, error: insertErr } = await examRepo.startExamRecord({
             masv,
             madethi,
             lanthi: 1,
-            thoigianvaothi: vnNow,
+            thoigianvaothi: vnNowISO,
         });
         if (insertErr || !record) throw new Error(insertErr?.message ?? 'Không thể bắt đầu ca thi');
 

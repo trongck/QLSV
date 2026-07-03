@@ -48,6 +48,11 @@ export function AttendanceView() {
     return activeClass.lichDay.includes(dbDay);
   })();
 
+  // Kiểm tra ngày chọn có vượt quá ngày kết thúc của lớp học phần không
+  const todayStr = new Date(Date.now() + 7 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  const isClassEnded = activeClass?.ngayketthuc ? selectedDate > activeClass.ngayketthuc : false;
+  const isClassEndedOverall = activeClass?.ngayketthuc ? todayStr > activeClass.ngayketthuc : false;
+
   // Filter sessions matching selected class (maphancong)
   const classSessions = allSessions.filter((s) => {
     return s.maphancong === selectedPC;
@@ -83,7 +88,7 @@ export function AttendanceView() {
           >
              Làm mới
           </button>
-          {!selectedBH && selectedPC && (
+          {!selectedBH && selectedPC && !isClassEnded && (
             <button 
               onClick={handleCreateSession}
               disabled={!isScheduledDay}
@@ -133,6 +138,8 @@ export function AttendanceView() {
           <input 
             type="date" 
             value={selectedDate}
+            max={todayStr}
+            min={activeClass?.ngaybatdau || undefined}
             onChange={(e) => setSelectedDate(e.target.value)}
             className="w-full md:w-auto p-2.5 rounded-lg border border-[#F0E1D9] outline-none text-[#6B4F43] focus:border-[#F2A8A8] transition-colors"
           />
@@ -147,7 +154,17 @@ export function AttendanceView() {
             />
           </div>
         </div>
-        {!isScheduledDay && (
+        {isClassEnded && (
+          <p className="text-red-500 text-xs m-0 px-2 font-semibold">
+             Lớp học phần này đã kết thúc lịch dạy. Không thể tạo ca điểm danh mới.
+          </p>
+        )}
+        {isClassEndedOverall && !isClassEnded && (
+          <p className="text-amber-600 text-xs m-0 px-2 font-semibold">
+             Lớp học phần đã kết thúc lịch giảng dạy (Chỉ cho phép điểm danh bù cho các ngày trong quá khứ).
+          </p>
+        )}
+        {!isClassEnded && !isScheduledDay && (
           <p className="text-red-500 text-xs m-0 px-2 font-semibold">
              Lớp học phần này không có lịch dạy vào thứ được chọn. Bạn không thể tạo ca điểm danh cho ngày này.
           </p>
@@ -163,7 +180,7 @@ export function AttendanceView() {
             <button 
               onClick={() => setSubTab("list")}
               className={`px-4 py-2 rounded-md text-[13px] font-semibold cursor-pointer transition-all ${
-                subTab === "list" ? "bg-[#F2A8A8] text-white border-none" : "bg-white text-[#6B4F43] border border-[#EAD9CB]"
+                subTab === "list" ? "bg-[#C0392B] text-white border-none" : "bg-white text-[#6B4F43] border border-[#EAD9CB]"
               }`}
             >
               Danh sách điểm danh
@@ -171,7 +188,7 @@ export function AttendanceView() {
             <button 
               onClick={() => setSubTab("qrcode")}
               className={`px-4 py-2 rounded-md text-[13px] font-semibold cursor-pointer transition-all ${
-                subTab === "qrcode" ? "bg-[#F2A8A8] text-white border-none" : "bg-white text-[#6B4F43] border border-[#EAD9CB]"
+                subTab === "qrcode" ? "bg-[#C0392B] text-white border-none" : "bg-white text-[#6B4F43] border border-[#EAD9CB]"
               }`}
             >
               QR Code
@@ -179,7 +196,7 @@ export function AttendanceView() {
             <button 
               onClick={() => setSubTab("leave_requests")}
               className={`px-4 py-2 rounded-md text-[13px] font-semibold cursor-pointer flex items-center gap-2 transition-all ${
-                subTab === "leave_requests" ? "bg-[#F2A8A8] text-white border-none" : "bg-white text-[#6B4F43] border border-[#EAD9CB]"
+                subTab === "leave_requests" ? "bg-[#C0392B] text-white border-none" : "bg-white text-[#6B4F43] border border-[#EAD9CB]"
               }`}
             >
               Đơn xin nghỉ học
@@ -213,7 +230,7 @@ export function AttendanceView() {
                 {isScheduledDay && (
                   <button 
                     onClick={handleCreateSession}
-                    className="mt-4 px-5 py-2.5 bg-[#F2A8A8] text-white border-none rounded-lg font-semibold cursor-pointer hover:bg-[#eb9d9d] transition-colors"
+                    className="mt-4 px-5 py-2.5 bg-[#C0392B] text-white border-none rounded-lg font-semibold cursor-pointer hover:bg-[#eb9d9d] transition-colors"
                   >
                     Kích hoạt ca điểm danh mới
                   </button>

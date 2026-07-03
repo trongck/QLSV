@@ -326,7 +326,7 @@ export const examService = {
         hour: "2-digit", minute: "2-digit", day: "2-digit", month: "2-digit", year: "numeric"
       });
       await notificationRepo.createNotification({
-        tieude: `Ủ Ca thi: ${examData.tieude}`,
+        tieude: `Ca thi: ${examData.tieude}`,
         noidung: `Ca thi sẽ bắt đầu lúc ${startStr}. Thời lượng: ${examData.thoigianlam} phút. Vui lòng chuẩn bị sẵn sàng.`,
         loai: "Hoctap",
         doituong: "SinhVien",

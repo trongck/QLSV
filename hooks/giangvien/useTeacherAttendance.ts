@@ -11,6 +11,8 @@ export interface LopItem {
   mamon: string;
   tenlop: string;
   lichDay?: number[];
+  ngaybatdau?: string | null;
+  ngayketthuc?: string | null;
 }
 
 export interface BuoiHocItem {
