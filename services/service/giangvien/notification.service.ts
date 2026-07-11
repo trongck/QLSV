@@ -1,4 +1,18 @@
 import { notificationRepo } from "@/services/repositories/giangvien/notification.repo";
+import { getVietnamTimeISO } from "@/lib/utils/date";
+
+const parseToVNTimeMs = (dateInput: string | Date) => {
+  if (dateInput instanceof Date) {
+    return dateInput.getTime();
+  }
+  let str = dateInput.trim().replace(' ', 'T');
+  // If the timestamp has no timezone info (no Z, +, or -xx:xx),
+  // force it to Indochina Time (+07:00) since DB stores VN local time
+  if (!str.includes('Z') && !str.includes('+') && !/-\d{2}:\d{2}$/.test(str)) {
+    str = str + '+07:00';
+  }
+  return new Date(str).getTime();
+};
 
 export const notificationService = {
   /**
@@ -21,8 +35,8 @@ export const notificationService = {
     const now = new Date();
     const filtered = (rawData ?? []).filter((tb: any) => {
       if (tb.mataikhoantao === mataikhoan) return true;
-      const ngaytaoTime = new Date(tb.ngaytao).getTime();
-      const ngayhethanTime = tb.ngayhethan ? new Date(tb.ngayhethan).getTime() : null;
+      const ngaytaoTime = parseToVNTimeMs(tb.ngaytao);
+      const ngayhethanTime = tb.ngayhethan ? parseToVNTimeMs(tb.ngayhethan) : null;
       if (ngaytaoTime > now.getTime()) return false;
       if (ngayhethanTime !== null && ngayhethanTime < now.getTime()) return false;
       return true;
@@ -95,8 +109,8 @@ export const notificationService = {
       maphancong: maphancong ? Number(maphancong) : null,
       ngayhethan: ngayhethan || null,
       ghim: Boolean(ghim),
-      ngaytao: new Date().toISOString(),
-      ngaycapnhat: new Date().toISOString(),
+      ngaytao: getVietnamTimeISO(),
+      ngaycapnhat: getVietnamTimeISO(),
     };
 
     const { data, error } = await notificationRepo.createNotification(insertPayload);
@@ -111,7 +125,7 @@ export const notificationService = {
     mataikhoan: string,
     body: { all?: boolean; mathongbao?: number; dadoc?: boolean }
   ) {
-    const vnNow = new Date().toISOString();
+    const vnNow = getVietnamTimeISO();
 
     if (body.all === true) {
       // Find all active notifications for teachers
@@ -203,7 +217,7 @@ export const notificationService = {
     if (body.ghim !== undefined) updatePayload.ghim = Boolean(body.ghim);
     if (body.ngaytao !== undefined) updatePayload.ngaytao = body.ngaytao;
 
-    updatePayload.ngaycapnhat = new Date().toISOString();
+    updatePayload.ngaycapnhat = getVietnamTimeISO();
 
     const { data: updated, error: updateError } = await notificationRepo.updateNotification(mathongbao, updatePayload);
     if (updateError) throw updateError;

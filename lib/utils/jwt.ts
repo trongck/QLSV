@@ -61,7 +61,7 @@ export function refreshTokenExpiresAt(): Date {
   return new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 }
 
-// ─── Role / Authorization Helpers ─────────────────────────────────────────────
+// ─── Yêu cầu quyền truy cập cụ thể ─────────────────────────────────────────────
 
 export async function requireRole(request: Request, allowedRole: VaiTro): Promise<AppJwtPayload | null> {
   const token = extractBearer(request.headers.get("authorization"));
