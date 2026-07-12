@@ -1,5 +1,5 @@
 import { SupabaseClient } from "@supabase/supabase-js";
-import * as repo from "@/services/repositories/admin/sinhvien.repo/sinhvien.repo";
+import * as repo from "@/services/repositories/admin/sinhvien.repo";
 
 export function mapSinhVien(sv: any) {
   if (!sv) return sv;
