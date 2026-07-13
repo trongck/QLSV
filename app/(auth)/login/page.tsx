@@ -10,7 +10,6 @@ export default function LoginPage() {
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [remember, setRemember] = useState(false);
   const [showPw, setShowPw] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<{
     email?: string;
@@ -63,7 +62,7 @@ export default function LoginPage() {
     e.preventDefault();
     if (!validate()) return;
 
-    await login({ email: email.trim(), matkhau: password }, remember);
+    await login({ email: email.trim(), matkhau: password }, true);
   };
 
   return (
@@ -283,17 +282,6 @@ export default function LoginPage() {
                 </span>
               )}
             </div>
-
-            <label className="flex items-center gap-2 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={remember}
-                onChange={(e) => setRemember(e.target.checked)}
-                className="w-4 h-4 accent-primary cursor-pointer shrink-0"
-                disabled={submitting}
-              />
-              <span className="text-[13px] text-[#6B4F3F]">Duy trì đăng nhập</span>
-            </label>
 
             <button
               type="submit"

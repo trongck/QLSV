@@ -58,7 +58,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const login = useCallback(
-    async (payload: LoginRequest, remember = false) => {
+    async (payload: LoginRequest, remember = true) => {
       const response = await authService.login(payload, remember);
       setUser(response.user);
 

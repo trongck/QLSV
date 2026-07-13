@@ -12,7 +12,7 @@ export function useAuth() {
   // ── Xử lý login với UI state ────────────────────────────────────────────────
 
   const handleLogin = useCallback(
-    async (payload: LoginRequest, remember = false) => {
+    async (payload: LoginRequest, remember = true) => {
       setSubmitting(true);
       setError(null);
       try {
