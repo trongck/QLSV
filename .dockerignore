@@ -1,0 +1,50 @@
+# Các file/thư mục bị loại trừ khỏi Docker build context
+# Giúp giảm kích thước context và tăng tốc build
+
+# Thư viện (sẽ được cài lại trong container)
+node_modules
+.pnp
+.pnp.js
+
+# Kiểm thử
+coverage
+
+# Kết quả build cũ của Next.js
+.next
+out
+build
+
+# File hệ thống & khóa bảo mật
+.DS_Store
+*.pem
+
+# Log gỡ lỗi
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Git
+.git
+.gitignore
+
+# IDE / Trình soạn thảo
+.vscode
+.idea
+
+# File Docker (không cần copy vào image)
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# AI Agent
+.agents
+AGENTS.md
+CLAUDE.md
+skills-lock.json
+
+# File tạm của TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# Tài liệu
+README.md
