@@ -67,11 +67,26 @@ export async function GET(request: Request) {
 
     // B. XỬ LÝ TÌM KIẾM TOÀN CẦU (Global Search) + Ghi Log
     if (search) {
-      const results = await globalSearchService(supabase, search, payload, ip);
-      return NextResponse.json({
-        success: true,
-        results
-      });
+      const trimmedSearch = search.trim();
+      if (trimmedSearch.length < 2 || trimmedSearch.length > 50) {
+        return NextResponse.json({ error: "Từ khóa tìm kiếm không hợp lệ (yêu cầu từ 2 đến 50 ký tự)." }, { status: 400 });
+      }
+      
+      // Loại bỏ các ký tự wildcard % và _ để tránh query quét toàn bộ database ngoài ý muốn
+      const sanitizedSearch = trimmedSearch.replace(/[%_]/g, "");
+      
+      if (sanitizedSearch.length > 0) {
+        const results = await globalSearchService(supabase, sanitizedSearch, payload, ip);
+        return NextResponse.json({
+          success: true,
+          results
+        });
+      } else {
+        return NextResponse.json({
+          success: true,
+          results: { sinhvien: [], giangvien: [], lop: [], monhoc: [] }
+        });
+      }
     }
 
     // C. MẶC ĐỊNH: Trả về Stats tổng hợp + Lịch học hôm nay + Nhật ký hệ thống

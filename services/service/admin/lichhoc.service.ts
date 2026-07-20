@@ -99,6 +99,7 @@ export async function createLichHocService(supabase: SupabaseClient, body: any) 
       const { data: roomConflicts, error: rcError } = await repo.getRoomConflictsRepo(supabase, maphong.trim(), pc.mahocky, thu);
       if (rcError) throw new Error(rcError.message);
 
+      //--------------item.tietbatdau------------item.tietketthuc-----------
       for (const item of (roomConflicts || [])) {
         if (tbd <= item.tietketthuc && item.tietbatdau <= tkt) {
           throw new Error(`Trùng lịch phòng học: Phòng "${maphong.trim()}" đã được đăng ký sử dụng bởi lớp "${item.phancong.lop.tenlop}" học môn "${item.phancong.monhoc.tenmon}" vào Thứ ${thu}, Tiết ${item.tietbatdau}-${item.tietketthuc}.`);

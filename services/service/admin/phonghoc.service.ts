@@ -21,7 +21,7 @@ export async function createPhongHocService(
   if (!maphongClean) throw new Error("Mã phòng học không được để trống.");
   if (payload.suchua <= 0) throw new Error("Sức chứa phòng học phải lớn hơn 0.");
 
-  // Check if room code already exists using repository
+  // Kiểm tra xem mã phòng đã tồn tại hay chưa bằng cách sử dụng repository
   const existing = await getPhongHocByCodeService(supabase, maphongClean);
 
   if (existing) {

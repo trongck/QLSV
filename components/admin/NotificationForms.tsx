@@ -27,6 +27,7 @@ export interface ParsedContent {
   text: string;
 }
 
+//giải nén ảnh 
 export function parseNotificationContent(noidung: string): ParsedContent {
   const match = noidung.match(/^\s*\[IMAGE_URL:([^\]]+)\]([\s\S]*)$/i);
   if (match) {

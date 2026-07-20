@@ -118,14 +118,15 @@ export default function AdminDashboard() {
 
   // Debounced Global Search
   useEffect(() => {
-    if (!search.trim()) {
+    const trimmed = search.trim();
+    if (trimmed.length < 2 || trimmed.length > 50) {
       setSearchResults(null);
       return;
     }
     const delayDebounce = setTimeout(async () => {
       setSearchLoading(true);
       try {
-        const json = await searchStats(search);
+        const json = await searchStats(trimmed);
         if (json.success) {
           setSearchResults(json.results);
           // Reload logs in background to show search activity log!
@@ -231,6 +232,7 @@ export default function AdminDashboard() {
               </svg>
               <input
                 type="text"
+                maxLength={50}
                 className="w-full h-11 pl-11 pr-10 border-2 border-[#FFDBB6] rounded-full bg-white text-sm font-medium text-fg outline-none transition-all duration-200 shadow-[0_2px_8px_rgba(76,38,24,0.04)] focus:border-primary focus:shadow-[0_0_0_3px_rgba(194,84,80,0.15)]"
                 placeholder="Tìm sinh viên, lớp, môn, giảng viên..."
                 value={search}
@@ -254,7 +256,15 @@ export default function AdminDashboard() {
         {/* Global Search Results Drawer */}
         {search.trim() && (
           <div className="flex flex-col gap-4 bg-white border border-[#FFDBB6] rounded-2xl p-5 shadow-lg">
-            {searchLoading ? (
+            {search.trim().length < 2 ? (
+              <p className="p-4 text-sm text-[#c25450] text-center m-0 font-medium">
+                Vui lòng nhập tối thiểu 2 ký tự để tìm kiếm.
+              </p>
+            ) : search.trim().length > 50 ? (
+              <p className="p-4 text-sm text-[#c25450] text-center m-0 font-medium">
+                Vui lòng nhập tối đa 50 ký tự để tìm kiếm.
+              </p>
+            ) : searchLoading ? (
               <p className="p-8 text-sm text-fg-subtle text-center m-0 font-medium">
                 Đang tìm kiếm thông tin trên hệ thống...
               </p>

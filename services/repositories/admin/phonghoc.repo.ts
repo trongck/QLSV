@@ -114,11 +114,7 @@ export async function checkPhongHocConflictRepo(
 
   // Check for session/period overlap
   const conflict = data.filter((lh: any) => {
-    return (
-      (tietbatdau >= lh.tietbatdau && tietbatdau <= lh.tietketthuc) ||
-      (tietketthuc >= lh.tietbatdau && tietketthuc <= lh.tietketthuc) ||
-      (lh.tietbatdau >= tietbatdau && lh.tietbatdau <= tietketthuc)
-    );
+    return tietbatdau <= lh.tietketthuc && lh.tietbatdau <= tietketthuc;
   });
 
   return { data: conflict, error: null };
